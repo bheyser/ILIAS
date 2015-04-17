@@ -64,6 +64,11 @@ class ilOldStyleRandomTestMigration
 	 * @var string
 	 */
 	private $flushString;
+
+	/**
+	 * @var string
+	 */
+	private $newLine;
 	
 	// -----------------------------------------------------------------------------------------------------------------
 
@@ -74,10 +79,15 @@ class ilOldStyleRandomTestMigration
 		$this->startTime = null;
 		$this->memoryPeak = null;
 
-		$this->flushString = "\n";
 		if( PHP_SAPI == 'cli' )
 		{
 			$this->flushString = '';
+			$this->newLine = "\n";
+		}
+		else
+		{
+			$this->flushString = "\n";
+			$this->newLine = '<br />';
 		}
 	}
 
@@ -213,7 +223,7 @@ class ilOldStyleRandomTestMigration
 	
 	private function printLine($message)
 	{
-		echo '<br />' . $message . '<br />' . $this->flushString; flush(); ob_flush();
+		echo $this->newLine . $message . $this->newLine . $this->flushString; flush(); ob_flush();
 	}
 
 	private function printStartState()
