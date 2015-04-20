@@ -20,6 +20,9 @@ fi
 
 LOGFILE="migrateOldStyleRandomTests_`date +%F--%H-%M-%S`.log"
 
+CURTIME=`date +%F %H:%M:%S`
+echo "startet migration at $CURTIME"
+echo "SH: startet migration at $CURTIME" >> $LOGFILE
 
 STATUSCODE=1
 
@@ -31,9 +34,15 @@ while [ $STATUSCODE -gt "0" ] && [ $STATUSCODE -lt "7" ]; do
     CURTIME=`date +%F %H:%M:%S`
     
     if [ $STATUSCODE = "0" ]; then
-        echo "finished to state 7 at $CURTIME"
+        CURSTATE=7
     el
-        echo "state $STATUSCODE in progress - $CURTIME"
+        CURSTATE=$STATUSCODE
     fi
     
+    echo "current state is $CURSTATE - $CURTIME"
+    
 done;
+
+CURTIME=`date +%F %H:%M:%S`
+echo "finished migration at $CURTIME"
+echo "SH: finished migration at $CURTIME" >> $LOGFILE
