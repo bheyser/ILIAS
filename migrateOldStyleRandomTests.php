@@ -198,7 +198,7 @@ class ilOldStyleRandomTestMigration
 		$mins = floor(($runTime - ($hours*3600)) / 60);
 		$secs = floor($runTime % 60);
 
-		return "$hours:$mins:$secs";
+		return sprintf("%02d:%02d:%02d", $hours, $mins, $secs);
 	}
 	
 	private function getFormatedMemoryPeak()
