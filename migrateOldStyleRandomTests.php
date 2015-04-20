@@ -43,7 +43,7 @@ class ilOldStyleRandomTestMigration
 {
 	// -----------------------------------------------------------------------------------------------------------------
 
-	const MAX_QUESTION_DUPLICATIONS = 1000;
+	const MAX_QUESTION_DUPLICATIONS = 5000;
 	
 	const LOCK_FILE = 'migrateOldStyleRandomTests.lock';
 	
@@ -609,6 +609,8 @@ class ilOldStyleRandomTestMigration
 		require_once 'Modules/TestQuestionPool/classes/class.assQuestion.php';
 
 		$this->printProgress();
+
+		$this->db->setLimit(self::MAX_QUESTION_DUPLICATIONS + 1);
 		
 		$res = $this->db->query("
 			SELECT tst, pool, qst FROM tmp_mig_qst_duplic
@@ -634,7 +636,7 @@ class ilOldStyleRandomTestMigration
 
 		$handled = array();
 		
-		$i = 0;
+		$i = 1;
 
 		while( $row = $this->db->fetchAssoc($res) )
 		{
