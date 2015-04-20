@@ -4,14 +4,14 @@
 echo "Bitte PHP Interpreter eingeben: "
 read PHPCMD
 
+echo "Bitte ILIAS Client ID eingeben: "
+read ILCLIENT
+
 echo "Bitte ILIAS Admin Benutzer eingeben: "
 read ILUSER
 
 echo "Bitte Passwort des Benutzers eingeben: "
 read -s ILPASS
-
-echo "Bitte ILIAS Client ID eingeben: "
-read ILCLIENT
 
 
 if [ "$PHPCMD" = "" ]; then
