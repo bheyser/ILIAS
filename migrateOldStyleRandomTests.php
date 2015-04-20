@@ -20,11 +20,21 @@ if( PHP_SAPI == 'cli' )
 	}
 }
 
-require_once 'include/inc.header.php';
+try
+{
+	require_once 'include/inc.header.php';
+}
+catch(Exception $e)
+{
+	echo 'Unknown trouble during ilInit!';
+	exit(126);
+}
+
 
 if(!$rbacsystem->checkAccess('visible,read', SYSTEM_FOLDER_ID))
 {
-	die('Sorry, this script requires administrative privileges!');
+	echo 'Sorry, this script requires administrative privileges!';
+	exit(125);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -33,6 +43,8 @@ class ilOldStyleRandomTestMigration
 {
 	// -----------------------------------------------------------------------------------------------------------------
 
+	const MAX_QUESTION_DUPLICATIONS = 1000;
+	
 	const LOCK_FILE = 'migrateOldStyleRandomTests.lock';
 	
 	/**
@@ -215,10 +227,10 @@ class ilOldStyleRandomTestMigration
 		}
 	}
 	
-	private function printProgress()
+	private function printProgress($uselessLoop = false)
 	{
 		$this->trackMemoryUsagePeak();
-		echo '.'.$this->flushString; flush(); ob_flush();
+		echo ($uselessLoop ? ',' : '.').$this->flushString; flush(); ob_flush();
 	}
 	
 	private function printLine($message)
@@ -280,8 +292,10 @@ class ilOldStyleRandomTestMigration
 					$this->updateMigrationState();
 					break;
 				
-			case 5: $this->performQuestionDuplication();
-					$this->updateMigrationState();
+			case 5: if( $this->performQuestionDuplication() )
+					{
+						$this->updateMigrationState();
+					}
 					break;
 			
 			case 6: $this->markFinalBrokenTests();
@@ -299,6 +313,13 @@ class ilOldStyleRandomTestMigration
 		$this->printFinishState();
 		
 		$this->releaseMigrationLock();
+		
+		if( $this->getMigrationState() == 7 )
+		{
+			return 0;
+		}
+		
+		return $this->getMigrationState();
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
@@ -378,6 +399,8 @@ class ilOldStyleRandomTestMigration
 
 			$this->db->addPrimaryKey('tmp_mig_qst_duplic', array('tst', 'pool', 'qst'));
 		}
+		
+		return true;
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
@@ -416,6 +439,8 @@ class ilOldStyleRandomTestMigration
 
 			$this->printProgress();
 		}
+
+		return true;
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
@@ -463,6 +488,8 @@ class ilOldStyleRandomTestMigration
 
 			$this->printProgress();
 		}
+
+		return true;
 	}
 	
 	// -----------------------------------------------------------------------------------------------------------------
@@ -504,6 +531,8 @@ class ilOldStyleRandomTestMigration
 
 			$this->printProgress();
 		}
+
+		return true;
 	}
 	
 	// -----------------------------------------------------------------------------------------------------------------
@@ -566,6 +595,8 @@ class ilOldStyleRandomTestMigration
 
 			$this->printProgress();
 		}
+
+		return true;
 	}
 	
 	// -----------------------------------------------------------------------------------------------------------------
@@ -602,13 +633,21 @@ class ilOldStyleRandomTestMigration
 		$this->printProgress();
 
 		$handled = array();
+		
+		$i = 0;
 
 		while( $row = $this->db->fetchAssoc($res) )
 		{
+			if($i > self::MAX_QUESTION_DUPLICATIONS)
+			{
+				return false;
+			}
+			
 			$key = "{$row['tst']}::{$row['pool']}::{$row['qst']}";
 
-			if( isset($handled[$key]) )
+			if(isset($handled[$key]))
 			{
+				$this->printProgress(true);
 				continue;
 			}
 
@@ -623,12 +662,14 @@ class ilOldStyleRandomTestMigration
 
 			$this->printProgress();
 
-			$this->db->execute(
-				$storeStmt, array($nextId, $row['tst'], $dupId, $row['pool'])
-			);
+			$this->db->execute($storeStmt, array($nextId, $row['tst'], $dupId, $row['pool']));
 
 			$this->printProgress();
+			
+			$i++;
 		}
+
+		return true;
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
@@ -645,10 +686,21 @@ class ilOldStyleRandomTestMigration
 		);
 
 		$this->printProgress();
+
+		return true;
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
 }
 
-$migration = new ilOldStyleRandomTestMigration($ilDB);
-$migration->perform();
+try
+{
+	$migration = new ilOldStyleRandomTestMigration($ilDB);
+	$exitCode = $migration->perform();
+}
+catch(Exception $e)
+{
+	$exitCode = 127;
+}
+
+exit((int)$exitCode);
