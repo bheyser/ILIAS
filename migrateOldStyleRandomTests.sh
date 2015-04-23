@@ -1,26 +1,36 @@
 #!/bin/bash
 
 
-echo "Bitte PHP Interpreter eingeben: "
+echo "Bitte PHP Interpreter eingeben [/usr/bin/php]: "
 read PHPCMD
 echo
-
-echo "Bitte ILIAS Client ID eingeben: "
-read ILCLIENT
-echo
-
-echo "Bitte ILIAS Admin Benutzer eingeben: "
-read ILUSER
-echo
-
-echo "Bitte Passwort des Benutzers eingeben: "
-read -s ILPASS
-echo
-
-
 if [ "$PHPCMD" = "" ]; then
     PHPCMD=/usr/bin/php
 fi
+
+
+echo "Bitte ILIAS Client ID eingeben [default]: "
+read ILCLIENT
+echo
+if [ "$ILCLIENT" = "" ]; then
+    ILCLIENT=default
+fi
+
+echo "Bitte ILIAS Admin Benutzer eingeben [root]: "
+read ILUSER
+echo
+if [ "$ILUSER" = "" ]; then
+    ILUSER=root
+fi
+
+echo "Bitte Passwort des Benutzers eingeben [homer]: "
+read -s ILPASS
+echo
+if [ "$ILPASS" = "" ]; then
+    ILPASS=homer
+fi
+
+
 
 LOGFILE="migrateOldStyleRandomTests_`date +%F--%H-%M-%S`.log"
 
