@@ -613,7 +613,9 @@ class ilOldStyleRandomTestMigration
 		$this->db->setLimit(self::MAX_QUESTION_DUPLICATIONS + 1);
 		
 		$res = $this->db->query("
-			SELECT tst, pool, qst FROM tmp_mig_qst_duplic
+			SELECT tst, pool, qst, tst_tests.obj_fi FROM tmp_mig_qst_duplic
+			
+			INNER JOIN tst_tests ON tst_tests.test_id = tst
 
 			INNER JOIN qpl_questions orig ON orig.question_id = qst
 			LEFT JOIN qpl_questions dups ON dups.original_id = orig.question_id AND dups.obj_fi = tst
@@ -622,7 +624,7 @@ class ilOldStyleRandomTestMigration
 
 			WHERE copy_id IS NULL
 			
-			GROUP BY tst, pool, qst
+			GROUP BY tst, pool, qst, tst_tests.obj_fi
 		");
 
 		$this->printProgress();
@@ -656,7 +658,7 @@ class ilOldStyleRandomTestMigration
 			$handled[$key] = $key;
 
 			$question = assQuestion::_instantiateQuestion($row['qst']);
-			$dupId = $question->duplicate(true, null, null, null, $row['tst']);
+			$dupId = $question->duplicate(true, null, null, null, $row['obj_fi']);
 
 			$this->printProgress();
 
