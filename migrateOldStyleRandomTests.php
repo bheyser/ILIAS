@@ -512,6 +512,8 @@ class ilOldStyleRandomTestMigration
 			
 			WHERE poolclone.tst IS NULL
 			AND poolclone.pool IS NULL
+
+			GROUP BY defs.test_fi, defs.pool_fi
 		");
 
 		$this->printProgress();
@@ -522,9 +524,21 @@ class ilOldStyleRandomTestMigration
 		);
 
 		$this->printProgress();
+
+		$handled = array();
 		
 		while( $row = $this->db->fetchAssoc($res) )
 		{
+			$key = "{$row['test_fi']}::{$row['pool_fi']}";
+
+			if(isset($handled[$key]))
+			{
+				$this->printProgress(true);
+				continue;
+			}
+
+			$handled[$key] = $key;
+
 			$this->db->execute(
 				$registerStmt, array($row['test_fi'], $row['pool_fi'], 0)
 			);
