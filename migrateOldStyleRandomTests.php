@@ -162,7 +162,7 @@ class ilOldStyleRandomTestMigration
 
 	private function changeKeyActivationStatusForTablesChangedByQuestionDuplication($activationStatus)
 	{
-		if( $this->db->getDBType() == 'mysql' ) return;
+		if( $this->db->getDBType() != 'mysql' ) return;
 		
 		$activationStatus = $activationStatus ? 'ENABLE' : 'DISABLE';
 
