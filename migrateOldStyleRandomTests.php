@@ -46,6 +46,14 @@ class ilOldStyleRandomTestMigration
 	const MAX_QUESTION_DUPLICATIONS = 5000;
 	
 	const LOCK_FILE = 'migrateOldStyleRandomTests.lock';
+
+	/**
+	 * @var array
+	 */
+	private $tablesChangedByQuestionDuplication = array(
+		'qpl_questions',
+		'tst_rnd_cpy'
+	);
 	
 	/**
 	 * @var ilDB
@@ -101,6 +109,8 @@ class ilOldStyleRandomTestMigration
 			$this->flushString = "\n";
 			$this->newLine = '<br />';
 		}
+
+		#$this->db->query('SET SESSION query_cache_type=0');
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
@@ -147,7 +157,21 @@ class ilOldStyleRandomTestMigration
 			}
 		}
 	}
+	
+	// -----------------------------------------------------------------------------------------------------------------
 
+	private function changeKeyActivationStatusForTablesChangedByQuestionDuplication($activationStatus)
+	{
+		if( $this->db->getDBType() == 'mysql' ) return;
+		
+		$activationStatus = $activationStatus ? 'ENABLE' : 'DISABLE';
+
+		foreach($this->tablesChangedByQuestionDuplication as $table)
+		{
+			#$this->db->query("ALTER TABLE {$table} {$activationStatus} KEYS");
+		}
+	}
+	
 	// -----------------------------------------------------------------------------------------------------------------
 
 	private function requestMigrationLock()
@@ -233,6 +257,20 @@ class ilOldStyleRandomTestMigration
 		echo ($uselessLoop ? ',' : '.').$this->flushString; flush(); ob_flush();
 	}
 	
+	private function printTime($microtime, $counter = null)
+	{
+		$u = (int)(($microtime * 1000) % 1000);
+		$s = (int)(($u / 1000) % 60);
+		$m = (int)($s / 60); 
+
+		if( $counter )
+		{
+			echo sprintf("%05d-", $counter);
+		}
+		
+		echo sprintf("%02d:%02d", $m, $s).'.'.($u ? rtrim($u, '0') : '0').$this->newLine;
+	}
+	
 	private function printLine($message)
 	{
 		echo $this->newLine . $message . $this->newLine . $this->flushString; flush(); ob_flush();
@@ -265,7 +303,7 @@ class ilOldStyleRandomTestMigration
 		$this->checkPreconditions();
 
 		$this->requestMigrationLock();
-
+		
 		$this->initMigrationState();
 		
 		$this->printStartState();
@@ -311,7 +349,7 @@ class ilOldStyleRandomTestMigration
 		}
 
 		$this->printFinishState();
-		
+
 		$this->releaseMigrationLock();
 		
 		if( $this->getMigrationState() == 7 )
@@ -636,6 +674,8 @@ class ilOldStyleRandomTestMigration
 
 		$this->printProgress();
 
+		$this->changeKeyActivationStatusForTablesChangedByQuestionDuplication(false);
+
 		$handled = array();
 		
 		$i = 1;
@@ -656,22 +696,30 @@ class ilOldStyleRandomTestMigration
 			}
 
 			$handled[$key] = $key;
+			
+			$microtime = microtime(true);
 
 			$question = assQuestion::_instantiateQuestion($row['qst']);
 			$dupId = $question->duplicate(true, null, null, null, $row['obj_fi']);
 
-			$this->printProgress();
+			#$this->printProgress();
 
 			$nextId = $this->db->nextId('tst_rnd_cpy');
 
-			$this->printProgress();
+			#$this->printProgress();
 
 			$this->db->execute($storeStmt, array($nextId, $row['tst'], $dupId, $row['pool']));
 
-			$this->printProgress();
+			#$this->printProgress();
+
+			$microtime = microtime(true) - $microtime;
+
+			$this->printTime($microtime, $i);
 			
 			$i++;
 		}
+		
+		$this->changeKeyActivationStatusForTablesChangedByQuestionDuplication(true);
 
 		return true;
 	}
