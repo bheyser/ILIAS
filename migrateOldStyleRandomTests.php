@@ -43,7 +43,7 @@ class ilOldStyleRandomTestMigration
 {
 	// -----------------------------------------------------------------------------------------------------------------
 
-	const MAX_QUESTION_DUPLICATIONS = 1000;
+	const MAX_QUESTION_DUPLICATIONS = 5000;
 	
 	const LOCK_FILE = 'migrateOldStyleRandomTests.lock';
 
