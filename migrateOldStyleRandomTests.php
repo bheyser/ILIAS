@@ -43,7 +43,7 @@ class ilOldStyleRandomTestMigration
 {
 	// -----------------------------------------------------------------------------------------------------------------
 
-	const MAX_QUESTION_DUPLICATIONS = 5000;
+	const MAX_QUESTION_DUPLICATIONS = 1000;
 	
 	const LOCK_FILE = 'migrateOldStyleRandomTests.lock';
 
@@ -432,6 +432,12 @@ class ilOldStyleRandomTestMigration
 					'length' => 4,
 					'notnull' => true,
 					'default' => 0
+				),
+				'dup' => array(
+					'type' => 'integer',
+					'length' => 4,
+					'notnull' => false,
+					'default' => null
 				)
 			));
 
@@ -669,10 +675,7 @@ class ilOldStyleRandomTestMigration
 			
 			INNER JOIN tst_tests ON tst_tests.test_id = tst
 
-			INNER JOIN qpl_questions orig ON orig.question_id = qst
-			LEFT JOIN qpl_questions dups ON dups.original_id = orig.question_id AND dups.obj_fi = tst
-
-			LEFT JOIN tst_rnd_cpy ON tst_fi = tst AND qpl_fi = pool AND qst_fi = dups.question_id
+			LEFT JOIN tst_rnd_cpy ON tst_fi = tst AND qpl_fi = pool AND qst_fi = dup
 
 			WHERE copy_id IS NULL
 			
@@ -683,6 +686,11 @@ class ilOldStyleRandomTestMigration
 
 		$storeStmt = $this->db->prepareManip(
 			"INSERT INTO tst_rnd_cpy (copy_id, tst_fi, qst_fi, qpl_fi) VALUES (?, ?, ?, ?)",
+			array('integer', 'integer', 'integer', 'integer')
+		);
+
+		$duplicatedStmt = $this->db->prepareManip(
+			"UPDATE tmp_mig_qst_duplic SET dup = ? WHERE tst = ? AND pool = ? AND qst = ?",
 			array('integer', 'integer', 'integer', 'integer')
 		);
 
@@ -722,6 +730,8 @@ class ilOldStyleRandomTestMigration
 
 			#$this->printProgress();
 
+			$this->db->execute($duplicatedStmt, array($dupId, $row['tst'], $row['pool'], $row['qst']));
+			
 			$this->db->execute($storeStmt, array($nextId, $row['tst'], $dupId, $row['pool']));
 
 			#$this->printProgress();
