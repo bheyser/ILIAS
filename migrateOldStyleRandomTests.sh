@@ -53,7 +53,11 @@ while [ $STATUSCODE -gt "0" ] && [ $STATUSCODE -lt "7" ]; do
         CURSTATE="$STATUSCODE"
     fi
     
-    echo "current state is ${CURSTATE} - ${CURTIME}"
+    if [ $STATUSCODE -gt "124" ] && [ $STATUSCODE -lt "128" ]; then
+        echo "something went wrong, have a look into the file migrateOldStyleRandomTests_<TIMESTAMP>.log"
+    else
+        echo "current state is ${CURSTATE} - ${CURTIME}"
+    fi
     
 done;
 
