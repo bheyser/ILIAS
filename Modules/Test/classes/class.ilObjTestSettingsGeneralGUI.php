@@ -1066,7 +1066,17 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 		$autosave_interval->setSuffix($this->lng->txt('seconds'));
 		$autosave_output->addSubItem($autosave_interval);
 		$form->addItem($autosave_output);
-
+		// uzk-patch: begin
+		/**
+		 * @var $ilSetting ilSetting
+		 */
+		global $ilSetting;
+		$autosave_output = new ilCheckboxInputGUI($this->lng->txt('uzk_save_buttons_enable'), 'save_buttons_enabled');
+		$autosave_output->setValue(1);
+		$autosave_output->setChecked($ilSetting->get('uzk_tst_save_buttons_enabled_' . $this->testOBJ->getId() , false));
+		$autosave_output->setInfo($this->lng->txt('uzk_save_buttons_enable_info'));
+		$form->addItem($autosave_output);
+		// uzk-patch: end
 		// shuffle questions
 		$shuffle = new ilCheckboxInputGUI($this->lng->txt("tst_shuffle_questions"), "chb_shuffle_questions");
 		$shuffle->setValue(1);
@@ -1148,6 +1158,13 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 		}
 
 		$this->testOBJ->setAutosave($form->getItemByPostVar('autosave')->getChecked());
+		// uzk-patch: begin
+		/**
+		 * @var $ilSetting ilSetting
+		 */
+		global $ilSetting;
+		$ilSetting->set('uzk_tst_save_buttons_enabled_' . $this->testOBJ->getId() , $form->getItemByPostVar('save_buttons_enabled')->getChecked());
+		// uzk-patch: end
 		$this->testOBJ->setAutosaveIval($form->getItemByPostVar('autosave_ival')->getValue() * 1000);
 
 		$this->testOBJ->setShuffleQuestions($form->getItemByPostVar('chb_shuffle_questions')->getChecked());

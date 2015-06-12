@@ -212,6 +212,15 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 					$this->outTestPage(false);
 				}
 				break;
+			// uzk-patch: begin
+			case "saveworkingstate":
+				$this->sequence = $this->calculateSequence();
+				$this->testSession->setLastSequence($this->sequence);
+				$this->testSession->saveToDb();
+				ilUtil::sendSuccess($this->lng->txt('saved_working_state_successfully'));
+				$this->outTestPage(false);
+				break;
+			// uzk-patch: end
 			case "previous":
 				$this->sequence = $this->calculateSequence();
 				$this->testSession->setLastSequence($this->sequence);

@@ -1180,6 +1180,19 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
 		{
 			$this->outProcessingTime($this->testSession->getActiveId());
 		}
+		// uzk-patch: begin
+		/**
+		 * @var $ilSetting ilSetting
+		 */
+		global $ilSetting;
+		if($ilSetting->get('uzk_tst_save_buttons_enabled_' . $this->object->getId() , false))
+		{
+			$this->tpl->setVariable("TXT_BUFFER_1", $this->lng->txt("saveworkingstate"));
+			$this->tpl->setVariable("TXT_BUFFER_2", $this->lng->txt("saveworkingstate"));
+			$this->tpl->setVariable("CMD_BUFFER_1", 'saveworkingstate');
+			$this->tpl->setVariable("CMD_BUFFER_2", 'saveworkingstate');
+		}
+		// uzk-patch: end
 
 		$this->tpl->setVariable("FORM_TIMESTAMP", time());
 		
@@ -1961,4 +1974,12 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
 		
 		return $this->lng->txt("save_introduction");
 	}
+	// uzk-patch: begin
+	protected function saveworkingstateCmd()
+	{
+		$this->saveQuestionSolution();
+		$this->ctrl->setParameter($this, "activecommand", "saveworkingstate");
+		$this->ctrl->redirect($this, "redirectQuestion");
+	}
+	// uzk-patch: end
 }
