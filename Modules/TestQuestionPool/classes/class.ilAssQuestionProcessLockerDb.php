@@ -51,7 +51,9 @@ class ilAssQuestionProcessLockerDb extends ilAssQuestionProcessLocker
 	{
 		$tables = array(
 			array('name' => 'tst_solutions', 'type' => ilDB::LOCK_WRITE),
-			array('name' => 'tst_solutions', 'type' => ilDB::LOCK_WRITE, 'sequence' => true)
+			array('name' => 'tst_solutions', 'type' => ilDB::LOCK_WRITE, 'sequence' => true),
+			array('name' => 'hist_answer_progress', 'type' => ilDB::LOCK_WRITE),
+			array('name' => 'hist_answer_progress', 'type' => ilDB::LOCK_WRITE, 'sequence' => true)
 		);
 		
 		if( $this->isAssessmentLogEnabled() )

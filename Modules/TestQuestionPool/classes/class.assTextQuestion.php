@@ -15,6 +15,7 @@ require_once './Modules/TestQuestionPool/interfaces/interface.ilObjAnswerScoring
  * @author	Björn Heyser <bheyser@databay.de>
  * @author	Maximilian Becker <mbecker@databay.de>
  *          
+ * @version		$Id: class.assTextQuestion.php 58104 2015-02-18 16:36:48Z mjansen $
  * @version		$Id$
  * 
  * @ingroup		ModulesTestQuestionPool
@@ -654,6 +655,32 @@ class assTextQuestion extends assQuestion implements ilObjQuestionScoringAdjusta
 				"pass" => array("integer", $pass),
 				"tstamp" => array("integer", time())
 			));
+			require_once './Modules/TestQuestionPool/classes/class.ilAnswerProgressHistorizing.php';
+			$case_id = array('active_fi' => $active_id, 'question_fi' => $this->getId(), 'pass' => $pass);
+			if(ilAnswerProgressHistorizing::caseExists($case_id))
+			{
+				$old_data = ilAnswerProgressHistorizing::getCurrentRecordByCase($case_id);
+				if($old_data['value1'] != trim($text))
+				{
+					ilAnswerProgressHistorizing::updateHistorizedData(
+						$case_id,
+						array('solution_id' => $next_id, 'value1' => trim($text), 'value2' => '', 'tstamp' => 0),
+						$ilUser->getId(),
+						time(),
+						false
+					);
+				}
+			} 
+			else 
+			{
+				ilAnswerProgressHistorizing::createNewHistorizedCase(
+					$case_id,
+					array('solution_id' => $next_id, 'value1' => trim($text), 'value2' => '', 'tstamp' => 0),
+					$ilUser->getId(),
+					time(),
+					false
+				);
+			}
 			$entered_values++;
 		}
 

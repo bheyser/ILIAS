@@ -12,6 +12,7 @@ require_once './Modules/TestQuestionPool/classes/class.ilUserQuestionResult.php'
 /**
  * Class for cloze tests
  * 
+ * @version		$Id: class.assClozeTest.php 55009 2014-11-12 11:28:51Z mjansen $
  * @author		Helmut Schottmüller <helmut.schottmueller@mac.com> 
  * @author		Björn Heyser <bheyser@databay.de>
  * @author		Maximilian Becker <mbecker@databay.de>
@@ -1285,6 +1286,7 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 							}
 							$solutionSubmit[trim($matches[1])] = $value;
 						}
+						$answer_elements[] = array('value1' => trim($matches[1]), 'value2' => trim($value));
 					}
 				}
 			}
@@ -1332,6 +1334,39 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 					}
 				}
 			}
+		}
+
+		$buffer = '';
+		foreach($answer_elements as $answer)
+		{
+			$buffer  .= 'value1:' . $answer['value1'] .'/:value1 ' . "\r\n";
+			$buffer  .= 'value2:' . $answer['value2'] .'/:value2 ' . "\r\n---\r\n";
+		}
+		require_once './Modules/TestQuestionPool/classes/class.ilAnswerProgressHistorizing.php';
+		$case_id = array('active_fi' => $active_id, 'question_fi' => $this->getId(), 'pass' => $pass);
+		if(ilAnswerProgressHistorizing::caseExists($case_id))
+		{
+			$old_data = ilAnswerProgressHistorizing::getCurrentRecordByCase($case_id);
+			if($buffer != '' && ($old_data['value1'] != $buffer))
+			{
+				ilAnswerProgressHistorizing::updateHistorizedData(
+					$case_id,
+					array('solution_id' => $next_id, 'value1' => $buffer, 'value2' => 'BUFFERED MULTILINE ANSWER', 'tstamp' => 0),
+					$ilUser->getId(),
+					time(),
+					false
+				);
+			}
+		}
+		else
+		{
+			ilAnswerProgressHistorizing::createNewHistorizedCase(
+				$case_id,
+				array('solution_id' => $next_id, 'value1' => $buffer, 'value2' => 'BUFFERED MULTILINE ANSWER', 'tstamp' => 0),
+				$ilUser->getId(),
+				time(),
+				false
+			);
 		}
 
 		$this->getProcessLocker()->releaseUserSolutionUpdateLock();
