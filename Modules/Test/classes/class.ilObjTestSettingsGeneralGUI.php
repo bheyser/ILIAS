@@ -1157,7 +1157,11 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 			$this->testOBJ->setTitleOutput($form->getItemByPostVar('title_output')->getValue());
 		}
 
-		$this->testOBJ->setAutosave($form->getItemByPostVar('autosave')->getChecked());
+		if ($form->getItemByPostVar('autosave') instanceof ilFormPropertyGUI)
+		{
+			$this->testOBJ->setAutosave($form->getItemByPostVar('autosave')->getChecked());
+			$this->testOBJ->setAutosaveIval($form->getItemByPostVar('autosave_ival')->getValue() * 1000);
+		}
 		// uzk-patch: begin
 		/**
 		 * @var $ilSetting ilSetting
@@ -1165,10 +1169,11 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 		global $ilSetting;
 		$ilSetting->set('uzk_tst_save_buttons_enabled_' . $this->testOBJ->getId() , $form->getItemByPostVar('save_buttons_enabled')->getChecked());
 		// uzk-patch: end
-		$this->testOBJ->setAutosaveIval($form->getItemByPostVar('autosave_ival')->getValue() * 1000);
-
-		$this->testOBJ->setShuffleQuestions($form->getItemByPostVar('chb_shuffle_questions')->getChecked());
-
+		if ($form->getItemByPostVar('chb_shuffle_questions') instanceof ilFormPropertyGUI)
+		{
+			$this->testOBJ->setShuffleQuestions($form->getItemByPostVar('chb_shuffle_questions')->getChecked());
+		}
+		
 		if (!$this->testOBJ->participantDataExist() && $this->formPropertyExists($form, 'offer_hints'))
 		{
 			$this->testOBJ->setOfferingQuestionHintsEnabled($form->getItemByPostVar('offer_hints')->getChecked());
