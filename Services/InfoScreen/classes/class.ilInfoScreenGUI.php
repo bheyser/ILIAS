@@ -459,20 +459,22 @@ class ilInfoScreenGUI
 						);
 				}
 
-				include_once 'Services/PermanentLink/classes/class.ilPermanentLinkGUI.php';				
-				$pm = new ilPermanentLinkGUI($type, $ref_id);
-				$pm->setIncludePermanentLinkText(false);
-				$pm->setAlignCenter(false);
-				$this->addProperty($lng->txt("perma_link"),
-					$pm->getHTML(),
-					""
-					);
+				// uzk-patch: begin
+				//include_once 'Services/PermanentLink/classes/class.ilPermanentLinkGUI.php';				
+				//$pm = new ilPermanentLinkGUI($type, $ref_id);
+				//$pm->setIncludePermanentLinkText(false);
+				//$pm->setAlignCenter(false);
+				//$this->addProperty($lng->txt("perma_link"),
+				//	$pm->getHTML(),
+				//	""
+				//	);
 			
 				// bookmarks
 
-				$title = $ilObjDataCache->lookupTitle($a_obj->getId());
-
-				$bms = ilPermanentLinkGUI::_getBookmarksSelectionList($title, $href);
+				//$title = $ilObjDataCache->lookupTitle($a_obj->getId());
+ 			
+				//$bms = ilPermanentLinkGUI::_getBookmarksSelectionList($title, $href);
+				// uzk-patch: end
 
 				// links to resource
 				if ($ilAccess->checkAccess("write", "", $ref_id) ||

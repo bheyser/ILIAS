@@ -234,10 +234,24 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
 		$button->setCommand( 'nextQuestion' );
 		$button->setCaption( 'save_next' );
 		$button->setId( 'bottomnextbutton' );
+		
+		// uzk-patch: begin
+		$button2 = ilSubmitButton::getInstance();
+		$button2->setPrimary( true );
+		$button2->setCommand( 'nextQuestion' );
+		$button2->setCaption( 'save_next' );
+		$button2->setId( 'bottomnextbutton2' );
+		// uzk-patch: end
 
 		$this->tpl->setCurrentBlock( "next_bottom" );
 		$this->tpl->setVariable( "BTN_NEXT", $button->render());
 		$this->tpl->parseCurrentBlock();
+		
+		// uzk-patch: begin
+		$this->tpl->setCurrentBlock( "next_bottom_2" );
+		$this->tpl->setVariable( "BTN_NEXT", $button2->render());
+		$this->tpl->parseCurrentBlock();
+		// uzk-patch: end
 	}
 
 	protected function populateUpperNextButtonBlockLeadingToQuestion()
@@ -247,10 +261,24 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
 		$button->setCommand( 'nextQuestion' );
 		$button->setCaption( 'save_next' );
 		$button->setId( 'nextbutton' );
-
+		
+		// uzk-patch: begin
+		$button2 = ilSubmitButton::getInstance();
+		$button2->setPrimary( true );
+		$button2->setCommand( 'nextQuestion' );
+		$button2->setCaption( 'save_next' );
+		$button2->setId( 'nextbutton2' );
+		// uzk-patch: end
+		
 		$this->tpl->setCurrentBlock( "next" );
 		$this->tpl->setVariable( "BTN_NEXT", $button->render());
 		$this->tpl->parseCurrentBlock();
+		
+		// uzk-patch: begin
+		$this->tpl->setCurrentBlock( "next_2" );
+		$this->tpl->setVariable( "BTN_NEXT", $button2->render());
+		$this->tpl->parseCurrentBlock();
+		// uzk-patch: end
 	}
 
 	protected function populateNextButtonsLeadingToEndOfTest()

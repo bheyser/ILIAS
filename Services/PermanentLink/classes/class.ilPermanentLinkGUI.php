@@ -175,6 +175,9 @@ class ilPermanentLinkGUI
 	*/
 	function getHTML()
 	{
+		// uzk-patch: begin
+		return "";
+		// uzk-patch: end
 		global $lng, $ilCtrl, $ilObjDataCache;
 		
 		$tpl = new ilTemplate("tpl.permanent_link.html", true, true,

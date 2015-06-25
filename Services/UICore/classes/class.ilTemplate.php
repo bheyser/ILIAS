@@ -1019,7 +1019,10 @@ class ilTemplate extends ilTemplateX
 			", ".number_format($ilBench->getMeasuredTime("Core", "ElapsedTimeUntilFooter"),1).' seconds');
 		// END Usability: Non-Delos Skins can display the elapsed time in the footer
 		
-		$this->setVariable("FOOTER", $ftpl->get());
+		// uzk-patch: begin
+		//$this->setVariable("FOOTER", $ftpl->get());
+		$this->setVariable("FOOTER", "");
+		// uzk-patch: end
 	}
 
 
