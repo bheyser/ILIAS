@@ -496,7 +496,7 @@ class ilOldStyleRandomTestMigration
 		// - by checking the deletion state of corresponding pools
 
 		$checkStmt = $this->db->prepare("
-			SELECT COUNT(pool_fi)
+			SELECT COUNT(pool_fi) cnt
 			FROM tst_rnd_quest_set_qpls
 			INNER JOIN object_reference ON obj_id = pool_fi
 			WHERE test_fi = ? AND deleted IS NOT NULL
