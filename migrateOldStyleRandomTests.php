@@ -4,6 +4,11 @@
 
 if( PHP_SAPI == 'cli' )
 {
+	if($_SERVER['argc'] < 5)
+	{
+		die("Usage: cron.php username password client includeTrash\n");
+	}
+
 	include_once "Services/Context/classes/class.ilContext.php";
 	ilContext::init(ilContext::CONTEXT_CRON);
 
@@ -14,10 +19,18 @@ if( PHP_SAPI == 'cli' )
 	$_POST['username'] = $_SERVER['argv'][1];
 	$_POST['password'] = $_SERVER['argv'][2];
 
-	if($_SERVER['argc'] < 4)
+	if( strtolower($_SERVER['argv'][4]) == 'yes' )
 	{
-		die("Usage: cron.php username password client\n");
+		$includeTrashEnabled = true;
 	}
+	else
+	{
+		$includeTrashEnabled = false;
+	}
+}
+else
+{
+	$includeTrashEnabled = true;
 }
 
 try
@@ -96,6 +109,11 @@ class ilOldStyleRandomTestMigration
 	 * @var string
 	 */
 	private $newLine;
+
+	/**
+	 * @var bool
+	 */
+	private $includeTrashEnabled;
 	
 	// -----------------------------------------------------------------------------------------------------------------
 
@@ -116,8 +134,26 @@ class ilOldStyleRandomTestMigration
 			$this->flushString = "\n";
 			$this->newLine = '<br />';
 		}
+		
+		$this->includeTrashEnabled = true;
 
 		$this->db->query('SET SESSION query_cache_type=0');
+	}
+
+	/**
+	 * @return boolean
+	 */
+	public function isIncludeTrashEnabled()
+	{
+		return $this->includeTrashEnabled;
+	}
+
+	/**
+	 * @param boolean $includeTrashEnabled
+	 */
+	public function setIncludeTrashEnabled($includeTrashEnabled)
+	{
+		$this->includeTrashEnabled = $includeTrashEnabled;
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
@@ -467,6 +503,16 @@ class ilOldStyleRandomTestMigration
 	
 	private function determineOldStyleRandomTests() // state 1 -> 2
 	{
+		$excludeTrashQueryJoins = '';
+		if( !$this->isIncludeTrashEnabled() )
+		{
+			$excludeTrashQueryJoins = "
+				INNER JOIN object_reference
+				ON obj_id = obj_fi
+				AND deleted IS NULL
+			";
+		}
+		
 		// get all random tests ...
 		// - with existing entries in tst_rnd_quest_set_qpls
 		// - but no existing entries in tst_rnd_cpy 
@@ -474,6 +520,7 @@ class ilOldStyleRandomTestMigration
 
 		$res = $this->db->query("
 			SELECT DISTINCT test_id FROM tst_tests
+			$excludeTrashQueryJoins
 			LEFT JOIN tmp_mig_rnd_tst ON tst = test_id
 			LEFT JOIN tst_rnd_cpy ON tst_fi = test_id
 			LEFT JOIN tst_rnd_quest_set_qpls ON test_fi = test_id
@@ -800,6 +847,8 @@ class ilOldStyleRandomTestMigration
 try
 {
 	$migration = new ilOldStyleRandomTestMigration($ilDB);
+
+	$migration->setIncludeTrashEnabled($includeTrashEnabled);
 	
 	$exitCode = $migration->perform();
 }

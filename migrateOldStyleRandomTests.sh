@@ -30,6 +30,12 @@ if [ "$ILPASS" = "" ]; then
     ILPASS=homer
 fi
 
+echo "Sollen Test im Papierkorb auch mit migriert werden? [yes]: "
+read -s INCLUDE_TRASH
+echo
+if [ "$INCLUDE_TRASH" = "" ]; then
+    INCLUDE_TRASH=yes
+fi
 
 
 LOGFILE="migrateOldStyleRandomTests_`date +%F--%H-%M-%S`.log"
@@ -42,7 +48,7 @@ STATUSCODE=1
 
 while [ $STATUSCODE -gt "0" ] && [ $STATUSCODE -lt "7" ]; do
     
-    $PHPCMD migrateOldStyleRandomTests.php $ILUSER $ILPASS $ILCLIENT >> $LOGFILE
+    $PHPCMD migrateOldStyleRandomTests.php $ILUSER $ILPASS $ILCLIENT $INCLUDE_TRASH >> $LOGFILE
     STATUSCODE=$?
     
     CURTIME=`date "+%F %H:%M:%S"`
