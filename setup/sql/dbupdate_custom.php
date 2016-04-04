@@ -71,3 +71,12 @@ if(!$ilDB->tableExists('hist_answer_progress'))
 	$ilDB->createSequence('hist_answer_progress');
 }
 ?>
+<#2>
+<?php
+	include_once('./Services/Migration/DBUpdate_3560/classes/class.ilDBUpdateNewObjectType.php');
+	ilDBUpdateNewObjectType::addAdminNode('pdfg', 'PDFGeneration');
+?>
+<#3>
+<?php
+	$ilCtrlStructureReader->getStructure();
+?>

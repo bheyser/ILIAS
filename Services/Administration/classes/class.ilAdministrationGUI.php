@@ -448,7 +448,10 @@ class ilAdministrationGUI
 			2 => array(
 				"services" =>
 					array("pdts", "nwss", "tags", "prfa", "skmg", "cals", "mail", 
-						"---", "seas", "mds", "taxs", "cert", 'ecss', "pays", "extt")
+						"---", "seas", "mds", "taxs", "cert", 'ecss', "pays", "extt"
+					  // uzk-patch: begin
+						  ,"pdfg"),
+					// uzk-patch: end
 				),
 			3 => array(
 				"objects" =>
