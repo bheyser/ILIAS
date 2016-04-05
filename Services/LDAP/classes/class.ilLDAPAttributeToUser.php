@@ -292,6 +292,13 @@ class ilLDAPAttributeToUser
 						break;
 						
 					case 'matriculation':
+						// uzk-patch: begin
+						//removes first character if it's alphabetic
+						if(ctype_alpha(substr($value,0,1)))
+						{
+							$value = substr($value,1);
+						}
+						// uzk-patch: end
 						$this->writer->xmlElement('Matriculation',array(),$value);
 						break;
 						
