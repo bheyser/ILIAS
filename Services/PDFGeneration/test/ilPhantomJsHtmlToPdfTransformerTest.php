@@ -16,7 +16,7 @@ class ilPhantomJsHtmlToPdfTransformerTest  extends PHPUnit_Framework_TestCase
 		return $method;
 	}
 	/**
-	 * 
+	 *
 	 */
 	public function testInstanceCanBeCreated()
 	{
@@ -37,7 +37,7 @@ class ilPhantomJsHtmlToPdfTransformerTest  extends PHPUnit_Framework_TestCase
 		$transformer = new ilPhantomJsHtmlToPdfTransformer(true);
 		$this->assertSame(false, $transformer->supportMultiSourcesFiles());
 	}
-	
+
 	public function testGetTitle()
 	{
 		$transformer = new ilPhantomJsHtmlToPdfTransformer(true);

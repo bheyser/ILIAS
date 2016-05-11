@@ -179,8 +179,8 @@ class ilWebkitHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	 */
 	public function __construct($phpunit_test = false)
 	{
-			$this->phpunit = $phpunit_test;
-			$this->loadDefaultSettings();
+		$this->phpunit = $phpunit_test;
+		$this->loadDefaultSettings();
 	}
 
 	protected function loadDefaultSettings()
@@ -1066,7 +1066,7 @@ class ilWebkitHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 			$this->config[] = 'quiet';
 		}
 	}
-	
+
 	protected function getCheckboxSvgArgument()
 	{
 		$checkbox_svg = $this->getCheckboxSvg();
@@ -1166,7 +1166,7 @@ class ilWebkitHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	{
 		$this->checkbox_checked_svg = $checkbox_checked_svg;
 	}
-	
+
 	/**
 	 * @return string
 	 */

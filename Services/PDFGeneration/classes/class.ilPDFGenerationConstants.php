@@ -31,8 +31,8 @@ class ilPDFGenerationConstants
 			'C0' => 'C0',
 		);
 	}
-	
-	
+
+
 	public static function getOrientations()
 	{
 		return array(
@@ -40,5 +40,5 @@ class ilPDFGenerationConstants
 			'Landscape' => 'Landscape'
 		);
 	}
-	
+
 }

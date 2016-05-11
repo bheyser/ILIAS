@@ -15335,3 +15335,7 @@ style#:#sty_va_iheada_class#:#Vert. Akkordeonelement Kopf (aktiv)
 style#:#sty_va_ihcap_class#:#Vert. Akkordeonelement Überschrift
 exc#:#exc_delete_team#:#Team löschen
 trac#:#trac_cron_info#:#Aktivieren Sie den "Objekt-Statistik"-Cron-Job, um Daten für diese Auswertung zu sammeln.
+help#:#help_tt_disable#:#Hilfe-Tooltips ausschalten
+help#:#help_tt_enable#:#Hilfe-Tooltips anschalten
+common#:#obj_pdfg#:#PDF-Erstellung
+common#:#obj_pdfg_desc#:#Administrationseinstellungen für die PDF-Erstellung

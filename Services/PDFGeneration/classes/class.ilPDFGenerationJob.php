@@ -3,20 +3,20 @@
 
 /**
  * Class ilPDFGenerationJob
- * 
+ *
  * Data-object blueprint that holds all PDF-generation related settings.
  * If you add to the methods, see to it that they follow the fluent interface, meaning
  * that all setters return $this for developer convenience.
  *
  * @author Maximilian Becker <mbecker@databay.de>
  * @version $Id$
- * 
+ *
  */
-class ilPDFGenerationJob 
+class ilPDFGenerationJob
 {
 	#region Properties
 	private $font;					/** @var $font array Font */
-	private $author;				/** @var $author string Author */	
+	private $author;				/** @var $author string Author */
 	private $creator;				/** @var $creator string Creator */
 	private $footer;				/** @var $footer string Footer */
 	private $footer_font;			/** @var $footer_font array Font*/
@@ -35,9 +35,9 @@ class ilPDFGenerationJob
 	private $filename;				/** @var $filename string Filename */
 	private $output_mode;			/** @var $output_mode string Output mode, one D, F or I */
 	#endregion
-	
+
 	#region Methods
-	
+
 	/**
 	 * @param boolean $auto_page_break
 	 * @return $this
@@ -209,7 +209,7 @@ class ilPDFGenerationJob
 	}
 
 	/**
-	 * @return float 
+	 * @return float
 	 */
 	public function getImageScale()
 	{
@@ -397,6 +397,6 @@ class ilPDFGenerationJob
 	{
 		return $this->output_mode;
 	}
-	
+
 	#endregion
 }

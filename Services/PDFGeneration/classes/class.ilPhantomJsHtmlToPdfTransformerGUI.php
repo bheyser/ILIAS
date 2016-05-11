@@ -178,11 +178,11 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 	public function appendForm(ilPropertyFormGUI $form)
 	{
 		$form->setTitle($this->lng->txt('phantomjs_config'));
-		
+
 		$path = new ilTextInputGUI($this->lng->txt('path'), 'path');
 		$path->setValue($this->path);
 		$form->addItem($path);
-		
+
 		$active = new ilCheckboxInputGUI($this->lng->txt('is_active'), 'is_active');
 		if($this->is_active == true || $this->is_active == 1)
 		{
@@ -282,7 +282,7 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 			$footer_show_pages->setChecked(true);
 		}
 		return $footer_show_pages;
-	}	
+	}
 
 	/**
 	 * @param $state
@@ -370,7 +370,7 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 		return $javascript_delay;
 	}
 
-	
+
 	/**
 	 * @param ilPropertyFormGUI $form
 	 */

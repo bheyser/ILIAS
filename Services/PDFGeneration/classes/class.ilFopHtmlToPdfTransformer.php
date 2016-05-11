@@ -9,7 +9,7 @@ require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransforme
  */
 class ilFopHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 {
-	
+
 	protected $xsl;
 
 	/**

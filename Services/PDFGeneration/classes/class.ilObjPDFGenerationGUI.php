@@ -22,9 +22,9 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 	 * @var ilHtmlToPdfTransformerGUIFactory
 	 */
 	protected $transformer_gui_factory;
-	
+
 	protected $active_tab;
-	
+
 	protected $pdf_transformer_settings;
 	/**
 	 * @var ilToolbarGUI
@@ -35,7 +35,7 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 	 * @var ilCtrl
 	 */
 	protected $ctrl;
-	
+
 	/**
 	 * @param int $a_id
 	 * @param int $a_id_type
@@ -161,7 +161,7 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 			$this->ctrl->redirect($this, "view" . '&pdf_transformer=' . $transformer);
 		}
 	}
-	
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -182,7 +182,7 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 		}
 
 	}
-	
+
 	protected function setActiveTab()
 	{
 		global $ilTabs;
@@ -204,7 +204,7 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 	{
 		$this->pdf_transformer_settings->set('selected_transformer', $selected_transformer);
 	}
-	
+
 	/*
 	 * 
 	 */

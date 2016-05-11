@@ -267,12 +267,12 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 		$header_select->addOption(new ilRadioOption($this->lng->txt("none"), ilPDFGenerationConstants::HEADER_NONE, ''));
 		$header_select->addOption($this->buildHeaderTextForm());
 		$header_select->addOption($this->buildHeaderHtmlForm());
-		
+
 		$header_select->setValue($this->header_select);
-		
+
 		return $header_select;
 	}
-	
+
 	/**
 	 * @return ilRadioOption
 	 */
@@ -616,7 +616,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 		$footer_text_option->addSubItem($footer_text_line);
 		return $footer_text_option;
 	}
-	
+
 	public function populateForm()
 	{
 		$pdf_webkit_set					= new ilSetting('pdf_transformer_webkit');

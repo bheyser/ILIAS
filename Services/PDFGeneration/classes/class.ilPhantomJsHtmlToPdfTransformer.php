@@ -113,8 +113,8 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	 */
 	public function __construct($phpunit_test = false)
 	{
-			$this->phpunit = $phpunit_test;
-			$this->loadDefaultSettings();
+		$this->phpunit = $phpunit_test;
+		$this->loadDefaultSettings();
 	}
 
 	/**
@@ -152,7 +152,7 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 
 	/**
 	 * @return string
-	 */	
+	 */
 	public function getId()
 	{
 		return __CLASS__;
@@ -208,7 +208,7 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 			{
 				$ilLog->write('ilPhantomJsHtmlToPdfTransformer return value line ' . $key . ' : ' . $value );
 			}
-			
+
 			if(file_exists($temp_file))
 			{
 				rename($temp_file, $a_target);
@@ -509,7 +509,7 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 			return null;
 		}
 	}
-	
+
 	/**
 	 * @return string
 	 */

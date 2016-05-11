@@ -91,9 +91,9 @@ class ilWebkitHtmlToPdfTransformerTest  extends PHPUnit_Framework_TestCase
 	protected $default_start = ' --zoom 1 --disable-external-links --disable-forms ';
 
 	protected $default_end = '--orientation Landscape --page-size A4 --javascript-delay 100 --margin-bottom 4 --margin-left 1 --margin-right 2 --margin-top 3 ';
-	
+
 	protected $default_quiet = '--quiet ';
-	
+
 	public function testGetCommandLineConfigOnObject()
 	{
 		$transformer = self::getMethod('getCommandLineConfig');
@@ -235,7 +235,7 @@ class ilWebkitHtmlToPdfTransformerTest  extends PHPUnit_Framework_TestCase
 	}
 
 	protected $default_margin_args = '--margin-bottom 4 --margin-left 1 --margin-right 2 --margin-top 3 --quiet ';
-	
+
 	public function testGetCommandLineConfigWithEnabledPrintMediaType()
 	{
 		$transformer = self::getMethod('getCommandLineConfig');

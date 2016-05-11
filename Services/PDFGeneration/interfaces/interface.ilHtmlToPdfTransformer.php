@@ -12,7 +12,7 @@ interface ilHtmlToPdfTransformer
 	 * @return string
 	 */
 	public function getId();
-	
+
 	/**
 	 * @return string
 	 */

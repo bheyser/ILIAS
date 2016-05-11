@@ -23,7 +23,7 @@ class ilPDFGenerationSuite extends PHPUnit_Framework_TestSuite
 			chdir( dirname( __FILE__ ) );
 			chdir('../../../');
 		}
-		
+
 		// Set timezone to prevent notices
 		date_default_timezone_set('Europe/Berlin');
 

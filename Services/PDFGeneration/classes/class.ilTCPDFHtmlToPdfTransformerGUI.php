@@ -10,7 +10,7 @@ require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransforme
 class ilTCPDFHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 {
 	protected $page_size;
-	
+
 	protected $is_active;
 
 	/**
@@ -57,7 +57,7 @@ class ilTCPDFHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 			$active->setChecked(true);
 		}
 		$form->addItem($active);
-		
+
 		$section_header = new ilFormSectionHeaderGUI();
 		$section_header->setTitle($this->lng->txt('page_settings'), 'page_settings');
 		$form->addItem($section_header);
