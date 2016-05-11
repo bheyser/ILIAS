@@ -26,14 +26,9 @@ class ilTestExportGUI extends ilExportGUI
 		$this->addFormat('xml', $a_parent_gui->lng->txt('ass_create_export_file'), $this, 'createTestExport');
 		$this->addFormat('xmlres', $a_parent_gui->lng->txt('ass_create_export_file_with_results'), $this, 'createTestExportWithResults');
 		$this->addFormat('csv', $a_parent_gui->lng->txt('ass_create_export_test_results'), $this, 'createTestResultsExport');
-		if($a_parent_gui->object->getEnableArchiving() == true)
-		{
-			$this->addFormat( 'arc',
-							  $a_parent_gui->lng->txt( 'ass_create_export_test_archive' ),
-							  $this,
-							  'createTestArchiveExport'
-			);
-		}
+		//uzk-patch: begin
+		$this->addFormat( 'arc', $a_parent_gui->lng->txt( 'ass_create_export_test_archive' ), $this, 'createTestArchiveExport');
+		//uzk-patch: end
 		$pl_names = $ilPluginAdmin->getActivePluginsForSlot(IL_COMP_MODULE, 'Test', 'texp');
 		foreach($pl_names as $pl)
 		{
@@ -118,10 +113,21 @@ class ilTestExportGUI extends ilExportGUI
 
 	function createTestArchiveExport()
 	{
-		global $ilAccess, $ilCtrl;
-
+		//uzk-patch: begin
+		global $ilAccess, $ilCtrl, $ilDB;
+		//uzk-patch: end
 		if ($ilAccess->checkAccess("write", "", $this->obj->ref_id))
 		{
+			//uzk-patch: begin
+			require_once 'Modules/Test/classes/class.ilTestEvaluation.php';
+			$evaluation = new ilTestEvaluation($ilDB, $this->obj->getTestId());
+			$allActivesPasses = $evaluation->getAllActivesPasses();
+			
+			require_once 'Modules/Test/classes/class.ilTestArchiveService.php';
+			$archiveService = new ilTestArchiveService($this->obj);
+			$archiveService->archivePassesByActives($allActivesPasses);
+			//uzk-patch: end
+
 			include_once("./Modules/Test/classes/class.ilTestArchiver.php");
 			$test_id = $this->obj->getId();
 			$archive_exp = new ilTestArchiver($test_id);

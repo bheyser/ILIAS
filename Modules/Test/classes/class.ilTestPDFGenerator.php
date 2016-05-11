@@ -1,6 +1,6 @@
 <?php
 /* Copyright (c) 1998-2013 ILIAS open source, Extended GPL, see docs/LICENSE */
-
+require_once 'Services/PDFGeneration/classes/class.ilHtmlToPdfTransformerFactory.php';
 /**
  * Class ilTestPDFGenerator
  * 
@@ -65,33 +65,27 @@ class ilTestPDFGenerator
 			$filename .= '.pdf';
 		}
 		
-		require_once './Services/PDFGeneration/classes/class.ilPDFGeneration.php';
-		
-		$job = new ilPDFGenerationJob();
-		$job->setAutoPageBreak(true)
-			->setCreator('ILIAS Test')
-			->setFilename($filename)
-			->setMarginLeft('20')
-			->setMarginRight('20')
-			->setMarginTop('20')
-			->setMarginBottom('20')
-			->setOutputMode($output_mode)
-			->addPage($pdf_output);
-		
-		ilPDFGeneration::doJob($job);
+		$pdf_factory = new ilHtmlToPdfTransformerFactory();
+		$pdf_factory->deliverPDFFromHTMLString($pdf_output, $filename, $output_mode);
 	}
 	
 	public static function preprocessHTML($html)
 	{
-		$html = self::removeScriptElements($html);
+		//$html = self::removeScriptElements($html);
 		$pdf_css_path = self::getTemplatePath('test_pdf.css');
-		return '<style>' . file_get_contents($pdf_css_path)	. '</style>' . $html;
+		$mathJaxSetting = new ilSetting("MathJax");
+		$mathjax = '';
+		if($mathJaxSetting->get("enable") == 1)
+		{
+			$mathjax = '<script type="text/javascript" src="' . $mathJaxSetting->get("path_to_mathjax") . '"></script>';
+		}
+
+		return $mathjax . '<style>' . file_get_contents($pdf_css_path)	. '</style>' . $html;
 	}
 
 	protected static function getTemplatePath($a_filename)
 	{
 			$module_path = "Modules/Test/";
-
 			// use ilStyleDefinition instead of account to get the current skin
 			include_once "Services/Style/classes/class.ilStyleDefinition.php";
 			if (ilStyleDefinition::getCurrentSkin() != "default")

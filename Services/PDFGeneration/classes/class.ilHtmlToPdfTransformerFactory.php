@@ -153,6 +153,10 @@ class ilHtmlToPdfTransformerFactory
 			{
 				ilUtil::deliverFile($file, basename($file), '', true, true);
 			}
+			else if(strtoupper($delivery_type) === self::PDF_OUTPUT_FILE)
+			{
+				return $file;
+			}
 			return $file;
 		}
 		return false;
