@@ -1,7 +1,7 @@
 <?php
 
 
-class ilPdfGeneratorUtils
+class ilPDFGeneratorUtils
 {
 	public static function getTestPdfDir()
 	{

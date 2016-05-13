@@ -2,7 +2,7 @@
 
 /* Copyright (c) 1998-2013 ILIAS open source, Extended GPL, see docs/LICENSE */
 
-require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransformerGUI.php';
+require_once __DIR__ . '/class.ilAbstractHtmlToPdfTransformerGUI.php';
 
 /**
  * Class ilPhantomJsHtmlToPdfTransformerGUI
@@ -147,7 +147,7 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 		$this->path 	= ilUtil::stripSlashes($_POST['path']);
 		if(mb_stripos($this->path, 'phantomjs') === false)
 		{
-			ilUtil::sendFailure($this->lng->txt("file_not_found"),true);
+			ilUtil::sendFailure($this->lng->txt('file_not_found'),true);
 			$everything_ok = false;
 		}
 		else
@@ -199,8 +199,8 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 		$form->addItem($this->buildPageSizesForm());
 
 		$header_select	= new ilRadioGroupInputGUI($this->lng->txt('header_type'), 'header_select');
-		$header_select->addOption(new ilRadioOption($this->lng->txt("none"), ilPDFGenerationConstants::HEADER_NONE, ''));
-		$header_text = new ilRadioOption($this->lng->txt("text"), ilPDFGenerationConstants::HEADER_TEXT, '');
+		$header_select->addOption(new ilRadioOption($this->lng->txt('none'), ilPDFGenerationConstants::HEADER_NONE, ''));
+		$header_text = new ilRadioOption($this->lng->txt('text'), ilPDFGenerationConstants::HEADER_TEXT, '');
 		$header_text->addSubItem($this->buildHeaderTextForm());
 		$header_text->addSubItem($this->buildHeaderHeightForm());
 		$header_text->addSubItem($this->buildHeaderPageNumbersForm());
@@ -209,8 +209,8 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 		$form->addItem($header_select);
 
 		$footer_select	= new ilRadioGroupInputGUI($this->lng->txt('footer_type'), 'footer_select');
-		$footer_select->addOption(new ilRadioOption($this->lng->txt("none"), ilPDFGenerationConstants::FOOTER_NONE, ''));
-		$footer_text = new ilRadioOption($this->lng->txt("text"), ilPDFGenerationConstants::FOOTER_TEXT, '');
+		$footer_select->addOption(new ilRadioOption($this->lng->txt('none'), ilPDFGenerationConstants::FOOTER_NONE, ''));
+		$footer_text = new ilRadioOption($this->lng->txt('text'), ilPDFGenerationConstants::FOOTER_TEXT, '');
 		$footer_text->addSubItem($this->buildFooterTextForm());
 		$footer_text->addSubItem($this->buildFooterHeightForm());
 		$footer_text->addSubItem($this->buildFooterPageNumbersForm());

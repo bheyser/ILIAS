@@ -2,8 +2,8 @@
 
 /* Copyright (c) 1998-2016 ILIAS open source, Extended GPL, see docs/LICENSE */
 
-require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransformerGUI.php';
-require_once 'Services/PDFGeneration/classes/class.ilPDFGenerationConstants.php';
+require_once __DIR__ . '/class.ilAbstractHtmlToPdfTransformerGUI.php';
+require_once __DIR__ . '/class.ilPDFGenerationConstants.php';
 
 /**
  * Class ilWebkitHtmlToPdfTransformerGUI
@@ -264,7 +264,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	protected function buildHeaderForm()
 	{
 		$header_select	= new ilRadioGroupInputGUI($this->lng->txt('header_type'), 'header_select');
-		$header_select->addOption(new ilRadioOption($this->lng->txt("none"), ilPDFGenerationConstants::HEADER_NONE, ''));
+		$header_select->addOption(new ilRadioOption($this->lng->txt('none'), ilPDFGenerationConstants::HEADER_NONE, ''));
 		$header_select->addOption($this->buildHeaderTextForm());
 		$header_select->addOption($this->buildHeaderHtmlForm());
 
@@ -278,7 +278,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	 */
 	protected function buildHeaderTextForm()
 	{
-		$header_text_option = new ilRadioOption($this->lng->txt("text"), ilPDFGenerationConstants::HEADER_TEXT, '');
+		$header_text_option = new ilRadioOption($this->lng->txt('text'), ilPDFGenerationConstants::HEADER_TEXT, '');
 
 		$header_text_left = new ilTextInputGUI($this->lng->txt('header_text_left'), 'head_text_left');
 		$header_text_left->setValue($this->head_text_left);
@@ -566,7 +566,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	 */
 	protected function buildFooterHtmlForm()
 	{
-		$footer_html_option = new ilRadioOption($this->lng->txt("html"), ilPDFGenerationConstants::FOOTER_HTML, '');
+		$footer_html_option = new ilRadioOption($this->lng->txt('html'), ilPDFGenerationConstants::FOOTER_HTML, '');
 
 		$footer_html = new ilTextInputGUI($this->lng->txt('footer_html'), 'footer_html');
 		$footer_html->setValue($this->footer_html);
@@ -590,7 +590,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	 */
 	protected function buildFooterTextForm()
 	{
-		$footer_text_option = new ilRadioOption($this->lng->txt("text"), ilPDFGenerationConstants::FOOTER_TEXT, '');
+		$footer_text_option = new ilRadioOption($this->lng->txt('text'), ilPDFGenerationConstants::FOOTER_TEXT, '');
 
 		$footer_text_left = new ilTextInputGUI($this->lng->txt('footer_text_left'), 'footer_text_left');
 		$footer_text_left->setValue($this->footer_text_left);

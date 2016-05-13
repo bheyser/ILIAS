@@ -20,7 +20,7 @@ class ilPDFGenerationSuite extends PHPUnit_Framework_TestSuite
 		}
 		else
 		{
-			chdir( dirname( __FILE__ ) );
+			chdir( __DIR__ );
 			chdir('../../../');
 		}
 
@@ -29,16 +29,13 @@ class ilPDFGenerationSuite extends PHPUnit_Framework_TestSuite
 
 		$suite = new self();
 
-		require_once dirname(__FILE__) . '/ilPdfGeneratorConstantsTest.php';
+		require_once __DIR__ . '/ilPdfGeneratorConstantsTest.php';
 		$suite->addTestSuite('ilPdfGeneratorConstantsTest');
 
-		require_once dirname(__FILE__) . '/ilPdfGeneratorConstantsTest.php';
-		$suite->addTestSuite('ilPdfGeneratorConstantsTest');
-
-		require_once dirname(__FILE__) . '/ilPhantomJsHtmlToPdfTransformerTest.php';
+		require_once __DIR__. '/ilPhantomJsHtmlToPdfTransformerTest.php';
 		$suite->addTestSuite('ilPhantomJsHtmlToPdfTransformerTest');
 
-		require_once dirname(__FILE__) . '/ilWebkitHtmlToPdfTransformerTest.php';
+		require_once __DIR__ . '/ilWebkitHtmlToPdfTransformerTest.php';
 		$suite->addTestSuite('ilWebkitHtmlToPdfTransformerTest');
 
 		return $suite;

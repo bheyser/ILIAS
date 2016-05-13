@@ -78,6 +78,7 @@ class ilTestPDFGenerator
 		if($mathJaxSetting->get("enable") == 1)
 		{
 			$mathjax = '<script type="text/javascript" src="' . $mathJaxSetting->get("path_to_mathjax") . '"></script>';
+			$mathjax .= '<script>MathJax.Hub.Config({messageStyle: "none",tex2jax: {preview: "none"}});</script>';
 		}
 
 		return $mathjax . '<style>' . file_get_contents($pdf_css_path)	. '</style>' . $html;

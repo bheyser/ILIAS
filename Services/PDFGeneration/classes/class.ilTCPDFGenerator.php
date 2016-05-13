@@ -1,7 +1,7 @@
 <?php
 /* Copyright (c) 1998-2013 ILIAS open source, Extended GPL, see docs/LICENSE */
 
-require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransformer.php';
+require_once __DIR__ . '/class.ilAbstractHtmlToPdfTransformer.php';
 
 /**
  * Class ilTCPDFGenerator
