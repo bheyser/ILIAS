@@ -15339,3 +15339,4 @@ help#:#help_tt_disable#:#Hilfe-Tooltips ausschalten
 help#:#help_tt_enable#:#Hilfe-Tooltips anschalten
 common#:#obj_pdfg#:#PDF-Erstellung
 common#:#obj_pdfg_desc#:#Administrationseinstellungen für die PDF-Erstellung
+common#:#building_export_file#:#Erstelle Export Datei...

@@ -15339,3 +15339,4 @@ help#:#help_tt_disable#:#Disable Help Tooltips
 help#:#help_tt_enable#:#Enable Help Tooltips
 common#:#obj_pdfg#:#PDF Generation
 common#:#obj_pdfg_desc#:#Options for generation PDF documents
+common#:#building_export_file#:#Building Export File...

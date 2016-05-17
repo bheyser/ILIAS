@@ -232,6 +232,23 @@ class ilTestExportGUI extends ilExportGUI
 		}
 
 		$table->setData($data);
+		// uzk-patch: begin
+		/**
+		 * @global $lng ilLanguage
+		 */
+			global $lng;
+			require_once 'Services/jQuery/classes/class.iljQueryUtil.php';
+			iljQueryUtil::initjQuery();
+			iljQueryUtil::initjQueryUI();
+			$GLOBALS['tpl']->addCss(ilUtil::getStyleSheetLocation('filesystem', 'jqueryui.css'));
+
+			$hash = md5(uniqid(rand(), true));
+			$tpl->setVariable('TABLE_ID', $hash);
+			$tpl->setVariable('TABLE_ID_JS', $hash);
+			$tpl->setVariable('TXT_PLEASE_WAIT', $lng->txt('mfs_please_wait'));
+			$tpl->setVariable('TXT_WAITING_INFORMATION', $lng->txt('building_export_file'));
+			$tpl->setVariable('SRC_SPINNING_WHEEL', ilUtil::getImagePath('loader.svg'));
+		// uzk-patch: end
 		$tpl->setContent($table->getHTML());
 	}
 
