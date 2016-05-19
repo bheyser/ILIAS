@@ -114,7 +114,7 @@ class ilTestExportGUI extends ilExportGUI
 	function createTestArchiveExport()
 	{
 		//uzk-patch: begin
-		global $ilAccess, $ilCtrl, $ilDB;
+		global $ilAccess, $ilCtrl, $ilDB, $lng;
 		//uzk-patch: end
 		if ($ilAccess->checkAccess("write", "", $this->obj->ref_id))
 		{
@@ -122,9 +122,15 @@ class ilTestExportGUI extends ilExportGUI
 			require_once 'Modules/Test/classes/class.ilTestEvaluation.php';
 			$evaluation = new ilTestEvaluation($ilDB, $this->obj->getTestId());
 			$allActivesPasses = $evaluation->getAllActivesPasses();
-			
+
+			require_once 'Modules/Test/classes/class.ilTestParticipantData.php';
+			$participantData = new ilTestParticipantData($ilDB, $lng);
+			$participantData->setActiveIds(array_keys($allActivesPasses));
+			$participantData->load($this->obj->getTestId());
+
 			require_once 'Modules/Test/classes/class.ilTestArchiveService.php';
 			$archiveService = new ilTestArchiveService($this->obj);
+			$archiveService->setParticipantData($participantData);
 			$archiveService->archivePassesByActives($allActivesPasses);
 			//uzk-patch: end
 
