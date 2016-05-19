@@ -3,14 +3,14 @@
 require_once 'Services/PDFGeneration/classes/class.ilHtmlToPdfTransformerFactory.php';
 /**
  * Class ilTestPDFGenerator
- * 
+ *
  * Class that handles PDF generation for test and assessment.
- * 
+ *
  * @author Maximilian Becker <mbecker@databay.de>
  * @version $Id$
- * 
+ *
  */
-class ilTestPDFGenerator 
+class ilTestPDFGenerator
 {
 	const PDF_OUTPUT_DOWNLOAD = 'D';
 	const PDF_OUTPUT_INLINE = 'I';
@@ -86,19 +86,20 @@ class ilTestPDFGenerator
 
 	protected static function getTemplatePath($a_filename)
 	{
-			$module_path = "Modules/Test/";
-			// use ilStyleDefinition instead of account to get the current skin
-			include_once "Services/Style/classes/class.ilStyleDefinition.php";
-			if (ilStyleDefinition::getCurrentSkin() != "default")
-			{
-				$fname = "./Customizing/global/skin/".
-					ilStyleDefinition::getCurrentSkin()."/".$module_path.basename($a_filename);
-			}
+		$module_path = "Modules/Test/";
 
-			if($fname == "" || !file_exists($fname))
-			{
-				$fname = "./".$module_path."templates/default/".basename($a_filename);
-			}
+		// use ilStyleDefinition instead of account to get the current skin
+		include_once "Services/Style/classes/class.ilStyleDefinition.php";
+		if (ilStyleDefinition::getCurrentSkin() != "default")
+		{
+			$fname = "./Customizing/global/skin/".
+				ilStyleDefinition::getCurrentSkin()."/".$module_path.basename($a_filename);
+		}
+
+		if($fname == "" || !file_exists($fname))
+		{
+			$fname = "./".$module_path."templates/default/".basename($a_filename);
+		}
 		return $fname;
 	}
 

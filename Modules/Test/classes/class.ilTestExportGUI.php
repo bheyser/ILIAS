@@ -5,14 +5,14 @@ require_once 'Services/Export/classes/class.ilExportGUI.php';
 
 /**
  * Export User Interface Class
- * 
+ *
  * @author       Michael Jansen <mjansen@databay.de>
  * @author       Maximilian Becker <mbecker@databay.de>
- *               
+ *
  * @version      $Id$
- *               
+ *
  * @ingroup      ModulesTest
- *               
+ *
  * @ilCtrl_Calls ilTestExportGUI:
  */
 class ilTestExportGUI extends ilExportGUI
@@ -26,9 +26,7 @@ class ilTestExportGUI extends ilExportGUI
 		$this->addFormat('xml', $a_parent_gui->lng->txt('ass_create_export_file'), $this, 'createTestExport');
 		$this->addFormat('xmlres', $a_parent_gui->lng->txt('ass_create_export_file_with_results'), $this, 'createTestExportWithResults');
 		$this->addFormat('csv', $a_parent_gui->lng->txt('ass_create_export_test_results'), $this, 'createTestResultsExport');
-		//uzk-patch: begin
 		$this->addFormat( 'arc', $a_parent_gui->lng->txt( 'ass_create_export_test_archive' ), $this, 'createTestArchiveExport');
-		//uzk-patch: end
 		$pl_names = $ilPluginAdmin->getActivePluginsForSlot(IL_COMP_MODULE, 'Test', 'texp');
 		foreach($pl_names as $pl)
 		{
@@ -137,17 +135,17 @@ class ilTestExportGUI extends ilExportGUI
 			include_once("./Modules/Test/classes/class.ilTestArchiver.php");
 			$test_id = $this->obj->getId();
 			$archive_exp = new ilTestArchiver($test_id);
-			
+
 			require_once './Modules/Test/classes/class.ilTestScoring.php';
 			$scoring = new ilTestScoring($this->obj);
 			$best_solution = $scoring->calculateBestSolutionForTest();
-			
+
 			require_once './Modules/Test/classes/class.ilTestPDFGenerator.php';
 			$generator = new ilTestPDFGenerator();
 			$generator->generatePDF($best_solution, ilTestPDFGenerator::PDF_OUTPUT_FILE, 'Best_Solution.pdf');
 			$archive_exp->handInTestBestSolution($best_solution, 'Best_Solution.pdf');
 			unlink('Best_Solution.pdf');
-			
+
 			$archive_exp->updateTestArchive();
 			$archive_exp->compressTestArchive();
 		}
@@ -191,7 +189,7 @@ class ilTestExportGUI extends ilExportGUI
 		{
 			$archive_files = scandir($archive_dir);
 		}
-		
+
 		$export_dir   = $this->obj->getExportDirectory();
 		$export_files = $this->obj->getExportFiles($export_dir);
 		$data         = array();
@@ -218,10 +216,10 @@ class ilTestExportGUI extends ilExportGUI
 				}
 				$file_arr = explode("_", $exp_file);
 				array_push($data, array(
-									'file' => $exp_file,
-									'size' => filesize($archive_dir."/".$exp_file),
-									'timestamp' => $file_arr[4]
-								));
+					'file' => $exp_file,
+					'size' => filesize($archive_dir."/".$exp_file),
+					'timestamp' => $file_arr[4]
+				));
 			}
 		}
 
@@ -231,7 +229,7 @@ class ilTestExportGUI extends ilExportGUI
 		{
 			$table->addCustomColumn($c["txt"], $c["obj"], $c["func"]);
 		}
-		
+
 		foreach($this->getCustomMultiCommands() as $c)
 		{
 			$table->addCustomMultiCommand($c["txt"], "multi_".$c["func"]);
@@ -317,7 +315,7 @@ class ilTestExportGUI extends ilExportGUI
 		require_once 'class.ilTestArchiver.php';
 		$archiver = new ilTestArchiver($this->getParentGUI()->object->getId());
 		$archiveDir = $archiver->getZipExportDirectory();
-		
+
 		$export_dir = $this->obj->getExportDirectory();
 		foreach($_POST['file'] as $file)
 		{
@@ -328,7 +326,7 @@ class ilTestExportGUI extends ilExportGUI
 			{
 				continue;
 			}
-			
+
 			$exp_file = $export_dir.'/'.$file;
 			$arc_file = $archiveDir.'/'.$file;
 			$exp_dir = $export_dir.'/'.$dir;
