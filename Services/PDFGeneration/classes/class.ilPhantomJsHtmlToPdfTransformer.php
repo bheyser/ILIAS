@@ -214,6 +214,7 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 
 			if(file_exists($temp_file))
 			{
+				$ilLog->write('ilWebkitHtmlToPdfTransformer file exists: ' . $temp_file . ' file size is :' . filesize($temp_file) . ' bytes, will be renamed to '. $a_target);
 				rename($temp_file, $a_target);
 			}
 			else
