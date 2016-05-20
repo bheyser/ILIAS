@@ -1,7 +1,7 @@
 <?php
 /* Copyright (c) 1998-2014 ILIAS open source, Extended GPL, see docs/LICENSE */
 
-require_once 'Services/PDFGeneration/classes/class.ilPDFGenerationConstants.php';
+require_once __DIR__ .'/../classes/class.ilPDFGenerationConstants.php';
 
 /**
  * Class ilPdfGeneratorConstantsTest
