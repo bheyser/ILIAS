@@ -104,11 +104,19 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 	}
 
 	/**
+	 * @return ilSetting
+	 */
+	protected function getSettingObject()
+	{
+		return new ilSetting('pdf_transformer_phantom');
+	}
+
+	/**
 	 *
 	 */
 	public function populateForm()
 	{
-		$pdf_phantom_set		= new ilSetting('pdf_transformer_phantom');
+		$pdf_phantom_set		= $this->getSettingObject();
 		$this->path				= $pdf_phantom_set->get('path', '/usr/local/bin/phantomjs');
 		$this->page_size		= $pdf_phantom_set->get('page_size', 'A4');
 		$this->zoom				= $pdf_phantom_set->get('zoom', 1);
@@ -132,7 +140,7 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 	 */
 	public function saveForm()
 	{
-		$pdf_phantom_set = new ilSetting('pdf_transformer_phantom');
+		$pdf_phantom_set = $this->getSettingObject();
 		$pdf_phantom_set->set('path', $this->path);
 		$pdf_phantom_set->set('page_size', $this->page_size);
 		$pdf_phantom_set->set('zoom', $this->zoom);
@@ -303,8 +311,8 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 	 */
 	protected function setActiveState($state)
 	{
-		$pdf_webkit_set = new ilSetting('pdf_transformer_phantom');
-		$pdf_webkit_set->set('is_active', $state);
+		$pdf_phantom_set = $this->getSettingObject();
+		$pdf_phantom_set->set('is_active', $state);
 	}
 
 

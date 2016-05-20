@@ -204,6 +204,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	 * @var ilLanguage
 	 */
 	protected $lng;
+
 	/**
 	 * ilPhantomJsHtmlToPdfTransformerGUI constructor.
 	 * @param $lng
@@ -211,6 +212,14 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	public function __construct($lng)
 	{
 		$this->lng = $lng;
+	}
+
+	/**
+	 * @return ilSetting
+	 */
+	protected function getSettingObject()
+	{
+		return new ilSetting('pdf_transformer_webkit');
 	}
 
 	/**
@@ -632,7 +641,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 
 	public function populateForm()
 	{
-		$pdf_webkit_set					= new ilSetting('pdf_transformer_webkit');
+		$pdf_webkit_set					= $this->getSettingObject();
 		$this->path						= $pdf_webkit_set->get('path',						'/usr/local/bin/wkhtmltopdf');
 		$this->zoom						= $pdf_webkit_set->get('zoom',						1);
 		$this->external_links			= $pdf_webkit_set->get('external_links');
@@ -675,7 +684,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 
 	public function saveForm()
 	{
-		$pdf_webkit_set = new ilSetting('pdf_transformer_webkit');
+		$pdf_webkit_set = $this->getSettingObject();
 		$pdf_webkit_set->set('path', 					$this->path);
 		$pdf_webkit_set->set('zoom',					$this->zoom);
 		$pdf_webkit_set->set('external_links',			$this->external_links);
@@ -778,7 +787,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	 */
 	protected function setActiveState($state)
 	{
-		$pdf_webkit_set = new ilSetting('pdf_transformer_webkit');
+		$pdf_webkit_set = $this->getSettingObject();
 		$pdf_webkit_set->set('is_active', $state);
 	}
 

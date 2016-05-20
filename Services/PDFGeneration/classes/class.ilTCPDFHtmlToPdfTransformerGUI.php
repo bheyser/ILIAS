@@ -21,12 +21,21 @@ class ilTCPDFHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	{
 		$this->lng = $lng;
 	}
+
+	/**
+	 * @return ilSetting
+	 */
+	protected function getSettingObject()
+	{
+		return new ilSetting('pdf_transformer_tcpdf');
+	}
+
 	/**
 	 *
 	 */
 	public function populateForm()
 	{
-		$pdf_tcpdf_set		= new ilSetting('pdf_transformer_tcpdf');
+		$pdf_tcpdf_set		= $this->getSettingObject();
 		$this->page_size	= $pdf_tcpdf_set->get('page_size', 'A4');
 		$this->is_active	= $pdf_tcpdf_set->get('is_active');
 	}
@@ -36,7 +45,7 @@ class ilTCPDFHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	 */
 	public function saveForm()
 	{
-		$pdf_tcpdf_set = new ilSetting('pdf_transformer_tcpdf');
+		$pdf_tcpdf_set = $this->getSettingObject();
 		$pdf_tcpdf_set->set('page_size',		$this->page_size);
 		$pdf_tcpdf_set->set('is_active',		$this->is_active);
 	}
@@ -90,7 +99,7 @@ class ilTCPDFHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	 */
 	protected function setActiveState($state)
 	{
-		$pdf_tcpdf_set = new ilSetting('pdf_transformer_tcpdf');
+		$pdf_tcpdf_set = $this->getSettingObject();
 		$pdf_tcpdf_set->set('is_active', $state);
 	}
 

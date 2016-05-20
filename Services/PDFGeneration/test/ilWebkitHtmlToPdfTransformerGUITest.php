@@ -8,6 +8,7 @@ require_once 'Services/Form/classes/class.ilSelectInputGUI.php';
 require_once 'Services/Form/classes/class.ilFormSectionHeaderGUI.php';
 require_once 'Services/Form/classes/class.ilRadioGroupInputGUI.php';
 require_once 'Services/Language/classes/class.ilLanguage.php';
+require_once 'Services/Administration/classes/class.ilSetting.php';
 
 /**
  * Class ilWebkitHtmlToPdfTransformerGUITest
@@ -17,6 +18,7 @@ class ilWebkitHtmlToPdfTransformerGUITest  extends PHPUnit_Framework_TestCase
 {
 
 	protected $lng;
+
 	/**
 	 * ilPhantomJsHtmlToPdfTransformerGUITest constructor.
 	 */
@@ -27,9 +29,7 @@ class ilWebkitHtmlToPdfTransformerGUITest  extends PHPUnit_Framework_TestCase
 					->getMock();
 		$this->lng->method('txt')
 			->will($this->returnArgument(0));
-		
 	}
-	
 
 	protected static function getMethod($name) {
 		$class = new ReflectionClass('ilWebkitHtmlToPdfTransformerGUI');

@@ -23,11 +23,19 @@ class ilFopHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	}
 
 	/**
+	 * @return ilSetting
+	 */
+	protected function getSettingObject()
+	{
+		return new ilSetting('pdf_transformer_fop');
+	}
+
+	/**
 	 *
 	 */
 	public function populateForm()
 	{
-		$pdf_fop_set		= new ilSetting('pdf_transformer_fop');
+		$pdf_fop_set		= $this->getSettingObject();
 		$this->is_active	= $pdf_fop_set->get('is_active');
 		$this->xsl			= $pdf_fop_set->get('xsl', 'Services/Certificate/xml/xhtml2fo.xsl');
 	}
@@ -37,7 +45,7 @@ class ilFopHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	 */
 	public function saveForm()
 	{
-		$pdf_fop_set = new ilSetting('pdf_transformer_fop');
+		$pdf_fop_set = $this->getSettingObject();
 		$pdf_fop_set->set('is_active',	$this->is_active);
 		$pdf_fop_set->set('xsl',		$this->xsl);
 	}
