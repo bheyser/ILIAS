@@ -35,11 +35,11 @@ class ilTestPDFGenerator
 
 		$invalid_elements = array();
 
-		$script_elements     = $dom->getElementsByTagName('script');
-		foreach($script_elements as $elm)
-		{
-			$invalid_elements[] = $elm;
-		}
+		#$script_elements     = $dom->getElementsByTagName('script');
+		#foreach($script_elements as $elm)
+		#{
+		#	$invalid_elements[] = $elm;
+		#}
 
 		foreach($invalid_elements as $elm)
 		{
@@ -71,7 +71,7 @@ class ilTestPDFGenerator
 	
 	public static function preprocessHTML($html)
 	{
-		//$html = self::removeScriptElements($html);
+		$html = self::removeScriptElements($html);
 		$pdf_css_path = self::getTemplatePath('test_pdf.css');
 		$mathJaxSetting = new ilSetting("MathJax");
 		$mathjax = '';
