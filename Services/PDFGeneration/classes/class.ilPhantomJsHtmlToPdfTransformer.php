@@ -501,7 +501,7 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	 */
 	protected function getFooterArgs()
 	{
-		if($this->getHeaderType() == ilPDFGenerationConstants::FOOTER_TEXT)
+		if($this->getFooterType() == ilPDFGenerationConstants::FOOTER_TEXT)
 		{
 			return array('text'			=> $this->getFooterText(),
 						 'height'		=> $this->getFooterHeight(),

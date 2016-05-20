@@ -69,6 +69,54 @@ class ilPhantomJsHtmlToPdfTransformerTest  extends PHPUnit_Framework_TestCase
 		$this->assertSame('\'{"page_size":"A4","zoom":1,"orientation":"Landscape","margin":2,"delay":200,"viewport":"800*600","header":null,"footer":null}\'', $transformer->invokeArgs($obj, array()));
 	}
 
+	public function testHeaderSettingsText()
+	{
+		$transformer = self::getMethod('getCommandLineConfig');
+		$obj = new ilPhantomJsHtmlToPdfTransformer(true);
+		$obj->setPageSize('A4');
+		$obj->setHeaderText('Hello');
+		$obj->setHeaderHeight('1cm');
+		$obj->setHeaderShowPages(true);
+		$obj->setHeaderType(1);
+		$this->assertSame('\'{"page_size":"A4","zoom":null,"orientation":null,"margin":null,"delay":null,"viewport":null,"header":{"text":"Hello","height":"1cm","show_pages":true},"footer":null}\'' ,  $transformer->invokeArgs($obj, array()));
+	}
+
+	public function testHeaderSettingsWithoutPageNumber()
+	{
+		$transformer = self::getMethod('getCommandLineConfig');
+		$obj = new ilPhantomJsHtmlToPdfTransformer(true);
+		$obj->setPageSize('A4');
+		$obj->setHeaderText('Hello');
+		$obj->setHeaderHeight('1cm');
+		$obj->setHeaderShowPages(false);
+		$obj->setHeaderType(1);
+		$this->assertSame('\'{"page_size":"A4","zoom":null,"orientation":null,"margin":null,"delay":null,"viewport":null,"header":{"text":"Hello","height":"1cm","show_pages":false},"footer":null}\'' ,  $transformer->invokeArgs($obj, array()));
+	}
+
+	public function testFooterSettingsText()
+	{
+		$transformer = self::getMethod('getCommandLineConfig');
+		$obj = new ilPhantomJsHtmlToPdfTransformer(true);
+		$obj->setPageSize('A4');
+		$obj->setFooterText('Hello');
+		$obj->setFooterHeight('1cm');
+		$obj->setFooterShowPages(true);
+		$obj->setFooterType(1);
+		$this->assertSame('\'{"page_size":"A4","zoom":null,"orientation":null,"margin":null,"delay":null,"viewport":null,"header":null,"footer":{"text":"Hello","height":"1cm","show_pages":true}}\'' ,  $transformer->invokeArgs($obj, array()));
+	}
+
+	public function testFooterSettingsTextWithoutPageNumber()
+	{
+		$transformer = self::getMethod('getCommandLineConfig');
+		$obj = new ilPhantomJsHtmlToPdfTransformer(true);
+		$obj->setPageSize('A4');
+		$obj->setFooterText('Hello');
+		$obj->setFooterHeight('1cm');
+		$obj->setFooterShowPages(false);
+		$obj->setFooterType(1);
+		$this->assertSame('\'{"page_size":"A4","zoom":null,"orientation":null,"margin":null,"delay":null,"viewport":null,"header":null,"footer":{"text":"Hello","height":"1cm","show_pages":false}}\'' ,  $transformer->invokeArgs($obj, array()));
+	}
+
 	public function testGetSettingsWithPrintMediaType()
 	{
 		$transformer = self::getMethod('isPrintMediaType');
