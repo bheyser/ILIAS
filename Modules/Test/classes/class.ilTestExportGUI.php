@@ -249,7 +249,7 @@ class ilTestExportGUI extends ilExportGUI
 			$hash = md5(uniqid(rand(), true));
 			$tpl->setVariable('TABLE_ID', $hash);
 			$tpl->setVariable('TABLE_ID_JS', $hash);
-			$tpl->setVariable('TXT_PLEASE_WAIT', $lng->txt('mfs_please_wait'));
+			$tpl->setVariable('TXT_PLEASE_WAIT', $lng->txt('please_wait'));
 			$tpl->setVariable('TXT_WAITING_INFORMATION', $lng->txt('building_export_file'));
 			$tpl->setVariable('SRC_SPINNING_WHEEL', ilUtil::getImagePath('loader.svg'));
 		// uzk-patch: end
