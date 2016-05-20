@@ -56,7 +56,7 @@ class ilHtmlToPdfTransformerGUIFactory
 	public function buildForm($form, $transformer)
 	{
 		/* @var ilHtmlToPdfTransformerGUI $transformer */
-		$transformer = new $transformer;
+		$transformer = new $transformer($this->lng);
 		$transformer->populateForm();
 		$transformer->appendForm($form);
 		$transformer->appendHiddenTransformerNameToForm($form);
@@ -68,7 +68,7 @@ class ilHtmlToPdfTransformerGUIFactory
 	public function saveForm($transformer)
 	{
 		/* @var ilHtmlToPdfTransformerGUI $transformer */
-		$transformer = new $transformer;
+		$transformer = new $transformer($this->lng);
 		if($transformer->checkForm())
 		{
 			$transformer->saveForm();

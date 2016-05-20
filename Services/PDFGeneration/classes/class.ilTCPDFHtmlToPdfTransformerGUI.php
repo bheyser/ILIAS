@@ -14,6 +14,14 @@ class ilTCPDFHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	protected $is_active;
 
 	/**
+	 * ilTCPDFHtmlToPdfTransformerGUI constructor.
+	 * @param $lng
+	 */
+	public function __construct($lng)
+	{
+		$this->lng = $lng;
+	}
+	/**
 	 *
 	 */
 	public function populateForm()

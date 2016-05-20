@@ -12,6 +12,16 @@ class ilFopHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	protected $is_active;
 
 	protected $xsl;
+
+	/**
+	 * ilFopHtmlToPdfTransformerGUI constructor.
+	 * @param $lng
+	 */
+	public function __construct($lng)
+	{
+		$this->lng = $lng;
+	}
+
 	/**
 	 *
 	 */

@@ -90,6 +90,20 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 	protected $footer_show_pages;
 
 	/**
+	 * @var ilLanguage
+	 */
+	protected $lng;
+
+	/**
+	 * ilPhantomJsHtmlToPdfTransformerGUI constructor.
+	 * @param $lng
+	 */
+	public function __construct($lng)
+	{
+		$this->lng = $lng;
+	}
+
+	/**
 	 *
 	 */
 	public function populateForm()

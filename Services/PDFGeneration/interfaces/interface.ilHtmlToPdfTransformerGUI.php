@@ -7,6 +7,13 @@
  */
 interface ilHtmlToPdfTransformerGUI
 {
+
+	/**
+	 * ilHtmlToPdfTransformerGUI constructor.
+	 * @param $lng
+	 */
+	public function __construct($lng);
+
 	/**
 	 */
 	public function populateForm();

@@ -9,14 +9,5 @@ require_once __DIR__ . '/../interfaces/interface.ilHtmlToPdfTransformerGUI.php';
  */
 abstract class ilAbstractHtmlToPdfTransformerGUI implements ilHtmlToPdfTransformerGUI
 {
-
-	protected $lng;
-	/**
-	 * ilAbstractHtmlToPdfTransformerGUI constructor.
-	 */
-	public function __construct()
-	{
-		global $lng;
-		$this->lng = $lng;
-	}
+	
 }

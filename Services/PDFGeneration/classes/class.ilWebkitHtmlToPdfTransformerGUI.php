@@ -201,6 +201,19 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	protected $footer_html_spacing;
 
 	/**
+	 * @var ilLanguage
+	 */
+	protected $lng;
+	/**
+	 * ilPhantomJsHtmlToPdfTransformerGUI constructor.
+	 * @param $lng
+	 */
+	public function __construct($lng)
+	{
+		$this->lng = $lng;
+	}
+
+	/**
 	 * @param ilPropertyFormGUI $form
 	 */
 	public function appendForm(ilPropertyFormGUI $form)
@@ -232,7 +245,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 		$form->addItem($this->buildGreyScaleForm());
 		$form->addItem($this->buildPrintMediaTypeForm());
 		$form->addItem($this->buildJavascriptDelayForm());
-		$form->addItem($this->bildCheckboxSvgForm());
+		$form->addItem($this->buildCheckboxSvgForm());
 		$form->addItem($this->buildCheckedCheckboxSvgForm());
 		$form->addItem($this->buildRadiobuttonSvgForm());
 		$form->addItem($this->buildCheckedRadiobuttonSvgForm());
@@ -448,7 +461,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	/**
 	 * @return ilTextInputGUI
 	 */
-	protected function bildCheckboxSvgForm()
+	protected function buildCheckboxSvgForm()
 	{
 		$checkbox_svg = new ilTextInputGUI($this->lng->txt('checkbox_svg'), 'checkbox_svg');
 		$checkbox_svg->setValue($this->checkbox_svg);

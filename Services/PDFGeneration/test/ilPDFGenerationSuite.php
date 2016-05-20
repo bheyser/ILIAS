@@ -35,8 +35,14 @@ class ilPDFGenerationSuite extends PHPUnit_Framework_TestSuite
 		require_once __DIR__. '/ilPhantomJsHtmlToPdfTransformerTest.php';
 		$suite->addTestSuite('ilPhantomJsHtmlToPdfTransformerTest');
 
+		require_once __DIR__. '/ilPhantomJsHtmlToPdfTransformerGUITest.php';
+		$suite->addTestSuite('ilPhantomJsHtmlToPdfTransformerGUITest');
+
 		require_once __DIR__ . '/ilWebkitHtmlToPdfTransformerTest.php';
 		$suite->addTestSuite('ilWebkitHtmlToPdfTransformerTest');
+
+		require_once __DIR__. '/ilWebkitHtmlToPdfTransformerGUITest.php';
+		$suite->addTestSuite('ilWebkitHtmlToPdfTransformerGUITest');
 
 		return $suite;
 	}
