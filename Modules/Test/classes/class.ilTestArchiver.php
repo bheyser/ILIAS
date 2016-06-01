@@ -345,8 +345,10 @@ class ilTestArchiver
 	 *
 	 * @return string $test_archive Path to this tests archive directory.
 	 */
-	protected function getTestArchive()
+	//uzk-patch: begin
+	public function getTestArchive()
 	{
+	//uzk-patch: end
 		$test_archive_directory =  $this->external_directory_path . self::DIR_SEP . $this->client_id . self::DIR_SEP . 'tst_data'
 			. self::DIR_SEP . 'archive' . self::DIR_SEP . 'tst_'.$this->test_obj_id;
 		return $test_archive_directory;

@@ -148,6 +148,9 @@ class ilTestExportGUI extends ilExportGUI
 
 			$archive_exp->updateTestArchive();
 			$archive_exp->compressTestArchive();
+			//uzk-patch: begin
+			ilUtil::delDir($archive_exp->getTestArchive());
+			//uzk-patch: end
 		}
 		else
 		{
