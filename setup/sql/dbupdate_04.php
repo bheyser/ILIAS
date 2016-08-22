@@ -2094,7 +2094,7 @@ if($wiki_type_id)
 		array(
 			"type" => "text",
 			"length" => 100,
-			"notnull" => false,
+			"notnull" => true,
 			'fixed' => false
 		)
 	);
@@ -2107,7 +2107,7 @@ if($wiki_type_id)
 		array(
 			"type" => "text",
 			"length" => 100,
-			"notnull" => false,
+			"notnull" => true,
 			'fixed' => false
 		)
 	);
@@ -2561,7 +2561,7 @@ $ilDB->addTableColumn("content_object", "store_tries", $def);
 	";
 	$res = $ilDB->query($query);
 
-	$handled_roles_by_parent = array()
+	$handled_roles_by_parent = array();
 
 	while($row = $ilDB->fetchAssoc($res))
 	{

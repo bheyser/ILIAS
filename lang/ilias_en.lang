@@ -393,9 +393,8 @@ assessment#:#empty_term_message#:#There is a least one empty term field.
 assessment#:#empty_terms_exist#:#There are already empty term fields. Please fill out these fields before you add more terms.
 assessment#:#enable_javascript#:#Click to enable JavaScript support
 assessment#:#end_tag#:#End Tag
-assessment#:#tst_conflict_fbh_oblig_quest#:#The combination of using compulsory questions and locked answers is not allowed.
-assessment#:#tst_conflict_reset_non_fbh#:#The setting "Lock Answers" was adjusted to "Do Not Lock Answers".
-assessment#:#tst_conflict_reset_fbh_force#:#The setting "Lock Answers" was adjusted to "Do Not Lock Answers but Force Feedback".
+assessment#:#tst_conflict_fbh_oblig_quest#:#The combination of using compulsory questions and freezing answers given is not allowed.
+assessment#:#tst_conflict_reset_non_fbh#:#The setting "Freeze Answers Given" has been disabled.
 assessment#:#ending_time_reached#:#You have reached the finish time
 assessment#:#enlarge#:#Enlarge
 assessment#:#enter_anonymous_code#:#Enter Anonymous Access Code
@@ -12935,7 +12934,8 @@ exc#:#exc_team_notification_body_rmv#:#you have been removed from  a team upload
 exc#:#exc_team_notification_changed_by#:#Status changed by
 exc#:#exc_team_notification_link#:#Link to exercise
 poll#:#poll_absolute#:#Current Votes
-dcl#:#dcl_reference_link#:#Show as link in table view
+dcl#:#dcl_reference_link#:#Show as link to referenced entry
+dcl#:#dcl_reference_link_info#:#Detailed View must be active in referenced table
 dcl#:#dcl_ILIAS_reference_link#:#Show as link in table view
 dcl#:#dcl_text_area#:#Textarea
 dcl#:#dcl_delete_table#:#Delete Table
@@ -15335,3 +15335,7 @@ style#:#sty_va_iheada_class#:#Vert. Accordion Header (active)
 style#:#sty_va_ihcap_class#:#Vert. Accordion Caption
 exc#:#exc_delete_team#:#Delete Team
 trac#:#trac_cron_info#:#Please activate the "Object Statistics" cron job to gather data.
+rbac#:#mep_copy#:#User can copy media pool
+crs#:#crs_cannot_find_role#:#Can't find this role.
+grp#:#grp_admission_link_failure_invalid_code#:#Can't register: Link is invalid.
+crs#:#crs_admission_link_failure_invalid_code#:#Can't register: Link is invalid.
