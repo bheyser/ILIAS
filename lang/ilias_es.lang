@@ -5045,7 +5045,6 @@ content#:#cont_lm_default_layout#:#Fondo por defecto en Módulo de aprendizaje
 content#:#cont_lm_menu#:#Menú
 content#:#cont_lm_properties#:#Propiedades del Módulo de Aprendizaje
 content#:#cont_localfile#:#Fichero local
-content#:#cont_LocalFile#:#Fichero local
 content#:#cont_location#:#Localización
 content#:#cont_lrs_settings#:#Configuración
 content#:#cont_lvalue#:#-Datos-
@@ -14494,7 +14493,6 @@ poll#:#poll_result_answers#:#Votos###26 09 2014 new variable
 poll#:#poll_result_users#:#Participantes###26 09 2014 new variable
 user#:#usr_id#:#ID del Usuario###26 09 2014 new variable
 meta#:#meta_c_XK#:#Kosovo###11 03 2014 new variable
-certificate#:#certificate_var_matriculation#:#12345###11 03 2014 new variable
 certificate#:#certificate_ph_matriculation#:#Número de matrícula del usuario###11 03 2014 new variable
 survey#:#mailparticipantdata_placeholder#:#Los siguientes marcadores serán reemplazados con los datos reales del usuario en encuestas personalizadas:###11 03 2014 new variable
 poll#:#poll_notification_subscribe#:#Activar notificación###26 09 2014 new variable
@@ -15330,7 +15328,6 @@ style#:#sty_va_ihcap_class#:#Texto desplegable Vert###01 03 2016 new variable
 assessment#:#ass_create_export_file_with_results#:#Crear fichero de exportación de Test  (incl. resultados de los participantes)###06 05 2016 new variable
 assessment#:#tst_conflict_fbh_oblig_quest#:#No se permite combinar preguntas obligatorias y respuestas bloqueadas.###06 05 2016 new variable
 assessment#:#tst_conflict_reset_non_fbh#:#La configuración de "Respuestas bloqueadas" se ha modificado a "No hay respuestas bloqueadas"###06 05 2016 new variable
-assessment#:#tst_conflict_reset_fbh_force#:#La configuración de "Respuestas bloqueadas" se ha modificado a "No hay respuestas bloquedas pero se fuerza la retroalimentación"###06 05 2016 new variable
 exc#:#exc_delete_team#:#Borrar equipo###06 05 2016 new variable
 trac#:#trac_cron_info#:#Por favor, active la tarea "Estadísticas de objeto" en el Cron para recopilar datos.###06 05 2016 new variable
 dcl#:#dcl_reference_link_info#:#La vista detallada debe estar activa en la tabla referenciada###29 06 2016 new variable
@@ -15338,3 +15335,13 @@ rbac#:#mep_copy#:#El usuario puede copiar un repositorio multimedia###29 06 2016
 crs#:#crs_cannot_find_role#:#No se puede encontrar este rol.###29 06 2016 new variable
 grp#:#grp_admission_link_failure_invalid_code#:#No se puede registrar: el enlace no es válido.###29 06 2016 new variable
 crs#:#crs_admission_link_failure_invalid_code#:#Can't register: Link is invalid.###10 08 2016 new variable
+auth#:#auth_ldap_server_ds#:#LDAP-Server###14 10 2016 new variable
+assessment#:#ass_location#:#Location###14 10 2016 new variable
+assessment#:#ass_imap_hint#:#Hint to be shown as Tooltip###14 10 2016 new variable
+blog#:#blog_show_latest#:#Show latest postings/drafts###14 10 2016 new variable
+assessment#:#ass_competence_respect_level_ordering#:#Please note that the competence thresholds have to be defined in an ascending order according to the available levels.###14 10 2016 new variable
+registration#:#reg_mail_body_activation#:#to activate your account and confirm ownership of this email address, click the link below:###14 10 2016 new variable
+form#:#err_invalid_input#:#An invalid value has been submited. Please check your input.###14 10 2016 new variable
+itgr#:#itgr_desc_info#:#The description will not be a part of the item group's presentation in its container.###14 10 2016 new variable
+dcl#:#dcl_std_field_not_importable#:# - Standard fields are not importable.###25 10 2016 new variable
+certificate#:#certificate_var_user_matriculation#:#12345###25 10 2016 new variable

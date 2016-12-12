@@ -402,7 +402,7 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 								$item->getPoints(),
 								$item->getOrder(),
 								$gap->getType(),
-								$gap->getGapSize()
+								(int)$gap->getGapSize()
 							)
 		);
 	}
@@ -482,7 +482,7 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 								) > 0) ? $item->getLowerBound() : $item->getAnswertext(),
 								($eval->e( $item->getUpperBound() !== FALSE ) && strlen( $item->getUpperBound()
 								) > 0) ? $item->getUpperBound() : $item->getAnswertext(),
-								$gap->getGapSize()
+								(int)$gap->getGapSize()
 							)
 		);
 	}
@@ -984,11 +984,14 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 		{
 			$clone->setTitle($title);
 		}
+
+		$clone->saveToDb();
+
 		if($this->gap_combinations_exists)
 		{
 			$this->copyGapCombination($original_id, $clone->getId());
+			$clone->saveToDb();
 		}
-		$clone->saveToDb();
 
 		// copy question page content
 		$clone->copyPageOfQuestion($original_id);
