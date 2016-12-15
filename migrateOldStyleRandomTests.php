@@ -672,9 +672,9 @@ class ilOldStyleRandomTestMigration
 		$fetchStmt = $this->db->prepare("
 			SELECT question_id FROM qpl_questions
 			LEFT JOIN tmp_mig_qst_duplic ON tst = ? AND pool = obj_fi AND qst = question_id
-			WHERE obj_fi = ? AND original_id IS NULL
+			WHERE obj_fi = ? AND original_id IS NULL AND complete = ?
 			AND qst IS NULL
-			", array('integer', 'integer')
+			", array('integer', 'integer', 'integer')
 		);
 
 		$this->printProgress();
@@ -696,7 +696,7 @@ class ilOldStyleRandomTestMigration
 		while( $row1 = $this->db->fetchAssoc($res1) )
 		{
 			$res2 = $this->db->execute(
-				$fetchStmt, array($row1['tst'], $row1['pool'])
+				$fetchStmt, array($row1['tst'], $row1['pool'], 1)
 			);
 
 			$this->printProgress();
@@ -794,20 +794,23 @@ class ilOldStyleRandomTestMigration
 			$dupTime = microtime(true);
 			//if($i == 1) $this->db->sqlLog = 'db2.log';
 			$question = assQuestion::_instantiateQuestion($row['qst']);
-			$dupId = $question->duplicate(true, null, null, null, $row['obj_fi']);
-			//if($i == 1) $this->db->sqlLog = '';
-			$dupTime = microtime(true) - $dupTime;
-			$this->printTime($dupTime, null, 'questDup -> ');
-			
-			#$this->printProgress();
-
-			$nextId = $this->db->nextId('tst_rnd_cpy');
-
-			#$this->printProgress();
-
-			$this->db->execute($duplicatedStmt, array($dupId, $row['tst'], $row['pool'], $row['qst']));
-			
-			$this->db->execute($storeStmt, array($nextId, $row['tst'], $dupId, $row['pool']));
+			if( $question->isComplete() )
+			{
+				$dupId = $question->duplicate(true, null, null, null, $row['obj_fi']);
+				//if($i == 1) $this->db->sqlLog = '';
+				$dupTime = microtime(true) - $dupTime;
+				$this->printTime($dupTime, null, 'questDup -> ');
+				
+				#$this->printProgress();
+				
+				$nextId = $this->db->nextId('tst_rnd_cpy');
+				
+				#$this->printProgress();
+				
+				$this->db->execute($duplicatedStmt, array($dupId, $row['tst'], $row['pool'], $row['qst']));
+				
+				$this->db->execute($storeStmt, array($nextId, $row['tst'], $dupId, $row['pool']));
+			}
 
 			#$this->printProgress();
 
