@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/class.ilPDFGeneration.php';
 require_once __DIR__ . '/class.ilPDFGenerationJob.php';
+require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransformer.php';
 
 class ilTCPDFHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 {
