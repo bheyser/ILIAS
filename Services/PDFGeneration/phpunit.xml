@@ -14,8 +14,14 @@
 			 target="build/dox.html" />
 	</logging>
 	<filter>
+		<blacklist>
+			<directory suffix=".php">classes/tcpdf</directory>
+		</blacklist>
 		<whitelist>
 			<directory suffix=".php">classes</directory>
+			<exclude>
+				<directory suffix=".php">classes/tcpdf</directory>
+			</exclude>
 		</whitelist>
 	</filter>
 </phpunit>

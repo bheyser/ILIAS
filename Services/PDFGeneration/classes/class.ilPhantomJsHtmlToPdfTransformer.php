@@ -1,8 +1,8 @@
 <?php
 /* Copyright (c) 1998-2013 ILIAS open source, Extended GPL, see docs/LICENSE */
 
-require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransformer.php';
-require_once 'Services/PDFGeneration/classes/class.ilPDFGeneratorUtils.php';
+require_once __DIR__ . '/class.ilAbstractHtmlToPdfTransformer.php';
+require_once __DIR__ . '/class.ilPDFGeneratorUtils.php';
 
 /**
  * Class ilPhantomJsHtmlToPdfTransformer
@@ -15,6 +15,9 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 
 	protected $config = array();
 
+	/**
+	 * @var ilSetting
+	 */
 	protected $pdf_phantom_settings;
 
 	/**
@@ -113,8 +116,8 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	 */
 	public function __construct($phpunit_test = false)
 	{
-			$this->phpunit = $phpunit_test;
-			$this->loadDefaultSettings();
+		$this->phpunit = $phpunit_test;
+		$this->loadDefaultSettings();
 	}
 
 	/**
@@ -152,7 +155,7 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 
 	/**
 	 * @return string
-	 */	
+	 */
 	public function getId()
 	{
 		return __CLASS__;
@@ -208,9 +211,10 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 			{
 				$ilLog->write('ilPhantomJsHtmlToPdfTransformer return value line ' . $key . ' : ' . $value );
 			}
-			
+
 			if(file_exists($temp_file))
 			{
+				$ilLog->write('ilWebkitHtmlToPdfTransformer file exists: ' . $temp_file . ' file size is :' . filesize($temp_file) . ' bytes, will be renamed to '. $a_target);
 				rename($temp_file, $a_target);
 			}
 			else
@@ -219,7 +223,6 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 			}
 		}
 	}
-
 	/**
 	 * @return string
 	 */
@@ -359,7 +362,7 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	/**
 	 * @return string
 	 */
-	public function getViewport()
+	public function getViewPort()
 	{
 		return $this->viewport;
 	}
@@ -498,7 +501,7 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	 */
 	protected function getFooterArgs()
 	{
-		if($this->getHeaderType() == ilPDFGenerationConstants::FOOTER_TEXT)
+		if($this->getFooterType() == ilPDFGenerationConstants::FOOTER_TEXT)
 		{
 			return array('text'			=> $this->getFooterText(),
 						 'height'		=> $this->getFooterHeight(),
@@ -509,7 +512,7 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 			return null;
 		}
 	}
-	
+
 	/**
 	 * @return string
 	 */

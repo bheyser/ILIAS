@@ -2,7 +2,7 @@
 
 /* Copyright (c) 1998-2013 ILIAS open source, Extended GPL, see docs/LICENSE */
 
-require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransformerGUI.php';
+require_once __DIR__ . '/class.ilAbstractHtmlToPdfTransformerGUI.php';
 
 /**
  * Class ilPhantomJsHtmlToPdfTransformerGUI
@@ -90,11 +90,33 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 	protected $footer_show_pages;
 
 	/**
+	 * @var ilLanguage
+	 */
+	protected $lng;
+
+	/**
+	 * ilPhantomJsHtmlToPdfTransformerGUI constructor.
+	 * @param $lng
+	 */
+	public function __construct($lng)
+	{
+		$this->lng = $lng;
+	}
+
+	/**
+	 * @return ilSetting
+	 */
+	protected function getSettingObject()
+	{
+		return new ilSetting('pdf_transformer_phantom');
+	}
+
+	/**
 	 *
 	 */
 	public function populateForm()
 	{
-		$pdf_phantom_set		= new ilSetting('pdf_transformer_phantom');
+		$pdf_phantom_set		= $this->getSettingObject();
 		$this->path				= $pdf_phantom_set->get('path', '/usr/local/bin/phantomjs');
 		$this->page_size		= $pdf_phantom_set->get('page_size', 'A4');
 		$this->zoom				= $pdf_phantom_set->get('zoom', 1);
@@ -118,7 +140,7 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 	 */
 	public function saveForm()
 	{
-		$pdf_phantom_set = new ilSetting('pdf_transformer_phantom');
+		$pdf_phantom_set = $this->getSettingObject();
 		$pdf_phantom_set->set('path', $this->path);
 		$pdf_phantom_set->set('page_size', $this->page_size);
 		$pdf_phantom_set->set('zoom', $this->zoom);
@@ -147,7 +169,7 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 		$this->path 	= ilUtil::stripSlashes($_POST['path']);
 		if(mb_stripos($this->path, 'phantomjs') === false)
 		{
-			ilUtil::sendFailure($this->lng->txt("file_not_found"),true);
+			ilUtil::sendFailure($this->lng->txt('file_not_found'),true);
 			$everything_ok = false;
 		}
 		else
@@ -178,11 +200,11 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 	public function appendForm(ilPropertyFormGUI $form)
 	{
 		$form->setTitle($this->lng->txt('phantomjs_config'));
-		
+
 		$path = new ilTextInputGUI($this->lng->txt('path'), 'path');
 		$path->setValue($this->path);
 		$form->addItem($path);
-		
+
 		$active = new ilCheckboxInputGUI($this->lng->txt('is_active'), 'is_active');
 		if($this->is_active == true || $this->is_active == 1)
 		{
@@ -199,8 +221,8 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 		$form->addItem($this->buildPageSizesForm());
 
 		$header_select	= new ilRadioGroupInputGUI($this->lng->txt('header_type'), 'header_select');
-		$header_select->addOption(new ilRadioOption($this->lng->txt("none"), ilPDFGenerationConstants::HEADER_NONE, ''));
-		$header_text = new ilRadioOption($this->lng->txt("text"), ilPDFGenerationConstants::HEADER_TEXT, '');
+		$header_select->addOption(new ilRadioOption($this->lng->txt('none'), ilPDFGenerationConstants::HEADER_NONE, ''));
+		$header_text = new ilRadioOption($this->lng->txt('text'), ilPDFGenerationConstants::HEADER_TEXT, '');
 		$header_text->addSubItem($this->buildHeaderTextForm());
 		$header_text->addSubItem($this->buildHeaderHeightForm());
 		$header_text->addSubItem($this->buildHeaderPageNumbersForm());
@@ -209,8 +231,8 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 		$form->addItem($header_select);
 
 		$footer_select	= new ilRadioGroupInputGUI($this->lng->txt('footer_type'), 'footer_select');
-		$footer_select->addOption(new ilRadioOption($this->lng->txt("none"), ilPDFGenerationConstants::FOOTER_NONE, ''));
-		$footer_text = new ilRadioOption($this->lng->txt("text"), ilPDFGenerationConstants::FOOTER_TEXT, '');
+		$footer_select->addOption(new ilRadioOption($this->lng->txt('none'), ilPDFGenerationConstants::FOOTER_NONE, ''));
+		$footer_text = new ilRadioOption($this->lng->txt('text'), ilPDFGenerationConstants::FOOTER_TEXT, '');
 		$footer_text->addSubItem($this->buildFooterTextForm());
 		$footer_text->addSubItem($this->buildFooterHeightForm());
 		$footer_text->addSubItem($this->buildFooterPageNumbersForm());
@@ -282,15 +304,15 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 			$footer_show_pages->setChecked(true);
 		}
 		return $footer_show_pages;
-	}	
+	}
 
 	/**
 	 * @param $state
 	 */
 	protected function setActiveState($state)
 	{
-		$pdf_webkit_set = new ilSetting('pdf_transformer_phantom');
-		$pdf_webkit_set->set('is_active', $state);
+		$pdf_phantom_set = $this->getSettingObject();
+		$pdf_phantom_set->set('is_active', $state);
 	}
 
 
@@ -370,7 +392,7 @@ class ilPhantomJsHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerG
 		return $javascript_delay;
 	}
 
-	
+
 	/**
 	 * @param ilPropertyFormGUI $form
 	 */

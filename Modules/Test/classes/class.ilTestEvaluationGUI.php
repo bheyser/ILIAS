@@ -924,6 +924,68 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 		}
 	}
 
+	//uzk-patch: begin
+	public function getIliasEaPassDetailOverview($active_id, $pass)
+	{
+		global $ilAccess;
+		if (!$ilAccess->checkAccess('write', '', $this->ref_id))
+		{
+			// allow only write access
+			ilUtil::sendInfo($this->lng->txt('no_permission'), true);
+			$this->ctrl->redirectByClass('ilObjTestGUI', 'infoScreen');
+		}
+
+		$testSession = $this->testSessionFactory->getSession($active_id);
+
+		// protect actives from other tests
+		if( $testSession->getTestId() != $this->object->getTestId() )
+		{
+			ilUtil::sendInfo($this->lng->txt('no_permission'), true);
+			$this->ctrl->redirectByClass('ilObjTestGUI', 'infoScreen');
+		}
+
+		$result_array =& $this->object->getTestResult($active_id, $pass);
+
+		$overview = $this->getPassDetailsOverview($result_array, $active_id, $pass, $this, "outParticipantsPassDetails", '', true);
+		$user_data = $this->getResultsUserdata($testSession, $active_id, FALSE);
+		$user_id = $this->object->_getUserIdFromActiveId($active_id);
+		$exam_id = $this->lng->txt('exam_id') . ' ' . $this->object->lookupExamId($active_id, $pass);
+
+		$template = new ilTemplate("tpl.il_as_tst_pass_details_overview_participants.html", TRUE, TRUE, "Modules/Test");
+
+		if( $this->isGradingMessageRequired() && $this->object->getNrOfTries() == 1 )
+		{
+			$template->setCurrentBlock('grading_message');
+			$template->setVariable('GRADING_MESSAGE', $this->getGradingMessage($active_id));
+			$template->parseCurrentBlock();
+		}
+
+		$list_of_answers = $this->getPassListOfAnswers($result_array, $active_id, $pass, $_SESSION['tst_results_show_best_solutions'], false, false, false, true);
+		$template->setVariable("LIST_OF_ANSWERS", $list_of_answers);
+		$template->setVariable("TEXT_RESULTS", $this->lng->txt("tst_results"));
+		$template->setVariable("PASS_DETAILS", $overview);
+		$template->setVariable("USER_DATA", $user_data . $exam_id);
+		$uname = $this->object->userLookupFullName($user_id);
+		$template->setVariable("TEXT_HEADING", sprintf($this->lng->txt("tst_result_user_name_pass"), $pass + 1, $uname));
+		$signature = $this->getSignaturePlaceholder();
+		$template->setVariable("SIGNATURE", $signature);
+		$this->tpl->addCss(ilUtil::getStyleSheetLocation("output", "test_print.css", "Modules/Test"), "print");
+		return $template->get();
+	}
+	
+	private function getSignaturePlaceholder()
+	{
+		$template = new ilTemplate("tpl.il_as_tst_results_userdata_signature.html", TRUE, TRUE, "Modules/Test");
+		$template->setVariable("TXT_DATE", $this->lng->txt("date"));
+		$old_value = ilDatePresentation::useRelativeDates();
+		ilDatePresentation::setUseRelativeDates(false);
+		$template->setVariable("VALUE_DATE", ilDatePresentation::formatDate(new ilDate(time(), IL_CAL_UNIX)));
+		ilDatePresentation::setUseRelativeDates($old_value);
+		$template->setVariable("TXT_SIGNATURE", $this->lng->txt("tst_signature"));
+		$template->setVariable("IMG_SPACER", ilUtil::getImagePath("spacer.png"));
+		return $template->get();
+	}
+	//uzk-patch: end
 	/**
 	* Output of the pass overview for a test called from the statistics
 	*

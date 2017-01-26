@@ -2,8 +2,8 @@
 
 /* Copyright (c) 1998-2016 ILIAS open source, Extended GPL, see docs/LICENSE */
 
-require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransformerGUI.php';
-require_once 'Services/PDFGeneration/classes/class.ilPDFGenerationConstants.php';
+require_once __DIR__ . '/class.ilAbstractHtmlToPdfTransformerGUI.php';
+require_once __DIR__ . '/class.ilPDFGenerationConstants.php';
 
 /**
  * Class ilWebkitHtmlToPdfTransformerGUI
@@ -201,6 +201,28 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	protected $footer_html_spacing;
 
 	/**
+	 * @var ilLanguage
+	 */
+	protected $lng;
+
+	/**
+	 * ilPhantomJsHtmlToPdfTransformerGUI constructor.
+	 * @param $lng
+	 */
+	public function __construct($lng)
+	{
+		$this->lng = $lng;
+	}
+
+	/**
+	 * @return ilSetting
+	 */
+	protected function getSettingObject()
+	{
+		return new ilSetting('pdf_transformer_webkit');
+	}
+
+	/**
 	 * @param ilPropertyFormGUI $form
 	 */
 	public function appendForm(ilPropertyFormGUI $form)
@@ -232,7 +254,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 		$form->addItem($this->buildGreyScaleForm());
 		$form->addItem($this->buildPrintMediaTypeForm());
 		$form->addItem($this->buildJavascriptDelayForm());
-		$form->addItem($this->bildCheckboxSvgForm());
+		$form->addItem($this->buildCheckboxSvgForm());
 		$form->addItem($this->buildCheckedCheckboxSvgForm());
 		$form->addItem($this->buildRadiobuttonSvgForm());
 		$form->addItem($this->buildCheckedRadiobuttonSvgForm());
@@ -264,21 +286,21 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	protected function buildHeaderForm()
 	{
 		$header_select	= new ilRadioGroupInputGUI($this->lng->txt('header_type'), 'header_select');
-		$header_select->addOption(new ilRadioOption($this->lng->txt("none"), ilPDFGenerationConstants::HEADER_NONE, ''));
+		$header_select->addOption(new ilRadioOption($this->lng->txt('none'), ilPDFGenerationConstants::HEADER_NONE, ''));
 		$header_select->addOption($this->buildHeaderTextForm());
 		$header_select->addOption($this->buildHeaderHtmlForm());
-		
+
 		$header_select->setValue($this->header_select);
-		
+
 		return $header_select;
 	}
-	
+
 	/**
 	 * @return ilRadioOption
 	 */
 	protected function buildHeaderTextForm()
 	{
-		$header_text_option = new ilRadioOption($this->lng->txt("text"), ilPDFGenerationConstants::HEADER_TEXT, '');
+		$header_text_option = new ilRadioOption($this->lng->txt('text'), ilPDFGenerationConstants::HEADER_TEXT, '');
 
 		$header_text_left = new ilTextInputGUI($this->lng->txt('header_text_left'), 'head_text_left');
 		$header_text_left->setValue($this->head_text_left);
@@ -448,7 +470,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	/**
 	 * @return ilTextInputGUI
 	 */
-	protected function bildCheckboxSvgForm()
+	protected function buildCheckboxSvgForm()
 	{
 		$checkbox_svg = new ilTextInputGUI($this->lng->txt('checkbox_svg'), 'checkbox_svg');
 		$checkbox_svg->setValue($this->checkbox_svg);
@@ -566,7 +588,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	 */
 	protected function buildFooterHtmlForm()
 	{
-		$footer_html_option = new ilRadioOption($this->lng->txt("html"), ilPDFGenerationConstants::FOOTER_HTML, '');
+		$footer_html_option = new ilRadioOption($this->lng->txt('html'), ilPDFGenerationConstants::FOOTER_HTML, '');
 
 		$footer_html = new ilTextInputGUI($this->lng->txt('footer_html'), 'footer_html');
 		$footer_html->setValue($this->footer_html);
@@ -590,7 +612,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	 */
 	protected function buildFooterTextForm()
 	{
-		$footer_text_option = new ilRadioOption($this->lng->txt("text"), ilPDFGenerationConstants::FOOTER_TEXT, '');
+		$footer_text_option = new ilRadioOption($this->lng->txt('text'), ilPDFGenerationConstants::FOOTER_TEXT, '');
 
 		$footer_text_left = new ilTextInputGUI($this->lng->txt('footer_text_left'), 'footer_text_left');
 		$footer_text_left->setValue($this->footer_text_left);
@@ -616,10 +638,10 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 		$footer_text_option->addSubItem($footer_text_line);
 		return $footer_text_option;
 	}
-	
+
 	public function populateForm()
 	{
-		$pdf_webkit_set					= new ilSetting('pdf_transformer_webkit');
+		$pdf_webkit_set					= $this->getSettingObject();
 		$this->path						= $pdf_webkit_set->get('path',						'/usr/local/bin/wkhtmltopdf');
 		$this->zoom						= $pdf_webkit_set->get('zoom',						1);
 		$this->external_links			= $pdf_webkit_set->get('external_links');
@@ -662,7 +684,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 
 	public function saveForm()
 	{
-		$pdf_webkit_set = new ilSetting('pdf_transformer_webkit');
+		$pdf_webkit_set = $this->getSettingObject();
 		$pdf_webkit_set->set('path', 					$this->path);
 		$pdf_webkit_set->set('zoom',					$this->zoom);
 		$pdf_webkit_set->set('external_links',			$this->external_links);
@@ -765,7 +787,7 @@ class ilWebkitHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	 */
 	protected function setActiveState($state)
 	{
-		$pdf_webkit_set = new ilSetting('pdf_transformer_webkit');
+		$pdf_webkit_set = $this->getSettingObject();
 		$pdf_webkit_set->set('is_active', $state);
 	}
 

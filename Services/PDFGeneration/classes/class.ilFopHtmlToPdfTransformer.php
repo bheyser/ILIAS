@@ -1,7 +1,7 @@
 <?php
 /* Copyright (c) 1998-2013 ILIAS open source, Extended GPL, see docs/LICENSE */
 
-require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransformer.php';
+require_once __DIR__ . '/class.ilAbstractHtmlToPdfTransformer.php';
 
 /**
  * Class ilFopHtmlToPdfTransformer
@@ -9,7 +9,7 @@ require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransforme
  */
 class ilFopHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 {
-	
+
 	protected $xsl;
 
 	/**
@@ -40,8 +40,6 @@ class ilFopHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	 */
 	protected function processHTML2FO($print_output)
 	{
-		$this->xsl = 'Services/Certificate/xml/xhtml2fo.xsl'; //ToDo: add own or other xsl
-
 		if (!@file_exists($this->xsl)) return "";
 		if (extension_loaded("tidy"))
 		{
@@ -106,7 +104,7 @@ class ilFopHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	protected function createPDFFileFromFO($fo, $target)
 	{
 		global $ilLog;
-
+		$this->xsl = $this->getXsl();
 		include_once "./Services/Utilities/classes/class.ilUtil.php";
 		$fo_file = ilUtil::ilTempnam() . ".fo";
 		$fp = fopen($fo_file, "w"); fwrite($fp, $fo); fclose($fp);
@@ -172,5 +170,14 @@ class ilFopHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	public function hasInfoInterface()
 	{
 		return false;
+	}
+
+	/**
+	 * @return mixed
+	 */
+	public function getXsl()
+	{
+		$fop_set = new ilSetting('pdf_transformer_fop');
+		return $fop_set->get('xsl');
 	}
 }

@@ -1,6 +1,6 @@
 <?php
 /* Copyright (c) 1998-2015 ILIAS open source, Extended GPL, see docs/LICENSE */
-require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransformer.php';
+
 /**
  * Class ilHtmlToPdfTransformerFactory
  * @author Michael Jansen <mjansen@databay.de>
@@ -33,42 +33,6 @@ class ilHtmlToPdfTransformerFactory
 	protected $transformer;
 
 	/**
-	 * @return array
-	 */
-	public function getValidEngines()
-	{
-		if(null !== self::$valid_engines)
-		{
-			return self::$valid_engines;
-		}
-
-		$engines = array();
-		$iter = new DirectoryIterator(dirname(__FILE__));
-		foreach($iter as $file)
-		{
-			/**
-			 * @var $file SplFileInfo
-			 */
-			if($file->isDir())
-			{
-				continue;
-			}
-
-			require_once $file->getFilename();
-			$class      = str_replace(array('class.', '.php'), '', $file->getBasename());
-			$reflection = new ReflectionClass($class);
-			if(
-				!$reflection->isAbstract() &&
-				$reflection->isSubclassOf('ilAbstractHtmlToPdfTransformer')
-			)
-			{
-				$engines[$class] = new $class();
-			}
-		}
-
-		return (self::$valid_engines = $engines);
-	}
-	/**
 	 * ilHtmlToPdfTransformerFactory constructor.
 	 * @param $component
 	 */
@@ -85,6 +49,53 @@ class ilHtmlToPdfTransformerFactory
 		}
 		$this->pdf_transformer_settings	= new ilSetting($setting);
 		$this->lng	= $lng;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getValidEngines()
+	{
+		if(null !== self::$valid_engines)
+		{
+			return self::$valid_engines;
+		}
+
+		$local_pdf_engines	= $this->scanForSubClasses(__DIR__);
+
+		return (self::$valid_engines = $local_pdf_engines);
+	}
+
+	/**
+	 * @param $dir
+	 * @return array
+	 */
+	protected function scanForSubClasses($dir)
+	{
+		$iter = new DirectoryIterator($dir);
+		$engines = array();
+		foreach($iter as $file)
+		{
+			/**
+			 * @var $file SplFileInfo
+			 */
+			if($file->isDir())
+			{
+				continue;
+			}
+
+			require_once $file->getPathname();
+			$class      = str_replace(array('class.', '.php'), '', $file->getBasename());
+			$reflection = new ReflectionClass($class);
+			if(
+				!$reflection->isAbstract() &&
+				$reflection->isSubclassOf('ilAbstractHtmlToPdfTransformer')
+			)
+			{
+				$engines[$class] = new $class();
+			}
+		}
+		return $engines;
 	}
 
 	/**
@@ -116,7 +127,7 @@ class ilHtmlToPdfTransformerFactory
 		if($this->transformer->isActive())
 		{
 			$this->transformer->createPDFFileFromHTMLFile($src, $output);
-			self::deliverPDF($output, $delivery_type);
+			$this->deliverPDF($output, $delivery_type);
 		}
 	}
 
@@ -132,7 +143,7 @@ class ilHtmlToPdfTransformerFactory
 		if($this->transformer->isActive())
 		{
 			$this->transformer->createPDFFileFromHTMLString($src, $output);
-			self::deliverPDF($output, $delivery_type);
+			$this->deliverPDF($output, $delivery_type);
 		}
 	}
 
@@ -153,11 +164,15 @@ class ilHtmlToPdfTransformerFactory
 			{
 				ilUtil::deliverFile($file, basename($file), '', true, true);
 			}
+			else if(strtoupper($delivery_type) === self::PDF_OUTPUT_FILE)
+			{
+				return $file;
+			}
 			return $file;
 		}
 		return false;
 	}
-	
+
 	/**
 	 * @param $src
 	 * @param $output

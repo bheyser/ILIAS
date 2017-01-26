@@ -1,10 +1,12 @@
 <?php
 /* Copyright (c) 1998-2015 ILIAS open source, Extended GPL, see docs/LICENSE */
-
+require_once 'Services/AccessControl/classes/class.ilPermissionGUI.php';
+require_once 'Services/Form/classes/class.ilPropertyFormGUI.php';
 require_once 'Services/Object/classes/class.ilObject2GUI.php';
 require_once 'Services/PDFGeneration/classes/class.ilHtmlToPdfTransformerFactory.php';
 require_once 'Services/PDFGeneration/classes/class.ilHtmlToPdfTransformerGUIFactory.php';
 require_once 'Services/PDFGeneration/classes/class.ilPDFGeneratorUtils.php';
+require_once 'Services/UIComponent/Button/classes/class.ilLinkButton.php';
 /**
  * Class ilObjPDFGenerationGUI
  * @author Michael Jansen <mjansen@databay.de>
@@ -22,9 +24,9 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 	 * @var ilHtmlToPdfTransformerGUIFactory
 	 */
 	protected $transformer_gui_factory;
-	
+
 	protected $active_tab;
-	
+
 	protected $pdf_transformer_settings;
 	/**
 	 * @var ilToolbarGUI
@@ -35,7 +37,7 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 	 * @var ilCtrl
 	 */
 	protected $ctrl;
-	
+
 	/**
 	 * @param int $a_id
 	 * @param int $a_id_type
@@ -75,7 +77,6 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 		{
 			case 'ilpermissiongui':
 				$this->tabs_gui->setTabActive('perm_settings');
-				require_once 'Services/AccessControl/classes/class.ilPermissionGUI.php';
 				$perm_gui = new ilPermissionGUI($this);
 				$this->ctrl->forwardCommand($perm_gui);
 				break;
@@ -92,16 +93,14 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 
 	public function configForm()
 	{
-		include_once "Services/Form/classes/class.ilPropertyFormGUI.php";
 		$form = new ilPropertyFormGUI();
 		$form->setFormAction($this->ctrl->getFormAction($this, 'view'));
 		$transformer = ilUtil::stripSlashes($_GET['pdf_transformer']);
 		if($transformer == '')
 		{
 			$active_transformers = $this->transformer_factory->getActivePdfTransformers();
-			if(sizeof($active_transformers) > 0)
+			if(count($active_transformers) > 0)
 			{
-				require_once 'Services/UIComponent/Button/classes/class.ilLinkButton.php';
 				$button = ilLinkButton::getInstance();
 				$button->setCaption('create_test_pdf');
 				$button->setUrl($this->ctrl->getLinkTarget($this, 'createTestPdf'));
@@ -135,7 +134,6 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 		$transformer_instance = new $transformer;
 		if($transformer_instance->hasInfoInterface())
 		{
-			require_once 'Services/UIComponent/Button/classes/class.ilLinkButton.php';
 			$button = ilLinkButton::getInstance();
 			$button->setCaption('show_info');
 			$button->setUrl($this->ctrl->getLinkTarget($this, 'showInfo&pdf_transformer=' . $transformer));
@@ -145,7 +143,6 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 
 	public function saveSettings()
 	{
-		include_once "Services/Form/classes/class.ilPropertyFormGUI.php";
 		$form = new ilPropertyFormGUI();
 
 		$transformer = ilUtil::stripSlashes($_POST['transformer']);
@@ -161,7 +158,7 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 			$this->ctrl->redirect($this, "view" . '&pdf_transformer=' . $transformer);
 		}
 	}
-	
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -182,7 +179,7 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 		}
 
 	}
-	
+
 	protected function setActiveTab()
 	{
 		global $ilTabs;
@@ -204,7 +201,7 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 	{
 		$this->pdf_transformer_settings->set('selected_transformer', $selected_transformer);
 	}
-	
+
 	/*
 	 * 
 	 */

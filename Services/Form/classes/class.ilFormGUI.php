@@ -21,7 +21,26 @@ class ilFormGUI
 	protected $id;
 	protected $name;
 	protected $prevent_double_submission = false;
-	
+	// uzk-patch: begin
+	/**
+	 * @var bool
+	 */
+	protected $waitbox_status = true;
+
+	/**
+	 * @param null|bool $status
+	 * @return bool
+	 */
+	public function isWaitboxEnabled($status = null)
+	{
+		if(null === $status)
+		{
+			return $this->waitbox_status;
+		}
+
+		$this->waitbox_status = $status;
+	}
+	// uzk-patch: end
 	/**
 	* Constructor
 	*

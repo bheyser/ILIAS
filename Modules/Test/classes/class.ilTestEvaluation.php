@@ -19,7 +19,6 @@ class ilTestEvaluation
 	 * @var integer
 	 */
 	protected $testId;
-
 	/**
 	 * @param ilDB $db
 	 */
@@ -42,10 +41,12 @@ class ilTestEvaluation
 			ON active_fi = active_id
 			WHERE test_fi = %s
 		";
+
 		
 		$res = $this->db->queryF($query, array('integer'), array($this->testId));
-		
+
 		$passes = array();
+
 		
 		while($row = $this->db->fetchAssoc($res))
 		{

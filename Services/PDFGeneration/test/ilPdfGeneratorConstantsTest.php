@@ -1,7 +1,7 @@
 <?php
 /* Copyright (c) 1998-2014 ILIAS open source, Extended GPL, see docs/LICENSE */
 
-require_once 'Services/PDFGeneration/classes/class.ilPDFGenerationConstants.php';
+require_once __DIR__ .'/../classes/class.ilPDFGenerationConstants.php';
 
 /**
  * Class ilPdfGeneratorConstantsTest
@@ -10,7 +10,7 @@ require_once 'Services/PDFGeneration/classes/class.ilPDFGenerationConstants.php'
 class ilPdfGeneratorConstantsTest  extends PHPUnit_Framework_TestCase
 {
 	/**
-	 * 
+	 *
 	 */
 	public function testInstanceCanBeCreated()
 	{
@@ -27,7 +27,7 @@ class ilPdfGeneratorConstantsTest  extends PHPUnit_Framework_TestCase
 		$this->assertSame('Portrait', $orientations['Portrait']);
 		$this->assertSame('Landscape', $orientations['Landscape']);
 	}
-	
+
 	public function testGetPageSizesNames()
 	{
 		$this->assertCount(15, ilPDFGenerationConstants::getPageSizesNames());

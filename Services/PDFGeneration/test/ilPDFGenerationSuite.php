@@ -3,7 +3,7 @@
 
 
 /**
- * Class ilPasswordTestSuite
+ * Class ilPDFGenerationSuite
  * @package ilPdfGenerator
  */
 class ilPDFGenerationSuite extends PHPUnit_Framework_TestSuite
@@ -20,26 +20,29 @@ class ilPDFGenerationSuite extends PHPUnit_Framework_TestSuite
 		}
 		else
 		{
-			chdir( dirname( __FILE__ ) );
+			chdir( __DIR__ );
 			chdir('../../../');
 		}
-		
+
 		// Set timezone to prevent notices
 		date_default_timezone_set('Europe/Berlin');
 
 		$suite = new self();
 
-		require_once dirname(__FILE__) . '/ilPdfGeneratorConstantsTest.php';
+		require_once __DIR__ . '/ilPdfGeneratorConstantsTest.php';
 		$suite->addTestSuite('ilPdfGeneratorConstantsTest');
 
-		require_once dirname(__FILE__) . '/ilPdfGeneratorConstantsTest.php';
-		$suite->addTestSuite('ilPdfGeneratorConstantsTest');
-
-		require_once dirname(__FILE__) . '/ilPhantomJsHtmlToPdfTransformerTest.php';
+		require_once __DIR__. '/ilPhantomJsHtmlToPdfTransformerTest.php';
 		$suite->addTestSuite('ilPhantomJsHtmlToPdfTransformerTest');
 
-		require_once dirname(__FILE__) . '/ilWebkitHtmlToPdfTransformerTest.php';
+		require_once __DIR__. '/ilPhantomJsHtmlToPdfTransformerGUITest.php';
+		$suite->addTestSuite('ilPhantomJsHtmlToPdfTransformerGUITest');
+
+		require_once __DIR__ . '/ilWebkitHtmlToPdfTransformerTest.php';
 		$suite->addTestSuite('ilWebkitHtmlToPdfTransformerTest');
+
+		require_once __DIR__. '/ilWebkitHtmlToPdfTransformerGUITest.php';
+		$suite->addTestSuite('ilWebkitHtmlToPdfTransformerGUITest');
 
 		return $suite;
 	}

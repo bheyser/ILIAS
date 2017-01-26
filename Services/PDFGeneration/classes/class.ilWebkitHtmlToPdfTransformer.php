@@ -1,8 +1,8 @@
 <?php
 /* Copyright (c) 1998-2013 ILIAS open source, Extended GPL, see docs/LICENSE */
 
-require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransformer.php';
-require_once 'Services/PDFGeneration/classes/class.ilPDFGenerationConstants.php';
+require_once __DIR__ . '/class.ilAbstractHtmlToPdfTransformer.php';
+require_once __DIR__ . '/class.ilPDFGenerationConstants.php';
 
 /**
  * Class ilWebkitHtmlToPdfTransformer
@@ -179,8 +179,8 @@ class ilWebkitHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	 */
 	public function __construct($phpunit_test = false)
 	{
-			$this->phpunit = $phpunit_test;
-			$this->loadDefaultSettings();
+		$this->phpunit = $phpunit_test;
+		$this->loadDefaultSettings();
 	}
 
 	protected function loadDefaultSettings()
@@ -316,6 +316,7 @@ class ilWebkitHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 		}
 		if(file_exists($temp_file))
 		{
+			$ilLog->write('ilWebkitHtmlToPdfTransformer file exists: ' . $temp_file . ' file size is :' . filesize($temp_file) . ' bytes, will be renamed to '. $a_target);
 			rename($temp_file, $a_target);
 		}
 		else
@@ -1066,7 +1067,7 @@ class ilWebkitHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 			$this->config[] = 'quiet';
 		}
 	}
-	
+
 	protected function getCheckboxSvgArgument()
 	{
 		$checkbox_svg = $this->getCheckboxSvg();
@@ -1166,7 +1167,7 @@ class ilWebkitHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	{
 		$this->checkbox_checked_svg = $checkbox_checked_svg;
 	}
-	
+
 	/**
 	 * @return string
 	 */

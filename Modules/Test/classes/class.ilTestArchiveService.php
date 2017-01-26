@@ -17,7 +17,7 @@ class ilTestArchiveService
 	 * @var ilObjTest
 	 */
 	protected $testOBJ;
-	
+
 	/**
 	 * @var ilTestParticipantData
 	 */
@@ -28,7 +28,7 @@ class ilTestArchiveService
 		$this->testOBJ = $testOBJ;
 		$this->participantData = null;
 	}
-	
+
 	/**
 	 * @return ilTestParticipantData
 	 */
@@ -60,7 +60,7 @@ class ilTestArchiveService
 	{
 		$content = $this->renderOverviewContent($activeId, $pass);
 		$filename = $this->buildOverviewFilename($activeId, $pass);
-		
+
 		ilTestPDFGenerator::generatePDF($content, ilTestPDFGenerator::PDF_OUTPUT_FILE, $filename);
 
 		$archiver = new ilTestArchiver($this->testOBJ->getId());
@@ -77,15 +77,12 @@ class ilTestArchiveService
 	 */
 	private function renderOverviewContent($activeId, $pass)
 	{
-		$results = $this->testOBJ->getTestResult(
-			$activeId, $pass, false
-		);
-		
-		$gui = new ilTestServiceGUI($this->testOBJ);
-		
-		return $gui->getPassListOfAnswers(
-			$results, $activeId, $pass, true, false, false, true, false
-		);
+
+		//uzk-patch: begin
+		require_once 'Modules/Test/classes/class.ilTestEvaluationGUI.php';
+		$gui = new ilTestEvaluationGUI($this->testOBJ);
+		return $gui->getIliasEaPassDetailOverview($activeId, $pass);
+		//uzk-patch: end
 	}
 
 	/**

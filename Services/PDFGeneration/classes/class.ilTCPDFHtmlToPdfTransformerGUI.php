@@ -2,7 +2,7 @@
 
 /* Copyright (c) 1998-2013 ILIAS open source, Extended GPL, see docs/LICENSE */
 
-require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransformerGUI.php';
+require_once __DIR__ . '//class.ilAbstractHtmlToPdfTransformerGUI.php';
 
 /**
  * Class ilTCPDFHtmlToPdfTransformerGUI
@@ -10,15 +10,32 @@ require_once 'Services/PDFGeneration/classes/class.ilAbstractHtmlToPdfTransforme
 class ilTCPDFHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 {
 	protected $page_size;
-	
+
 	protected $is_active;
+
+	/**
+	 * ilTCPDFHtmlToPdfTransformerGUI constructor.
+	 * @param $lng
+	 */
+	public function __construct($lng)
+	{
+		$this->lng = $lng;
+	}
+
+	/**
+	 * @return ilSetting
+	 */
+	protected function getSettingObject()
+	{
+		return new ilSetting('pdf_transformer_tcpdf');
+	}
 
 	/**
 	 *
 	 */
 	public function populateForm()
 	{
-		$pdf_tcpdf_set		= new ilSetting('pdf_transformer_tcpdf');
+		$pdf_tcpdf_set		= $this->getSettingObject();
 		$this->page_size	= $pdf_tcpdf_set->get('page_size', 'A4');
 		$this->is_active	= $pdf_tcpdf_set->get('is_active');
 	}
@@ -28,7 +45,7 @@ class ilTCPDFHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	 */
 	public function saveForm()
 	{
-		$pdf_tcpdf_set = new ilSetting('pdf_transformer_tcpdf');
+		$pdf_tcpdf_set = $this->getSettingObject();
 		$pdf_tcpdf_set->set('page_size',		$this->page_size);
 		$pdf_tcpdf_set->set('is_active',		$this->is_active);
 	}
@@ -57,7 +74,7 @@ class ilTCPDFHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 			$active->setChecked(true);
 		}
 		$form->addItem($active);
-		
+
 		$section_header = new ilFormSectionHeaderGUI();
 		$section_header->setTitle($this->lng->txt('page_settings'), 'page_settings');
 		$form->addItem($section_header);
@@ -82,7 +99,7 @@ class ilTCPDFHtmlToPdfTransformerGUI extends ilAbstractHtmlToPdfTransformerGUI
 	 */
 	protected function setActiveState($state)
 	{
-		$pdf_tcpdf_set = new ilSetting('pdf_transformer_tcpdf');
+		$pdf_tcpdf_set = $this->getSettingObject();
 		$pdf_tcpdf_set->set('is_active', $state);
 	}
 

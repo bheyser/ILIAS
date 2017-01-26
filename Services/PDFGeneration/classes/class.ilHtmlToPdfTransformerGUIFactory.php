@@ -2,11 +2,7 @@
 
 /* Copyright (c) 1998-2016 ILIAS open source, Extended GPL, see docs/LICENSE */
 
-require_once 'Services/PDFGeneration/classes/class.ilHtmlToPdfTransformerFactory.php';
-require_once 'Services/PDFGeneration/classes/class.ilWebkitHtmlToPdfTransformerGUI.php';
-require_once 'Services/PDFGeneration/classes/class.ilPhantomJsHtmlToPdfTransformerGUI.php';
-require_once 'Services/PDFGeneration/classes/class.ilTCPDFHtmlToPdfTransformerGUI.php';
-require_once 'Services/PDFGeneration/classes/class.ilFopHtmlToPdfTransformerGUI.php';
+require_once __DIR__ . '/class.ilHtmlToPdfTransformerFactory.php';
 
 /**
  * Class ilHtmlToPdfTransformerGUIFactory
@@ -60,7 +56,7 @@ class ilHtmlToPdfTransformerGUIFactory
 	public function buildForm($form, $transformer)
 	{
 		/* @var ilHtmlToPdfTransformerGUI $transformer */
-		$transformer = new $transformer;
+		$transformer = new $transformer($this->lng);
 		$transformer->populateForm();
 		$transformer->appendForm($form);
 		$transformer->appendHiddenTransformerNameToForm($form);
@@ -72,7 +68,7 @@ class ilHtmlToPdfTransformerGUIFactory
 	public function saveForm($transformer)
 	{
 		/* @var ilHtmlToPdfTransformerGUI $transformer */
-		$transformer = new $transformer;
+		$transformer = new $transformer($this->lng);
 		if($transformer->checkForm())
 		{
 			$transformer->saveForm();

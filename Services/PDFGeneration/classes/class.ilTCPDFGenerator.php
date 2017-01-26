@@ -1,10 +1,11 @@
 <?php
 /* Copyright (c) 1998-2013 ILIAS open source, Extended GPL, see docs/LICENSE */
 
+require_once __DIR__ . '/class.ilAbstractHtmlToPdfTransformer.php';
 
 /**
  * Class ilTCPDFGenerator
- * 
+ *
  * @author Maximilian Becker <mbecker@databay.de>
  * @version $Id$
  */
@@ -47,7 +48,7 @@ class ilTCPDFGenerator
 		foreach ($job->getPages() as $page)
 		{
 			$pdf->AddPage();
-			$pdf->writeHTML($page, true, false, true, false, '');			
+			$pdf->writeHTML($page, true, false, true, false, '');
 		}
 
 		$result = $pdf->Output($job->getFilename(), $job->getOutputMode() ); // (I - Inline, D - Download, F - File)
