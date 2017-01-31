@@ -89,11 +89,6 @@ class ilTestArchiver
 	 */
 	protected $participantData;
 
-	/**
-	 * @var ilTestParticipantData
-	 */
-	protected $participantData;
-
 	#endregion
 
 	/**
@@ -511,20 +506,6 @@ class ilTestArchiver
 			}
 		}
 		
-		return null;
-	}
-
-	private function buildPassDataDirectory($active_fi, $pass)
-	{
-		foreach ($this->archive_data_index as $data_index_entry)
-		{
-			if ( $data_index_entry != null && $data_index_entry['identifier'] == $active_fi.'|'.$pass )
-			{
-				array_shift($data_index_entry);
-				return $this->getTestArchive() . self::DIR_SEP . implode(self::DIR_SEP, $data_index_entry);
-			}
-		}
-
 		return null;
 	}
 
