@@ -215,7 +215,7 @@ class ilFileXMLParser extends ilSaxParser
 			    if (strlen($this->cdata) == 0)
 			          throw new ilFileException("Filename ist missing!");
 			    
-			    $this->file->setFilename($this->cdata);
+			    $this->file->setFilename(basename(self::normalizeRelativePath($this->cdata)));
 			    $this->file->setTitle($this->cdata);
 			    
 				break;
@@ -326,16 +326,11 @@ class ilFileXMLParser extends ilSaxParser
 	 */
 	public function setFileContents ()
 	{
-		global $ilLog;
-		
-		#$ilLog->write(__METHOD__.' '.filesize($this->tmpFilename));
-
 		if (filesize ($this->tmpFilename) == 0) {
 			return;
 		}
 
 		$filedir = $this->file->getDirectory($this->file->getVersion());
-		#$ilLog->write(__METHOD__.' '.$filedir);
 		
 		if (!is_dir($filedir))
 		{
@@ -344,11 +339,11 @@ class ilFileXMLParser extends ilSaxParser
 		}
 		   
 		$filename = $filedir."/".$this->file->getFileName();
+
 		if (file_exists($filename))
 			unlink($filename);
-//echo "-".$this->tmpFilename."-".$filename."-"; exit;
+
 		return rename($this->tmpFilename, $filename);
-	   // @file_put_contents($filename, $this->content);
 	}
 
 
@@ -379,5 +374,41 @@ class ilFileXMLParser extends ilSaxParser
 	    return $this->result > 0;
 	}
 
+
+	/**
+	 * Normalize relative directories in a path.
+	 *
+	 * Source: https://github.com/thephpleague/flysystem/blob/master/src/Util.php#L96
+	 *  Workaround until we have
+	 *
+	 * @param string $path
+	 *
+	 * @throws LogicException
+	 *
+	 * @return string
+	 */
+	public static function normalizeRelativePath($path) {
+		$path = str_replace('\\', '/', $path);
+
+		while (preg_match('#\p{C}+|^\./#u', $path)) {
+			$path = preg_replace('#\p{C}+|^\./#u', '', $path);
+		}
+
+		$parts = [];
+		foreach (explode('/', $path) as $part) {
+			switch ($part) {
+				case '':
+				case '.':
+					break;
+				case '..':
+					array_pop($parts);
+					break;
+				default:
+					$parts[] = $part;
+					break;
+			}
+		}
+
+		return implode('/', $parts);
+	}
 }
-?>
