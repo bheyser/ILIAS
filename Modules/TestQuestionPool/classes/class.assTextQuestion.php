@@ -15,7 +15,6 @@ require_once './Modules/TestQuestionPool/interfaces/interface.ilObjAnswerScoring
  * @author	Björn Heyser <bheyser@databay.de>
  * @author	Maximilian Becker <mbecker@databay.de>
  *          
- * @version		$Id: class.assTextQuestion.php 58104 2015-02-18 16:36:48Z mjansen $
  * @version		$Id$
  * 
  * @ingroup		ModulesTestQuestionPool

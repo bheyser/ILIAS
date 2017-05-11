@@ -3422,13 +3422,6 @@ function getAnswerFeedbackPoints()
 			$this->removeTestActives($participantData->getActiveIds());
 		}
 	}
-	
-	public function removeTestResults(ilTestParticipantData $participantData)
-	{
-		if( count($participantData->getAnonymousActiveIds()) )
-		{
-			$this->removeTestResultsByActiveIds($participantData->getAnonymousActiveIds());
-		}
 
 	public function removeTestResultsByUserIds($userIds)
 	{
@@ -6380,7 +6373,7 @@ function getAnswerFeedbackPoints()
 		// processing time
 		$a_xml_writer->xmlStartTag("qtimetadatafield");
 		$a_xml_writer->xmlElement("fieldlabel", NULL, "processing_time");
-		$a_xml_writer->xmlElement("fieldentry", NULL, (int)$this->getProcessingTime());
+		$a_xml_writer->xmlElement("fieldentry", NULL, $this->getProcessingTime());
 		$a_xml_writer->xmlEndTag("qtimetadatafield");
 		
 		// enable_examview

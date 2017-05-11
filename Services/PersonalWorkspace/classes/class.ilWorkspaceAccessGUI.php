@@ -39,7 +39,7 @@ class ilWorkspaceAccessGUI
 	
 	function executeCommand()
 	{
-		global $ilTabs, $tpl, $ilErr;
+		global $ilTabs, $tpl;
 
 		$next_class = $this->ctrl->getNextClass($this);
 		$cmd = $this->ctrl->getCmd();

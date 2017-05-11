@@ -751,9 +751,6 @@ class ilObjCourse extends ilContainer implements ilMembershipRegistrationCodes
 		include_once('./Services/Container/classes/class.ilContainerSortingSettings.php');
 		$this->setOrderType(ilContainerSortingSettings::_lookupSortMode($this->getId()));
 
-		include_once('./Services/Container/classes/class.ilContainerSortingSettings.php');
-		$this->setOrderType(ilContainerSortingSettings::_lookupSortMode($this->getId()));
-
 		$this->__readSettings();
 	}
 	function create($a_upload = false)
@@ -1355,12 +1352,6 @@ class ilObjCourse extends ilContainer implements ilMembershipRegistrationCodes
 		$new_obj->setCancellationEnd($this->getCancellationEnd());
 		$new_obj->setWaitingListAutoFill($this->hasWaitingListAutoFill());
 		$new_obj->setSubscriptionMinMembers($this->getSubscriptionMinMembers());
-		
-		// #10271
-		$new_obj->setEnableCourseMap($this->getEnableCourseMap());
-		$new_obj->setLatitude($this->getLatitude());
-		$new_obj->setLongitude($this->getLongitude());
-		$new_obj->setLocationZoom($this->getLocationZoom());
 		
 		// #10271
 		$new_obj->setEnableCourseMap($this->getEnableCourseMap());

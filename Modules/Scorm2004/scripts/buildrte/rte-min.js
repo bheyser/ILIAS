@@ -3087,9 +3087,9 @@ function Runtime(cmiItem,onCommit,onTerminate,onDebug)
 {if(logActive)
 sendLogEntry(getMsecSinceStart(),'GetLastError',"","",String(error),"");return String(error);}
 function GetErrorString(param)
-{if(typeof param!=='string'&&typeof param!=='number')
-{var returnValueF='GetErrorString param must contain an error code and should be a string';if(logActive)
-sendLogEntry(getMsecSinceStart(),'GetErrorString',String(param),"",returnValueF,"");return returnValueF;}
+{if(typeof param!=='string')
+{if(logActive)
+sendLogEntry(getMsecSinceStart(),'GetErrorString',String(param),"","false",201);return setReturn(201,'GetErrorString param must be empty string','');}
 var e=Runtime.errors[param];var returnValue=e&&e.message?String(e.message).substr(0,255):'';if(logActive)
 sendLogEntry(getMsecSinceStart(),'GetErrorString',String(param),"",returnValue,0);return returnValue;}
 function GetDiagnostic(param)

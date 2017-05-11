@@ -106,33 +106,6 @@ class ilPublicUserProfileGUI
 		$this->backurl = $a_backurl;
 		$ilCtrl->setParameter($this, "back_url", rawurlencode($a_backurl));
 	}
-	
-	protected function handleBackUrl($a_is_portfolio = false)
-	{
-		global $ilMainMenu, $ilTabs, $lng;
-				
-		$back = ($this->getBackUrl() != "")
-			? $this->getBackUrl()
-			: $_GET["back_url"];
-		
-		if(!$back)
-		{
-			// #15984
-			$back = 'ilias.php?baseClass=ilPersonalDesktopGUI';
-		}
-
-		if((bool)$a_is_portfolio)
-		{
-			$ilMainMenu->setTopBarBack($back);
-		}
-		else
-		{
-			// #17838
-			$ilTabs->clearTargets();
-			$ilTabs->setBackTarget($lng->txt("back"),
-				$back);
-		}
-	}
 
 	/**
 	* Get Back Link URL.

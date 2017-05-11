@@ -546,7 +546,7 @@ proxy_status#:#Proxy
 proxy_status_info#:#Um einen Proxy in ILIAS zu verwenden (z.B. für Webfeeds und die Überprüfung von Weblinks) aktivieren Sie bitte dieses Häkchen.
 proxy_disabled#:#Proxy deaktiviert
 proxy_activated_configurated#:#Proxy aktiviert 
-info_text_proxy#:#Proxy-Einstellungen
+info_text_proxy#:#Proxy Einstellungen
 setup_process_step_proxy#:#Proxy
 step_proxy#:#Proxy
 db_innodb#:#MySQL (InnoDB)client_cloned#:#All files and settings of the source are copied into the client.###02 09 2012 new variable

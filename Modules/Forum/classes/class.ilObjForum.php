@@ -719,7 +719,7 @@ class ilObjForum extends ilObject
 		$this->deleteDraftsByForumId((int)$topData['top_pk']);
 			
 		return true;
-	}	
+	}
 
 	/**
 	 * @param int $forum_id

@@ -302,10 +302,6 @@ class ilObjBibliographicGUI extends ilObject2GUI implements ilDesktopItemHandlin
 		if ($ilAccess->checkAccess('edit_permission', "", $this->object->getRefId())) {
 			$ilTabs->addTab(self::TAB_ID_PERMISSIONS, $lng->txt("perm_settings"), $this->ctrl->getLinkTargetByClass("ilpermissiongui", "perm"));
 		}
-		// edit permissions
-		if ($ilAccess->checkAccess('edit_permission', "", $this->object->getRefId())) {
-			$ilTabs->addTab("id_permissions", $lng->txt("perm_settings"), $this->ctrl->getLinkTargetByClass("ilpermissiongui", "perm"));
-		}
 	}
 
 
@@ -477,21 +473,6 @@ class ilObjBibliographicGUI extends ilObject2GUI implements ilDesktopItemHandlin
 		$ilCtrl->redirect($this, "");
 	}
 
-	/**
-	 * @param string $change
-	 */
-	public function addNews($obj_id, $change = 'created') {
-		global $lng, $ilUser;
-
-		$ilNewsItem = new ilNewsItem();
-		$ilNewsItem->setTitle($lng->txt('news_title_' . $change));
-		$ilNewsItem->setPriority(NEWS_NOTICE);
-		$ilNewsItem->setContext($obj_id, $this->getType());
-		$ilNewsItem->setUserId($ilUser->getId());
-		$ilNewsItem->setVisibility(NEWS_USERS);
-		$ilNewsItem->setContentTextIsLangVar(false);
-		$ilNewsItem->create();
-	}
 
 	/**
 	 * @param string $change

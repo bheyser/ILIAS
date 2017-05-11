@@ -47,8 +47,6 @@ class ilExerciseDataSet extends ilDataSet
 			switch ($a_version)
 			{
 				case "4.1.0":
-				case "4.4.0":
-				case "5.0.0":
 					return array(
 						"Id" => "integer",
 						"Title" => "text",
@@ -296,24 +294,6 @@ class ilExerciseDataSet extends ilDataSet
 						" peer_text, peer_rating, peer_crit_cat, fb_file feedback_file, fb_cron feedback_cron, fb_date feedback_date".
 						" FROM exc_assignment".
 						" WHERE ".$ilDB->in("exc_id", $a_ids, false, "integer"));
-					break;
-				
-				case "4.4.0":
-					$this->getDirectDataFromQuery("SELECT id, exc_id exercise_id, time_stamp deadline,".
-						" instruction, title, start_time, mandatory, order_nr, peer, peer_min, peer_dl peer_deadline,".
-						" fb_file feedback_file, fb_cron feedback_cron, fb_date feedback_date".
-						" FROM exc_assignment".
-						" WHERE ".
-						$ilDB->in("exc_id", $a_ids, false, "integer"));
-					break;
-				
-				case "5.0.0":
-					$this->getDirectDataFromQuery("SELECT id, exc_id exercise_id, time_stamp deadline,".
-						" instruction, title, start_time, mandatory, order_nr, peer, peer_min, peer_dl peer_deadline,".
-						" peer_file, peer_prsl peer_personal, fb_file feedback_file, fb_cron feedback_cron, fb_date feedback_date".
-						" FROM exc_assignment".
-						" WHERE ".
-						$ilDB->in("exc_id", $a_ids, false, "integer"));
 					break;
 			}
 		}

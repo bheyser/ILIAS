@@ -2805,13 +2805,8 @@ function save()
 		//alert("Before save "+result.node.length);
 		//if (!result.node.length) {return;} 
 		if (typeof SOP!="undefined" && SOP==true) result=saveRequest(result);
-		else {
-			try{
-				result = this.config.store_url ? sendJSONRequest(this.config.store_url, result): {};
-			}catch(e){
-				return false;
-			}
-		}
+		else result = this.config.store_url ? sendJSONRequest(this.config.store_url, result): {};
+		
 		// added to synchronize the new data. it might update the navigation
 		updateNavForSequencing();
 

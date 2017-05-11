@@ -4388,33 +4388,6 @@ class ilUtil
 		return $ref_ids ? $ref_ids : array();
 	}
 
-
-	/**
-	 * Include Mathjax
-	 *
-	 * @param
-	 * @return
-	 */
-	function includeMathjax($a_tpl = null)
-	{
-		global $tpl;
-
-		if ($a_tpl == null)
-		{
-			$a_tpl = $tpl;
-		}
-
-		// - take care of html exports (-> see buildLatexImages)
-		include_once "./Services/Administration/classes/class.ilSetting.php";
-		$mathJaxSetting = new ilSetting("MathJax");
-		$use_mathjax = $mathJaxSetting->get("enable");
-		if ($use_mathjax)
-		{
-			$a_tpl->addJavaScript($mathJaxSetting->get("path_to_mathjax"));
-		}
-	}
-
-
 	/**
 	 * Include Mathjax
 	 * @deprecated
@@ -4575,7 +4548,7 @@ class ilUtil
 
 	 	return implode(', ', $array);
 	}
-	
+
 	public static function getFileSizeInfo()
 	{
 		$max_filesize = self::formatBytes(

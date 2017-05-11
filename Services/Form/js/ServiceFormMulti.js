@@ -36,7 +36,7 @@ var ilMultiFormValues = {
 		});
 		
 		// handle preset values (in hidden inputs)
-		$('input:hidden[id*="ilMultiValues"]').each(function() {		
+		$('input[id*="ilMultiValues"]').each(function() {		
 			ilMultiFormValues.handlePreset(this);				
 		});				
 	},	

@@ -5,14 +5,14 @@ require_once 'Services/Export/classes/class.ilExportGUI.php';
 
 /**
  * Export User Interface Class
- *
+ * 
  * @author       Michael Jansen <mjansen@databay.de>
  * @author       Maximilian Becker <mbecker@databay.de>
- *
+ *               
  * @version      $Id$
- *
+ *               
  * @ingroup      ModulesTest
- *
+ *               
  * @ilCtrl_Calls ilTestExportGUI:
  */
 class ilTestExportGUI extends ilExportGUI
@@ -76,25 +76,6 @@ class ilTestExportGUI extends ilExportGUI
 	}
 
 	/**
-	 * Create test export file
-	 */
-	public function createTestExportWithResults()
-	{
-		/**
-		 * @var $lng ilLanguage
-		 * @var $ilCtrl ilCtrl
-		 */
-		global $lng, $ilCtrl;
-
-		require_once 'Modules/Test/classes/class.ilTestExport.php';
-		$test_exp = new ilTestExport($this->obj, 'xml');
-		$test_exp->setResultExportingEnabledForTestExport(true);
-		$test_exp->buildExportFile();
-		ilUtil::sendSuccess($lng->txt('exp_file_created'), true);
-		$ilCtrl->redirectByClass('iltestexportgui');
-	}
-
-	/**
 	 * Create results export file
 	 */
 	public function createTestResultsExport()
@@ -140,7 +121,7 @@ class ilTestExportGUI extends ilExportGUI
 			include_once("./Modules/Test/classes/class.ilTestArchiver.php");
 			$test_id = $this->obj->getId();
 			$archive_exp = new ilTestArchiver($test_id);
-
+			
 			require_once './Modules/Test/classes/class.ilTestScoring.php';
 			$scoring = new ilTestScoring($this->obj);
 			$best_solution = $scoring->calculateBestSolutionForTest();
@@ -206,7 +187,7 @@ class ilTestExportGUI extends ilExportGUI
 		{
 			$archive_files = scandir($archive_dir);
 		}
-
+		
 		$export_dir   = $this->obj->getExportDirectory();
 		$export_files = $this->obj->getExportFiles($export_dir);
 		$data         = array();
@@ -233,10 +214,10 @@ class ilTestExportGUI extends ilExportGUI
 				}
 				$file_arr = explode("_", $exp_file);
 				array_push($data, array(
-					'file' => $exp_file,
-					'size' => filesize($archive_dir."/".$exp_file),
-					'timestamp' => $file_arr[4]
-				));
+									'file' => $exp_file,
+									'size' => filesize($archive_dir."/".$exp_file),
+									'timestamp' => $file_arr[4]
+								));
 			}
 		}
 
@@ -246,7 +227,7 @@ class ilTestExportGUI extends ilExportGUI
 		{
 			$table->addCustomColumn($c["txt"], $c["obj"], $c["func"]);
 		}
-
+		
 		foreach($this->getCustomMultiCommands() as $c)
 		{
 			$table->addCustomMultiCommand($c["txt"], "multi_".$c["func"]);
@@ -332,7 +313,7 @@ class ilTestExportGUI extends ilExportGUI
 		require_once 'class.ilTestArchiver.php';
 		$archiver = new ilTestArchiver($this->getParentGUI()->object->getId());
 		$archiveDir = $archiver->getZipExportDirectory();
-
+		
 		$export_dir = $this->obj->getExportDirectory();
 		foreach($_POST['file'] as $file)
 		{
@@ -343,7 +324,7 @@ class ilTestExportGUI extends ilExportGUI
 			{
 				continue;
 			}
-
+			
 			$exp_file = $export_dir.'/'.$file;
 			$arc_file = $archiveDir.'/'.$file;
 			$exp_dir = $export_dir.'/'.$dir;

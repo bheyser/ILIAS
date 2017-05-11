@@ -164,21 +164,16 @@ class ilUserPasswordManager
 	/**
 	 * @param  ilObjUser $user
 	 * @param  string    $raw
-	 * @param  bool      $migrate
 	 * @return bool
 	 */
-	public function verifyPassword(ilObjUser $user, $raw, $migrate = true)
+	public function verifyPassword(ilObjUser $user, $raw)
 	{
 		$encoder = $this->getEncoderFactory()->getEncoderByName($user->getPasswordEncodingType(), true);
 		if($this->getEncoderName() != $encoder->getName())
 		{
 			if($encoder->isPasswordValid($user->getPasswd(), $raw, $user->getPasswordSalt()))
 			{
-				if($migrate)
-				{
-					$user->resetPassword($raw, $raw);
-				}
-
+				$user->resetPassword($raw, $raw);
 				return true;
 			}
 		}

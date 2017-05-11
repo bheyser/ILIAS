@@ -14,8 +14,6 @@ class ilTestPassesSelector
 	
 	protected $testOBJ;
 	
-	private $adminModeEnabled;
-	
 	private $activeId;
 	
 	private $lastFinishedPass = null;
@@ -26,18 +24,6 @@ class ilTestPassesSelector
 	{
 		$this->db = $db;
 		$this->testOBJ = $testOBJ;
-
-		$this->adminModeEnabled = false;
-	}
-
-	public function isAdminModeEnabled()
-	{
-		return $this->adminModeEnabled;
-	}
-
-	public function setAdminModeEnabled($adminModeEnabled)
-	{
-		$this->adminModeEnabled = $adminModeEnabled;
 	}
 
 	public function getActiveId()

@@ -114,7 +114,7 @@ class ilCSVReader
 	public function getDataArrayFromCSVFile()
 	{
 		$row = 0;
-		
+
 		while (($line = fgetcsv($this->ptr_file, $this->length, $this->separator)) !== FALSE)
 		{
 			for ($col = 0; $col < count($line); $col++)

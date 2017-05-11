@@ -108,10 +108,6 @@ class ilObjCloudGUI extends ilObject2GUI {
 				$this->$cmd();
 
 				return;
-			case "infoScreen":
-				$this->prepareOutput();
-				$this->infoScreenObject();
-				return;
 			case "render" :
 				$this->addHeaderAction();
 				break;
@@ -120,7 +116,7 @@ class ilObjCloudGUI extends ilObject2GUI {
 		switch ($next_class) {
 			case "ilinfoscreengui":
 				$this->prepareOutput();
-				$this->infoScreen();
+				$this->infoScreenForward();
 				break;
 			case "ilcommonactiondispatchergui":
 				include_once("Services/Object/classes/class.ilCommonActionDispatcherGUI.php");
@@ -212,18 +208,10 @@ class ilObjCloudGUI extends ilObject2GUI {
 		include("ilias.php");
 	}
 
-	/**
-	 * this one is called from the info button in the repository
-	 * not very nice to set cmdClass/Cmd manually, if everything
-	 * works through ilCtrl in the future this may be changed
-	 */
-	function infoScreenObject()
-	{
-		$this->ctrl->setCmd("showSummary");
-		$this->ctrl->setCmdClass("ilinfoscreengui");
-		$this->infoScreen();
-	}
 
+	public function infoScreen() {
+		return false;
+	}
 
 
 	public function setTabs() {

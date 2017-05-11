@@ -503,7 +503,7 @@ class ilContainerObjectiveGUI extends ilContainerContentGUI
 							break;
 
 						case self::MATERIALS_OTHER:
-							$block_id = "oth";			
+							$block_id = "oth";
 							$this->renderer->addCustomBlock($block_id, $lng->txt('crs_other_resources'));					
 							break;
 						

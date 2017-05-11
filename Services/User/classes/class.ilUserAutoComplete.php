@@ -80,11 +80,6 @@ class ilUserAutoComplete
 	private $more_link_available = false;
 
 	/**
-	 * @var bool
-	 */
-	private $more_link_available = false;
-
-	/**
 	 * Default constructor
 	 */
 	public function __construct()

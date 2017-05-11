@@ -5,14 +5,14 @@ require_once 'class.ilPDFGenerationJob.php';
 
 /**
  * Class ilPDFGeneration
- *
+ * 
  * Dispatcher to route PDF-Generation jobs to the appropriate handling mechanism.
- *
+ * 
  * @author Maximilian Becker <mbecker@databay.de>
  * @version $Id$
- *
+ * 
  */
-class ilPDFGeneration
+class ilPDFGeneration 
 {
 	public static function doJob(ilPDFGenerationJob $job)
 	{

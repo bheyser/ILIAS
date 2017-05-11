@@ -4891,7 +4891,7 @@ class ilObjUser extends ilObject
 		{
 			$groups_and_courses_of_user[] = $row["obj_id"];
 		}
-		
+
 		require_once 'Services/TermsOfService/classes/class.ilTermsOfServiceHelper.php';
 		$tos_condition = '';
 		if(ilTermsOfServiceHelper::isEnabled())

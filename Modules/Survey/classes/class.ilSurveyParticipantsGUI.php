@@ -1033,7 +1033,7 @@ class ilSurveyParticipantsGUI
 			include_once "./Services/Utilities/classes/class.ilCSVReader.php";
 			$reader = new ilCSVReader();
 			$reader->open($_FILES['externalmails']['tmp_name']);
-			$data = $reader->getDataArrayFromCSVFile();			
+			$data = $reader->getDataArrayFromCSVFile();
 			$fields = array_shift($data);
 			foreach($fields as $idx => $field)
 			{

@@ -333,10 +333,6 @@ class ilSCORM13Player
 		// }
 		// $config['status'] = $status;
 
-			// $status['last_visited']=$this->get_last_visited($this->packageId, $ilUser->getID());
-		// }
-
-		// $config['status'] = $status;
 		return $config;
 	}
 

@@ -185,26 +185,6 @@ class ilToolbarGUI
 	{
 		return $this->prevent_double_submission;
 	}
-
-	/**
-	 * Set prevent double submission
-	 *
-	 * @param bool $a_val prevent double submission
-	 */
-	public function setPreventDoubleSubmission($a_val)
-	{
-		$this->prevent_double_submission = $a_val;
-	}
-
-	/**
-	 * Get prevent double submission
-	 *
-	 * @return bool prevent double submission
-	 */
-	public function getPreventDoubleSubmission()
-	{
-		return $this->prevent_double_submission;
-	}
 	
 	/**
 	* Add button to toolbar

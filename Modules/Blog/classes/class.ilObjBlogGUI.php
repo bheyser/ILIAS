@@ -483,9 +483,6 @@ class ilObjBlogGUI extends ilObject2GUI implements ilDesktopItemHandling
 				}				
 				$ilTabs->setBackTarget($lng->txt("back"),
 					$ilCtrl->getLinkTarget($this, ""));
-				
-				$style_sheet_id = ilObjStyleSheet::getEffectiveContentStyleId(
-					$this->object->getStyleSheetId(), "blog");
 					
 				$style_sheet_id = ilObjStyleSheet::getEffectiveContentStyleId(
 					$this->object->getStyleSheetId(), "blog");
@@ -2412,13 +2409,6 @@ class ilObjBlogGUI extends ilObject2GUI implements ilDesktopItemHandling
 			unset($a_right_content);
 		}			
 
-		// template: right content			
-		if($a_right_content)
-		{
-			$a_tpl->setRightContent($a_right_content);
-			unset($a_right_content);
-		}	
-		
 		$content = $a_tpl->get("DEFAULT", false, false, false,
 			true, true, true);		
 

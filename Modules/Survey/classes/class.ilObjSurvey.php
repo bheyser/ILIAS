@@ -4180,23 +4180,6 @@ class ilObjSurvey extends ilObject
 		}
 	}
 	
-	function bindSurveyCodeToUser($user_id, $code)
-	{
-		global $ilDB;
-		
-		if($user_id == ANONYMOUS_USER_ID)
-		{
-			return;
-		}
-		
-		if($this->checkSurveyCode($code))
-		{		
-			$ilDB->manipulate("UPDATE svy_anonymous".
-				" SET user_key = ".$ilDB->quote(md5($user_id), "text").
-				" WHERE survey_key = ".$ilDB->quote($code, "text"));
-		}
-	}
-	
 	function isAnonymizedParticipant($key)
 	{
 		global $ilDB;
@@ -5932,7 +5915,7 @@ class ilObjSurvey extends ilObject
 			// #16871
 			$user_ids = $this->getNotificationTargetUserIds(($this->getReminderTarget() == self::NOTIFICATION_INVITED_USERS));
 			if($user_ids)
-			{				
+			{
 				// gather participants who already finished
 				$finished_ids = array();
 				$set = $ilDB->query("SELECT user_fi FROM svy_finished".

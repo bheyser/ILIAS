@@ -3,14 +3,14 @@
 require_once 'Services/PDFGeneration/classes/class.ilHtmlToPdfTransformerFactory.php';
 /**
  * Class ilTestPDFGenerator
- *
+ * 
  * Class that handles PDF generation for test and assessment.
- *
+ * 
  * @author Maximilian Becker <mbecker@databay.de>
  * @version $Id$
- *
+ * 
  */
-class ilTestPDFGenerator
+class ilTestPDFGenerator 
 {
 	const PDF_OUTPUT_DOWNLOAD = 'D';
 	const PDF_OUTPUT_INLINE = 'I';
@@ -50,11 +50,11 @@ class ilTestPDFGenerator
 		
 		$invalid_elements = array();
 
-		#$script_elements     = $dom->getElementsByTagName('script');
-		#foreach($script_elements as $elm)
-		#{
-		#	$invalid_elements[] = $elm;
-		#}
+		$script_elements     = $dom->getElementsByTagName('script');
+		foreach($script_elements as $elm)
+		{
+			$invalid_elements[] = $elm;
+		}
 
 		foreach($invalid_elements as $elm)
 		{

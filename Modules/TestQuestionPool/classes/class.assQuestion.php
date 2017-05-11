@@ -273,10 +273,6 @@ abstract class assQuestion
 		'image/jpeg' => array('jpg', 'jpeg'), 'image/png' => array('png'), 'image/gif' => array('gif')
 	);
 	
-	protected static $allowedImageMaterialFileExtensionsByMimeType = array(
-		'image/jpeg' => array('jpg', 'jpeg'), 'image/png' => array('png'), 'image/gif' => array('gif')
-	);
-	
 	/**
 	* assQuestion constructor
 	*
@@ -412,43 +408,6 @@ abstract class assQuestion
 	public function setShuffler(ilArrayElementShuffler $shuffler)
 	{
 		$this->shuffler = $shuffler;
-	}
-
-	public static function isAllowedImageMimeType($mimeType)
-	{
-		return (bool)count(self::getAllowedFileExtensionsForMimeType($mimeType));
-	}
-
-	public static function fetchMimeTypeIdentifier($contentTypeString)
-	{
-		return current(explode(';', $contentTypeString));
-	}
-
-	public static function getAllowedFileExtensionsForMimeType($mimeType)
-	{
-		foreach(self::$allowedFileExtensionsByMimeType as $allowedMimeType => $extensions)
-		{
-			$rexCharsets = implode('|', self::$allowedCharsetsByMimeType[$allowedMimeType]);
-			$rexMimeType = preg_quote($allowedMimeType, '/');
-
-			$rex = '/^'.$rexMimeType.'(;(\s)*charset=('.$rexCharsets.'))*$/';
-
-			if( !preg_match($rex, $mimeType) )
-			{
-				continue;
-			}
-
-			return $extensions;
-		}
-
-		return array();
-	}
-
-	public static function isAllowedImageFileExtension($mimeType, $fileExtension)
-	{
-		return in_array(
-			strtolower($fileExtension), self::getAllowedFileExtensionsForMimeType($mimeType)
-		);
 	}
 
 	/**

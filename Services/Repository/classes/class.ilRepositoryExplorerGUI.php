@@ -336,7 +336,6 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 			if ($child["type"] == "itgr")
 			{
 				$g = $child["child"];
-				
 				$items = ilObjectActivation::getItemsByItemGroup($g);
 				if ($items)
 				{

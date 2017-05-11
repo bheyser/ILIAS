@@ -45,12 +45,11 @@ function Runtime(cmiItem, onCommit, onTerminate, onDebug)
 	 */	 
 	function GetErrorString(param) 
 	{
-		if (typeof param !== 'string' && typeof param !== 'number') 
+		if (typeof param !== 'string') 
 		{
-			var returnValueF = 'GetErrorString param must contain an error code and should be a string';
 			if (logActive)
-				sendLogEntry(getMsecSinceStart(),'GetErrorString',String(param),"",returnValueF,"");
-			return returnValueF;
+				sendLogEntry(getMsecSinceStart(),'GetErrorString',String(param),"","false",201);
+			return setReturn(201, 'GetErrorString param must be empty string', '');
 		}
 		var e = Runtime.errors[param];
 		var returnValue = e && e.message ? String(e.message).substr(0,255) : '';

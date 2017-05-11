@@ -12,7 +12,6 @@ require_once './Modules/TestQuestionPool/classes/class.ilUserQuestionResult.php'
 /**
  * Class for cloze tests
  * 
- * @version		$Id: class.assClozeTest.php 55009 2014-11-12 11:28:51Z mjansen $
  * @author		Helmut Schottmüller <helmut.schottmueller@mac.com> 
  * @author		Björn Heyser <bheyser@databay.de>
  * @author		Maximilian Becker <mbecker@databay.de>
@@ -1295,7 +1294,6 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 							}
 							$solutionSubmit[trim($matches[1])] = $value;
 						}
-						$answer_elements[] = array('value1' => trim($matches[1]), 'value2' => trim($value));
 					}
 				}
 			}

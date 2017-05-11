@@ -734,10 +734,6 @@ ADLSequencer.prototype =
 				valid = this.mSeqTree.getValidRequests();
 			}
 		}
-		else
-		{
-			this.mValidTermination = false;
-		}
 		
 		// Copy the set of valid requests to the return object
 		if (valid != null)
@@ -3145,12 +3141,6 @@ ADLSequencer.prototype =
 							}
 							walk = walk.getParent();
 						}
-					}
-					
-					// Create the selected child vector
-					for (var i = 0; i < all.length; i++)
-					{
-						lookUp = index_of(set, i);
 						
 						// Evaluate the common ancestor
 						if (process)
@@ -3656,22 +3646,13 @@ ADLSequencer.prototype =
 				{
 					oLaunch.mSeqNonContent = LAUNCH_COURSECOMPLETE;
 				}
-			}
-		}
-		else if (!done && direction == FLOW_BACKWARD)
-		{
-			// Can't walk off the root of the tree
-			if (parent != null)
-			{
-				// Is the activity a leaf or a cluster that should not be entered
-				if (!iFrom.hasChildren(false) || !iEnter)
+				else
 				{
 					if (this.mEndSession)
 					{
 						oLaunch.mSeqNonContent = LAUNCH_EXITSESSION;
 					}
-					
-					if (!done)
+					else
 					{
 						oLaunch.mSeqNonContent = LAUNCH_SEQ_BLOCKED;
 					}
@@ -3777,17 +3758,6 @@ ADLSequencer.prototype =
 				begin[begin.length] = walk;
 				walk = walk.getParent();
 			}
-		}
-		else
-		{
-			deliver = false;
-		}
-		
-		if (deliver)
-		{
-			// Check if the activity should be 'skipped'.
-			var result = null;
-			var skippedRules = ioFrom.at.getPreSeqRules();
 			
 			
 			if (begin.length > 0)
@@ -3862,23 +3832,6 @@ ADLSequencer.prototype =
 				// Walk up the tree
 				walk = walk.getParent();
 			}
-		}
-		return deliver;
-	},
-
-	processFlow: function (iDirection, iEnter, ioFrom, iConChoice)
-	{
-		// This method implements Flow Subprocess SB.2.3
-		sclog("FlowSub [SB.2.3]","seq");
-	   
-		var success = true;
-		var candidate = ioFrom.at;
-		
-		// Make sure we have somewhere to start from
-		if (candidate != null)
-		{
-			var walk = this.walkTree(iDirection, FLOW_NONE, iEnter,
-				candidate, !iConChoice);
 			
 			if (services.length > 0)
 			{
@@ -4717,8 +4670,6 @@ ADLSequencer.prototype =
 					forwardAct = j;
 					break;
 				}
-				
-				toc[toc.length] = temp;
 			}
 			
 			// Find the previous activity relative to the constrained activity.
@@ -4764,52 +4715,6 @@ ADLSequencer.prototype =
 							break;
 						}
 					}
-					else
-					{                 
-						// Check if this activity is prevented from activation
-						if (tempAct.getPreventActivation() && !tempAct.getIsActive() && tempAct.hasChildren(true))
-						{
-							if (cur != null)
-							{
-								if (tempAct != cur && cur.getParent() != tempAct)
-								{
-									prevented = tempTOC.mDepth;
-								}
-							}
-							// if cur is null, it won't be equal to the tempActivity or it's parent
-							else
-							{
-								prevented = tempTOC.mDepth;
-							}
-						}
-					} //else
-				} //else
-			} //if hidden =1
-		} //for
-		
-		// After the TOC has been created, mark activites unselectable
-		// if the Choice Exit control prevents them being selected
-		var noExit = null;
-		
-		if (this.mSeqTree.getFirstCandidate() != null)
-		{
-			walk =  this.mSeqTree.getFirstCandidate().getParent();
-		}
-		else
-		{
-			walk = null;
-		}
-		
-		// Walk up the active path looking for a non-exiting cluster
-		while (walk != null && noExit == null)
-		{
-			// We cannot choose any target that is outside of the activiy tree,
-			// so choice exit does not apply to the root of the tree
-			if (walk.getParent() != null)
-			{
-				if (!walk.getControlModeChoiceExit())
-				{
-					noExit = walk;
 				}
 				
 				if (idx != toc.length)
@@ -4890,43 +4795,6 @@ ADLSequencer.prototype =
 					if (depth >= temp.mDepth)
 					{
 						depth = -1;
-					}
-				}
-				
-				if (idx != toc.length)
-				{
-					forwardAct = idx;
-				}
-			}
-			
-			// Need to check if an ancestor of the first available
-			// activity is reachable from the first activity in the
-			// constrained range, via flow
-			var idx = (toc[backwardAct]).mParent;
-			var childID = (toc[backwardAct]).mID;
-			var avalParent = -1;
-			
-			while (idx != -1)
-			{
-				temp = toc[idx];
-				
-				// We're done checking as soon as we find an activity
-				// that is not available for choice
-				if (!temp.mIsSelectable || !temp.mIsEnabled)
-				{
-					break;
-				}
-				
-				// Need to check if we can "flow" from this activity
-				var check = this.mSeqTree.getActivity(temp.mID);
-				if (check.getControlModeFlow())
-				{
-					// First need to check if the constrained activity is the first child
-					if ((check.getChildren(false)[0]).getID() == childID)
-					{   
-						childID = (toc[idx]).mID;
-						avalParent = idx;
-						idx = (toc[avalParent]).mParent;
 					}
 					else
 					{
@@ -5122,9 +4990,6 @@ ADLSequencer.prototype =
 								parents[parents.length] = j;
 							}
 						}
-						
-						// This activity must be a descendent
-						tempTOC.mIsSelectable = false;
 					}
 				}
 			}
@@ -5177,7 +5042,7 @@ ADLSequencer.prototype =
 				temp = toc[i];
 				temp.mIsVisible = false;
 			}
-		}      
+		}
 		
 		return toc;
 	},
@@ -6578,7 +6443,6 @@ SeqActivity.prototype =
 					}
 				}
 			}
-			
 		}
 		return status;
 	},
@@ -9616,7 +9480,6 @@ SeqObjectiveTracking.prototype =
 				{
 					ret = this.mRawScore + '';
 				}
-				this.mSetOK = false;
 			}
 		}
 
@@ -13725,13 +13588,8 @@ function save()
 		//alert("Before save "+result.node.length);
 		//if (!result.node.length) {return;} 
 		if (typeof SOP!="undefined" && SOP==true) result=saveRequest(result);
-		else {
-			try{
-				result = this.config.store_url ? sendJSONRequest(this.config.store_url, result): {};
-			}catch(e){
-				return false;
-			}
-		}
+		else result = this.config.store_url ? sendJSONRequest(this.config.store_url, result): {};
+		
 		// added to synchronize the new data. it might update the navigation
 		updateNavForSequencing();
 
@@ -15113,12 +14971,11 @@ function Runtime(cmiItem, onCommit, onTerminate, onDebug)
 	 */	 
 	function GetErrorString(param) 
 	{
-		if (typeof param !== 'string' && typeof param !== 'number') 
+		if (typeof param !== 'string') 
 		{
-			var returnValueF = 'GetErrorString param must contain an error code and should be a string';
 			if (logActive)
-				sendLogEntry(getMsecSinceStart(),'GetErrorString',String(param),"",returnValueF,"");
-			return returnValueF;
+				sendLogEntry(getMsecSinceStart(),'GetErrorString',String(param),"","false",201);
+			return setReturn(201, 'GetErrorString param must be empty string', '');
 		}
 		var e = Runtime.errors[param];
 		var returnValue = e && e.message ? String(e.message).substr(0,255) : '';

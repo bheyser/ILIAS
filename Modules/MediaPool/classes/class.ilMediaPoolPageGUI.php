@@ -30,8 +30,6 @@ class ilMediaPoolPageGUI extends ilPageObjectGUI
 		include_once("./Services/Style/Content/classes/class.ilObjStyleSheet.php");
 		$this->setStyleId(ilObjStyleSheet::getEffectiveContentStyleId(0));
 
-		$this->setStyleId(ilObjStyleSheet::getEffectiveContentStyleId(0));
-
 		$this->setEditPreview(true);
 	}
 	

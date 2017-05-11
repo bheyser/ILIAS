@@ -5,7 +5,7 @@ require_once __DIR__ . '/class.ilAbstractHtmlToPdfTransformer.php';
 
 /**
  * Class ilTCPDFGenerator
- *
+ * 
  * @author Maximilian Becker <mbecker@databay.de>
  * @version $Id$
  */

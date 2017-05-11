@@ -5,14 +5,14 @@
  * Class ilTestArchiver
  *
  * Helper class to deal with the generation and maintenance of test archives.
- *
+ * 
  * @author Maximilian Becker <mbecker@databay.de>
- *
+ * 
  * @version $Id$
  *
  * @ingroup ModulesTest
  */
-class ilTestArchiver
+class ilTestArchiver 
 {
 	#region Constants / Config
 
@@ -93,7 +93,7 @@ class ilTestArchiver
 
 	/**
 	 * Returns a new ilTestArchiver object
-	 *
+	 * 
 	 * @param $test_obj_id integer Object-ID of the test, the archiver is instantiated for.
 	 */
 	public function __construct($test_obj_id)

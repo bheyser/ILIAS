@@ -163,12 +163,6 @@ class ilTestSubmissionReviewGUI extends ilTestServiceGUI
 			$template->touchBlock('prevent_double_form_subm');
 			$template->parseCurrentBlock();
 		}
-		else
-		{
-			$template->setCurrentBlock('prevent_double_form_subm');
-			$template->touchBlock('prevent_double_form_subm');
-			$template->parseCurrentBlock();
-		}
 
 		if($this->object->getShowExamviewHtml())
 		{

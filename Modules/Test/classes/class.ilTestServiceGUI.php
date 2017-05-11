@@ -99,24 +99,6 @@ class ilTestServiceGUI
 		$this->contextResultPresentation = $contextResultPresentation;
 	}
 	
-	private $contextWithinTestPass = false;
-
-	/**
-	 * @return boolean
-	 */
-	public function isContextWithinTestPass()
-	{
-		return $this->contextWithinTestPass;
-	}
-
-	/**
-	 * @param boolean $contextWithinTestPass
-	 */
-	public function setContextWithinTestPass($contextWithinTestPass)
-	{
-		$this->contextWithinTestPass = $contextWithinTestPass;
-	}
-	
 	/**
 	 * The constructor takes the test object reference as parameter 
 	 *
