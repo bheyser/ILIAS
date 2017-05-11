@@ -4775,7 +4775,9 @@ abstract class assQuestion
 		global $ilDB;
 
 		$next_id = $ilDB->nextId("tst_solutions");
-		
+		// uzk-patch: begin
+		$GLOBALS['uzk']['tst_solutions']['next_id'] = $next_id;
+		// uzk-patch: end
 		$fieldData = array(
 			"solution_id" => array("integer", $next_id),
 			"active_fi" => array("integer", $active_id),

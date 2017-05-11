@@ -64,6 +64,9 @@ class ilAssQuestionProcessLockerDb extends ilAssQuestionProcessLocker
 	{
 		return array(
 			array('name' => 'tst_solutions', 'sequence' => true)
+			// uzk-patch: begin
+			, array('name' => 'hist_answer_progress', 'sequence' => true)
+			// uzk-patch: end
 		);
 	}
 
