@@ -50,11 +50,11 @@ class ilTestPDFGenerator
 		
 		$invalid_elements = array();
 
-		$script_elements     = $dom->getElementsByTagName('script');
-		foreach($script_elements as $elm)
-		{
-			$invalid_elements[] = $elm;
-		}
+		#$script_elements     = $dom->getElementsByTagName('script');
+		#foreach($script_elements as $elm)
+		#{
+			#$invalid_elements[] = $elm;
+		#}
 
 		foreach($invalid_elements as $elm)
 		{
@@ -120,7 +120,7 @@ class ilTestPDFGenerator
 
 	protected static function getTemplatePath($a_filename)
 	{
-		$module_path = "Modules/Test/";
+			$module_path = "Modules/Test/";
 
 			// use ilStyleDefinition instead of account to get the current skin
 			include_once "Services/Style/System/classes/class.ilStyleDefinition.php";
@@ -130,10 +130,10 @@ class ilTestPDFGenerator
 					ilStyleDefinition::getCurrentSkin()."/".$module_path.basename($a_filename);
 			}
 
-		if($fname == "" || !file_exists($fname))
-		{
-			$fname = "./".$module_path."templates/default/".basename($a_filename);
-		}
+			if($fname == "" || !file_exists($fname))
+			{
+				$fname = "./".$module_path."templates/default/".basename($a_filename);
+			}
 		return $fname;
 	}
 

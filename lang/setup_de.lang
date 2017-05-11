@@ -49,12 +49,12 @@ clean_command#:#Clean-Kommando
 client_access_mode_changed#:#Zugangsstatus des Mandanten geändert
 client_data#:#Informationen über den Mandanten
 client_deleted#:#Mandant Gelöscht
-client_id#:#Mandanten-ID
+client_id#:#Mandanten ID
 client_info#:#Beschreibung
 client_institution#:#Institution
 client_login#:#Bei einem Mandanten anmelden
 client_name#:#Name
-client_setup_not_finished#:#Die Installation dieses Mandanten wurde noch nicht abgeschlossen.
+client_setup_not_finished#:#Die Installation dieses Mandanten wurde noch nicht abgeschlossen
 client#:#Mandant
 clients#:#Mandanten
 collation#:#Collation / Sortierfolge
@@ -97,7 +97,7 @@ datadir_path#:#Pfad zum Datenverzeichnis
 datadir_webspacedir_match#:#Datenverzeichnis und Webspaceverzeichnis sind gleich! Sie müssen für das Datenverzeichnis ein eigenes Verzeichnis angeben.
 date#:#Datum
 db_conn#:#Verbindungsdaten zur Datenbank
-db_control_structure_missing#:#Kontrollstruktur fehlt. (Siehe 'Details' » 'Tools')
+db_control_structure_missing#:#Kontrollstruktur fehlt. (Siehe 'Details' -> 'Tools')
 db_error_please_check#:#Bitte überprüfen Sie Datenbank Host, Benutzer und Passwort.
 db_host#:#Datenbankserver
 db_mysql#:#MySQL (MyISAM)
@@ -193,13 +193,13 @@ info_text_nic2#:#an info@ilias.de. Sie erhalten dann umgehend ihre Kennung per E
 info_text_nic3#:#Sie haben Ihre Installation registriert. Ihre Kennung ist
 info_text_password#:#Hier könnnen Sie das Administrator-Password für das Setup-Programm ändern.
 info_text_pathes#:#ILIAS ist mandantenfähig. Sie können mit einer Installation mehrere ILIAS-Instanzen (Mandanten) betreiben, die jeweils eigene Datenbanken und Datenverzeichnisse nutzen. Geben Sie bitte ein Verzeichnis für Daten ausserhalb des Webspaces, den Pfad der Log-Datei, sowie die Pfade zu den unten aufgeführten Drittanbieter-Programmen an. Diese Einstellung sind für alle Mandanten gültig.<br/><br/>Bei aktivierten Safe Mode müssen Sie bei den Drittanbieter-Programmen nur die auszuführende Datei ohne den Pfad angeben. Diese Dateien müssen im geschützten Basisverzeichnis von PHP liegen (ggf. per Symlink).
-ini_client_id_exists#:#Diese Mandanten-ID ist bereits vergeben. Wählen Sie eine andere Kennung
-ini_client_id_invalid#:#Die gewählte Mandanten-ID enthält ungültige Zeichen.
-ini_client_id_no_change#:#Die Mandanten-ID kann nicht mehr geändert werden, nachdem die Datenverzeichnisse angelegt wurden.
-ini_client_id_too_long#:#Mandanten-ID zu lang
-ini_client_id_too_short#:#Mandanten-ID zu kurz
+ini_client_id_exists#:#Diese Mandanten ID ist bereits vergeben. Wählen Sie eine andere Kennung
+ini_client_id_invalid#:#Die gewählte Mandanten ID enthält ungültige Zeichen.
+ini_client_id_no_change#:#Die Mandanten ID kann nicht mehr geändert werden, nachdem die Datenverzeichnisse angelegt wurden.
+ini_client_id_too_long#:#Mandanten ID zu lang
+ini_client_id_too_short#:#Mandanten ID zu kurz
 ini_db_name_exists#:#exisitiert bereits! Bitte wählen Sie einen anderen Datenbanknamen
-ini_no_client_id#:#Keine Mandanten-ID angegeben
+ini_no_client_id#:#Keine Mandanten ID angegeben
 ini_no_db_host#:#Keinen Host angegeben
 ini_no_db_name#:#Keine Datenbanknamen angegeben
 ini_no_db_user#:#Geben Sie einen Datenbankbenutzer an
@@ -217,7 +217,7 @@ inst_name#:#Installationsname
 install#:#installieren
 installation#:#Installation
 installed_local#:#Mit lokaler Sprachdatei installiert
-installed#:#Installiert
+installed#:#installiert
 institution#:#Institution
 intro_install#:#Das ist das Hauptmenü von ILIAS-Setup. Hier können Sie Schritt für Schritt die Installation von ILIAS durchführen.
 ip_address#:#IP-Adresse
@@ -244,7 +244,6 @@ lang_nl#:#Niederländisch
 lang_no#:#Norwegisch
 lang_none_installed#:#Keine Sprache installiert
 lang_not_installed_default#:#Die als Standard ausgewählte Sprache ist nicht installiert!
-lang_fa#:#Persisch (Farsi)
 lang_pl#:#Polnisch
 lang_pt#:#Portugiesisch
 lang_ro#:#Romänisch
@@ -257,7 +256,7 @@ lang_uk#:#Ukrainisch
 lang_vi#:#Vietnamesisch
 lang_xx#:#benutzerdefiniert
 lang_zh#:#Chinesisch
-langs_not_valid_not_installed#:#Folgende Sprachen konnten wegen fehlerhafter Sprachdateien nicht installiert werden:
+langs_not_valid_not_installed#:#Folgende Sprachen wurden nicht installiert, aufgrund fehlerhafter Sprachdateien
 language#:#Sprache
 languages_installed#:#Sprache(n) installiert
 languages#:#Sprachen
@@ -285,7 +284,7 @@ msg_input_is_required#:#Notwendige Angabe! Bitte einen Wert eintragen.
 mysql_4_0_x_or_lower_mode#:#MySQL 4.0.x oder niedriger
 mysql_4_1_x_or_higher_mode#:#MySQL 4.1.x oder höher
 name#:#Name
-need_mysql_4_1_or_higher#:#Diese MySQL-Version wird leider nicht unterstützt. Bitte installieren Sie MySQL 4.1.x oder höher.
+need_mysql_4_1_or_higher#:#Diese MySQL Version wird leider nicht unterstüzt. Bitte installieren Sie MysQL 4.1.x oder höher.
 new_client#:#Neuer Mandant
 new#:#neu
 next_update_break_info#:#Je nach Grösse Ihrer Installation ist es nicht ratsam, das Update in einem Durchlauf auszuführen.
@@ -296,7 +295,7 @@ nic_reg_disable_comment#:#(später registrieren)
 nic_reg_disable_info#:#Sie können sich zu einem späteren Zeitpunkt jederzeit registrieren.
 nic_reg_disable#:#Keine Registrierung
 nic_reg_disabled#:#NIC-Registrierung abgeschaltet
-nic_reg_email#:#Per E-Mail
+nic_reg_email#:#Per Email
 nic_reg_enabled#:#NIC-ID erhalten!
 nic_reg_enter_checksum#:#Übermittelte Prüfsumme
 nic_reg_enter_correct_id#:#Bitte geben Sie die korrekte NIC-ID an.
@@ -370,7 +369,7 @@ pre_folder_write_error#:#Das ILIAS-Verzeichnis ist nicht schreibbar. Bitte über
 pre_folder_write#:#Schreibbares ILIAS-Verzeichnis
 pre_gd_missing#:#Bitte aktivieren Sie die GD-Unterstützung in Ihrer PHP-Installation. Siehe <a target="_blank" href="%s">PHP Dokumentation</a>.
 pre_gd#:#GD-Unterstützung
-pre_intro#:#Die Setup-Routine prüft, ob alle Voraussetzungen für die Installation und den Betrieb von ILIAS erfüllt sind.
+pre_intro#:#Die Setup-Routine prüft, ob alle Vorraussetzungen für die Installation und den Betrieb von ILIAS erfüllt sind.
 pre_javascript_comment#:#Sie können ILIAS auch ohne Javascript nutzen. Allerdings sind einige Komfortfunktion in der Bedienung deaktiviert.
 pre_javascript_enabled#:#Javascript ist eingeschaltet
 pre_memory_limit_recommend#:#Wir empfehlen einen Wert von 80M oder mehr.
@@ -384,7 +383,7 @@ pre_php_version_4.1#:#Einige PEAR Module arbeiten nicht zufriedenstellend unter 
 pre_php_version_4.2#:#Die DOMXML und XSLT Unterstüzung arbeiten nicht zufriedenstellend unter dieser PHP-Version.
 pre_php_version_4#:#Diese PHP-Version wird nicht unterstützt. Bitte installieren Sie PHP 5.2.1 oder höher.
 pre_php_version_5#:#ILIAS wurde noch nicht getestet mit PHP 5. Benutzung also auf eigene Gefahr.
-pre_php_version_too_low#:#Ihre PHP-Version wird nicht unterstützt. Wir empfehlen die Nutzung von PHP 5.2.1 oder höher.
+pre_php_version_too_low#:#Your PHP version is not supported. We recommend to use PHP 5.2.1 or higher. PHP 6 has not been tested yet.###24 07 2009 new variable
 pre_php_version_unknown#:#Unbekannte PHP-Version. Benutzung auf eigene Gefahr.
 pre_php_version#:#PHP-Version
 pre_php#:#PHP Version

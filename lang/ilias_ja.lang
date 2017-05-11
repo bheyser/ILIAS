@@ -816,8 +816,8 @@ assessment#:#grading_obligations_answered_msg#:#全ての必須問題を解答�
 assessment#:#grading_obligations_listlabel#:#必須問題
 assessment#:#grading_obligations_missing_listentry#:#オープン
 assessment#:#grading_obligations_missing_msg#:#必須問題に全てに解答していません。
-assessment#:#grading_status_failed_msg#:#残念ながらテストに <b>不合格です。</b> 
-assessment#:#grading_status_passed_msg#:#おめでとうございます。テスト <b>合格です。</b> 
+assessment#:#grading_status_failed_msg#:#残念ながらテストに <b>不合格です。</b>
+assessment#:#grading_status_passed_msg#:#おめでとうございます。テスト <b>合格です。</b>
 assessment#:#graphical_answers#:#グラフィック形式による答案のサポート
 assessment#:#graphical_answers_hide#:#グラフィック形式による答案のサポートを表示しない
 assessment#:#graphical_answers_show#:#グラフィック形式による答案のサポートを表示する
