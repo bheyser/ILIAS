@@ -232,12 +232,6 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
 		$this->tpl->setCurrentBlock('test_nav_toolbar');
 		$this->tpl->setVariable('TEST_NAV_TOOLBAR', $toolbarGUI->getHTML());
 		$this->tpl->parseCurrentBlock();
-		
-		// uzk-patch: begin
-		$this->tpl->setCurrentBlock( "next_2" );
-		$this->tpl->setVariable( "BTN_NEXT", $button2->render());
-		$this->tpl->parseCurrentBlock();
-		// uzk-patch: end
 	}
 
 	protected function populateQuestionNavigation($sequenceElement, $disabled)
@@ -2751,12 +2745,4 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
 		
 		return $fixedSeed;
 	}
-	// uzk-patch: begin
-	protected function saveworkingstateCmd()
-	{
-		$this->saveQuestionSolution();
-		$this->ctrl->setParameter($this, "activecommand", "saveworkingstate");
-		$this->ctrl->redirect($this, "redirectQuestion");
-	}
-	// uzk-patch: end
 }
