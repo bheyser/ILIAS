@@ -40,14 +40,14 @@ class ilContainerLinkListGUI
 	* Constructor
 	* @access public
 	*/
-	function ilContainerLinkListGUI()
+	function __construct()
 	{
 		global $ilCtrl;
 		
 		$this->ctrl =& $ilCtrl;
 	}
 
-	function &executeCommand()
+	function executeCommand()
 	{
 		$next_class = $this->ctrl->getNextClass($this);
 		$cmd = $this->ctrl->getCmd();
@@ -71,14 +71,14 @@ class ilContainerLinkListGUI
 			"Services/Container");
 		
 		$type_ordering = array(
-			"cat", "fold", "crs", "icrs", "icla", "grp", "chat", "frm", "lres",
+			"cat", "fold", "crs", "grp", "chat", "frm", "lres",
 			"glo", "webr", "file", "exc",
 			"tst", "svy", "mep", "qpl", "spl");
 			
 		$childs = $tree->getChilds($_GET["ref_id"]);
 		foreach($childs as $child)
 		{
-			if (in_array($child["type"], array("lm", "dbk", "sahs", "htlm")))
+			if (in_array($child["type"], array("lm", "sahs", "htlm")))
 			{
 				$cnt["lres"]++;
 			}

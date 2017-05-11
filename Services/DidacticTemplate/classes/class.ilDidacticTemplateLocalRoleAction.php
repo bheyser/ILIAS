@@ -65,14 +65,24 @@ class ilDidacticTemplateLocalRoleAction extends ilDidacticTemplateAction
 		
 		include_once './Services/AccessControl/classes/class.ilObjRole.php';
 		$role = new ilObjRole();
-		$role->setTitle(ilObject::_lookupTitle($this->getRoleTemplateId()));
+		$role->setTitle(ilObject::_lookupTitle($this->getRoleTemplateId()). '_' . $this->getRefId());
 		$role->setDescription(ilObject::_lookupDescription($this->getRoleTemplateId()));
 		$role->create();
 		$rbacadmin->assignRoleToFolder($role->getId(),$source->getRefId(),"y");
 
-		$GLOBALS['ilLog']->write(__METHOD__.': Using rolt: '.$this->getRoleTemplateId().' with title "'.ilObject::_lookupTitle($this->getRoleTemplateId().'". '));
+		ilLoggerFactory::getLogger('otpl')->info('Using rolt: '.$this->getRoleTemplateId().' with title "'.ilObject::_lookupTitle($this->getRoleTemplateId().'". '));
 
 		// Copy template permissions
+		
+		ilLoggerFactory::getLogger('otpl')->debug(
+				'Copy role template permissions '.
+				'tpl_id: '.$this->getRoleTemplateId().' '.
+				'parent: '.ROLE_FOLDER_ID.' '.
+				'role_id: '.$role->getId().' '.
+				'role_parent: '.$source->getRefId()
+		);
+		
+		
 		$rbacadmin->copyRoleTemplatePermissions(
 			$this->getRoleTemplateId(),
 			ROLE_FOLDER_ID,
@@ -144,7 +154,6 @@ class ilDidacticTemplateLocalRoleAction extends ilDidacticTemplateAction
 		$writer->xmlStartTag('localRoleAction');
 
 
-
 		$il_id = 'il_'.IL_INST_ID.'_'.ilObject::_lookupType($this->getRoleTemplateId()).'_'.$this->getRoleTemplateId();
 
 		$writer->xmlStartTag(
@@ -178,7 +187,7 @@ class ilDidacticTemplateLocalRoleAction extends ilDidacticTemplateAction
 		$query = 'SELECT * FROM didactic_tpl_alr '.
 			'WHERE action_id = '.$ilDB->quote($this->getActionId(),'integer');
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$this->setRoleTemplateId($row->role_template_id);
 		}

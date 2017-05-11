@@ -38,6 +38,11 @@ abstract class SurveyQuestionGUI
 	protected $ctrl;
 	protected $cumulated; // [array]	
 	protected $parent_url;
+
+    /**
+     * @var ilLogger
+     */
+    protected $log;
 	
 	public $object;
 		
@@ -58,7 +63,9 @@ abstract class SurveyQuestionGUI
 		{
 			$this->object->loadFromDb($a_id);
 		}
-	}
+        $this->log = ilLoggerFactory::getLogger('svy');
+
+    }
 	
 	abstract protected function initObject();
 	abstract public function setQuestionTabs();
@@ -87,7 +94,7 @@ abstract class SurveyQuestionGUI
 	* @return object The alias to the question object
 	* @access public
 	*/
-	static function &_getQuestionGUI($questiontype, $question_id = -1)
+	static function _getQuestionGUI($questiontype, $question_id = -1)
 	{
 		include_once "./Modules/SurveyQuestionPool/classes/class.SurveyQuestion.php";
 		if ((!$questiontype) and ($question_id > 0))
@@ -100,7 +107,7 @@ abstract class SurveyQuestionGUI
 		return $question;
 	}
 	
-	function _getGUIClassNameForId($a_q_id)
+	static function _getGUIClassNameForId($a_q_id)
 	{
 		include_once "./Modules/SurveyQuestionPool/classes/class.SurveyQuestion.php";
 		include_once "./Modules/SurveyQuestionPool/classes/class.SurveyQuestionGUI.php";
@@ -109,7 +116,7 @@ abstract class SurveyQuestionGUI
 		return $class_name;
 	}
 
-	function _getClassNameForQType($q_type)
+	static function _getClassNameForQType($q_type)
 	{
 		return $q_type;
 	}
@@ -358,7 +365,7 @@ abstract class SurveyQuestionGUI
 			$ilUser->setPref("svy_lastquestiontype", $this->object->getQuestionType());
 			$ilUser->writePref("svy_lastquestiontype", $this->object->getQuestionType());				
 
-			$originalexists = $this->object->_questionExists($this->object->original_id);
+			$originalexists = SurveyQuestion::_questionExists($this->object->original_id);
 			$this->ctrl->setParameter($this, "q_id", $this->object->getId());
 			include_once "./Modules/SurveyQuestionPool/classes/class.SurveyQuestion.php";
 
@@ -545,6 +552,29 @@ abstract class SurveyQuestionGUI
 				
 	abstract public function getPrintView($question_title = 1, $show_questiontext = 1);
 	
+	protected function getPrintViewQuestionTitle($question_title = 1)
+	{
+		switch ($question_title)
+		{
+			case 1:
+				$title = ilUtil::prepareFormOutput($this->object->getTitle());
+				break;
+
+			case 2:
+				$title = ilUtil::prepareFormOutput($this->object->getLabel());
+				break;
+
+			case 3:
+				$title = ilUtil::prepareFormOutput($this->object->getTitle());
+				if(trim($this->object->getLabel()))
+				{
+					$title .= ' <span class="questionLabel">('.ilUtil::prepareFormOutput($this->object->getLabel()).')</span>';
+				}
+				break;
+		}
+		return $title;
+	}
+	
 	/**
 	* Creates a preview of the question
 	*
@@ -607,76 +637,7 @@ abstract class SurveyQuestionGUI
 			return $template->get();
 		}
 		return "";
-	}	
-
-	
-	//
-	// EVALUATION
-	//
-	
-	abstract public function getCumulatedResultsDetails($survey_id, $counter, $finished_ids);
-	
-	protected function renderChart($a_id, $a_variables)
-	{
-		include_once "Services/Chart/classes/class.ilChart.php";
-		$chart = ilChart::getInstanceByType(ilChart::TYPE_GRID, $a_id);
-		$chart->setsize(700, 400);
-
-		$legend = new ilChartLegend();
-		$chart->setLegend($legend);	
-		$chart->setYAxisToInteger(true);
-		
-		$data = $chart->getDataInstance(ilChartGrid::DATA_BARS);
-		$data->setLabel($this->lng->txt("users_answered"));
-		$data->setBarOptions(0.5, "center");
-		
-		$max = 5;
-		
-		if(sizeof($a_variables) <= $max)
-		{
-			if($a_variables)
-			{
-				$labels = array();
-				foreach($a_variables as $idx => $points)
-				{			
-					$data->addPoint($idx, $points["selected"]);		
-					$labels[$idx] = ($idx+1).". ".ilUtil::prepareFormOutput($points["title"]);
-				}
-				$chart->addData($data);
-
-				$chart->setTicks($labels, false, true);
-			}
-
-			return "<div style=\"margin:10px\">".$chart->getHTML()."</div>";		
-		}
-		else
-		{
-			$chart_legend = array();			
-			$labels = array();
-			foreach($a_variables as $idx => $points)
-			{			
-				$data->addPoint($idx, $points["selected"]);		
-				$labels[$idx] = ($idx+1).".";				
-				$chart_legend[($idx+1)] = ilUtil::prepareFormOutput($points["title"]);
-			}
-			$chart->addData($data);
-						
-			$chart->setTicks($labels, false, true);
-			
-			$legend = "<table>";
-			foreach($chart_legend as $number => $caption)
-			{
-				$legend .= "<tr valign=\"top\"><td>".$number.".</td><td>".$caption."</td></tr>";
-			}
-			$legend .= "</table>";
-
-			return "<div style=\"margin:10px\"><table><tr valign=\"bottom\"><td>".
-				$chart->getHTML()."</td><td class=\"small\" style=\"padding-left:15px\">".
-				$legend."</td></tr></table></div>";					
-		}				
 	}
-	
-	
 	
 	// 
 	// MATERIAL
@@ -801,9 +762,9 @@ abstract class SurveyQuestionGUI
 			}
 
 			$exp = new ilMaterialExplorer($this, 'addMaterial', $_SESSION["link_new_type"]);
-			$exp->setPathOpen((int)$_GET["ref_id"]);			
+			$exp->setPathOpen((int)$_GET["ref_id"]);
 			if (!$exp->handleCommand())
-			{			
+			{	
 				include_once "Services/UIComponent/Panel/classes/class.ilPanelGUI.php";
 				$panel = ilPanelGUI::getInstance();
 				$panel->setHeading($this->lng->txt("select_object_to_link"));
@@ -868,7 +829,7 @@ abstract class SurveyQuestionGUI
 			case "pg":
 				include_once "./Modules/LearningModule/classes/class.ilLMPageObject.php";
 				include_once("./Modules/LearningModule/classes/class.ilObjContentObjectGUI.php");
-				$cont_obj_gui =& new ilObjContentObjectGUI("", $source_id, true);
+				$cont_obj_gui = new ilObjContentObjectGUI("", $source_id, true);
 				$cont_obj = $cont_obj_gui->object;
 				$pages = ilLMPageObject::getPageList($cont_obj->getId());										
 				foreach($pages as $page)
@@ -886,7 +847,7 @@ abstract class SurveyQuestionGUI
 				
 			case "st":				
 				include_once("./Modules/LearningModule/classes/class.ilObjContentObjectGUI.php");
-				$cont_obj_gui =& new ilObjContentObjectGUI("", $source_id, true);
+				$cont_obj_gui = new ilObjContentObjectGUI("", $source_id, true);
 				$cont_obj = $cont_obj_gui->object;
 				// get all chapters
 				$ctree =& $cont_obj->getLMTree();
@@ -906,7 +867,7 @@ abstract class SurveyQuestionGUI
 				
 			case "glo":				
 				include_once "./Modules/Glossary/classes/class.ilObjGlossary.php";
-				$glossary =& new ilObjGlossary($source_id, true);
+				$glossary = new ilObjGlossary($source_id, true);
 				// get all glossary items
 				$terms = $glossary->getTermList();				
 				foreach($terms as $term)
@@ -1152,6 +1113,59 @@ abstract class SurveyQuestionGUI
 		}
 		
 		$this->savePhrase(true);
+	}
+	
+	protected function renderStatisticsDetailsTable(array $a_head, array $a_rows, array $a_foot = null)
+	{
+		$html = array();
+		$html[] = '<div class="ilTableOuter table-responsive">';
+			$html[] = '<table class="table table-striped">';
+
+				$html[] = "<thead>";
+				$html[] = "<tr>";
+				foreach($a_head as $col)
+				{
+					$col = trim($col);
+					$html[] = "<th>";
+					$html[] = ($col != "") ? $col : "&nbsp;";
+					$html[] = "</th>";
+				}
+				$html[] = "</tr>";
+				$html[] = "</thead>";
+
+				$html[] = "<tbody>";
+				foreach($a_rows as $row)
+				{
+					$html[] = "<tr>";
+					foreach($row as $col)
+					{
+						$col = trim($col);
+						$html[] = "<td>";
+						$html[] = ($col != "") ? $col : "&nbsp;";
+						$html[] = "</td>";
+					}
+					$html[] = "</tr>";
+				}
+				$html[] = "</tbody>";
+				
+				if($a_foot)
+				{
+					$html[] = "<tfoot>";
+					$html[] = "<tr>";
+					foreach($a_foot as $col)
+					{
+						$col = trim($col);
+						$html[] = "<td>";
+						$html[] = ($col != "") ? $col : "&nbsp;";
+						$html[] = "</td>";
+					}
+					$html[] = "</tr>";
+					$html[] = "</tfoot>";
+				}
+				
+			$html[] = "</table>";
+		$html[] = "</div>";
+		return implode("\n", $html);
 	}
 }
 

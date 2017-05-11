@@ -18,11 +18,10 @@ require_once './Modules/Test/classes/inc.AssessmentConstants.php';
  * @version	$Id$
  *          
  * @ingroup ModulesTestQuestionPool
+ * @ilCtrl_Calls assSingleChoiceGUI: ilFormPropertyDispatchGUI
  */
 class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringAdjustable, ilGuiAnswerScoringAdjustable
 {
-	var $choiceKeys;
-
 	/**
 	 * assSingleChoiceGUI constructor
 	 *
@@ -42,13 +41,9 @@ class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 	}
 
 	/**
-	 * Evaluates a posted edit form and writes the form data in the question object
-	 *
-	 * @param bool $always
-	 *
-	 * @return integer A positive value, if one of the required fields wasn't set, else 0
+	 * {@inheritdoc}
 	 */
-	public function writePostData($always = false)
+	protected function writePostData($always = false)
 	{
 		$hasErrors = (!$always) ? $this->editQuestion(true) : false;
 		if (!$hasErrors)
@@ -64,6 +59,34 @@ class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 	}
 
 	/**
+	 * Get the single/multiline editing of answers
+	 * - The settings of an already saved question is preferred
+	 * - A new question will use the setting of the last edited question by the user
+	 * @param bool	$checkonly	get the setting for checking a POST
+	 * @return bool
+	 */
+	protected function getEditAnswersSingleLine($checkonly = false)
+	{
+		if ($checkonly)
+		{
+			// form posting is checked
+			return ($_POST['types'] == 0) ? true : false;
+		}
+
+		$lastChange = $this->object->getLastChange();
+		if (empty($lastChange) && !isset($_POST['types']))
+		{
+			// a new question is edited
+			return $this->object->getMultilineAnswerSetting() ? false : true;
+		}
+		else
+		{
+			// a saved question is edited
+			return $this->object->isSingleline;
+		}
+	}
+
+	/**
 	 * Creates an output of the edit form for the question
 	 *
 	 */
@@ -74,10 +97,11 @@ class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 
 		include_once("./Services/Form/classes/class.ilPropertyFormGUI.php");
 		$form = new ilPropertyFormGUI();
+		$this->editForm = $form;
+
 		$form->setFormAction($this->ctrl->getFormAction($this));
 		$form->setTitle($this->outQuestionType());
-		$isSingleline = ($this->object->lastChange == 0 && !array_key_exists('types', $_POST)) ? (($this->object->getMultilineAnswerSetting()) ? false : true) : $this->object->isSingleline;
-		if ($checkonly) $isSingleline = ($_POST['types'] == 0) ? true : false;
+		$isSingleline = $this->getEditAnswersSingleLine($checkonly);
 		if ($isSingleline)
 		{
 			$form->setMultipart(TRUE);
@@ -290,16 +314,31 @@ class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 			}
 			$template->setCurrentBlock("answer_row");
 			$template->setVariable("ANSWER_TEXT", $this->object->prepareTextareaOutput($answer->getAnswertext(), TRUE));
-			if (strcmp($user_solution, $answer_id) == 0)
+			
+			if( $this->isPdfOutputMode() || $this->isUserInputOutputMode() )
 			{
-				$template->setVariable("SOLUTION_IMAGE", ilUtil::getHtmlPath(ilUtil::getImagePath("radiobutton_checked.png")));
-				$template->setVariable("SOLUTION_ALT", $this->lng->txt("checked"));
+				if (strcmp($user_solution, $answer_id) == 0)
+				{
+					$template->setVariable("SOLUTION_IMAGE", ilUtil::getHtmlPath(ilUtil::getImagePath("radiobutton_checked.png")));
+					$template->setVariable("SOLUTION_ALT", $this->lng->txt("checked"));
+				}
+				else
+				{
+					$template->setVariable("SOLUTION_IMAGE", ilUtil::getHtmlPath(ilUtil::getImagePath("radiobutton_unchecked.png")));
+					$template->setVariable("SOLUTION_ALT", $this->lng->txt("unchecked"));
+				}
 			}
 			else
 			{
-				$template->setVariable("SOLUTION_IMAGE", ilUtil::getHtmlPath(ilUtil::getImagePath("radiobutton_unchecked.png")));
-				$template->setVariable("SOLUTION_ALT", $this->lng->txt("unchecked"));
+				$template->setVariable('QID', $this->object->getId());
+				$template->setVariable('SUFFIX', $show_correct_solution ? 'bestsolution' : 'usersolution');
+				$template->setVariable('SOLUTION_VALUE', $answer_id);
+				if (strcmp($user_solution, $answer_id) == 0)
+				{
+					$template->setVariable('SOLUTION_CHECKED', 'checked');
+				}
 			}
+			
 			if ($result_output)
 			{
 				$points = $this->object->answers[$answer_id]->getPoints();
@@ -314,7 +353,7 @@ class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 			$template->setVariable("QUESTIONTEXT", $this->object->prepareTextareaOutput($questiontext, TRUE));
 		}
 		$questionoutput = $template->get();
-		$feedback = ($show_feedback) ? $this->getAnswerFeedbackOutput($active_id, $pass) : "";
+		$feedback = ($show_feedback && !$this->isTestPresentationContext()) ? $this->getAnswerFeedbackOutput($active_id, $pass) : "";
 		if (strlen($feedback)) $solutiontemplate->setVariable("FEEDBACK", $this->object->prepareTextareaOutput( $feedback, true ));
 		$solutiontemplate->setVariable("SOLUTION_OUTPUT", $questionoutput);
 
@@ -419,7 +458,7 @@ class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 			{
 				if (is_null($pass)) $pass = ilObjTest::_getPass($active_id);
 			}
-			$solutions =& $this->object->getSolutionValues($active_id, $pass);
+			$solutions = $this->object->getUserSolutionPreferingIntermediate($active_id, $pass);
 			foreach ($solutions as $idx => $solution_value)
 			{
 				$user_solution = $solution_value["value1"];
@@ -601,20 +640,14 @@ class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 	 */
 	function getChoiceKeys()
 	{
-		if (strcmp($_GET["activecommand"], "directfeedback") == 0)
+		$choiceKeys = array_keys($this->object->answers);
+		
+		if( $this->object->getShuffle() )
 		{
-			if (is_array($_SESSION["choicekeys"])) $this->choiceKeys = $_SESSION["choicekeys"];
+			$choiceKeys = $this->object->getShuffler()->shuffle($choiceKeys);
 		}
-		if (!is_array($this->choiceKeys))
-		{
-			$this->choiceKeys = array_keys($this->object->answers);
-			if ($this->object->getShuffle())
-			{
-				$this->choiceKeys = $this->object->pcArrayShuffle($this->choiceKeys);
-			}
-		}
-		$_SESSION["choicekeys"] = $this->choiceKeys;
-		return $this->choiceKeys;
+		
+		return $choiceKeys;
 	}
 	
 	function getSpecificFeedbackOutput($active_id, $pass)
@@ -642,7 +675,7 @@ class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 
 	public function populateQuestionSpecificFormPart(\ilPropertyFormGUI $form)
 	{
-		$isSingleline = ($this->object->lastChange == 0 && !array_key_exists( 'types',$_POST)) ? (($this->object->getMultilineAnswerSetting()) ? false : true) : $this->object->isSingleline;
+		$isSingleline = $this->getEditAnswersSingleLine();
 		// shuffle
 		$shuffle = new ilCheckboxInputGUI($this->lng->txt( "shuffle_answers" ), "shuffle");
 		$shuffle->setValue( 1 );
@@ -722,7 +755,7 @@ class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 					if (in_array( $suffix, array( "jpg", "jpeg", "png", "gif" ) ))
 					{
 						// upload image
-						$filename = $this->object->createNewImageFileName( $file_org_name );
+						$filename = $this->object->buildHashedImageFilename( $file_org_name );
 						if ($this->object->setImageFile( $filename, $file_temp_name ) == 0)
 						{
 							$picturefile = $filename;
@@ -745,7 +778,7 @@ class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 
 	public function populateAnswerSpecificFormPart(\ilPropertyFormGUI $form)
 	{
-		$isSingleline = ($this->object->lastChange == 0 && !array_key_exists('types', $_POST)) ? (($this->object->getMultilineAnswerSetting()) ? false : true) : $this->object->isSingleline;
+		$isSingleline = $this->getEditAnswersSingleLine();
 
 		// Choices
 		include_once "./Modules/TestQuestionPool/classes/class.ilSingleChoiceWizardInputGUI.php";

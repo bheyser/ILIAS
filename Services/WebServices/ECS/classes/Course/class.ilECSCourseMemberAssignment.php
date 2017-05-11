@@ -34,23 +34,25 @@ class ilECSCourseMemberAssignment
 	/**
 	 * Lookup missing assignments;
 	 * @global type $ilDB
-	 * @param type $a_usr_id
-	 * @return type
+	 * @param string account
+	 * @return ilECSCourseMemberAssignment[]
 	 */
 	public static function lookupMissingAssignmentsOfUser($a_usr_id)
 	{
 		global $ilDB;
 		
-		$query = 'SELECT obj_id FROM ecs_course_assignments '.
+		$query = 'SELECT id FROM ecs_course_assignments '.
 				'WHERE usr_id = '.$ilDB->quote($a_usr_id,'text');
 		$res = $ilDB->query($query);
 		
 		$obj_ids = array();
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		
+		$assignments = array();
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
-			$obj_ids[] = $row->obj_id;
+			$assignments[] = new self($row->id);
 		}
-		return $obj_ids;
+		return $assignments;
 	}
 	
 	/**
@@ -93,14 +95,25 @@ class ilECSCourseMemberAssignment
 	{
 		global $ilDB;
 		
+		$cms_sub_id_query = '';
+		
+		if(is_null($a_cms_sub_id))
+		{
+			$cms_sub_id_query = 'AND cms_sub_id IS NULL ';
+		}
+		else
+		{
+			$cms_sub_id_query = 'AND cms_sub_id = '.$ilDB->quote($a_cms_sub_id,'integer').' ';
+		}
+		
 		$query = 'SELECT usr_id FROM ecs_course_assignments '.
 				'WHERE cms_id = '.$ilDB->quote($a_cms_id,'integer').' '.
-				'AND cms_sub_id = '.$ilDB->quote($a_cms_sub_id).' '.
+				$cms_sub_id_query.
 				'AND obj_id = '.$ilDB->quote($a_obj_id,'integer');
 		$res = $ilDB->query($query);
 		
 		$usr_ids = array();
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$usr_ids[] = $row->usr_id;
 		}
@@ -119,13 +132,23 @@ class ilECSCourseMemberAssignment
 	{
 		global $ilDB;
 		
+		$cms_sub_id_query = '';
+		if(is_null($a_cms_sub_id))
+		{
+			$cms_sub_id_query = 'AND cms_sub_id IS NULL ';
+		}
+		else
+		{
+			$cms_sub_id_query = 'AND cms_sub_id = '.$ilDB->quote($a_cms_sub_id,'integer').' ';
+		}
+		
 		$query = 'SELECT id FROM ecs_course_assignments '.
 				'WHERE cms_id = '.$ilDB->quote($a_cms_id,'integer').' '.
-				'AND cms_sub_id = '.$ilDB->quote($a_cms_sub_id,'integer').' '.
+				$cms_sub_id_query.
 				'AND obj_id = '.$ilDB->quote($a_obj_id,'integer').' '.
 				'AND usr_id = '.$ilDB->quote($a_usr_id,'text');
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			return new ilECSCourseMemberAssignment($row->id);
 		}
@@ -308,7 +331,7 @@ class ilECSCourseMemberAssignment
 		$query = 'SELECT * FROM ecs_course_assignments '.
 				'WHERE id = '.$ilDB->quote($this->getId(),'integer');
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$this->setServer($row->sid);
 			$this->setMid($row->mid);

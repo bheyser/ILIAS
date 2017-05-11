@@ -36,8 +36,6 @@ class ilUserSearchCache
 {
 	const DEFAULT_SEARCH = 0;
 	const ADVANCED_SEARCH = 1;
-	const SHOP_CONTENT = 2;
-	const SHOP_ADVANCED_SEARCH = 3;
 	const ADVANCED_MD_SEARCH = 4;
 	const LUCENE_DEFAULT = 5;
 	const LUCENE_ADVANCED = 6;
@@ -66,6 +64,11 @@ class ilUserSearchCache
 	// begin-patch mime_filter
 	private $mime_filter = array();
 	// end-patch mime_filter
+	
+	// begin-patch create_date
+	private $creation_filter = array();
+	// end-patch create_date
+	
 	
 	
 	/**
@@ -328,6 +331,19 @@ class ilUserSearchCache
 	{
 		return (array) $this->mime_filter;
 	}
+	
+	// begin-patch create_date
+	public function setCreationFilter($a_filter)
+	{
+		$this->creation_filter = $a_filter;
+	}
+	
+	public function getCreationFilter()
+	{
+		return $this->creation_filter;
+	}
+	// end-patch create_date
+	
 
 	/**
 	 * delete cached entries
@@ -348,7 +364,7 @@ class ilUserSearchCache
 			"WHERE usr_id = ".$ilDB->quote($this->usr_id,'integer')." ".
 			"AND search_type = ".$ilDB->quote($this->search_type,'integer');
 		$res = $ilDB->query($query);
-		$row = $res->fetchRow(DB_FETCHMODE_OBJECT);
+		$row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT);
 		
 		if($row->num > 0)
 		{
@@ -425,13 +441,13 @@ class ilUserSearchCache
 	 */
 	public function save()
 	{
-		global $ilDB,$ilLog;
+		global $ilDB;
 		
 		if($this->isAnonymous())
 		{
 			return $this->saveForAnonymous();
 		}
-
+		
 		$query = "DELETE FROM usr_search ".
 			"WHERE usr_id = ".$ilDB->quote($this->usr_id ,'integer')." ".
 			"AND ( search_type = ".$ilDB->quote($this->search_type ,'integer').' '.
@@ -448,7 +464,8 @@ class ilUserSearchCache
 			'query'			=> array('clob',serialize($this->getQuery())),
 			'root'			=> array('integer',$this->getRoot()),
 			'item_filter'	=> array('text',serialize($this->getItemFilter())),
-			'mime_filter'	=> array('text',  serialize($this->getMimeFilter()))
+			'mime_filter'	=> array('text',  serialize($this->getMimeFilter())),
+			'creation_filter' => array('text', serialize($this->getCreationFilter()))
 		));
 			
 			
@@ -474,6 +491,7 @@ class ilUserSearchCache
 		$_SESSION['usr_search_cache'][$this->search_type]['root'] =  $this->getRoot();
 		$_SESSION['usr_search_cache'][$this->search_type]['item_filter'] =  $this->getItemFilter();
 		$_SESSION['usr_search_cache'][$this->search_type]['mime_filter'] =  $this->getMimeFilter();
+		$_SESSION['usr_search_cache'][$this->search_type]['creation_filter'] =  $this->getCreationFilter();
 
 		$_SESSION['usr_search_cache'][self::LAST_QUERY]['query'] =  $this->getQuery();
 
@@ -505,7 +523,7 @@ class ilUserSearchCache
 	 		"AND search_type = ".$this->db->quote($this->search_type ,'integer');
 		
 	 	$res = $this->db->query($query);
-	 	while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+	 	while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 	 	{
 	 		$this->search_result = unserialize(stripslashes($row->search_result));
 	 		if(strlen($row->checked))
@@ -520,6 +538,7 @@ class ilUserSearchCache
 			$this->setQuery(unserialize($row->query));
 			$this->setRoot($row->root);
 			$this->setItemFilter(unserialize($row->item_filter));
+			$this->setCreationFilter(unserialize($row->creation_filter));
 	 	}
 		return true;			
 	}
@@ -538,6 +557,7 @@ class ilUserSearchCache
 		$this->setRoot((string) $_SESSION['usr_search_cache'][$this->search_type]['root']);
 		$this->setItemFilter((array) $_SESSION['usr_search_cache'][$this->search_type]['item_filter']);
 		$this->setMimeFilter((array) $_SESSION['usr_search_cache'][$this->search_type]['mime_filter']);
+		$this->setCreationFilter((array) $_SESSION['usr_search_cache'][$this->search_type]['creation_filter']);
 
 		return true;
 	}

@@ -344,7 +344,7 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 	 * @param boolean $returndetails (deprecated !!)
 	 * @return integer/array $points/$details (array $details is deprecated !!)
 	 */
-	public function calculateReachedPoints($active_id, $pass = NULL, $returndetails = FALSE)
+	public function calculateReachedPoints($active_id, $pass = NULL, $authorizedSolution = true, $returndetails = FALSE)
 	{
 		if( $returndetails )
 		{
@@ -358,7 +358,7 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 		if (is_null($pass)) {
 			$pass = $this->getSolutionMaxPass($active_id);
 		}
-		$result = $this->getCurrentSolutionResultSet($active_id, $pass);
+		$result = $this->getCurrentSolutionResultSet($active_id, $pass, $authorizedSolution);
 
 		while ($row = $ilDB->fetchAssoc($result)) {
 			array_push($positions, $row['value1']);
@@ -380,7 +380,7 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 	 * @param integer $pass Test pass
 	 * @return boolean $status
 	 */
-	public function saveWorkingData($active_id, $pass = NULL)
+	public function saveWorkingData($active_id, $pass = NULL, $authorized = true)
 	{
 		global $ilDB;
 		global $ilUser;
@@ -390,30 +390,31 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 			include_once "./Modules/Test/classes/class.ilObjTest.php";
 			$pass = ilObjTest::_getPass($active_id);
 		}
-		
-		$this->getProcessLocker()->requestUserSolutionUpdateLock();
-
-		$affectedRows = $this->removeCurrentSolution($active_id, $pass);
 
 		$entered_values = false;
-		if (strlen($_POST["qst_" . $this->getId()]))
-		{
-			$selected = split(",", $_POST["qst_" . $this->getId()]);
-			foreach ($selected as $position)
+
+		$this->getProcessLocker()->executeUserSolutionUpdateLockOperation(function() use (&$entered_values, $active_id, $pass, $authorized) {
+
+			$this->removeCurrentSolution($active_id, $pass, $authorized);
+
+			if(strlen($_POST["qst_" . $this->getId()]))
 			{
-				$affectedRows = $this->saveCurrentSolution($active_id, $pass, $position, null);
+				$selected = explode(",", $_POST["qst_" . $this->getId()]);
+				foreach ($selected as $position)
+				{
+					$this->saveCurrentSolution($active_id, $pass, $position, null, $authorized);
+				}
+				$entered_values = true;
 			}
-			$entered_values = true;
-		}
-		
-		$this->getProcessLocker()->releaseUserSolutionUpdateLock();
-		
+
+		});
+
 		if ($entered_values)
 		{
 			include_once ("./Modules/Test/classes/class.ilObjAssessmentFolder.php");
 			if (ilObjAssessmentFolder::_enabledAssessmentLogging())
 			{
-				$this->logAction($this->lng->txtlng("assessment", "log_user_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
+				assQuestion::logAction($this->lng->txtlng("assessment", "log_user_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
 			}
 		}
 		else
@@ -421,7 +422,7 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 			include_once ("./Modules/Test/classes/class.ilObjAssessmentFolder.php");
 			if (ilObjAssessmentFolder::_enabledAssessmentLogging())
 			{
-				$this->logAction($this->lng->txtlng("assessment", "log_user_not_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
+				assQuestion::logAction($this->lng->txtlng("assessment", "log_user_not_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
 			}
 		}
 
@@ -443,14 +444,9 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 	}
 
 	/**
-	 * Reworks the allready saved working data if neccessary
-	 *
-	 * @access protected
-	 * @param integer $active_id
-	 * @param integer $pass
-	 * @param boolean $obligationsAnswered
+	 * {@inheritdoc}
 	 */
-	protected function reworkWorkingData($active_id, $pass, $obligationsAnswered)
+	protected function reworkWorkingData($active_id, $pass, $obligationsAnswered, $authorized)
 	{
 		// nothing to rework!
 	}
@@ -496,21 +492,11 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 	}
 
 	/**
-	* Creates an Excel worksheet for the detailed cumulated results of this question
-	*
-	* @param object $worksheet Reference to the parent excel worksheet
-	* @param object $startrow Startrow of the output in the excel worksheet
-	* @param object $active_id Active id of the participant
-	* @param object $pass Test pass
-	* @param object $format_title Excel title format
-	* @param object $format_bold Excel bold format
-	* @param array $eval_data Cumulated evaluation data
-	*/
-	public function setExportDetailsXLS(&$worksheet, $startrow, $active_id, $pass, &$format_title, &$format_bold)
+	 * {@inheritdoc}
+	 */
+	public function setExportDetailsXLS($worksheet, $startrow, $active_id, $pass)
 	{
-		include_once ("./Services/Excel/classes/class.ilExcelUtils.php");
-		$worksheet->writeString($startrow, 0, ilExcelUtils::_convert_text($this->lng->txt($this->getQuestionType())), $format_title);
-		$worksheet->writeString($startrow, 1, ilExcelUtils::_convert_text($this->getTitle()), $format_title);
+		parent::setExportDetailsXLS($worksheet, $startrow, $active_id, $pass);
 
 		$i= 0;
 		$selections = array();
@@ -525,8 +511,9 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 		}
 		$errortext = $this->createErrorTextExport($selections);
 		$i++;
-		$worksheet->writeString($startrow+$i, 0, ilExcelUtils::_convert_text($errortext));
+		$worksheet->setCell($startrow+$i, 0, $errortext);
 		$i++;
+
 		return $startrow + $i + 1;
 	}
 
@@ -633,7 +620,7 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 		ksort($this->errordata);
 	}
 
-	public function createErrorTextOutput($selections = null, $graphicalOutput = false, $correct_solution = false)
+	public function createErrorTextOutput($selections = null, $graphicalOutput = false, $correct_solution = false, $use_link_tags = true)
 	{
 		$counter = 0;
 		$errorcounter = 0;
@@ -722,7 +709,7 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 							$item = strlen($errorobject->text_correct) ? $errorobject->text_correct : '&nbsp;';
 						}
 						$errorcounter++;
-						$items[$idx] = '<a class="' . $class . '" href="#">' . ($item == '&nbsp;' ? $item : ilUtil::prepareFormOutput($item)) . '</a>' . $img;
+						$items[$idx] = $this->getErrorTokenHtml($item, $class, $use_link_tags) . $img;
 						$counter++;
 						continue;
 					}
@@ -759,7 +746,7 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 						{
 							$class = "sel";
 						}
-						$item_stack[] = '<a class="' . $class . '" href="#">' . ilUtil::prepareFormOutput($tmp_item) . '</a>' . $img;
+						$item_stack[] = $this->getErrorTokenHtml($tmp_item, $class, $use_link_tags) . $img;
 						$start_idx++;
 					}
 					$class = '';
@@ -779,7 +766,7 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 						}
 					}
 					
-					$item_stack[] = '<a class="' . $class . '" href="#">' . ($item == '&nbsp;' ? $item : ilUtil::prepareFormOutput($item)) . '</a>' . $img;
+					$item_stack[] = $this->getErrorTokenHtml($item, $class, $use_link_tags) . $img;
 					$item_stack = trim(implode(" ", $item_stack));
 					$item_stack = strlen($item_stack) ? $item_stack : '&nbsp;';
 					
@@ -815,7 +802,7 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 					}
 				}
 
-				$items[$idx] = '<a class="' . $class . '" href="#">' . ($item == '&nbsp;' ? $item : ilUtil::prepareFormOutput($item)) . '</a>' . $img;
+				$items[$idx] = $this->getErrorTokenHtml($item, $class, $use_link_tags) . $img;
 				$counter++;
 			}
 			$textarray[$textidx] = '<p>' . implode(" ", $items) . '</p>';
@@ -1320,7 +1307,7 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 	*/
 	public function getUserQuestionResult($active_id, $pass)
 	{
-		/** @var ilDB $ilDB */
+		/** @var ilDBInterface $ilDB */
 		global $ilDB;
 		$result = new ilUserQuestionResult($this, $active_id, $pass);
 
@@ -1369,5 +1356,20 @@ class assErrorText extends assQuestion implements ilObjQuestionScoringAdjustable
 		{
 			return $error_text_array;
 		}
+	}
+
+	/**
+	 * @param $item
+	 * @param $class
+	 * @return string
+	 */
+	private function getErrorTokenHtml($item, $class, $useLinkTags)
+	{
+		if($useLinkTags)
+		{
+			return '<a class="' . $class . '" href="#">' . ($item == '&nbsp;' ? $item : ilUtil::prepareFormOutput($item)) . '</a>';
+		}
+		
+		return '<span class="' . $class . '">' . ($item == '&nbsp;' ? $item : ilUtil::prepareFormOutput($item)) . '</span>';
 	}
 }

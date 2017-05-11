@@ -141,8 +141,9 @@ class ilTaggingGUI
 		$tags = ilTagging::getTagsForUserAndObject($this->obj_id, $this->obj_type,
 			$this->sub_obj_id, $this->sub_obj_type, $this->getUserId());
 		$ttpl->setVariable("VAL_TAGS",
-			ilUtil::prepareFormOutput(implode($tags, " ")));
+			ilUtil::prepareFormOutput(implode($tags, ", ")));
 		$ttpl->setVariable("TXT_SAVE", $lng->txt("save"));
+		$ttpl->setVariable("TXT_COMMA_SEPARATED", $lng->txt("comma_separated"));
 		$ttpl->setVariable("CMD_SAVE", $this->savecmd);
 		$ttpl->setVariable("NAME_TAGS", $this->getInputFieldName());
 		
@@ -157,8 +158,10 @@ class ilTaggingGUI
 		global $lng;
 		
 		$input = ilUtil::stripSlashes($_POST[$this->getInputFieldName()]);
-		$input = str_replace(",", " ", $input);
-		$itags = explode(" ", $input);
+		$input = str_replace("\r", "\n", $input);
+		$input = str_replace("\n\n", "\n", $input);
+		$input = str_replace("\n", ",", $input);
+		$itags = explode(",", $input);
 		$tags = array();
 		foreach($itags as $itag)
 		{
@@ -234,10 +237,13 @@ class ilTaggingGUI
 	/**
 	 * Init javascript
 	 */
-	function initJavascript($a_ajax_url)
+	static function initJavascript($a_ajax_url)
 	{
-		global $tpl;
-		
+		global $tpl, $lng;
+
+		$lng->loadLanguageModule("tagging");
+		$lng->toJs("tagging_tags");
+
 		include_once("./Services/YUI/classes/class.ilYuiUtil.php");
 		ilYuiUtil::initPanel();
 		include_once("./Services/jQuery/classes/class.iljQueryUtil.php");
@@ -254,7 +260,7 @@ class ilTaggingGUI
 	 * @param string $a_update_code
 	 * @return string 
 	 */
-	function getListTagsJSCall($a_hash, $a_update_code = null)
+	static function getListTagsJSCall($a_hash, $a_update_code = null)
 	{
 		global $tpl;
 		
@@ -305,8 +311,9 @@ class ilTaggingGUI
 		$tags = ilTagging::getTagsForUserAndObject($this->obj_id, $this->obj_type,
 			$this->sub_obj_id, $this->sub_obj_type, $this->getUserId());
 		$tpl->setVariable("VAL_TAGS",
-			ilUtil::prepareFormOutput(implode($tags, " ")));
+			ilUtil::prepareFormOutput(implode($tags, ", ")));
 		$tpl->setVariable("TXT_SAVE", $lng->txt("save"));
+		$tpl->setVariable("TXT_COMMA_SEPARATED", $lng->txt("comma_separated"));
 		$tpl->setVariable("CMD_SAVE", "saveJS");
 		
 		$os = "ilTagging.cmdAjaxForm(event, '".
@@ -348,8 +355,10 @@ class ilTaggingGUI
 	function saveJS()
 	{
 		$input = ilUtil::stripSlashes($_POST["tags"]);
-		$input = str_replace(",", " ", $input);
-		$itags = explode(" ", $input);
+		$input = str_replace("\r", "\n", $input);
+		$input = str_replace("\n\n", "\n", $input);
+		$input = str_replace("\n", ",", $input);
+		$itags = explode(",", $input);
 		$tags = array();
 		foreach($itags as $itag)
 		{

@@ -40,10 +40,8 @@ class ilLikeUserMultiFieldSearch extends ilAbstractSearch
 			"FROM usr_data_multi ".
 			$where;
 		
-		$GLOBALS['ilLog']->write(__METHOD__.': '.$query);
-		
 		$res = $this->db->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$this->search_result->addEntry($row->usr_id,'usr',$this->__prepareFound($row));
 		}

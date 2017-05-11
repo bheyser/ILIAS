@@ -61,8 +61,7 @@ abstract class ilComponent
 //		global $ilDB;
 		$this->global_cache = ilCachedComponentData::getInstance();
 
-		$rec = $this->global_cache->lookCompId($this->getName(), $this->getComponentType());
-		$this->setId($rec["id"]);
+		$this->setId($this->global_cache->lookCompId($this->getComponentType(), $this->getName()));	
 		$this->setPluginSlots(ilComponent::lookupPluginSlots(
 			$this->getComponentType(), $this->getName()));
 
@@ -263,8 +262,7 @@ abstract class ilComponent
 		
 		//return $rec["id"];
 	}
-
-
+	
 	/**
 	 * @param $a_type
 	 * @param $a_name
@@ -346,6 +344,27 @@ abstract class ilComponent
 
 		return false;
 	}
+	
+	/**
+	 * lookup component name
+	 * @global type $ilDB
+	 * @param type $a_component_id
+	 * @return type
+	 */
+	public static function lookupComponentName($a_component_id)
+	{
+		global $ilDB;
+		
+		$query = 'SELECT name from il_component '.
+				'WHERE id = '.$ilDB->quote($a_component_id,'text');
+		
+		$res = $ilDB->query($query);
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
+		{
+			return $row->name;
+		}
+	}
+	
 
 }
 ?>

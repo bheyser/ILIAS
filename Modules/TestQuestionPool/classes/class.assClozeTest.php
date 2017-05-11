@@ -353,7 +353,7 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 	protected function saveClozeGapItemsToDb($gap, $key)
 	{
 		global $ilDB;
-		foreach ($gap->getItems() as $item)
+		foreach ($gap->getItems($this->getShuffler()) as $item)
 		{
 			$query   = "";
 			$next_id = $ilDB->nextId( 'qpl_a_cloze' );
@@ -852,7 +852,7 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 				if ($gap->getType() == CLOZE_TEXT)
 				{
 					$gap_max_points = 0;
-					foreach ($gap->getItems() as $item)
+					foreach ($gap->getItems($this->getShuffler()) as $item)
 					{
 						if ($item->getPoints() > $gap_max_points)
 						{
@@ -864,7 +864,7 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 				else if ($gap->getType() == CLOZE_SELECT)
 				{
 					$srpoints = 0;
-					foreach ($gap->getItems() as $item)
+					foreach ($gap->getItems($this->getShuffler()) as $item)
 					{
 						if ($item->getPoints() > $srpoints)
 						{
@@ -876,7 +876,7 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 				else if ($gap->getType() == CLOZE_NUMERIC)
 				{
 					$numpoints = 0;
-					foreach ($gap->getItems() as $item)
+					foreach ($gap->getItems($this->getShuffler()) as $item)
 					{
 						if ($item->getPoints() > $numpoints)
 						{
@@ -1239,7 +1239,7 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 	 * @param boolean $returndetails (deprecated !!)
 	 * @return integer/array $points/$details (array $details is deprecated !!)
 	 */
-	public function calculateReachedPoints($active_id, $pass = NULL, $returndetails = FALSE)
+	public function calculateReachedPoints($active_id, $pass = NULL, $authorized = true, $returndetails = FALSE)
 	{
 		global $ilDB;
 		
@@ -1248,7 +1248,7 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 			$pass = $this->getSolutionMaxPass($active_id);
 		}
 
-		$result = $this->getCurrentSolutionResultSet($active_id, $pass);
+		$result = $this->getCurrentSolutionResultSet($active_id, $pass, $authorized);
 		$user_result = array();
 		while ($data = $ilDB->fetchAssoc($result)) 
 		{
@@ -1312,7 +1312,7 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 	 * @param integer $pass Test pass
 	 * @return boolean $status
 	 */
-	public function saveWorkingData($active_id, $pass = NULL) 
+	public function saveWorkingData($active_id, $pass = NULL, $authorized = true) 
 	{
 		global $ilDB;
 		global $ilUser;
@@ -1321,71 +1321,38 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 			include_once "./Modules/Test/classes/class.ilObjTest.php";
 			$pass = ilObjTest::_getPass($active_id);
 		}
-		
-		$this->getProcessLocker()->requestUserSolutionUpdateLock();
-
-		$affectedRows = $this->removeCurrentSolution($active_id, $pass);
 
 		$entered_values = 0;
-		
-		foreach($this->getSolutionSubmit() as $val1 => $val2)
-		{
-			$value = trim(ilUtil::stripSlashes($val2, FALSE));
-			if (strlen($value))
+
+		$this->getProcessLocker()->executeUserSolutionUpdateLockOperation(function() use (&$entered_values, $active_id, $pass, $authorized) {
+
+			$this->removeCurrentSolution($active_id, $pass, $authorized);
+
+			foreach($this->getSolutionSubmit() as $val1 => $val2)
 			{
-				$gap = $this->getGap(trim(ilUtil::stripSlashes($val1)));
-				if (is_object($gap))
+				$value = trim(ilUtil::stripSlashes($val2, FALSE));
+				if (strlen($value))
 				{
-					if (!(($gap->getType() == CLOZE_SELECT) && ($value == -1)))
+					$gap = $this->getGap(trim(ilUtil::stripSlashes($val1)));
+					if (is_object($gap))
 					{
-						$affectedRows = $this->saveCurrentSolution($active_id,$pass, $val1, $value);
-						$entered_values++;
+						if (!(($gap->getType() == CLOZE_SELECT) && ($value == -1)))
+						{
+							$this->saveCurrentSolution($active_id,$pass, $val1, $value, $authorized);
+							$entered_values++;
+						}
 					}
 				}
 			}
-		}
 
-		$buffer = '';
-		foreach($answer_elements as $answer)
-		{
-			$buffer  .= 'value1:' . $answer['value1'] .'/:value1 ' . "\r\n";
-			$buffer  .= 'value2:' . $answer['value2'] .'/:value2 ' . "\r\n---\r\n";
-		}
-		require_once './Modules/TestQuestionPool/classes/class.ilAnswerProgressHistorizing.php';
-		$case_id = array('active_fi' => $active_id, 'question_fi' => $this->getId(), 'pass' => $pass);
-		if(ilAnswerProgressHistorizing::caseExists($case_id))
-		{
-			$old_data = ilAnswerProgressHistorizing::getCurrentRecordByCase($case_id);
-			if($buffer != '' && ($old_data['value1'] != $buffer))
-			{
-				ilAnswerProgressHistorizing::updateHistorizedData(
-					$case_id,
-					array('solution_id' => $next_id, 'value1' => $buffer, 'value2' => 'BUFFERED MULTILINE ANSWER', 'tstamp' => 0),
-					$ilUser->getId(),
-					time(),
-					false
-				);
-			}
-		}
-		else
-		{
-			ilAnswerProgressHistorizing::createNewHistorizedCase(
-				$case_id,
-				array('solution_id' => $next_id, 'value1' => $buffer, 'value2' => 'BUFFERED MULTILINE ANSWER', 'tstamp' => 0),
-				$ilUser->getId(),
-				time(),
-				false
-			);
-		}
-
-		$this->getProcessLocker()->releaseUserSolutionUpdateLock();
+		});
 
 		if ($entered_values)
 		{
 			include_once ("./Modules/Test/classes/class.ilObjAssessmentFolder.php");
 			if (ilObjAssessmentFolder::_enabledAssessmentLogging())
 			{
-				$this->logAction($this->lng->txtlng("assessment", "log_user_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
+				assQuestion::logAction($this->lng->txtlng("assessment", "log_user_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
 			}
 		}
 		else
@@ -1393,22 +1360,17 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 			include_once ("./Modules/Test/classes/class.ilObjAssessmentFolder.php");
 			if (ilObjAssessmentFolder::_enabledAssessmentLogging())
 			{
-				$this->logAction($this->lng->txtlng("assessment", "log_user_not_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
+				assQuestion::logAction($this->lng->txtlng("assessment", "log_user_not_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
 			}
 		}
 		
 		return TRUE;
 	}
-	
+
 	/**
-	 * Reworks the allready saved working data if neccessary
-	 *
-	 * @access protected
-	 * @param integer $active_id
-	 * @param integer $pass
-	 * @param boolean $obligationsAnswered
+	 * {@inheritdoc}
 	 */
-	protected function reworkWorkingData($active_id, $pass, $obligationsAnswered)
+	protected function reworkWorkingData($active_id, $pass, $obligationsAnswered, $authorized)
 	{
 		// nothing to rework!
 	}
@@ -1545,7 +1507,7 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 		if (array_key_exists($gap_index, $this->gaps))
 		{
 			$gap =& $this->gaps[$gap_index];
-			foreach ($gap->getItems() as $answer) 
+			foreach ($gap->getItems($this->getShuffler()) as $answer) 
 			{
 				if ($answer->getPoints() > $gap_max_points)
 				{
@@ -1584,28 +1546,20 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 	{
 		$this->gap_combinations = $value;
 	}
+
 	/**
-	* Creates an Excel worksheet for the detailed cumulated results of this question
-	*
-	* @param object $worksheet Reference to the parent excel worksheet
-	* @param object $startrow Startrow of the output in the excel worksheet
-	* @param object $active_id Active id of the participant
-	* @param object $pass Test pass
-	* @param object $format_title Excel title format
-	* @param object $format_bold Excel bold format
-	* @param array $eval_data Cumulated evaluation data
-	* @access public
-	*/
-	public function setExportDetailsXLS(&$worksheet, $startrow, $active_id, $pass, &$format_title, &$format_bold)
+	 * {@inheritdoc}
+	 */
+	public function setExportDetailsXLS($worksheet, $startrow, $active_id, $pass)
 	{
-		include_once ("./Services/Excel/classes/class.ilExcelUtils.php");
+		parent::setExportDetailsXLS($worksheet, $startrow, $active_id, $pass);
+
 		$solution = $this->getSolutionValues($active_id, $pass);
-		$worksheet->writeString($startrow, 0, ilExcelUtils::_convert_text($this->lng->txt($this->getQuestionType())), $format_title);
-		$worksheet->writeString($startrow, 1, ilExcelUtils::_convert_text($this->getTitle()), $format_title);
 		$i = 1;
 		foreach ($this->getGaps() as $gap_index => $gap)
 		{
-			$worksheet->writeString($startrow + $i, 0, ilExcelUtils::_convert_text($this->lng->txt("gap") . " $i"), $format_bold);
+			$worksheet->setCell($startrow + $i, 0,$this->lng->txt("gap") . " $i");
+			$worksheet->setBold($worksheet->getColumnCoord(0) . ($startrow + $i));
 			$checked = FALSE;
 			foreach ($solution as $solutionvalue)
 			{
@@ -1614,17 +1568,18 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 					switch ($gap->getType())
 					{
 						case CLOZE_SELECT:
-							$worksheet->writeString($startrow + $i, 1, $gap->getItem($solutionvalue["value2"])->getAnswertext());
+							$worksheet->setCell($startrow + $i, 1, $gap->getItem($solutionvalue["value2"])->getAnswertext());
 							break;
 						case CLOZE_NUMERIC:
 						case CLOZE_TEXT:
-							$worksheet->writeString($startrow + $i, 1, $solutionvalue["value2"]);
+							$worksheet->setCell($startrow + $i, 1, $solutionvalue["value2"]);
 							break;
 					}
 				}
 			}
 			$i++;
 		}
+
 		return $startrow + $i + 1;
 	}
 	
@@ -1638,9 +1593,8 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 		$result['id'] = (int) $this->getId();
 		$result['type'] = (string) $this->getQuestionType();
 		$result['title'] = (string) $this->getTitle();
-		$result['question'] =  $this->formatSAQuestion(
-			$this->getQuestion() . '<br/>' . $this->getClozeText()
-		);
+		$result['question'] =  $this->formatSAQuestion($this->getQuestion()).'<br/>'.
+			$this->formatSAQuestion($this->getClozeText());
 		$result['nr_of_tries'] = (int) $this->getNrOfTries();
 		$result['shuffle'] = (bool) $this->getShuffle();
 		$result['feedback'] = array(
@@ -1652,7 +1606,7 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 		foreach ($this->getGaps() as $key => $gap)
 		{
 			$items = array();
-			foreach ($gap->getItems() as $item)
+			foreach ($gap->getItems($this->getShuffler()) as $item)
 			{				
 				$jitem = array();
 				$jitem['points'] = $item->getPoints();
@@ -1726,18 +1680,41 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 	*/
 	public function getUserQuestionResult($active_id, $pass)
 	{
-		/** @var ilDB $ilDB */
+		/** @var ilDBInterface $ilDB */
 		global $ilDB;
 		$result = new ilUserQuestionResult($this, $active_id, $pass);
 
-		$data = $ilDB->queryF(
-			"SELECT sol.value1+1 as val, sol.value2, cloze.cloze_type FROM tst_solutions sol INNER JOIN qpl_a_cloze cloze ON cloze.gap_id = value1 AND cloze.question_fi = sol.question_fi WHERE sol.active_fi = %s AND sol.pass = %s AND sol.question_fi = %s AND sol.step = (
-				SELECT MAX(step) FROM tst_solutions WHERE active_fi = %s AND pass = %s AND question_fi = %s
-			) GROUP BY sol.solution_id",
-			array("integer", "integer", "integer","integer", "integer", "integer"),
-			array($active_id, $pass, $this->getId(), $active_id, $pass, $this->getId())
-		);
+		$maxStep = $this->lookupMaxStep($active_id, $pass);
 
+		if( $maxStep !== null )
+		{
+			$data = $ilDB->queryF(
+				"
+				SELECT sol.value1+1 as val, sol.value2, cloze.cloze_type
+				FROM tst_solutions sol
+				INNER JOIN qpl_a_cloze cloze ON cloze.gap_id = value1 AND cloze.question_fi = sol.question_fi
+				WHERE sol.active_fi = %s AND sol.pass = %s AND sol.question_fi = %s AND sol.step = %s
+				GROUP BY sol.solution_id, sol.value1+1, sol.value2, cloze.cloze_type
+				",
+				array("integer", "integer", "integer","integer"),
+				array($active_id, $pass, $this->getId(), $maxStep)
+			);
+		}
+		else
+		{
+			$data = $ilDB->queryF(
+				"
+				SELECT sol.value1+1 as val, sol.value2, cloze.cloze_type
+				FROM tst_solutions sol
+				INNER JOIN qpl_a_cloze cloze ON cloze.gap_id = value1 AND cloze.question_fi = sol.question_fi
+				WHERE sol.active_fi = %s AND sol.pass = %s AND sol.question_fi = %s
+				GROUP BY sol.solution_id, sol.value1+1, sol.value2, cloze.cloze_type
+				",
+				array("integer", "integer", "integer"),
+				array($active_id, $pass, $this->getId())
+			);
+		}
+		
 		while($row = $ilDB->fetchAssoc($data))
 		{
 			if($row["cloze_type"] == 1)

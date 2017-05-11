@@ -28,6 +28,13 @@ class ilLearningProgressBaseGUI
 	
 	protected $anonymized;
 	
+	/**
+	 * @var ilLogger
+	 */
+	protected $logger;
+	
+	
+	
 	const LP_CONTEXT_PERSONAL_DESKTOP = 1;
 	const LP_CONTEXT_ADMINISTRATION = 2;
 	const LP_CONTEXT_REPOSITORY = 3;
@@ -46,15 +53,15 @@ class ilLearningProgressBaseGUI
 	const LP_ACTIVE_OBJSTATADMIN = 10;
 	const LP_ACTIVE_MATRIX = 11;
 
-	function ilLearningProgressBaseGUI($a_mode,$a_ref_id = 0,$a_usr_id = 0)
+	function __construct($a_mode,$a_ref_id = 0,$a_usr_id = 0)
 	{
 		global $tpl,$ilCtrl,$lng,$ilObjDataCache,$ilTabs;
 
-		$this->tpl =& $tpl;
-		$this->ctrl =& $ilCtrl;
-		$this->lng =& $lng;
+		$this->tpl = $tpl;
+		$this->ctrl = $ilCtrl;
+		$this->lng = $lng;
 		$this->lng->loadLanguageModule('trac');
-		$this->tabs_gui =& $ilTabs;
+		$this->tabs_gui = $ilTabs;
 
 		$this->mode = $a_mode;
 		$this->ref_id = $a_ref_id;
@@ -69,6 +76,8 @@ class ilLearningProgressBaseGUI
 			$olp = ilObjectLP::getInstance($this->obj_id);
 			$this->anonymized = $olp->isAnonymized();
 		}
+		
+		$this->logger = $GLOBALS['DIC']->logger()->trac();
 	}
 
 	function isAnonymized()
@@ -171,7 +180,9 @@ class ilLearningProgressBaseGUI
 
 					if($has_read)
 					{
-						if(!$this->isAnonymized() && !in_array($this->obj_type, array('tst', 'htlm', 'exc', 'sess')) && !($olp instanceof ilPluginLP))
+						if(!$this->isAnonymized() && 
+							!($olp instanceof ilPluginLP) &&
+							ilObjectLP::supportsMatrixView($this->obj_type))
 						{
 							$this->tabs_gui->addSubTabTarget("trac_matrix",
 															$this->ctrl->getLinkTargetByClass("illplistofobjectsgui", 'showUserObjectMatrix'),
@@ -303,7 +314,7 @@ class ilLearningProgressBaseGUI
 	/**
 	 * Get image path for status
 	 */
-	function _getImagePathForStatus($a_status)
+	static function _getImagePathForStatus($a_status)
 	{
 		include_once("./Services/Tracking/classes/class.ilLPStatus.php");
 
@@ -342,29 +353,34 @@ class ilLearningProgressBaseGUI
 	/**
 	 * Get status alt text
 	 */
-	function _getStatusText($a_status)
+	static function _getStatusText($a_status, $a_lng = null)
 	{
 		global $lng;
+		
+		if(!$a_lng)
+		{
+			$a_lng = $lng;
+		}
 		
 		include_once("./Services/Tracking/classes/class.ilLPStatus.php");
 //echo "#".$a_status."#";
 		switch($a_status)
 		{
 			case ilLPStatus::LP_STATUS_IN_PROGRESS_NUM:
-				return $lng->txt(ilLPStatus::LP_STATUS_IN_PROGRESS);
+				return $a_lng->txt(ilLPStatus::LP_STATUS_IN_PROGRESS);
 				
 			case ilLPStatus::LP_STATUS_COMPLETED_NUM:
-				return $lng->txt(ilLPStatus::LP_STATUS_COMPLETED);
+				return $a_lng->txt(ilLPStatus::LP_STATUS_COMPLETED);
 
 			case ilLPStatus::LP_STATUS_FAILED_NUM:
-				return $lng->txt(ilLPStatus::LP_STATUS_FAILED);
+				return $a_lng->txt(ilLPStatus::LP_STATUS_FAILED);
 
 			default:
 				if ($a_status === ilLPStatus::LP_STATUS_NOT_ATTEMPTED_NUM)
 				{
-					return $lng->txt(ilLPStatus::LP_STATUS_NOT_ATTEMPTED);
+					return $a_lng->txt(ilLPStatus::LP_STATUS_NOT_ATTEMPTED);
 				}
-				return $lng->txt($a_status);
+				return $a_lng->txt($a_status);
 		}		
 	}
 
@@ -408,7 +424,7 @@ class ilLearningProgressBaseGUI
 
 			if($seconds = ilMDEducational::_getTypicalLearningTimeSeconds($details_id))
 			{
-				$info->addProperty($this->lng->txt('meta_typical_learning_time'), ilFormat::_secondsToString($seconds));
+				$info->addProperty($this->lng->txt('meta_typical_learning_time'), ilDatePresentation::secondsToString($seconds));
 			}
 
 			return true;
@@ -436,7 +452,7 @@ class ilLearningProgressBaseGUI
 			$info->addProperty($this->lng->txt('last_login'),
 				ilDatePresentation::formatDate(new ilDateTime($a_user->getLastLogin(),IL_CAL_DATETIME)));
 			$info->addProperty($this->lng->txt('trac_total_online'),
-							   ilFormat::_secondsToString(ilOnlineTracking::getOnlineTime($a_user->getId())));
+				ilDatePresentation::secondsToString(ilOnlineTracking::getOnlineTime($a_user->getId())));
 		   return true;
 		}
 	}
@@ -466,24 +482,28 @@ class ilLearningProgressBaseGUI
 				if($progress['access_time'])
 				{
 					$info->addProperty($this->lng->txt('last_access'),
-						ilDatePresentation::formatDate(new ilDateTime($progress['access_time'],IL_CAL_DATETIME)));
+						ilDatePresentation::formatDate(new ilDateTime($progress['access_time'],IL_CAL_UNIX)));
 				}
 				else
 				{
 					$info->addProperty($this->lng->txt('last_access'),$this->lng->txt('trac_not_accessed'));
 				}
 				$info->addProperty($this->lng->txt('trac_visits'),(int) $progress['visits']);
-				if($type == 'lm')
+				if(ilObjectLP::supportsSpentSeconds($type))
 				{
-					$info->addProperty($this->lng->txt('trac_spent_time'),ilFormat::_secondsToString($progress['spent_seconds']));
+					$info->addProperty($this->lng->txt('trac_spent_time'),ilDatePresentation::secondsToString($progress['spent_seconds']));
 				}
 				// fallthrough
 				
 			case 'exc':
 			case 'tst':
+			case 'file':
+			case 'mcst':
+			case 'svy':
 			case 'crs':
 			case 'sahs':
 			case 'grp':
+			case 'iass':
 				// display status as image
 				include_once("./Services/Tracking/classes/class.ilLearningProgressBaseGUI.php");
 				$status = $this->__readStatus($item_id,$user_id);
@@ -507,19 +527,24 @@ class ilLearningProgressBaseGUI
 				break;
 
 		}
-
+		
 		include_once 'Services/Tracking/classes/class.ilLPMarks.php';
-		if(strlen($mark = ilLPMarks::_lookupMark($user_id,$item_id)))
-		{
-			$info->addProperty($this->lng->txt('trac_mark'),$mark);
+
+		if(ilObjectLP::supportsMark($type))
+		{			
+			if(strlen($mark = ilLPMarks::_lookupMark($user_id,$item_id)))
+			{
+				$info->addProperty($this->lng->txt('trac_mark'),$mark);
+			}
 		}
+		
 		if(strlen($comment = ilLPMarks::_lookupComment($user_id,$item_id)))
 		{
 			$info->addProperty($this->lng->txt('trac_comment'),$comment);
 		}
 	}
 
-	function __readStatus($a_obj_id,$user_id)
+	static function __readStatus($a_obj_id,$user_id)
 	{
 		include_once 'Services/Tracking/classes/class.ilLPStatus.php';
 		$status = ilLPStatus::_lookupStatus($a_obj_id, $user_id);
@@ -575,7 +600,7 @@ class ilLearningProgressBaseGUI
 			"ORDER BY ".$a_field;
 
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$ids[] = $row->$a_id_name;
 		}
@@ -678,8 +703,7 @@ class ilLearningProgressBaseGUI
 		include_once 'Services/Tracking/classes/class.ilLPMarks.php';
 		$marks = new ilLPMarks($a_obj_id, $a_user_id);
 		
-		$type = ilObject::_lookupType($a_obj_id);
-		if($type != 'lm')
+		if(ilObjectLP::supportsMark(ilObject::_lookupType($a_obj_id)))
 		{
 			$mark = new ilTextInputGUI($lng->txt("trac_mark"), "mark");
 			$mark->setValue($marks->getMark());

@@ -93,7 +93,7 @@ class assNumeric extends assQuestion implements ilObjQuestionScoringAdjustable, 
 	 */
 	public function loadFromDb($question_id)
 	{
-		/** @var $ilDB ilDB */
+		/** @var $ilDB ilDBInterface */
 		global $ilDB;
 		
 		$result = $ilDB->queryF("SELECT qpl_questions.*, " . $this->getAdditionalTableName() . ".* FROM qpl_questions LEFT JOIN " . $this->getAdditionalTableName() . " ON " . $this->getAdditionalTableName() . ".question_fi = qpl_questions.question_id WHERE qpl_questions.question_id = %s",
@@ -316,6 +316,17 @@ class assNumeric extends assQuestion implements ilObjQuestionScoringAdjustable, 
 		return $this->getPoints();
 	}
 
+	public function calculateReachedPointsFromPreviewSession(ilAssQuestionPreviewSession $previewSession)
+	{
+		$points = 0;
+		if ($this->contains($previewSession->getParticipantsSolution()))
+		{
+			$points = $this->getPoints();
+		}
+
+		return $points;
+	}
+
 	/**
 	 * Returns the points, a learner has reached answering the question.
 	 * The points are calculated from the given answers.
@@ -325,17 +336,17 @@ class assNumeric extends assQuestion implements ilObjQuestionScoringAdjustable, 
 	 * @param boolean $returndetails (deprecated !!)
 	 *
 	 * @throws ilTestException
-	 * 
+	 *
 	 * @return integer|array $points/$details (array $details is deprecated !!)
 	 */
-	public function calculateReachedPoints($active_id, $pass = NULL, $returndetails = FALSE)
+	public function calculateReachedPoints($active_id, $pass = NULL, $authorizedSolution = true, $returndetails = FALSE)
 	{
 		if( $returndetails )
 		{
 			throw new ilTestException('return details not implemented for '.__METHOD__);
 		}
 
-		/** @var $ilDB ilDB */
+		/** @var $ilDB ilDBInterface */
 		global $ilDB;
 
 		$found_values = array();
@@ -343,24 +354,13 @@ class assNumeric extends assQuestion implements ilObjQuestionScoringAdjustable, 
 		{
 			$pass = $this->getSolutionMaxPass($active_id);
 		}
-		$result = $this->getCurrentSolutionResultSet($active_id, $pass);
+		$result = $this->getCurrentSolutionResultSet($active_id, $pass, $authorizedSolution);
 		$data = $ilDB->fetchAssoc($result);
 
 		$enteredvalue = $data["value1"];
 
 		$points = 0;
 		if ($this->contains($enteredvalue))
-		{
-			$points = $this->getPoints();
-		}
-
-		return $points;
-	}
-
-	public function calculateReachedPointsFromPreviewSession(ilAssQuestionPreviewSession $previewSession)
-	{
-		$points = 0;
-		if ($this->contains($previewSession->getParticipantsSolution()))
 		{
 			$points = $this->getPoints();
 		}
@@ -421,9 +421,9 @@ class assNumeric extends assQuestion implements ilObjQuestionScoringAdjustable, 
 	 *
 	 * @return boolean $status
 	 */
-	public function saveWorkingData($active_id, $pass = NULL)
+	public function saveWorkingData($active_id, $pass = NULL, $authorized = true)
 	{
-		/** @var $ilDB ilDB */
+		/** @var $ilDB ilDBInterface */
 		global $ilDB;
 
 		if (is_null($pass))
@@ -444,58 +444,47 @@ class assNumeric extends assQuestion implements ilObjQuestionScoringAdjustable, 
 			$returnvalue = false;
 		}
 
-		$this->getProcessLocker()->requestUserSolutionUpdateLock();
+		$this->getProcessLocker()->executeUserSolutionUpdateLockOperation(function() use (&$entered_values, $numeric_result, $ilDB, $active_id, $pass, $authorized) {
 
-		$result = $this->getCurrentSolutionResultSet($active_id, $pass);
+			$result = $this->getCurrentSolutionResultSet($active_id, $pass, $authorized);
 
-		$row = $ilDB->fetchAssoc($result);
-		$update = $row["solution_id"];
-		if ($update)
-		{
-			if (strlen($numeric_result))
+			$row    = $ilDB->fetchAssoc($result);
+			$update = $row["solution_id"];
+			if($update)
 			{
-				$ilDB->update("tst_solutions", 	array(
-													"value1" => array("clob", trim($numeric_result)),
-													"tstamp" => array("integer", time())
-													),
-							  					array(
-													"solution_id" => array("integer", $update)
-													)
-				);
-
-				$entered_values++;
+				if(strlen($numeric_result))
+				{
+					$this->updateCurrentSolution($update, trim($numeric_result), null, $authorized);
+					$entered_values++;
+				}
+				else
+				{
+					$this->removeSolutionRecordById($update);
+				}
 			}
 			else
 			{
-				$ilDB->manipulateF("DELETE FROM tst_solutions WHERE solution_id = %s",
-					array('integer'),
-					array($update)
-				);
+				if(strlen($numeric_result))
+				{
+					$this->saveCurrentSolution($active_id, $pass, trim($numeric_result), null, $authorized);
+					$entered_values++;
+				}
 			}
-		}
-		else
-		{
-			if (strlen($numeric_result))
-			{
-				$this->saveCurrentSolution($active_id, $pass, trim($numeric_result), null);
-				$entered_values++;
-			}
-		}
 
-		$this->getProcessLocker()->releaseUserSolutionUpdateLock();
-		
+		});
+
 		if ($entered_values)
 		{
 			require_once './Modules/Test/classes/class.ilObjAssessmentFolder.php';
 			if (ilObjAssessmentFolder::_enabledAssessmentLogging())
 			{
-				$this->logAction($this->lng->txtlng(
-									"assessment", 
-									"log_user_entered_values", 
-									ilObjAssessmentFolder::_getLogLanguage()
-								 	), 
-									$active_id,
-									$this->getId()
+				assQuestion::logAction($this->lng->txtlng(
+					"assessment",
+					"log_user_entered_values",
+					ilObjAssessmentFolder::_getLogLanguage()
+				),
+					$active_id,
+					$this->getId()
 				);
 			}
 		}
@@ -504,13 +493,13 @@ class assNumeric extends assQuestion implements ilObjQuestionScoringAdjustable, 
 			include_once ("./Modules/Test/classes/class.ilObjAssessmentFolder.php");
 			if (ilObjAssessmentFolder::_enabledAssessmentLogging())
 			{
-				$this->logAction($this->lng->txtlng(
-									"assessment", 
-									"log_user_not_entered_values", 
-									ilObjAssessmentFolder::_getLogLanguage()
-								 	), 
-									$active_id, 
-									$this->getId()
+				assQuestion::logAction($this->lng->txtlng(
+					"assessment",
+					"log_user_not_entered_values",
+					ilObjAssessmentFolder::_getLogLanguage()
+				),
+					$active_id,
+					$this->getId()
 				);
 			}
 		}
@@ -532,7 +521,7 @@ class assNumeric extends assQuestion implements ilObjQuestionScoringAdjustable, 
 
 	public function saveAdditionalQuestionDataToDb()
 	{
-		/** @var $ilDB ilDB */
+		/** @var $ilDB ilDBInterface */
 		global $ilDB;
 
 		// save additional data
@@ -553,7 +542,7 @@ class assNumeric extends assQuestion implements ilObjQuestionScoringAdjustable, 
 
 	public function saveAnswerSpecificDataToDb()
 	{
-		/** @var $ilDB ilDB */
+		/** @var $ilDB ilDBInterface */
 		global $ilDB;
 
 		// Write range to the database
@@ -572,13 +561,9 @@ class assNumeric extends assQuestion implements ilObjQuestionScoringAdjustable, 
 	}
 
 	/**
-	 * Reworks the allready saved working data if neccessary
-	 *
-	 * @param integer $active_id
-	 * @param integer $pass
-	 * @param boolean $obligationsAnswered
+	 * {@inheritdoc}
 	 */
-	protected function reworkWorkingData($active_id, $pass, $obligationsAnswered)
+	protected function reworkWorkingData($active_id, $pass, $obligationsAnswered, $authorized)
 	{
 		// nothing to rework!
 	}
@@ -633,30 +618,25 @@ class assNumeric extends assQuestion implements ilObjQuestionScoringAdjustable, 
 	}
 
 	/**
-	 * Creates an Excel worksheet for the detailed cumulated results of this question
-	 *
-	 * @param object $worksheet    Reference to the parent excel worksheet
-	 * @param object $startrow     Startrow of the output in the excel worksheet
-	 * @param object $active_id    Active id of the participant
-	 * @param object $pass         Test pass
-	 * @param object $format_title Excel title format
-	 * @param object $format_bold  Excel bold format
-	 *
-	 * @return object
+	 * {@inheritdoc}
 	 */
-	public function setExportDetailsXLS(&$worksheet, $startrow, $active_id, $pass, &$format_title, &$format_bold)
+	public function setExportDetailsXLS($worksheet, $startrow, $active_id, $pass)
 	{
-		include_once ("./Services/Excel/classes/class.ilExcelUtils.php");
+		parent::setExportDetailsXLS($worksheet, $startrow, $active_id, $pass);
+
 		$solutions = $this->getSolutionValues($active_id, $pass);
-		$worksheet->writeString($startrow, 0, ilExcelUtils::_convert_text($this->lng->txt($this->getQuestionType())), $format_title);
-		$worksheet->writeString($startrow, 1, ilExcelUtils::_convert_text($this->getTitle()), $format_title);
+
 		$i = 1;
-		$worksheet->writeString($startrow + $i, 0, ilExcelUtils::_convert_text($this->lng->txt("result")), $format_bold);
+		$worksheet->setCell($startrow + $i, 0, $this->lng->txt("result"));
+		$worksheet->setBold($worksheet->getColumnCoord(0) . ($startrow + $i));
+		
+		$worksheet->setBold($worksheet->getColumnCoord(0) . ($startrow + $i));
 		if (strlen($solutions[0]["value1"]))
 		{
-			$worksheet->write($startrow + $i, 1, ilExcelUtils::_convert_text($solutions[0]["value1"]));
+			$worksheet->setCell($startrow + $i, 1, $solutions[0]["value1"]);
 		}
 		$i++;
+
 		return $startrow + $i + 1;
 	}
 
@@ -697,17 +677,28 @@ class assNumeric extends assQuestion implements ilObjQuestionScoringAdjustable, 
 	*/
 	public function getUserQuestionResult($active_id, $pass)
 	{
-		/** @var ilDB $ilDB */
+		/** @var ilDBInterface $ilDB */
 		global $ilDB;
 		$result = new ilUserQuestionResult($this, $active_id, $pass);
 
-		$data = $ilDB->queryF(
-			"SELECT value1 FROM tst_solutions WHERE active_fi = %s AND pass = %s AND question_fi = %s AND step = (
-				SELECT MAX(step) FROM tst_solutions WHERE active_fi = %s AND pass = %s AND question_fi = %s
-			)",
-			array("integer", "integer", "integer","integer", "integer", "integer"),
-			array($active_id, $pass, $this->getId(), $active_id, $pass, $this->getId())
-		);
+		$maxStep = $this->lookupMaxStep($active_id, $pass);
+
+		if( $maxStep !== null )
+		{
+			$data = $ilDB->queryF(
+				"SELECT value1 FROM tst_solutions WHERE active_fi = %s AND pass = %s AND question_fi = %s AND step = %s",
+				array("integer", "integer", "integer","integer"),
+				array($active_id, $pass, $this->getId(), $maxStep)
+			);
+		}
+		else
+		{
+			$data = $ilDB->queryF(
+				"SELECT value1 FROM tst_solutions WHERE active_fi = %s AND pass = %s AND question_fi = %s",
+				array("integer", "integer", "integer"),
+				array($active_id, $pass, $this->getId())
+			);
+		}
 
 		while($row = $ilDB->fetchAssoc($data))
 		{

@@ -17,6 +17,8 @@ class ilAdvancedMDFieldDefinitionSelect extends ilAdvancedMDFieldDefinition
 	protected $confirm_objects; // [array]
 	protected $confirmed_objects; // [array]
 	
+	const REMOVE_ACTION_ID = "-iladvmdrm-";
+	
 	
 	//
 	// generic types
@@ -100,7 +102,7 @@ class ilAdvancedMDFieldDefinitionSelect extends ilAdvancedMDFieldDefinition
 	{
 		global $lng;
 		
-		return array($lng->txt("options") => implode(",", $this->getOptions()));		
+		return array($lng->txt("meta_advmd_select_options") => implode(",", $this->getOptions()));		
 	}
 	
 	/**
@@ -113,9 +115,9 @@ class ilAdvancedMDFieldDefinitionSelect extends ilAdvancedMDFieldDefinition
 	{
 		global $lng;
 		
-		$field = new ilTextInputGUI($lng->txt("options"), "opts");			
+		$field = new ilTextInputGUI($lng->txt("meta_advmd_select_options"), "opts");			
 		$field->setRequired(true);
-		$field->setMulti(true);
+		$field->setMulti(true, true);
 		$field->setMaxLength(255); // :TODO:
 		$a_form->addItem($field);
 		
@@ -156,14 +158,37 @@ class ilAdvancedMDFieldDefinitionSelect extends ilAdvancedMDFieldDefinition
 				$sgl_act = $sgl[$old_option];
 				
 				if($recipe == "sum")
-				{						
+				{	
+					// #18885 					 
+					if(!$sum_act)
+					{
+						return;
+					}
+					
 					foreach(array_keys($sgl_act) as $obj_idx)
 					{
+						if($sum_act == self::REMOVE_ACTION_ID)
+						{
+							$sum_act = "";
+						}
 						$res[$old_option][$obj_idx] = $sum_act;
 					}
 				}
 				else
 				{
+					// #18885 	
+					foreach($sgl_act as $sgl_index => $sgl_item)
+					{
+						if(!$sgl_item)
+						{
+							return;
+						}
+						else if($sgl_item == self::REMOVE_ACTION_ID)
+						{
+							$sgl_act[$sgl_index] = "";
+						}
+					}
+					
 					$res[$old_option] = $sgl_act;
 				}
 			}
@@ -216,36 +241,60 @@ class ilAdvancedMDFieldDefinitionSelect extends ilAdvancedMDFieldDefinition
 	public function prepareCustomDefinitionFormConfirmation(ilPropertyFormGUI $a_form)
 	{
 		global $lng, $objDefinition;
-		
-		$a_form->getItemByPostVar("opts")->setDisabled(true);
+				
+		$a_form->getItemByPostVar("opts")->setDisabled(true);				
 		
 		if(sizeof($this->confirm_objects))
-		{			
+		{					
 			$new_options = $a_form->getInput("opts");		
 			
 			$sec = new ilFormSectionHeaderGUI();
 			$sec->setTitle($lng->txt("md_adv_confirm_definition_select_section"));
 			$a_form->addItem($sec);
-			
+									
 			foreach($this->confirm_objects as $old_option => $items)
-			{
+			{				
 				$details = new ilRadioGroupInputGUI($lng->txt("md_adv_confirm_definition_select_option").': "'.$old_option.'"', "conf_det[".$this->getFieldId()."][".$old_option."]");			
 				$details->setRequired(true);			
 				$details->setValue("sum");
 				$a_form->addItem($details);
+								
+				// automatic reload does not work
+				if(isset($_POST["conf_det"][$this->getFieldId()][$old_option]))
+				{
+					$details->setValue($_POST["conf_det"][$this->getFieldId()][$old_option]);
+				}
 				
 				$sum = new ilRadioOption($lng->txt("md_adv_confirm_definition_select_option_all"), "sum");				
 				$details->addOption($sum);
 				
 				$sel = new ilSelectInputGUI($lng->txt("md_adv_confirm_definition_select_option_all_action"), 
-					"conf_det_act[".$this->getFieldId()."][".$old_option."]");					
-				$options = array(""=>$lng->txt("md_adv_confirm_definition_select_option_remove"));
+					"conf_det_act[".$this->getFieldId()."][".$old_option."]");	
+				$sel->setRequired(true);
+				$options = array(
+					"" => $lng->txt("please_select"),
+					self::REMOVE_ACTION_ID => $lng->txt("md_adv_confirm_definition_select_option_remove")
+				);
 				foreach($new_options as $new_option)
 				{
 					$options[$new_option] = $lng->txt("md_adv_confirm_definition_select_option_overwrite").': "'.$new_option.'"';
 				}
 				$sel->setOptions($options);
 				$sum->addSubItem($sel);
+				
+				// automatic reload does not work
+				if(isset($_POST["conf_det_act"][$this->getFieldId()][$old_option]))
+				{
+					if($_POST["conf_det_act"][$this->getFieldId()][$old_option])
+					{
+						$sel->setValue($_POST["conf_det_act"][$this->getFieldId()][$old_option]);
+					}
+					else if($_POST["conf_det"][$this->getFieldId()][$old_option] == "sum")
+					{
+						$sel->setAlert($lng->txt("msg_input_is_required"));
+						ilUtil::sendFailure($lng->txt("form_input_not_valid"));
+					}
+				}
 				
 				$single = new ilRadioOption($lng->txt("md_adv_confirm_definition_select_option_single"), "sgl");
 				$details->addOption($single);
@@ -278,18 +327,34 @@ class ilAdvancedMDFieldDefinitionSelect extends ilAdvancedMDFieldDefinition
 					}
 					
 					$sel = new ilSelectInputGUI($type_title.' '.$title, 
-						"conf[".$this->getFieldId()."][".$old_option."][".$item_id."]");					
-					$options = array(""=>$lng->txt("md_adv_confirm_definition_select_option_remove"));
+						"conf[".$this->getFieldId()."][".$old_option."][".$item_id."]");	
+					$sel->setRequired(true);
+					$options = array(
+						"" => $lng->txt("please_select"),
+						self::REMOVE_ACTION_ID => $lng->txt("md_adv_confirm_definition_select_option_remove")
+					);
 					foreach($new_options as $new_option)
 					{
 						$options[$new_option] = $lng->txt("md_adv_confirm_definition_select_option_overwrite").': "'.$new_option.'"';
 					}
 					$sel->setOptions($options);
 					
+					// automatic reload does not work
+					if(isset($_POST["conf"][$this->getFieldId()][$old_option][$item_id]))
+					{
+						if($_POST["conf"][$this->getFieldId()][$old_option][$item_id])
+						{
+							$sel->setValue($_POST["conf"][$this->getFieldId()][$old_option][$item_id]);
+						}
+						else if($_POST["conf_det"][$this->getFieldId()][$old_option] == "sgl")
+						{
+							$sel->setAlert($lng->txt("msg_input_is_required"));
+							ilUtil::sendFailure($lng->txt("form_input_not_valid"));
+						}
+					}
+					
 					$single->addSubItem($sel);
-				}
-				
-				
+				}								
 			}
 		}		
 	}
@@ -307,7 +372,7 @@ class ilAdvancedMDFieldDefinitionSelect extends ilAdvancedMDFieldDefinition
 		{
 			ilADTFactory::initActiveRecordByType();
 			foreach($this->confirmed_objects as $old_option => $item_ids)
-			{				
+			{
 				foreach($item_ids as $item => $new_option)
 				{
 					$item = explode("_", $item);
@@ -337,14 +402,14 @@ class ilAdvancedMDFieldDefinitionSelect extends ilAdvancedMDFieldDefinition
 						);
 						ilADTActiveRecordByType::writeByPrimary("adv_md_values", $primary, "Enum", $new_option);
 					}
-										
+					
 					if($sub_type == "wpg")
 					{
 						// #15763 - adapt advmd page lists
 						include_once "Modules/Wiki/classes/class.ilPCAMDPageList.php";
 						ilPCAMDPageList::migrateField($obj_id, $this->getFieldId(), $old_option, $new_option);												
-					}					
-				}				
+					}		
+				}
 			}			
 		}		
 	}
@@ -381,6 +446,18 @@ class ilAdvancedMDFieldDefinitionSelect extends ilAdvancedMDFieldDefinition
 	{		
 		$this->getADT()->setSelection($a_cdata);			
 	}	
+	
+	
+	//
+	// presentation
+	//
+	
+	public function prepareElementForEditor(ilADTFormBridge $a_enum)
+	{
+		assert($a_enum instanceof ilADTEnumFormBridge);
+		
+		$a_enum->setAutoSort(false);		
+	}
 }
 
 ?>

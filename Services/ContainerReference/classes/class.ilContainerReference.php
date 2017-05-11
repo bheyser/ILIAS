@@ -21,8 +21,7 @@
 	+-----------------------------------------------------------------------------+
 */
 
-include_once 'Services/Object/classes/class.ilObject.php';
-
+include_once './Services/Object/classes/class.ilObject.php';
 /** 
 * 
 * 
@@ -70,7 +69,7 @@ class ilContainerReference extends ilObject
 		$query = "SELECT * FROM container_reference ".
 			"WHERE obj_id = ".$ilDB->quote($a_obj_id,'integer')." ";
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			return $row->target_obj_id;
 		}
@@ -91,7 +90,7 @@ class ilContainerReference extends ilObject
 	 		"JOIN container_reference cr ON obr.obj_id = cr.target_obj_id ".
 	 		"WHERE cr.obj_id = ".$ilDB->quote($a_obj_id,'integer');
 	 	$res = $ilDB->query($query);
-	 	while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+	 	while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 	 	{
 	 		return $row->ref_id;
 	 	}
@@ -111,7 +110,7 @@ class ilContainerReference extends ilObject
 				 'JOIN object_data od ON cr.obj_id = od.obj_id '.
 				 'WHERE cr.obj_id = '.$ilDB->quote($a_obj_id,'integer');
 		 $res = $ilDB->query($query);
-		 while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		 while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		 {
 			 if($row->title_type == ilContainerReference::TITLE_TYPE_CUSTOM)
 			 {
@@ -135,7 +134,7 @@ class ilContainerReference extends ilObject
 	 		"JOIN container_reference cr ON target_obj_id = od.obj_id ".
 	 		"WHERE cr.obj_id = ".$ilDB->quote($a_obj_id ,'integer');
 	 	$res = $ilDB->query($query);
-	 	while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+	 	while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 	 	{
 	 		return $row->title;
 	 	}
@@ -156,12 +155,35 @@ class ilContainerReference extends ilObject
 	 	$query = "SELECT * FROM container_reference ".
 	 		"WHERE target_obj_id = ".$ilDB->quote($a_target_id,'integer')." ";
 	 	$res = $ilDB->query($query);
-	 	while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+	 	while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 	 	{
 	 		return $row->obj_id;
 	 	}
 	 	return false;
 	 }
+	
+	/**
+	 * Get ids of all container references that target the object with the
+	 * given id.
+	 *  
+	 * @param int $a_target_id obj_id of course or category
+	 * @return int[] obj_ids of references
+	 * @static
+	 */
+	public static function _lookupSourceIds($a_target_id)
+	{
+		global $ilDB;
+		
+		$query = "SELECT * FROM container_reference ".
+			"WHERE target_obj_id = ".$ilDB->quote($a_target_id,'integer')." ";
+		$res = $ilDB->query($query);
+		$ret = array();
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
+		{
+			$ret[] = $row->obj_id;
+		}
+		return $ret;
+	}
 	
 	/**
 	 * get target id
@@ -245,7 +267,7 @@ class ilContainerReference extends ilObject
 			"WHERE obj_id = ".$ilDB->quote($this->getId(),'integer')." ";
 		$res = $ilDB->query($query);
 		
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$this->setTargetId($row->target_obj_id);
 			$this->setTitleType($row->title_type);
@@ -333,11 +355,11 @@ class ilContainerReference extends ilObject
 	 * @param int copy id
 	 * 
 	 */
-	public function cloneObject($a_target_id,$a_copy_id = 0)
+	public function cloneObject($a_target_id,$a_copy_id = 0, $a_omit_tree = false)
 	{
 		global $ilDB,$ilUser;
 		
-	 	$new_obj = parent::cloneObject($a_target_id,$a_copy_id);
+	 	$new_obj = parent::cloneObject($a_target_id,$a_copy_id, $a_omit_tree);
 	 	
 		$query = "INSERT INTO container_reference (obj_id, target_obj_id, title_type) ".
 			"VALUES( ".

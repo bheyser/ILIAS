@@ -53,7 +53,7 @@ class ilBlogPostingGUI extends ilPageObjectGUI
 		$this->setEnableEditing($a_may_contribute);
 		
 		// content style
-		include_once("./Services/Style/classes/class.ilObjStyleSheet.php");
+		include_once("./Services/Style/Content/classes/class.ilObjStyleSheet.php");
 		
 		$tpl->setCurrentBlock("SyntaxStyle");
 		$tpl->setVariable("LOCATION_SYNTAX_STYLESHEET",
@@ -67,7 +67,7 @@ class ilBlogPostingGUI extends ilPageObjectGUI
 		$tpl->parseCurrentBlock();		
 					
 		// needed for editor			
-		$this->setStyleId($a_style_sheet_id);	
+		$this->setStyleId($a_style_sheet_id);		
 	}
 
 	/**
@@ -286,15 +286,29 @@ class ilBlogPostingGUI extends ilPageObjectGUI
 		if(($this->getOutputMode() == "preview" || $this->getOutputMode() == "offline") 
 			&& !$this->getAbstractOnly() && $this->add_date)
 		{			
+			$author = "";
 			if(!$this->isInWorkspace())		
 			{
-				$author = "";
+				$authors = array();
 				$author_id = $this->getBlogPosting()->getAuthor();
 				if($author_id)
 				{
 					include_once "Services/User/classes/class.ilUserUtil.php";
-					$author = ilUserUtil::getNamePresentation($author_id)." - ";
+					$authors[] = ilUserUtil::getNamePresentation($author_id);
 				}		
+								
+				foreach(ilBlogPosting::getPageContributors("blp", $this->getBlogPosting()->getId()) as $editor)
+				{
+					if($editor["user_id"] != $author_id)
+					{
+						$authors[] = ilUserUtil::getNamePresentation($editor["user_id"]);
+					}
+				}
+				
+				if($authors)
+				{
+					$author = implode(", ", $authors)." - ";
+				}
 			}
 			
 			// prepend creation date
@@ -420,6 +434,8 @@ class ilBlogPostingGUI extends ilPageObjectGUI
 			$page->setTitle($form->getInput("title"));
 			$page->update();			
 			
+			$page->handleNews(true);
+			
 			ilUtil::sendSuccess($lng->txt("settings_saved"), true);
 			$ilCtrl->redirect($this, "preview");
 		}
@@ -470,8 +486,8 @@ class ilBlogPostingGUI extends ilPageObjectGUI
 		$form = $this->initDateForm();
 		if($form->checkInput())
 		{
-			$dt = $form->getInput("date");
-			$dt = new ilDateTime($dt["date"]." ".$dt["time"], IL_CAL_DATETIME);
+			$dt = $form->getItemByPostVar("date");
+			$dt = $dt->getDate();
 			
 			$page = $this->getPageObject();
 			$page->setCreated($dt);
@@ -806,9 +822,14 @@ class ilBlogPostingGUI extends ilPageObjectGUI
 						}						
 						$mob_res = self::parseImage($mob_size["width"],
 							$mob_size["height"], $a_width, $a_height);
+
+
+						$location = $mob_item->getLocationType() == "Reference"
+							? $mob_item->getLocation()
+							: $mob_dir."/".$mob_item->getLocation();
 						
 						return '<img'.
-							' src="'.$mob_dir."/".$mob_item->getLocation().'"'.
+							' src="'.$location.'"'.
 							' width="'.$mob_res[0].'"'.
 							' height="'.$mob_res[1].'"'.
 							' class="ilBlogListItemSnippetPreviewImage ilFloatLeft noMirror"'.

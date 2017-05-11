@@ -250,7 +250,11 @@ class ilForumXMLParser extends ilSaxParser
 			case 'UpdateDate':
 				$x['UpdateDate'] = $this->cdata;
 				break;
-			
+
+			case 'FileUpload':
+				$x['FileUpload'] = $this->cdata;
+				break;
+
 			case 'UpdateUserId':
 				$x['UpdateUserId'] = $this->cdata;
 				break;
@@ -281,14 +285,12 @@ class ilForumXMLParser extends ilSaxParser
 						$this->forumArray['UpdateUserId'], ''
 					);
 					// Store old user id
-					$oldUsrId = $_SESSION["AccountId"];
 					// Manipulate user object
-					$_SESSION["AccountId"] = $update_forum_array['usr_id'];
+					// changed smeyer 28.7.16: the session id is not manipulated 
+					// anymore. Instead the user is passwd ilObjForum::update()
 					$this->forum->setTitle($this->forumArray["Title"]);
 					$this->forum->setDescription($this->forumArray["Description"]);
-					$this->forum->update();
-					// Restore old user id
-					$_SESSION["AccountId"] = $oldUsrId;
+					$this->forum->update($update_forum_array['usr_id']);
 
 					// create frm_settings
 					$newObjProp = ilForumProperties::getInstance($this->forum->getId());
@@ -302,6 +304,9 @@ class ilForumXMLParser extends ilSaxParser
 					$newObjProp->setNotificationType($this->forumArray['NotificationType'] ? $this->forumArray['NotificationType'] : 'all_users');
 					$newObjProp->setAdminForceNoti((int)$this->forumArray['ForceNotification']);
 					$newObjProp->setUserToggleNoti((int)$this->forumArray['ToggleNotification']);
+					$newObjProp->setFileUploadAllowed((int)$this->forumArray['FileUpload']);
+					$newObjProp->setThreadSorting($this->forumArray['Sorting']);
+					$newObjProp->setMarkModeratorPosts($this->forumArray['MarkModeratorPosts']);
 					$newObjProp->update();
 
 					$id = $this->getNewForumPk();
@@ -335,6 +340,14 @@ class ilForumXMLParser extends ilSaxParser
 
 			case 'Sticky':
 				$x['Sticky'] = $this->cdata;
+				break;
+
+			case 'Sorting':
+				$x['Sorting'] = $this->cdata;
+				break;
+
+			case 'MarkModeratorPosts':
+				$x['MarkModeratorPosts'] = $this->cdata;
 				break;
 
 			case 'Closed':

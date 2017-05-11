@@ -19,8 +19,8 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 	 */
 	function __construct($a_parent_obj, $a_parent_cmd, $a_ref_id, $a_print_mode = false)
 	{
-		global $ilCtrl, $lng, $ilAccess, $lng;
-
+		global $ilCtrl, $objDefinition;
+		
 		$this->setId("trsmy");
 
 		$this->ref_id = $a_ref_id;
@@ -29,8 +29,15 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 		
 		if(!$this->is_root)
 		{
-			include_once './Services/Object/classes/class.ilObjectLP.php';
-			$this->olp = ilObjectLP::getInstance($this->obj_id);		
+			// #17084 - are we multi-object or not?
+			//  we cannot parse type filter (too complicated)
+			$type = ilObject::_lookupType($this->obj_id);
+			if(!$objDefinition->isContainer($type))
+			{				
+				$this->type = $type;
+				include_once './Services/Object/classes/class.ilObjectLP.php';
+				$this->olp = ilObjectLP::getInstance($this->obj_id);						
+			}						
 		}
 
 		parent::__construct($a_parent_obj, $a_parent_cmd);
@@ -59,12 +66,13 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 			$this->addColumn($this->lng->txt("path"));
 			$this->addColumn($this->lng->txt("action"));
 		}
-		$this->initFilter();
-
+		
+		
 		// $this->setExternalSorting(true);
 		$this->setEnableHeader(true);
 		$this->setFormAction($ilCtrl->getFormActionByClass(get_class($this)));
 		$this->setRowTemplate("tpl.trac_summary_row.html", "Services/Tracking");
+		$this->initFilter();
 		
 		$this->getItems($a_parent_obj->getObjId(), $a_ref_id);
 	}
@@ -84,7 +92,7 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 		
 		$all = array("user_total");
 		$default = array();
-
+		
 		// show only if extended data was activated in lp settings
 		include_once 'Services/Tracking/classes/class.ilObjUserTracking.php';
 		$tracking = new ilObjUserTracking();
@@ -96,30 +104,39 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 		}
 		if($tracking->hasExtendedData(ilObjUserTracking::EXTENDED_DATA_SPENT_SECONDS))
 		{
-			$all[] = "spent_seconds_avg";
-			$default[] = "spent_seconds_avg";
+			if($this->is_root || !$this->type || ilObjectLP::supportsSpentSeconds($this->type))
+			{
+				$all[] = "spent_seconds_avg";
+				$default[] = "spent_seconds_avg";
+			}
 		}
 		if($tracking->hasExtendedData(ilObjUserTracking::EXTENDED_DATA_READ_COUNT) &&
 			$tracking->hasExtendedData(ilObjUserTracking::EXTENDED_DATA_SPENT_SECONDS))
 		{
-			$all[] = "read_count_spent_seconds_avg";
-			// $default[] = "read_count_spent_seconds_avg";
+			if($this->is_root || !$this->type || ilObjectLP::supportsSpentSeconds($this->type))
+			{
+				$all[] = "read_count_spent_seconds_avg";
+				// $default[] = "read_count_spent_seconds_avg";
+			}
 		}
 
-		$all[] = "percentage_avg";
 		
-		// do not show status if learning progress is deactivated					
-		if($this->is_root || $this->olp->isActive())
-		{		
-			$all[] = "status";
-			$all[] = 'status_changed_max';
+		if($this->is_root || !$this->type || $this->isPercentageAvailable($this->obj_id))
+		{
+			$all[] = "percentage_avg";		
 		}
 		
-		if($this->is_root || ilObject::_lookupType($this->obj_id) != "lm")
+		if($this->is_root || !$this->olp || $this->olp->isActive())
+		{
+			$all[] = "status";
+			$all[] = 'status_changed_max';		
+		}
+		
+		if($this->is_root || !$this->type || ilObjectLP::supportsMark($this->type))
 		{
 			$all[] = "mark";
 		}
-
+		
 		$privacy = array("gender", "city", "country", "sel_country");
 		foreach($privacy as $field)
 		{
@@ -130,10 +147,10 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 		}
 		
 		$all[] = "language";
-
+		
 		$default[] = "percentage_avg";
-		$default[] = "status";
-		$default[] = "mark";
+		$default[] = "status";	
+		$default[] = "mark";		
 	
 		if($tracking->hasExtendedData(ilObjUserTracking::EXTENDED_DATA_LAST_ACCESS))
 		{
@@ -144,7 +161,6 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 		$all[] = "create_date_min";
 		$all[] = "create_date_max";
 
-		
 		$columns = array();
 		foreach($all as $column)
 		{
@@ -189,7 +205,7 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 		
 		if($this->is_root)
 		{
-			return parent::initFilter(true, false);
+			return parent::initBaseFilter(true, false);
 		}
 		
 		// show only if extended data was activated in lp settings
@@ -209,19 +225,24 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 
 		if($tracking->hasExtendedData(ilObjUserTracking::EXTENDED_DATA_SPENT_SECONDS))
 		{
-			$item = $this->addFilterItemByMetaType("spent_seconds", ilTable2GUI::FILTER_DURATION_RANGE,
-				true, "&#216; ".$lng->txt("trac_spent_seconds")." / ".$lng->txt("user"));
-			$this->filter["spent_seconds"]["from"] = $item->getCombinationItem("from")->getValueInSeconds();
-			$this->filter["spent_seconds"]["to"] = $item->getCombinationItem("to")->getValueInSeconds();
+			if($this->is_root || !$this->type || ilObjectLP::supportsSpentSeconds($this->type))
+			{
+				$item = $this->addFilterItemByMetaType("spent_seconds", ilTable2GUI::FILTER_DURATION_RANGE,
+					true, "&#216; ".$lng->txt("trac_spent_seconds")." / ".$lng->txt("user"));
+				$this->filter["spent_seconds"]["from"] = $item->getCombinationItem("from")->getValueInSeconds();
+				$this->filter["spent_seconds"]["to"] = $item->getCombinationItem("to")->getValueInSeconds();
+			}
 		}
 
-		$item = $this->addFilterItemByMetaType("percentage", ilTable2GUI::FILTER_NUMBER_RANGE, true,
-			"&#216; ".$lng->txt("trac_percentage")." / ".$lng->txt("user"));
-		$this->filter["percentage"] = $item->getValue();
-
-		// do not show status if learning progress is deactivated				
-		if($this->olp->isActive())
-		{		
+		if($this->is_root || !$this->type || $this->isPercentageAvailable($this->obj_id))
+		{
+			$item = $this->addFilterItemByMetaType("percentage", ilTable2GUI::FILTER_NUMBER_RANGE, true,
+				"&#216; ".$lng->txt("trac_percentage")." / ".$lng->txt("user"));
+			$this->filter["percentage"] = $item->getValue();
+		}
+	
+		if($this->is_root || !$this->olp || $this->olp->isActive())
+		{
 			include_once "Services/Tracking/classes/class.ilLPStatus.php";
 			$item = $this->addFilterItemByMetaType("status", ilTable2GUI::FILTER_SELECT, true);
 			$item->setOptions(array("" => $lng->txt("trac_all"),
@@ -234,16 +255,16 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 			{
 				$this->filter["status"]--;
 			}
-
+		
 			$item = $this->addFilterItemByMetaType("trac_status_changed", ilTable2GUI::FILTER_DATE_RANGE, true);
 			$this->filter["status_changed"] = $item->getDate();
 		}
-
-		if(ilObject::_lookupType($this->obj_id) != "lm")
+	
+		if($this->is_root || !$this->type || ilObjectLP::supportsMark($this->type))
 		{
 			$item = $this->addFilterItemByMetaType("mark", ilTable2GUI::FILTER_TEXT, true,
 				$lng->txt("trac_mark"));
-			$this->filter["mark"] = $item->getValue();
+			$this->filter["mark"] = $item->getValue();		
 		}
 
 		if($ilSetting->get("usr_settings_course_export_gender"))
@@ -312,7 +333,7 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 	function getItems($a_object_id, $a_ref_id)
 	{
 		global $lng, $rbacsystem;
-
+		
 		include_once("./Services/Tracking/classes/class.ilTrQuery.php");
 
 		$preselected_obj_ids = $filter = NULL;
@@ -327,7 +348,7 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 			// using summary filters
 			$filter = $this->getCurrentFilter();
 		}
-
+		
 		$data = ilTrQuery::getObjectsSummaryForObject(
 				$a_object_id,
 				$a_ref_id,
@@ -553,7 +574,7 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 				$id = substr($id, 0, $pos);
 			}
 		}
-
+		
 		if(trim($value) == "")
 		{
 			if($id == "title")
@@ -576,24 +597,18 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 
 			case "spent_seconds":
 			case "read_count_spent_seconds":
-				if(in_array($type, array("exc")))
+				if(!ilObjectLP::supportsSpentSeconds($type))
 				{
 					$value = "-";
 				}
 				else
 				{
-					include_once("./Services/Utilities/classes/class.ilFormat.php");
-					$value = ilFormat::_secondsToString($value, ($value < 3600 ? true : false)); // #14858
+					$value = ilDatePresentation::secondsToString($value, ($value < 3600 ? true : false)); // #14858
 				}
 				break;
 
 			case "percentage":
-				/* :TODO:
-				if(in_array(strtolower($this->status_class),
-						  array("illpstatusmanual", "illpstatusscormpackage", "illpstatustestfinished")) ||
-				$type == "exc"))
-				*/
-			    if(false)
+				if(false /* $this->isPercentageAvailable() */)
 				{
 					$value = "-";
 				}
@@ -604,7 +619,7 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 				break;
 
 			case "mark":
-				if(in_array($type, array("lm", "dbk")))
+				if(!ilObjectLP::supportsMark($type))				
 				{
 					$value = "-";
 				}
@@ -704,6 +719,17 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 			
 			$this->tpl->touchBlock("path_action");
 		}
+		else if($a_set["ref_ids"]) // #18446
+		{
+			// #16453
+			include_once './Services/Tree/classes/class.ilPathGUI.php';
+			$path = new ilPathGUI();
+			$path = $path->getPath($this->ref_id, array_pop($a_set["ref_ids"]));
+			if($path)
+			{
+				$this->tpl->setVariable('COLL_PATH', $this->lng->txt('path').': '.$path);
+			}
+		}
 	}
 
 	protected function renderPercentages($id, $data)
@@ -727,7 +753,7 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 
 	protected function isArrayColumn($a_name)
 	{
-		if(in_array($a_name, array("country", "gender", "city", "language", "status", "mark")))
+		if(in_array($a_name, array("country", "gender", "city", "language", "status", "mark", 'sel_country')))
 		{
 			return true;
 		}
@@ -748,9 +774,9 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 		return false;
 	}
 
-	protected function fillHeaderExcel($worksheet, &$a_row)
+	protected function fillHeaderExcel(ilExcel $a_excel, &$a_row)
 	{
-		$worksheet->write($a_row, 0, $this->lng->txt("title"));
+		$a_excel->setCell($a_row, 0, $this->lng->txt("title"));
 
 		$labels = $this->getSelectableColumns();
 		$cnt = 1;
@@ -762,25 +788,25 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 			
 			if(!$this->isArrayColumn($c))
 			{
-				$worksheet->write($a_row, $cnt, $label);
+				$a_excel->setCell($a_row, $cnt, $label);
 				$cnt++;
 			}
 			else
 			{
 				if($c != "status")
 				{
-					$worksheet->write($a_row, $cnt, $label." #1");
-					$worksheet->write($a_row, ++$cnt, $label." #1");
-					$worksheet->write($a_row, ++$cnt, $label." #1 %");
-					$worksheet->write($a_row, ++$cnt, $label." #2");
-					$worksheet->write($a_row, ++$cnt, $label." #2");
-					$worksheet->write($a_row, ++$cnt, $label." #2 %");
-					$worksheet->write($a_row, ++$cnt, $label." #3");
-					$worksheet->write($a_row, ++$cnt, $label." #3");
-					$worksheet->write($a_row, ++$cnt, $label." #3 %");
-					$worksheet->write($a_row, ++$cnt, $label." ".$this->lng->txt("trac_others"));
-					$worksheet->write($a_row, ++$cnt, $label." ".$this->lng->txt("trac_others"));
-					$worksheet->write($a_row, ++$cnt, $label." ".$this->lng->txt("trac_others")." %");
+					$a_excel->setCell($a_row, $cnt, $label." #1");
+					$a_excel->setCell($a_row, ++$cnt, $label." #1");
+					$a_excel->setCell($a_row, ++$cnt, $label." #1 %");
+					$a_excel->setCell($a_row, ++$cnt, $label." #2");
+					$a_excel->setCell($a_row, ++$cnt, $label." #2");
+					$a_excel->setCell($a_row, ++$cnt, $label." #2 %");
+					$a_excel->setCell($a_row, ++$cnt, $label." #3");
+					$a_excel->setCell($a_row, ++$cnt, $label." #3");
+					$a_excel->setCell($a_row, ++$cnt, $label." #3 %");
+					$a_excel->setCell($a_row, ++$cnt, $label." ".$this->lng->txt("trac_others"));
+					$a_excel->setCell($a_row, ++$cnt, $label." ".$this->lng->txt("trac_others"));
+					$a_excel->setCell($a_row, ++$cnt, $label." ".$this->lng->txt("trac_others")." %");
 				}
 				else
 				{
@@ -795,42 +821,44 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 					foreach($valid_status as $status)
 					{
 						$text = ilLearningProgressBaseGUI::_getStatusText($status);
-						$worksheet->write($a_row, ++$cnt, $text);
-						$worksheet->write($a_row, ++$cnt, $text." %");
+						$a_excel->setCell($a_row, ++$cnt, $text);
+						$a_excel->setCell($a_row, ++$cnt, $text." %");
 					}
 				}
 				$cnt++;
 			}
 		}
+		
+		$a_excel->setBold("A".$a_row.":".$a_excel->getColumnCoord($cnt).$a_row);
 	}
 
-	protected function fillRowExcel($worksheet, &$a_row, $a_set)
+	protected function fillRowExcel(ilExcel $a_excel, &$a_row, $a_set)
 	{
-		$worksheet->write($a_row, 0, $a_set["title"]);
+		$a_excel->setCell($a_row, 0, $a_set["title"]);
 
 		$cnt = 1;
 		foreach ($this->getSelectedColumns() as $c)
 		{
 			if(!$this->isArrayColumn($c))
 			{
-				$val = $this->parseValue($c, $a_set[$c], "user");
-				$worksheet->write($a_row, $cnt, $val);
+				$val = $this->parseValue($c, $a_set[$c], $a_set["type"]);
+				$a_excel->setCell($a_row, $cnt, $val);
 				$cnt++;
 			}
 			else
 			{
-				foreach($a_set[$c] as $idx => $value)
+				foreach((array) $a_set[$c] as $idx => $value)
 				{
 					if($c == "status")
 					{
-						$worksheet->write($a_row, $cnt, (int)$value["absolute"]);
-						$worksheet->write($a_row, ++$cnt, $value["percentage"]);
+						$a_excel->setCell($a_row, $cnt, (int)$value["absolute"]);
+						$a_excel->setCell($a_row, ++$cnt, $value["percentage"]."%");
 					}
 					else
 					{
-						$worksheet->write($a_row, $cnt, $value["caption"]);
-						$worksheet->write($a_row, ++$cnt, (int)$value["absolute"]);
-						$worksheet->write($a_row, ++$cnt, $value["percentage"]);
+						$a_excel->setCell($a_row, $cnt, $value["caption"]);
+						$a_excel->setCell($a_row, ++$cnt, (int)$value["absolute"]);
+						$a_excel->setCell($a_row, ++$cnt, $value["percentage"]."%");
 					}
 					$cnt++;
 				}
@@ -838,9 +866,9 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 				{
 					for($loop = 4; $loop > sizeof($a_set[$c]); $loop--)
 					{
-						$worksheet->write($a_row, $cnt, "");
-						$worksheet->write($a_row, ++$cnt, "");
-						$worksheet->write($a_row, ++$cnt, "");
+						$a_excel->setCell($a_row, $cnt, "");
+						$a_excel->setCell($a_row, ++$cnt, "");
+						$a_excel->setCell($a_row, ++$cnt, "");
 						$cnt++;
 					}
 				}
@@ -910,12 +938,12 @@ class ilTrSummaryTableGUI extends ilLPTableBaseGUI
 		{
 			if(!$this->isArrayColumn($c))
 			{
-				$val = $this->parseValue($c, $a_set[$c], "user");
+				$val = $this->parseValue($c, $a_set[$c], $a_set["type"]);
 				$a_csv->addColumn($val);
 			}
 			else
 			{
-				foreach($a_set[$c] as $idx => $value)
+				foreach((array) $a_set[$c] as $idx => $value)
 				{
 					if($c != "status")
 					{

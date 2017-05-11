@@ -35,16 +35,16 @@ class ilObjMediaObject extends ilObject
 	* Constructor
 	* @access	public
 	*/
-	function ilObjMediaObject($a_id = 0)
+	function __construct($a_id = 0)
 	{
 		$this->is_alias = false;
 		$this->media_items = array();
 		$this->contains_int_link = false;
 		$this->type = "mob";
-		parent::ilObject($a_id, false);
+		parent::__construct($a_id, false);
 	}
 
-	function setRefId()
+	function setRefId($a_id)
 	{
 		$this->ilias->raiseError("Operation ilObjMedia::setRefId() not allowed.",$this->ilias->error_obj->FATAL);
 	}
@@ -54,7 +54,7 @@ class ilObjMediaObject extends ilObject
 		return false;
 	}
 
-	function putInTree()
+	function putInTree($a_parent_ref)
 	{
 		$this->ilias->raiseError("Operation ilObjMedia::putInTree() not allowed.",$this->ilias->error_obj->FATAL);
 	}
@@ -81,7 +81,7 @@ class ilObjMediaObject extends ilObject
 	*
 	* @return	boolean		true, if lm content object exists
 	*/
-	public static function _exists($a_id)
+	public static function _exists($a_id, $a_reference = false, $a_type = NULL)
 	{
 		global $ilDB;
 		
@@ -99,12 +99,17 @@ class ilObjMediaObject extends ilObject
 	*/
 	function delete()
 	{
+		$mob_logger = ilLoggerFactory::getLogger('mob');
+		$mob_logger->debug("ilObjMediaObject: Delete called for media object ID '".$this->getId()."'.");
+
 		if (!($this->getId() > 0))
 		{
 			return;
 		}
 
 		$usages = $this->getUsages();
+
+		$mob_logger->debug("ilObjMediaObject: ... Found ".count($usages)." usages.");
 
 		if (count($usages) == 0)
 		{
@@ -126,6 +131,19 @@ class ilObjMediaObject extends ilObject
 					
 			// delete object
 			parent::delete();
+
+			$mob_logger->debug("ilObjMediaObject: ... deleted.");
+		}
+		else
+		{
+			foreach ($usages as $u)
+			{
+				$mob_logger->debug("ilObjMediaObject: ... usage type:".$u["type"].
+					", id:".$u["id"].
+					", lang:".$u["lang"].
+					", hist_nr:".$u["hist_nr"].".");
+			}
+			$mob_logger->debug("ilObjMediaObject: ... not deleted.");
 		}
 	}
 
@@ -221,15 +239,15 @@ class ilObjMediaObject extends ilObject
 		include_once("Services/MetaData/classes/class.ilMDGeneral.php");
 		include_once("Services/MetaData/classes/class.ilMDDescription.php");
 
-		$md =& new ilMD(0, $this->getId(), $this->getType());
-		$md_gen =& $md->getGeneral();
+		$md = new ilMD(0, $this->getId(), $this->getType());
+		$md_gen = $md->getGeneral();
 		$md_gen->setTitle($this->getTitle());
 
 		// sets first description (maybe not appropriate)
-		$md_des_ids =& $md_gen->getDescriptionIds();
+		$md_des_ids = $md_gen->getDescriptionIds();
 		if (count($md_des_ids) > 0)
 		{
-			$md_des =& $md_gen->getDescription($md_des_ids[0]);
+			$md_des = $md_gen->getDescription($md_des_ids[0]);
 			$md_des->setDescription($this->getDescription());
 			$md_des->update();
 		}
@@ -443,10 +461,10 @@ class ilObjMediaObject extends ilObject
 
 		if ($a_save_media_items)
 		{
-			$media_items =& $this->getMediaItems();
+			$media_items = $this->getMediaItems();
 			for($i=0; $i<count($media_items); $i++)
 			{
-				$item =& $media_items[$i];
+				$item = $media_items[$i];
 				$item->setMobId($this->getId());
 				$item->setNr($i+1);
 				$item->create();
@@ -480,11 +498,11 @@ class ilObjMediaObject extends ilObject
 		ilMediaItem::deleteAllItemsOfMob($this->getId());
 
 		// iterate all items
-		$media_items =& $this->getMediaItems();
+		$media_items = $this->getMediaItems();
 		$j = 1;
 		foreach($media_items as $key => $val)
 		{
-		    $item =& $media_items[$key];
+		    $item = $media_items[$key];
 			if (is_object($item))
 			{
 				$item->setMobId($this->getId());
@@ -499,15 +517,13 @@ class ilObjMediaObject extends ilObject
 		}
 		
 		self::handleQuotaUpdate($this);		
-
-        	global $ilAppEventHandler;
+		global $ilAppEventHandler;
 		$ilAppEventHandler->raise('Services/MediaObjects',
         	'update',
 		array('object' => $this,
             		'obj_type' => 'mob',
             		'obj_id' => $this->getId())
-        	);            
-
+        	);  
 	}
 	
 	protected static function handleQuotaUpdate(ilObjMediaObject $a_mob)
@@ -552,17 +568,17 @@ class ilObjMediaObject extends ilObject
 	*
 	* @param	int		$a_mob_id		media object id
 	*/
-	function _getDirectory($a_mob_id)
+	static function _getDirectory($a_mob_id)
 	{
 		return ilUtil::getWebspaceDir()."/mobs/mm_".$a_mob_id;
 	}
-	
-/**
-	* get directory for files of media object (static)
-	*
-	* @param	int		$a_mob_id		media object id
-	*/
-	function _getURL($a_mob_id)
+
+	/**
+	 * get directory for files of media object (static)
+	 * @param int $a_mob_id media object id
+	 * @return string
+	 */
+	public static function _getURL($a_mob_id)
 	{
 		return ilUtil::getHtmlPath(ilUtil::getWebspaceDir()."/mobs/mm_".$a_mob_id);
 	}
@@ -572,7 +588,7 @@ class ilObjMediaObject extends ilObject
 	*
 	* @param	int		$a_mob_id		media object id
 	*/
-	function _getThumbnailDirectory($a_mob_id, $a_mode = "filesystem")
+	static function _getThumbnailDirectory($a_mob_id, $a_mode = "filesystem")
 	{
 		return ilUtil::getWebspaceDir($a_mode)."/thumbs/mm_".$a_mob_id;
 	}
@@ -625,7 +641,7 @@ class ilObjMediaObject extends ilObject
 	/**
 	 * Create thumbnail directory
 	 */
-	function _createThumbnailDirectory($a_obj_id)
+	static function _createThumbnailDirectory($a_obj_id)
 	{
 		ilUtil::createDirectory(ilUtil::getWebspaceDir()."/thumbs");
 		ilUtil::createDirectory(ilUtil::getWebspaceDir()."/thumbs/mm_".$a_obj_id);
@@ -678,10 +694,10 @@ class ilObjMediaObject extends ilObject
 			case IL_MODE_ALIAS:
 				$xml = "<MediaObject>";
 				$xml .= "<MediaAlias OriginId=\"il__mob_".$this->getId()."\"/>";
-				$media_items =& $this->getMediaItems();
+				$media_items = $this->getMediaItems();
 				for($i=0; $i<count($media_items); $i++)
 				{
-					$item =& $media_items[$i];
+					$item = $media_items[$i];
 					$xml .= "<MediaAliasItem Purpose=\"".$item->getPurpose()."\">";
 
 					// Layout
@@ -725,13 +741,13 @@ class ilObjMediaObject extends ilObject
 			case IL_MODE_OUTPUT:
 
 				// get first technical section
-//				$meta =& $this->getMetaData();
+//				$meta = $this->getMetaData();
 				$xml = "<MediaObject Id=\"il__mob_".$this->getId()."\">";
 
-				$media_items =& $this->getMediaItems();
+				$media_items = $this->getMediaItems();
 				for($i=0; $i<count($media_items); $i++)
 				{
-					$item =& $media_items[$i];
+					$item = $media_items[$i];
 
 					$xml .= "<MediaItem Purpose=\"".$item->getPurpose()."\">";
 
@@ -800,7 +816,7 @@ class ilObjMediaObject extends ilObject
 			// full xml for export
 			case IL_MODE_FULL:
 
-//				$meta =& $this->getMetaData();
+//				$meta = $this->getMetaData();
 				$xml = "<MediaObject>";
 
 				// meta data
@@ -810,10 +826,10 @@ class ilObjMediaObject extends ilObject
 				$md2xml->startExport();
 				$xml.= $md2xml->getXML();
 
-				$media_items =& $this->getMediaItems();
+				$media_items = $this->getMediaItems();
 				for($i=0; $i<count($media_items); $i++)
 				{
-					$item =& $media_items[$i];
+					$item = $media_items[$i];
 					
 					// highlight mode					
 					$xml .= "<MediaItem Purpose=\"".$item->getPurpose()."\">";
@@ -998,7 +1014,7 @@ class ilObjMediaObject extends ilObject
 	/**
 	* static
 	*/
-	function _deleteAllUsages($a_type, $a_id, $a_usage_hist_nr = 0, $a_lang = "-")
+	static function _deleteAllUsages($a_type, $a_id, $a_usage_hist_nr = 0, $a_lang = "-")
 	{
 		global $ilDB;
 		
@@ -1035,7 +1051,7 @@ class ilObjMediaObject extends ilObject
 	/**
 	* get mobs of object
 	*/
-	function _getMobsOfObject($a_type, $a_id, $a_usage_hist_nr = 0, $a_lang = "-")
+	static function _getMobsOfObject($a_type, $a_id, $a_usage_hist_nr = 0, $a_lang = "-")
 	{
 		global $ilDB;
 
@@ -1070,7 +1086,7 @@ class ilObjMediaObject extends ilObject
 	/**
 	* Save usage of mob within another container (e.g. page)
 	*/
-	function _saveUsage($a_mob_id, $a_type, $a_id, $a_usage_hist_nr = 0, $a_lang = "-")
+	static function _saveUsage($a_mob_id, $a_type, $a_id, $a_usage_hist_nr = 0, $a_lang = "-")
 	{
 		global $ilDB;
 
@@ -1091,7 +1107,7 @@ class ilObjMediaObject extends ilObject
 	/**
 	* Remove usage of mob in another container
 	*/
-	function _removeUsage($a_mob_id, $a_type, $a_id, $a_usage_hist_nr = 0, $a_lang = "-")
+	static function _removeUsage($a_mob_id, $a_type, $a_id, $a_usage_hist_nr = 0, $a_lang = "-")
 	{
 		global $ilDB;
 		
@@ -1111,7 +1127,7 @@ class ilObjMediaObject extends ilObject
 	*/
 	function getUsages($a_include_history = true)
 	{
-		return $this->lookupUsages($this->getId(), $a_include_history);
+		return self::lookupUsages($this->getId(), $a_include_history);
 	}
 	
 	/**
@@ -1119,7 +1135,7 @@ class ilObjMediaObject extends ilObject
 	*
 	* @todo: This should be all in one context -> mob id table
 	*/
-	function lookupUsages($a_id, $a_include_history = true)
+	static function lookupUsages($a_id, $a_include_history = true)
 	{
 		global $ilDB;
 
@@ -1217,7 +1233,7 @@ class ilObjMediaObject extends ilObject
 	* 
 	* see ilWebAccessChecker 
 	*/
-	function getParentObjectIdForUsage($a_usage, $a_include_all_access_obj_ids = false)
+	static function getParentObjectIdForUsage($a_usage, $a_include_all_access_obj_ids = false)
 	{
 		if(is_int(strpos($a_usage["type"], ":")))
 		{
@@ -1282,9 +1298,9 @@ class ilObjMediaObject extends ilObject
 					case "exca":
 						// Exercise assignment
 						$returned_pk = $a_usage['id'];					
-						// we are just checking against exercise object
-						include_once 'Modules/Exercise/classes/class.ilObjExercise.php';
-						$obj_id = ilObjExercise::lookupExerciseIdForReturnedId($returned_pk);			
+						// #15995 - we are just checking against exercise object
+						include_once 'Modules/Exercise/classes/class.ilExSubmission.php';
+						$obj_id = ilExSubmission::lookupExerciseIdForReturnedId($returned_pk);			
 						break;
 					
 					case "frm":		
@@ -1297,6 +1313,27 @@ class ilObjMediaObject extends ilObject
 						$obj_id = ilForum::_lookupObjIdForForumId($frm_pk);
 						break;
 					
+					
+					case "frm~d":
+						$draft_id = $a_usage['id'];
+						include_once 'Modules/Forum/classes/class.ilForumPostDraft.php';
+						include_once 'Modules/Forum/classes/class.ilForum.php';
+						$oDraft = ilForumPostDraft::newInstanceByDraftId($draft_id);
+						
+						$frm_pk =  $oDraft->getForumId();
+						$obj_id = ilForum::_lookupObjIdForForumId($frm_pk);
+						break;
+					case "frm~h":
+						$history_id = $a_usage['id'];
+						include_once 'Modules/Forum/classes/class.ilForumDraftsHistory.php';
+						include_once 'Modules/Forum/classes/class.ilForumPostDraft.php';
+						include_once 'Modules/Forum/classes/class.ilForum.php';
+						$oHistoryDraft = new ilForumDraftsHistory($history_id);
+						$oDraft = ilForumPostDraft::newInstanceByDraftId($oHistoryDraft->getDraftId());
+						
+						$frm_pk =  $oDraft->getForumId();
+						$obj_id = ilForum::_lookupObjIdForForumId($frm_pk);
+						break;
 					// temporary items (per user)
 					case "frm~":
 					case "exca~":
@@ -1358,7 +1395,6 @@ class ilObjMediaObject extends ilObject
 						break;
 						
 					case "lm":
-					case "dbk":
 						// learning modules
 						include_once("./Modules/LearningModule/classes/class.ilLMObject.php");
 						$obj_id = ilLMObject::_lookupContObjID($id);
@@ -1442,7 +1478,7 @@ class ilObjMediaObject extends ilObject
 	* @param	int			$a_width	width
 	* @param	int			$a_height	height
 	*/
-	function _resizeImage($a_file, $a_width, $a_height, $a_constrain_prop = false)
+	static function _resizeImage($a_file, $a_width, $a_height, $a_constrain_prop = false)
 	{
 		$file_path = pathinfo($a_file);
 		$location = substr($file_path["basename"],0,strlen($file_path["basename"]) -
@@ -1464,25 +1500,25 @@ class ilObjMediaObject extends ilObject
 	* @return	string					mime type
 	* static
 	*/
-	static function getMimeType($a_file)
+	static function getMimeType($a_file, $a_external = false)
 	{
 		include_once("./Services/Utilities/classes/class.ilMimeTypeUtil.php");
-		$mime = ilMimeTypeUtil::getMimeType($a_file);
+		$mime = ilMimeTypeUtil::lookupMimeType($a_file, ilMimeTypeUtil::APPLICATION__OCTET_STREAM, $a_external);
 		return $mime;
 	}
 
 	/**
 	* Determine width and height
 	*/
-	static function _determineWidthHeight($a_def_width, $a_def_height, $a_format, $a_type,
+	static function _determineWidthHeight($a_format, $a_type,
 		$a_file, $a_reference, $a_constrain_proportions, $a_use_original,
 		$a_user_width, $a_user_height)
 	{
 		global $lng;
 		
 		// determine width and height of known image types
-		$width = $a_def_width;
-		$height = $a_def_height;
+		$width = 640;
+		$height = 360;
 		$info = "";
 		
 		if ($a_format == "audio/mpeg")
@@ -1508,8 +1544,10 @@ class ilObjMediaObject extends ilObject
 		{
 			if ($size[0] > 0 && $size[1] > 0)
 			{
-				$width = $size[0];
-				$height = $size[1];
+				//$width = $size[0];
+				//$height = $size[1];
+				$width = "";
+				$height = "";
 			}
 			else
 			{
@@ -1548,6 +1586,16 @@ class ilObjMediaObject extends ilObject
 //echo "<br>D-$width-$height-";
 		}
 //echo "<br>E-$width-$height-";
+
+		if ($width == 0 && $a_user_width === "")
+		{
+			$width = "";
+		}
+		if ($height == 0 && $a_user_height === "")
+		{
+			$height = "";
+		}
+
 		return array("width" => $width, "height" => $height, "info" => $info);
 	}
 
@@ -1593,7 +1641,7 @@ class ilObjMediaObject extends ilObject
 	/**
 	 * Create new media object and update page in db and return new media object
 	 */
-	function &_saveTempFileAsMediaObject($name, $tmp_name, $upload = TRUE)
+	public static function _saveTempFileAsMediaObject($name, $tmp_name, $upload = TRUE)
 	{
 		// create dummy object in db (we need an id)
 		$media_object = new ilObjMediaObject();
@@ -1605,7 +1653,7 @@ class ilObjMediaObject extends ilObject
 		$media_object->createDirectory();
 		$mob_dir = ilObjMediaObject::_getDirectory($media_object->getId());
 
-		$media_item =& new ilMediaItem();
+		$media_item = new ilMediaItem();
 		$media_object->addMediaItem($media_item);
 		$media_item->setPurpose("Standard");
 
@@ -1649,7 +1697,7 @@ class ilObjMediaObject extends ilObject
 	/**
 	 * Create new media object and update page in db and return new media object
 	 */
-	function uploadAdditionalFile($a_name, $tmp_name, $a_subdir = "")
+	function uploadAdditionalFile($a_name, $tmp_name, $a_subdir = "", $a_mode = "move_uploaded")
 	{
 		$a_subdir = str_replace("..", "", $a_subdir);
 		$dir = $mob_dir = ilObjMediaObject::_getDirectory($this->getId());
@@ -1658,7 +1706,7 @@ class ilObjMediaObject extends ilObject
 			$dir.= "/".$a_subdir;
 		}
 		ilUtil::makeDirParents($dir);
-		ilUtil::moveUploadedFile($tmp_name, $a_name, $dir."/".$a_name);
+		ilUtil::moveUploadedFile($tmp_name, $a_name, $dir."/".$a_name, true, $a_mode);
 		self::renameExecutables($mob_dir);
 		include_once("./Services/MediaObjects/classes/class.ilMediaSvgSanitizer.php");
 		ilMediaSvgSanitizer::sanitizeDir($mob_dir);	// see #20339
@@ -1671,11 +1719,11 @@ class ilObjMediaObject extends ilObject
 	 * @param
 	 * @return
 	 */
-	function uploadSrtFile($a_tmp_name, $a_language)
+	function uploadSrtFile($a_tmp_name, $a_language, $a_mode = "move_uploaded")
 	{
 		if (is_file($a_tmp_name) && $a_language != "")
 		{
-			$this->uploadAdditionalFile("subtitle_".$a_language.".srt", $a_tmp_name, "srt");
+			$this->uploadAdditionalFile("subtitle_".$a_language.".srt", $a_tmp_name, "srt", $a_mode);
 			return true;
 		}
 		return false;
@@ -1983,6 +2031,85 @@ class ilObjMediaObject extends ilObject
 		return $a_name;
 	}
 
+
+	/**
+	 * Get directory for multi srt upload
+	 *
+	 * @param
+	 * @return
+	 */
+	function getMultiSrtUploadDir()
+	{
+		return ilObjMediaObject::_getDirectory($this->getId()."/srt/tmp");
+	}
+
+
+	/**
+	 * Upload multi srt file
+	 *
+	 * @param array $a_file file info array
+	 * @throws ilMediaObjectsException
+	 */
+	function uploadMultipleSubtitleFile($a_file)
+	{
+		global $lng, $ilUser;
+
+		include_once("./Services/MediaObjects/exceptions/class.ilMediaObjectsException.php");
+		if (!is_file($a_file["tmp_name"]))
+		{
+			throw new ilMediaObjectsException($lng->txt("mob_file_could_not_be_uploaded"));
+		}
+
+		$dir = $this->getMultiSrtUploadDir();
+		ilUtil::delDir($dir, true);
+		ilUtil::makeDirParents($dir);
+		ilUtil::moveUploadedFile($a_file["tmp_name"], "multi_srt.zip", $dir."/"."multi_srt.zip");
+		ilUtil::unzip($dir."/multi_srt.zip", true);
+	}
+
+	/**
+	 * Clear multi feedback directory
+	 */
+	function clearMultiSrtDirectory()
+	{
+		ilUtil::delDir($this->getMultiSrtUploadDir());
+	}
+
+	/**
+	 * Get all srt files of srt multi upload
+	 */
+	function getMultiSrtFiles()
+	{
+		$items = array();
+
+		include_once("./Services/MetaData/classes/class.ilMDLanguageItem.php");
+		$lang_codes = ilMDLanguageItem::_getPossibleLanguageCodes();
+
+		$dir = $this->getMultiSrtUploadDir();
+		$files = ilUtil::getDir($dir);
+		foreach ($files as $k => $i)
+		{
+			// check directory
+			if ($i["type"] == "file" && !in_array($k, array(".", "..")))
+			{
+				if (pathinfo($k, PATHINFO_EXTENSION) == "srt")
+				{
+					$lang = "";
+					if (substr($k, strlen($k) - 7, 1) == "_")
+					{
+						$lang = substr($k, strlen($k) - 6, 2);
+						if (!in_array($lang, $lang_codes))
+						{
+							$lang = "";
+						}
+					}
+					$items[] = array("filename" => $k, "lang" => $lang);
+				}
+			}
+		}
+		return $items;
+	}
+
 	/**
 	 * Rename executables
 	 *
@@ -1996,7 +2123,5 @@ class ilObjMediaObject extends ilObject
 			ilUtil::rRenameSuffix($a_dir, "html", "sec");        // see #20187
 		}
 	}
-
-	
 }
 ?>

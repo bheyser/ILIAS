@@ -16,5 +16,5 @@ include_once "./Modules/TestQuestionPool/classes/class.assClozeGap.php";
 
 class assClozeSelectGap extends assClozeGap
 {
-	
+
 }

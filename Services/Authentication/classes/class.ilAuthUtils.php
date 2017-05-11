@@ -15,7 +15,6 @@ define ("AUTH_SOAP",7);
 define ("AUTH_HTTP",8);
 // END WebDAV: Add support for HTTP authentication
 define ("AUTH_ECS",9);
-define('AUTH_OPENID',10);
 
 define ("AUTH_APACHE",11);
 
@@ -23,10 +22,11 @@ define ("AUTH_INACTIVE",18);
 
 define('AUTH_MULTIPLE',20);
 
+define ('AUTH_SESSION', 21);
+
 define('AUTH_SOAP_NO_ILIAS_USER', -100);
 define('AUTH_LDAP_NO_ILIAS_USER',-200);
 define('AUTH_RADIUS_NO_ILIAS_USER',-300);
-define('AUTH_OPENID_NO_ILIAS_USER',-400);
 
 // apache auhtentication failed...
 // maybe no (valid) certificate or
@@ -65,12 +65,61 @@ class ilAuthUtils
 	const LOCAL_PWV_FULL = 1;
 	const LOCAL_PWV_NO = 2;
 	const LOCAL_PWV_USER = 3;
-
 	
+	
+	/**
+	 * Initialize session
+	 */
+	public static function initSession()
+	{
+		
+	}
+	
+	public static function handleForcedAuthentication()
+	{
+		if(isset($_GET['ecs_hash']) or isset($_GET['ecs_hash_url']))
+		{
+			include_once './Services/Authentication/classes/Frontend/class.ilAuthFrontendCredentials.php';
+			$credentials = new ilAuthFrontendCredentials();
+			$credentials->setUsername($_GET['ecs_login']);
+			$credentials->setAuthMode(AUTH_ECS);
+			
+			include_once './Services/Authentication/classes/Provider/class.ilAuthProviderFactory.php';
+			$provider_factory = new ilAuthProviderFactory();
+			$providers = $provider_factory->getProviders($credentials);
+			
+			include_once './Services/Authentication/classes/class.ilAuthStatus.php';
+			$status = ilAuthStatus::getInstance();
+			
+			include_once './Services/Authentication/classes/Frontend/class.ilAuthFrontendFactory.php';
+			$frontend_factory = new ilAuthFrontendFactory();
+			$frontend_factory->setContext(ilAuthFrontendFactory::CONTEXT_STANDARD_FORM);
+			$frontend = $frontend_factory->getFrontend(
+				$GLOBALS['DIC']['ilAuthSession'],
+				$status,
+				$credentials,
+				$providers
+			);
+			
+			$frontend->authenticate();
+			
+			switch($status->getStatus())
+			{
+				case ilAuthStatus::STATUS_AUTHENTICATED:
+					return;
+					
+				case ilAuthStatus::STATUS_AUTHENTICATION_FAILED:
+					ilInitialisation::goToPublicSection();
+					return;
+			}
+		}
+	}
+	
+
 	/**
 	* initialises $ilAuth 
 	*/
-	function _initAuth()
+	public static function _initAuth()
 	{
 		global $ilAuth, $ilSetting, $ilDB, $ilClientIniFile,$ilBench;
 
@@ -85,14 +134,18 @@ class ilAuthUtils
 		// determine authentication method if no session is found and username & password is posted
 		// does this if statement make any sense? we enter this block nearly everytime.	
 		
-        if (empty($_SESSION) ||
+        if(
+			empty($_SESSION) ||
             (!isset($_SESSION['_authsession']['registered']) ||
-             $_SESSION['_authsession']['registered'] !== true))
+            $_SESSION['_authsession']['registered'] !== true))
         {
+			ilLoggerFactory::getLogger('auth')->debug('User is not remembered');
+			
 			// no sesssion found
 			if (isset($_POST['username']) and $_POST['username'] != '' and $_POST['password'] != '' or isset($_GET['ecs_hash']) or isset($_GET['ecs_hash_url']) or isset($_POST['oid_username']) or isset($_GET['oid_check_status']))
 			{
 				$user_auth_mode = ilAuthUtils::_getAuthModeOfUser($_POST['username'], $_POST['password'], $ilDB);
+				ilLoggerFactory::getLogger('auth')->debug('Authmode is '. $user_auth_mode);
 
 				if ($user_auth_mode == AUTH_CAS && $ilSetting->get("cas_allow_local"))
 				{
@@ -110,7 +163,7 @@ class ilAuthUtils
 			else if ($_POST['auth_mode'] == AUTH_APACHE)
 			{
 				$user_auth_mode = AUTH_APACHE;
-			}
+			}			
         }
 	
 		// to do: other solution?
@@ -130,6 +183,10 @@ class ilAuthUtils
 			ilAuthFactory::setContext(ilAuthFactory::CONTEXT_APACHE);
 			$user_auth_mode = AUTH_APACHE;
 		}
+		
+		// begin-patch auth
+		$user_auth_mode = AUTH_SESSION;
+
 
 		// BEGIN WebDAV: Share session between browser and WebDAV client.
 		// The realm is needed to support a common session between Auth_HTTP and Auth.
@@ -189,13 +246,17 @@ class ilAuthUtils
         // if no auth mode selected AND default mode is AUTH_APACHE then use it...
 		if ($authmode == null && AUTH_DEFAULT == AUTH_APACHE)
 			$authmode = AUTH_APACHE;
-		
-		switch ($authmode)
+
+		// begin-patch ldap_multiple
+		// we cast to int => AUTH_LDAP_1 matches AUTH_LDAP
+		switch ((int) $authmode)
 		{
 			case AUTH_LDAP:
-
+			
+				include_once './Services/LDAP/classes/class.ilLDAPServer.php';
+				$sid = ilLDAPServer::getServerIdByAuthMode($authmode);
 				include_once './Services/LDAP/classes/class.ilAuthContainerLDAP.php';
-				$ilAuth = ilAuthFactory::factory(new ilAuthContainerLDAP());
+				$ilAuth = ilAuthFactory::factory(new ilAuthContainerLDAP($sid));
 				break;
 				
 			case AUTH_RADIUS:
@@ -205,10 +266,8 @@ class ilAuthUtils
 				break;
 
 			case AUTH_SHIBBOLETH:
-				// build option string for SHIB::Auth
-				$auth_params = array();
-				$auth_params['sessionName'] = "_authhttp".md5($realm);
-				$ilAuth = new ShibAuth($auth_params,true);
+				include_once './Services/AuthShibboleth/classes/class.ilShibboleth.php';		
+				$ilAuth = new ShibAuth(array(),true);
 				break;
 				
 			case AUTH_CAS:
@@ -234,11 +293,6 @@ class ilAuthUtils
 				$ilAuth = ilAuthFactory::factory(new ilAuthContainerECS());
 				break;
 				
-			case AUTH_OPENID:
-				
-				include_once './Services/OpenId/classes/class.ilAuthContainerOpenId.php';
-				$ilAuth = ilAuthFactory::factory(new ilAuthContainerOpenId());
-				break;
 
 			case AUTH_INACTIVE:
 				require_once('./Services/Authentication/classes/class.ilAuthInactive.php');
@@ -253,10 +307,18 @@ class ilAuthUtils
 
 			// begin-patch auth_plugin
 			case AUTH_LOCAL:
-				global $ilLog;
-				include_once './Services/Database/classes/class.ilAuthContainerMDB2.php';
-				$ilAuth = ilAuthFactory::factory(new ilAuthContainerMDB2());
+				global $ilDB;
+                if($ilDB instanceof ilDBPdo) {
+                    require_once 'Services/Authentication/classes/PDO/class.ilPDOAuthentication.php';
+                    $ilAuth = new ilPDOAuthentication(ilAuthFactory::getContextOptions(ilAuthFactory::getContext()));
+                } else {
+                    include_once './Services/Database/classes/class.ilAuthContainerMDB2.php';
+                    $ilAuth = ilAuthFactory::factory(new ilAuthContainerMDB2());
+                }
 				break;
+				
+			case AUTH_SESSION:
+				
 
 			default:
 				// check for plugin
@@ -267,7 +329,7 @@ class ilAuthUtils
 						$container = $pl->getContainer($authmode);
 						if($container instanceof Auth_Container)
 						{
-							$GLOBALS['ilLog']->write(__METHOD__.' Using plugin authentication with auth_mode '.$authmode);
+							ilLoggerFactory::getLogger('auth')->info('Using plugin authentication with auth mode ' . $authmode);
 							$ilAuth = ilAuthFactory::factory($container);
 							break 2;
 						}
@@ -275,8 +337,13 @@ class ilAuthUtils
 				}
 				#$GLOBALS['ilLog']->write(__METHOD__.' Using default authentication');
 				// default for logged in users
-				include_once './Services/Database/classes/class.ilAuthContainerMDB2.php';
-				$ilAuth = ilAuthFactory::factory(new ilAuthContainerMDB2());
+                if($ilDB instanceof ilDBPdo) {
+                    require_once 'Services/Authentication/classes/PDO/class.ilPDOAuthentication.php';
+                    $ilAuth = new ilPDOAuthentication();
+                } else {
+                    include_once './Services/Database/classes/class.ilAuthContainerMDB2.php';
+                    $ilAuth = ilAuthFactory::factory(new ilAuthContainerMDB2());
+                }
 				break;
 			// end-patch auth_plugin
 		}
@@ -292,14 +359,14 @@ class ilAuthUtils
 
 		ini_set("session.cookie_lifetime", "0");
 //echo "-".get_class($ilAuth)."-";
-		$GLOBALS['ilAuth'] =& $ilAuth;
 
 		ilSessionControl::checkExpiredSession();
 
 		$ilBench->stop('Auth','initAuth');
+		ilLoggerFactory::getLogger('auth')->debug('Using auth implementation: ' . get_class($ilAuth));
 	}
 	
-	function _getAuthModeOfUser($a_username,$a_password,$a_db_handler = '')
+	static function _getAuthModeOfUser($a_username,$a_password,$a_db_handler = '')
 	{
 		global $ilDB;
 		
@@ -310,13 +377,9 @@ class ilAuthUtils
 		}
 		if(isset($_POST['auth_mode']))
 		{
-			return (int) $_POST['auth_mode'];
-		}
-		if(isset($_POST['oid_username']) or $_GET['oid_check_status'])
-		{
-			$GLOBALS['ilLog']->write(__METHOD__.' set context to open id');
-			ilAuthFactory::setContext(ilAuthFactory::CONTEXT_OPENID);
-			return AUTH_OPENID;
+			// begin-patch ldap_multiple
+			return $_POST['auth_mode'];
+			// end-patch ldap_multiple
 		}
 
 		include_once('./Services/Authentication/classes/class.ilAuthModeDetermination.php');
@@ -324,6 +387,7 @@ class ilAuthUtils
 		
 		if(!$det->isManualSelection() and $det->getCountActiveAuthModes() > 1)
 		{
+			ilLoggerFactory::getLogger('auth')->debug('Using AUTH_MULTIPLE');
 			return AUTH_MULTIPLE;
 		}
 
@@ -343,15 +407,16 @@ class ilAuthUtils
 							 
 			 
 		$r = $db->query($q);
-		$row = $r->fetchRow(DB_FETCHMODE_OBJECT);
+		$row = $r->fetchRow(ilDBConstants::FETCHMODE_OBJECT);
 //echo "+".$row->auth_mode."+";
 
+		
 		$auth_mode =  self::_getAuthMode($row->auth_mode,$db);
 		
 		return in_array($auth_mode,self::_getActiveAuthModes()) ? $auth_mode : AUTH_INACTIVE;
 	}
 	
-	function _getAuthMode($a_auth_mode,$a_db_handler = '')
+	static function _getAuthMode($a_auth_mode,$a_db_handler = '')
 	{
 		global $ilDB, $ilSetting;
 
@@ -362,15 +427,27 @@ class ilAuthUtils
 			$db =& $a_db_handler;
 		}
 
-		switch ($a_auth_mode)
+		// begin-patch ldap_multiple
+		if(strpos($a_auth_mode, '_') !== FALSE)
+		{
+			$auth_arr = explode('_',$a_auth_mode);
+			$auth_switch = $auth_arr[0];
+		}
+		else
+		{
+			$auth_switch = $a_auth_mode;
+		}
+		switch ($auth_switch)
 		{
 			case "local":
 				return AUTH_LOCAL;
 				break;
 				
 			case "ldap":
-				return AUTH_LDAP;
-				break;
+				// begin-patch ldap_multiple
+				include_once './Services/LDAP/classes/class.ilLDAPServer.php';
+				return ilLDAPServer::getKeyByAuthMode($a_auth_mode);
+				// end-patch ldap_multiple
 				
 			case "radius":
 				return AUTH_RADIUS;
@@ -394,9 +471,6 @@ class ilAuthUtils
 				
 			case 'ecs':
 				return AUTH_ECS;
-				
-			case 'openid':
-				return AUTH_OPENID;
 
 			case 'apache':
 				return AUTH_APACHE;
@@ -411,15 +485,18 @@ class ilAuthUtils
 	{
 		global $ilias;
 
-		switch ($a_auth_key)
+		// begin-patch ldap_multiple
+		switch ((int) $a_auth_key)
 		{
 			case AUTH_LOCAL:
 				return "local";
 				break;
 				
 			case AUTH_LDAP:
-				return "ldap";
-				break;
+				// begin-patch ldap_multiple
+				include_once './Services/LDAP/classes/class.ilLDAPServer.php';
+				return ilLDAPServer::getAuthModeByKey($a_auth_key);
+				// end-patch ldap_multiple
 				
 			case AUTH_RADIUS:
 				return "radius";
@@ -447,16 +524,13 @@ class ilAuthUtils
 			case AUTH_APACHE:
 				return 'apache';
 
-			case AUTH_OPENID:
-				return 'open_id';
-				
 			default:
 				return "default";
 				break;	
 		}
 	}
 	
-	function _getActiveAuthModes()
+	static function _getActiveAuthModes()
 	{
 		global $ilias,$ilSetting;
 		
@@ -465,10 +539,12 @@ class ilAuthUtils
 						'local'		=> AUTH_LOCAL
 						);
 		include_once('Services/LDAP/classes/class.ilLDAPServer.php');
-		if(count(ilLDAPServer::_getActiveServerList()))
+		// begin-patch ldap_multiple
+		foreach(ilLDAPServer::_getActiveServerList() as $sid)
 		{
-			$modes['ldap'] = AUTH_LDAP;			
-		}			
+			$modes['ldap_'.$sid] = (AUTH_LDAP.'_'.$sid);
+		}
+		// end-patch ldap_multiple
 		if ($ilSetting->get("radius_active")) $modes['radius'] = AUTH_RADIUS;
 		if ($ilSetting->get("shib_active")) $modes['shibboleth'] = AUTH_SHIBBOLETH;
 		if ($ilSetting->get("script_active")) $modes['script'] = AUTH_SCRIPT;
@@ -482,12 +558,6 @@ class ilAuthUtils
 			$modes['ecs'] = AUTH_ECS;
 		}
 
-		include_once './Services/OpenId/classes/class.ilOpenIdSettings.php';
-		if(ilOpenIdSettings::getInstance()->isActive())
-		{
-			$modes['openid'] = AUTH_OPENID;
-		}
-		
 		// begin-path auth_plugin
 		foreach(self::getAuthPlugins() as $pl)
 		{
@@ -503,26 +573,42 @@ class ilAuthUtils
 		return $modes;
 	}
 	
-	function _getAllAuthModes()
+	static function _getAllAuthModes()
 	{
-		return array(
-			AUTH_LOCAL => ilAuthUtils::_getAuthModeName(AUTH_LOCAL),
-			AUTH_LDAP => ilAuthUtils::_getAuthModeName(AUTH_LDAP),
-			AUTH_SHIBBOLETH => ilAuthUtils::_getAuthModeName(AUTH_SHIBBOLETH),
-			AUTH_CAS => ilAuthUtils::_getAuthModeName(AUTH_CAS),
-			AUTH_SOAP => ilAuthUtils::_getAuthModeName(AUTH_SOAP),
-			AUTH_RADIUS => ilAuthUtils::_getAuthModeName(AUTH_RADIUS),
-			AUTH_ECS => ilAuthUtils::_getAuthModeName(AUTH_ECS),
-			AUTH_OPENID => ilAuthUtils::_getAuthModeName(AUTH_OPENID),
-			AUTH_APACHE => ilAuthUtils::_getAuthModeName(AUTH_APACHE)
+		$modes = array(
+			AUTH_LOCAL,
+			AUTH_LDAP,
+			AUTH_SHIBBOLETH,
+			AUTH_CAS,
+			AUTH_SOAP,
+			AUTH_RADIUS,
+			AUTH_ECS,
+			AUTH_OPENID,
+			AUTH_APACHE
 		);
+		$ret = array();
+		foreach($modes as $mode)
+		{
+			// multi ldap implementation
+			if($mode == AUTH_LDAP)
+			{
+				foreach(ilLDAPServer::_getServerList() as $ldap_id)
+				{
+					$id = AUTH_LDAP . '_' . $ldap_id;
+					$ret[$id] = ilAuthUtils::_getAuthModeName($id);
+				}
+				continue;
+			}
+			$ret[$mode] =  ilAuthUtils::_getAuthModeName($mode);
+		}
+		return $ret;
 	}
 	
 	/**
 	* generate free login by starting with a default string and adding
 	* postfix numbers
 	*/
-	function _generateLogin($a_login)
+	public static function _generateLogin($a_login)
 	{
 		global $ilDB;
 		
@@ -594,12 +680,15 @@ class ilAuthUtils
 		
 		$options[AUTH_LOCAL]['txt'] = $lng->txt('authenticate_ilias');
 
-		// LDAP
-		if($ldap_id = ilLDAPServer::_getFirstActiveServer())
+		
+		// begin-patch ldap_multiple
+		foreach(ilLDAPServer::_getActiveServerList() as $sid)
 		{
-			$ldap_server = new ilLDAPServer($ldap_id);
-			$options[AUTH_LDAP]['txt'] = $ldap_server->getName();
+			$server = ilLDAPServer::getInstanceByServerId($sid);
+			$options[AUTH_LDAP.'_'.$sid]['txt'] = $server->getName();
 		}
+		// end-patch ldap_multiple
+		
 		include_once('Services/Radius/classes/class.ilRadiusSettings.php');
 		$rad_settings = ilRadiusSettings::_getInstance();
 		if($rad_settings->isActive())
@@ -647,8 +736,11 @@ class ilAuthUtils
 			}
 		}
 		// end-patch auth_plugins
-		
-		$options[$default]['checked'] = true;
+
+		if(array_key_exists($default, $options))
+		{
+			$options[$default]['checked'] = true;
+		}
 
 		return $options ? $options : array();
 	}
@@ -687,11 +779,6 @@ class ilAuthUtils
 		{
 			return true;
 		}
-		include_once './Services/OpenId/classes/class.ilOpenIdSettings.php';
-		if(ilOpenIdSettings::getInstance()->isActive())
-		{
-			return true;
-		}
 		
 		// begin-path auth_plugin
 		foreach(self::getAuthPlugins() as $pl)
@@ -719,12 +806,13 @@ class ilAuthUtils
 	 */
 	public static function _allowPasswordModificationByAuthMode($a_auth_mode)
 	{
-		switch($a_auth_mode)
+		// begin-patch ldap_multiple
+		// cast to int
+		switch((int) $a_auth_mode)
 		{
 			case AUTH_LDAP:
 			case AUTH_RADIUS:
 			case AUTH_ECS:
-			case AUTH_OPENID:
 				return false;
 			default:
 				return true;
@@ -765,7 +853,9 @@ class ilAuthUtils
 			return false;
 		}
 		
-		switch($a_authmode)
+		// begin-patch ldap_multiple
+		// cast to int
+		switch((int) $a_authmode)
 		{
 			// No local passwords for these auth modes
 			case AUTH_LDAP:
@@ -774,9 +864,8 @@ class ilAuthUtils
 			case AUTH_SCRIPT:
 				return false;
 			
-			// Always for openid and local
+			// Always for and local
 			case AUTH_LOCAL:
-			case AUTH_OPENID:
 			case AUTH_APACHE:
 				return true;
 
@@ -797,7 +886,9 @@ class ilAuthUtils
 	 */
 	public static function supportsLocalPasswordValidation($a_authmode)
 	{
-		switch($a_authmode)
+		// begin-patch ldap_multiple
+		// cast to int
+		switch((int) $a_authmode)
 		{
 			case AUTH_LDAP:
 			case AUTH_LOCAL:
@@ -814,7 +905,6 @@ class ilAuthUtils
 				return ilAuthUtils::LOCAL_PWV_USER;
 				
 			case AUTH_ECS:
-			case AUTH_OPENID:
 			case AUTH_SCRIPT:
 			case AUTH_APACHE:
 			default:
@@ -847,5 +937,26 @@ class ilAuthUtils
 		return $pl_objs;
 	}
 	// end-patch auth_plugins
+	
+	/**
+	 * 
+	 * @param string $a_authmode
+	 */
+	public static function getAuthModeTranslation($a_auth_key)
+	{
+		global $lng;
+		
+		switch((int) $a_auth_key)
+		{
+			case AUTH_LDAP:
+				include_once './Services/LDAP/classes/class.ilLDAPServer.php';
+				$sid = ilLDAPServer::getServerIdByAuthMode($a_auth_key);
+				$server = ilLDAPServer::getInstanceByServerId($sid);
+				return $server->getName();
+				
+			default:
+				return $lng->txt('auth_'.self::_getAuthModeName($a_auth_key));
+		}
+	}
 }
 ?>

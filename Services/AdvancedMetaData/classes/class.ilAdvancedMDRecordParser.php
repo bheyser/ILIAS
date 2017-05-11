@@ -34,7 +34,7 @@
 include_once('Services/AdvancedMetaData/classes/class.ilAdvancedMDRecord.php');
 include_once('Services/AdvancedMetaData/classes/class.ilAdvancedMDFieldDefinition.php');
 
-class ilAdvancedMDRecordParser extends ilSAXParser
+class ilAdvancedMDRecordParser extends ilSaxParser
 {
 	const MODE_UPDATE = 1;
 	const MODE_INSERT = 2;
@@ -47,6 +47,14 @@ class ilAdvancedMDRecordParser extends ilSAXParser
 	
 	private $is_error = false;
 	private $error_msg = array();
+	
+	protected $context; // [array]
+
+	/**
+	 * @var ilLogger
+	 */
+	protected $log;
+
 	/**
 	 * Constructor
 	 *
@@ -57,6 +65,7 @@ class ilAdvancedMDRecordParser extends ilSAXParser
 	public function __construct($a_file)
 	{
 	 	parent::__construct($a_file,true);
+		$this->log = ilLoggerFactory::getLogger('amet');
 	}
 	
 	/**
@@ -360,6 +369,18 @@ class ilAdvancedMDRecordParser extends ilSAXParser
 	 			return true;	
 	 		
 	 		case self::MODE_INSERT:
+				// set local context
+				if(is_array($this->context))
+				{
+					$this->getCurrentRecord()->setParentObject($this->context["obj_id"]);
+					$this->getCurrentRecord()->setAssignedObjectTypes(array(
+						array(
+							"obj_type" => $this->context["obj_type"],
+							"sub_type" => $this->context["sub_type"],
+							"optional" => false							
+					)));
+				}
+				
 	 			$this->getCurrentRecord()->save();
 	 			break;
 	 	}	
@@ -370,11 +391,33 @@ class ilAdvancedMDRecordParser extends ilSAXParser
 			{
 				case self::MODE_INSERT:
 					$field->save();
+					
+					// see getRecordMap()
+					$this->log->debug("add to record map, rec id: ".$this->getCurrentRecord()->getRecordId().
+						", import id: ".$field->getImportId().", field id:".$field->getFieldId());
+					$this->rec_map[$this->getCurrentRecord()->getRecordId()][$field->getImportId()] = $field->getFieldId();
 					break;
-			}
-			
+			}			
 		}		
 	}
 	
+	public function setContext($a_obj_id, $a_obj_type, $a_sub_type = null)
+	{
+		if(!$a_sub_type)
+		{
+			$a_sub_type = "-";
+		}
+		
+		$this->context = array(
+			"obj_id" => $a_obj_id,
+			"obj_type" => $a_obj_type,
+			"sub_type" => $a_sub_type
+		);		
+	}
+	
+	public function getRecordMap()
+	{
+		return $this->rec_map;
+	}	
 }
 ?>

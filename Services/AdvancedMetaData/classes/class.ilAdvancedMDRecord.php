@@ -23,6 +23,7 @@ class ilAdvancedMDRecord
 	protected $description;
 	protected $obj_types = array();
 	protected $db = null;
+	protected $parent_obj; // [int]
 	
 	/**
 	 * Singleton constructor
@@ -79,7 +80,7 @@ class ilAdvancedMDRecord
 			"WHERE searchable = 1 AND active = 1 ";
 			
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$records[] = self::_getInstanceByRecordId($row->record_id);
 		}
@@ -108,7 +109,7 @@ class ilAdvancedMDRecord
 		$query = "SELECT title FROM adv_md_record ".
 			"WHERE record_id = ".$ilDB->quote($a_record_id ,'integer')." ";
 		$res = $ilDB->query($query);
-		$row = $res->fetchRow(DB_FETCHMODE_OBJECT);
+		$row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT);
 		
 		return $title_cache[$a_record_id] = $row->title;
 	}
@@ -128,7 +129,7 @@ class ilAdvancedMDRecord
 		$query = "SELECT record_id FROM adv_md_record ".
 			"WHERE import_id = ".$ilDB->quote($a_ilias_id ,'text')." ";
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			return $row->record_id;
 		}
@@ -168,8 +169,8 @@ class ilAdvancedMDRecord
 			$types[] = $at;
 		}
 
+		sort($types);
 		return $types;
-	 	return array('cat','crs','rcrs');
 	}
 	
 	/**
@@ -188,7 +189,7 @@ class ilAdvancedMDRecord
 			"JOIN adv_md_record amr ON amo.record_id = amr.record_id ".
 			"WHERE active = 1 ";
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$obj_types[] = $row->obj_type; 
 		}
@@ -209,7 +210,7 @@ class ilAdvancedMDRecord
 		
 		$query = "SELECT record_id FROM adv_md_record ";
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$records[] = ilAdvancedMDRecord::_getInstanceByRecordId($row->record_id);
 		}
@@ -232,7 +233,7 @@ class ilAdvancedMDRecord
 		
 		$query = "SELECT * FROM adv_md_record_objs WHERE sub_type=".$ilDB->quote("-", "text");
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$records[$row->obj_type][] = self::_getInstanceByRecordId($row->record_id);
 		}
@@ -247,7 +248,7 @@ class ilAdvancedMDRecord
 	 *
 	 * @param string obj_type
 	 */
-	public static function _getActivatedRecordsByObjectType($a_obj_type, $a_sub_type = "")
+	public static function _getActivatedRecordsByObjectType($a_obj_type, $a_sub_type = "", $a_only_optional = false)
 	{
 		global $ilDB;		
 
@@ -263,9 +264,17 @@ class ilAdvancedMDRecord
 			"WHERE active = 1 ".
 			"AND obj_type = ".$ilDB->quote($a_obj_type ,'text')." ".
 			"AND sub_type = ".$ilDB->quote($a_sub_type ,'text');
+		
+		if($a_only_optional)
+		{
+			$query .= " AND optional =".$ilDB->quote(1, 'integer');
+		}
+		
+		// #16428
+		$query .= "ORDER by parent_obj DESC, record_id";
 
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$records[] = self::_getInstanceByRecordId($row->record_id);
 		}
@@ -281,9 +290,7 @@ class ilAdvancedMDRecord
 	 * @param string $a_sub_type sub type
 	 */
 	public static function _getSelectedRecordsByObject($a_obj_type, $a_obj_id, $a_sub_type = "")
-	{
-		global $ilDB;		
-
+	{		
 		$records = array();
 		
 		if ($a_sub_type == "")
@@ -291,6 +298,65 @@ class ilAdvancedMDRecord
 			$a_sub_type = "-";
 		}
 		
+		// object-wide metadata configuration setting		
+		include_once 'Services/Container/classes/class.ilContainer.php';
+		include_once 'Services/Object/classes/class.ilObjectServiceSettingsGUI.php';			
+		$config_setting = ilContainer::_lookupContainerSetting(
+			$a_obj_id,
+			ilObjectServiceSettingsGUI::CUSTOM_METADATA,
+			false);		
+		
+		$optional = array();
+		foreach(self::_getActivatedRecordsByObjectType($a_obj_type, $a_sub_type) as $record)
+		{
+			foreach($record->getAssignedObjectTypes() as $item)
+			{				
+				if($record->getParentObject())
+				{
+					// only matching local records
+					if($record->getParentObject() != $a_obj_id)
+					{
+						continue;
+					}
+					// if object-wide setting is off, ignore local records
+					else if(!$config_setting)
+					{
+						continue;
+					}
+				}
+				
+				if($item['obj_type'] == $a_obj_type &&
+					$item['sub_type'] == $a_sub_type)
+				{
+					if($item['optional'])
+					{
+						$optional[] = $record->getRecordId();
+					}
+					$records[$record->getRecordId()] = $record;
+				}
+			}
+		}
+		
+		if($optional)
+		{
+			if(!$config_setting && !in_array($a_sub_type, array("orgu_type", "prg_type"))) //#16925 + #17777
+			{
+				$selected = array();
+			}
+			else
+			{
+				$selected = self::getObjRecSelection($a_obj_id, $a_sub_type);
+			}
+			foreach($optional as $record_id)
+			{
+				if(!in_array($record_id, $selected))
+				{
+					unset($records[$record_id]);
+				}
+			}
+		}
+		
+		/* v1 obsolete		
 		$query = "SELECT amro.record_id record_id FROM adv_md_record_objs amro ".
 			"JOIN adv_md_record amr ON (amr.record_id = amro.record_id) ".
 			"JOIN adv_md_obj_rec_select os ON (amr.record_id = os.rec_id AND amro.sub_type = os.sub_type) ".
@@ -301,11 +367,12 @@ class ilAdvancedMDRecord
 			;
 
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$records[] = self::_getInstanceByRecordId($row->record_id);
 		}
-
+		*/
+		
 		return $records;
 	}
 	
@@ -362,13 +429,14 @@ class ilAdvancedMDRecord
 	 	// Save import id if given
 	 	$next_id = $ilDB->nextId('adv_md_record');
 	 	
-	 	$query = "INSERT INTO adv_md_record (record_id,import_id,active,title,description) ".
+	 	$query = "INSERT INTO adv_md_record (record_id,import_id,active,title,description,parent_obj) ".
 	 		"VALUES(".
 	 		$ilDB->quote($next_id,'integer').", ".
 			$this->db->quote($this->getImportId(),'text').", ".
 	 		$this->db->quote($this->isActive() ,'integer').", ".
 	 		$this->db->quote($this->getTitle() ,'text').", ".
-	 		$this->db->quote($this->getDescription() ,'text')." ".
+	 		$this->db->quote($this->getDescription() ,'text').", ".
+	 		$this->db->quote($this->getParentObject() ,'integer')." ".
 	 		")";
 		$res = $ilDB->manipulate($query);
 	 	$this->record_id = $next_id;
@@ -386,11 +454,12 @@ class ilAdvancedMDRecord
 	 	{
 	 		global $ilDB;
 
-	 		$query = "INSERT INTO adv_md_record_objs (record_id,obj_type,sub_type) ".
+	 		$query = "INSERT INTO adv_md_record_objs (record_id,obj_type,sub_type,optional) ".
 	 			"VALUES( ".
 	 			$this->db->quote($this->getRecordId() ,'integer').", ".
 	 			$this->db->quote($type["obj_type"] ,'text').", ".
-	 			$this->db->quote($type["sub_type"] ,'text')." ".
+	 			$this->db->quote($type["sub_type"] ,'text').", ".
+	 			$this->db->quote($type["optional"] ,'integer')." ".
 	 			")";
 			$res = $ilDB->manipulate($query);
 	 	}
@@ -421,11 +490,12 @@ class ilAdvancedMDRecord
 	 	// Insert assignments
 	 	foreach($this->getAssignedObjectTypes() as $type)
 	 	{
-	 		$query = "INSERT INTO adv_md_record_objs (record_id,obj_type, sub_type) ".
+	 		$query = "INSERT INTO adv_md_record_objs (record_id,obj_type,sub_type,optional) ".
 	 			"VALUES ( ".
 	 			$this->db->quote($this->getRecordId() ,'integer').", ".
 	 			$this->db->quote($type["obj_type"] ,'text').", ".
-	 			$this->db->quote($type["sub_type"] ,'text')." ".
+	 			$this->db->quote($type["sub_type"] ,'text').", ".
+	 			$this->db->quote($type["optional"] ,'integer')." ".
 	 			")";
 			$res = $ilDB->manipulate($query);
 	 	}
@@ -433,18 +503,14 @@ class ilAdvancedMDRecord
 	
 	/**
 	 * Validate settings
-	 * Write error message to ilErr 
 	 *
 	 * @access public
 	 * 
 	 */
 	public function validate()
-	{
-	 	global $ilErr,$lng;
-	 	
+	{	 	
 	 	if(!strlen($this->getTitle()))
-	 	{
-	 		$ilErr->setMessage('fill_out_all_required_fields');
+	 	{	 		
 	 		return false;
 	 	}
 	 	return true;
@@ -572,9 +638,13 @@ class ilAdvancedMDRecord
 	 * @param string ilias object type
 	 * 
 	 */
-	public function appendAssignedObjectType($a_obj_type, $a_sub_type)
+	public function appendAssignedObjectType($a_obj_type, $a_sub_type, $a_optional = false)
 	{
-	 	$this->obj_types[] = array("obj_type"=>$a_obj_type, "sub_type"=>$a_sub_type);
+	 	$this->obj_types[] = array(
+			"obj_type"=>$a_obj_type, 
+			"sub_type"=>$a_sub_type,
+			"optional"=>(bool)$a_optional
+		);
 	}
 	
 	/**
@@ -607,6 +677,15 @@ class ilAdvancedMDRecord
 		return false;
 	}
 	
+	function setParentObject($a_obj_id)
+	{		
+		$this->parent_obj = $a_obj_id;
+	}
+	
+	function getParentObject()
+	{		
+		return $this->parent_obj;
+	}
 	
 	/**
 	 * To Xml.
@@ -626,13 +705,14 @@ class ilAdvancedMDRecord
 	 	
 	 	foreach($this->getAssignedObjectTypes() as $obj_type)
 	 	{
+			$optional = array("optional"=>$obj_type["optional"]);
 	 		if ($obj_type["sub_type"] == "")
 	 		{
-	 			$writer->xmlElement('ObjectType',null,$obj_type["obj_type"]);
+	 			$writer->xmlElement('ObjectType',$optional,$obj_type["obj_type"]);
 	 		}
 	 		else
 	 		{
-	 			$writer->xmlElement('ObjectType',null,$obj_type["obj_type"].":".$obj_type["sub_type"]);
+	 			$writer->xmlElement('ObjectType',$optional,$obj_type["obj_type"].":".$obj_type["sub_type"]);
 	 		}
 	 	}
 	 	
@@ -658,20 +738,24 @@ class ilAdvancedMDRecord
 	 	$query = "SELECT * FROM adv_md_record ".
 	 		"WHERE record_id = ".$this->db->quote($this->getRecordId() ,'integer')." ";
 	 	$res = $this->db->query($query);
-	 	while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+	 	while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$this->setImportId($row->import_id);
 			$this->setActive($row->active);
 			$this->setTitle($row->title);
 			$this->setDescription($row->description);
+			$this->setParentObject($row->parent_obj);
 		}
 		$query = "SELECT * FROM adv_md_record_objs ".
 	 		"WHERE record_id = ".$this->db->quote($this->getRecordId() ,'integer')." ";
 	 	$res = $this->db->query($query);
-	 	while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+	 	while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 	 	{
-	 		$this->obj_types[] = array("obj_type" => $row->obj_type,
-	 			"sub_type" => $row->sub_type);
+	 		$this->obj_types[] = array(
+				"obj_type" => $row->obj_type,
+	 			"sub_type" => $row->sub_type,
+				"optional" => (bool)$row->optional
+			);
 	 	}
 	}
 	
@@ -762,6 +846,90 @@ class ilAdvancedMDRecord
 		}
 		return $recs;
 	}
+	
+	/**
+	 * Clone record
+	 * 
+	 * @param array &$a_fields_map
+	 * @param type $a_parent_obj_id
+	 * @return self
+	 */
+	public function _clone(array &$a_fields_map, $a_parent_obj_id = null)
+	{		
+		$new_obj = new self();
+		$new_obj->setActive($this->isActive());
+		$new_obj->setTitle($this->getTitle());
+		$new_obj->setDescription($this->getDescription());				
+		$new_obj->setParentObject($a_parent_obj_id
+			? $a_parent_obj_id
+			: $this->getParentObject());
+		$new_obj->setAssignedObjectTypes($this->getAssignedObjectTypes());
+		$new_obj->save();
+		
+		include_once('Services/AdvancedMetaData/classes/class.ilAdvancedMDFieldDefinition.php');
+		foreach(ilAdvancedMDFieldDefinition::getInstancesByRecordId($this->getRecordId()) as $definition)
+		{
+			$new_def = $definition->_clone($new_obj->getRecordId());			
+			$a_fields_map[$definition->getFieldId()] = $new_def->getFieldId();
+		}		
 
+		return $new_obj;
+	}
+		
+	/**
+	 * Get shared records
+	 * 
+	 * @param int $a_obj1_id
+	 * @param int $a_obj2_id
+	 * @param string $a_sub_type
+	 * @return array
+	 */
+	public static function getSharedRecords($a_obj1_id, $a_obj2_id, $a_sub_type = "-")
+	{
+		$obj_type = ilObject::_lookupType($a_obj1_id);
+		$sel = array_intersect(
+			ilAdvancedMDRecord::getObjRecSelection($a_obj1_id, $a_sub_type),
+			ilAdvancedMDRecord::getObjRecSelection($a_obj2_id, $a_sub_type)
+		);
+		
+		$res = array();
+		
+		foreach(self::_getRecords() as $record)
+		{	
+			// local records cannot be shared
+			if($record->getParentObject())
+			{
+				continue;
+			}
+			
+			// :TODO: inactive records can be ignored?
+			if(!$record->isActive())
+			{
+				continue;
+			}
+			
+			// parse assigned types
+			foreach($record->getAssignedObjectTypes() as $item)
+			{
+				if($item["obj_type"] == $obj_type &&
+					$item["sub_type"] == $a_sub_type)
+				{				
+					// mandatory
+					if(!$item["optional"])
+					{
+						$res[] = $record->getRecordId();
+					}
+					// optional
+					else if(in_array($record->getRecordId(), $sel))
+					{
+						$res[] = $record->getRecordId();
+					}
+				}
+			}					
+		}
+		
+		return $res;
+	}
 }
+
 ?>

@@ -8,7 +8,7 @@
  * @version $Id$
  * 
  * @ilCtrl_Calls ilWorkspaceAccessGUI: ilMailSearchCoursesGUI, ilMailSearchGroupsGUI
- * @ilCtrl_Calls ilWorkspaceAccessGUI: ilMailSearchGUI, ilPublicUserProfileGUI
+ * @ilCtrl_Calls ilWorkspaceAccessGUI: ilMailSearchGUI, ilPublicUserProfileGUI, ilSingleUserShareGUI
  *
  * @ingroup ServicesPersonalWorkspace
  */
@@ -43,12 +43,7 @@ class ilWorkspaceAccessGUI
 
 		$next_class = $this->ctrl->getNextClass($this);
 		$cmd = $this->ctrl->getCmd();
-
-		if (!$this->getAccessHandler()->checkAccess("write", "", $this->node_id))
-		{
-			$ilErr->raiseError($this->lng->txt('permission_denied'), $ilErr->WARNING);
-		}
-
+		
 		switch($next_class)
 		{
 			case "ilmailsearchcoursesgui";							
@@ -83,7 +78,18 @@ class ilWorkspaceAccessGUI
 				
 				$this->setObjectTitle();
 				break;
-			
+
+			case "ilsingleusersharegui";
+				$ilTabs->setBackTarget($this->lng->txt("back"),
+					$this->ctrl->getLinkTarget($this, "share"));
+				include_once('Services/PersonalWorkspace/classes/class.ilSingleUserShareGUI.php');
+				$ushare = new ilSingleUserShareGUI($this->access_handler, $this->node_id);
+				$this->ctrl->setReturn($this, 'share');
+				$this->ctrl->forwardCommand($ushare);
+
+				$this->setObjectTitle();
+				break;
+
 			case "ilpublicuserprofilegui";				
 				$ilTabs->clearTargets();
 				$ilTabs->setBackTarget($this->lng->txt("back"),
@@ -174,7 +180,7 @@ class ilWorkspaceAccessGUI
 		include_once "Services/Form/classes/class.ilPropertyFormGUI.php";
 		$actions = new ilSelectInputGUI("", "action");		
 		$actions->setOptions($options);		
-		$ilToolbar->addInputItem($actions);
+		$ilToolbar->addStickyItem($actions);
 		
 		$ilToolbar->setFormAction($this->ctrl->getFormAction($this));		
 		
@@ -182,7 +188,7 @@ class ilWorkspaceAccessGUI
 		$button = ilSubmitButton::getInstance();
 		$button->setCaption("add");
 		$button->setCommand("addpermissionhandler");
-		$ilToolbar->addButtonInstance($button);
+		$ilToolbar->addStickyItem($button);
 	
 		include_once "Services/PersonalWorkspace/classes/class.ilWorkspaceAccessTableGUI.php";
 		$table = new ilWorkspaceAccessTableGUI($this, "share", $this->node_id, $this->getAccessHandler());
@@ -194,8 +200,17 @@ class ilWorkspaceAccessGUI
 		switch($_REQUEST["action"])
 		{
 			case "user":
-				$this->ctrl->setParameterByClass("ilmailsearchgui", "ref", "wsp");
-				$this->ctrl->redirectByClass("ilmailsearchgui");
+
+				include_once './Services/User/classes/class.ilUserAccountSettings.php';
+				if(ilUserAccountSettings::getInstance()->isUserAccessRestricted())
+				{
+					$this->ctrl->redirectByClass("ilsingleusersharegui");
+				}
+				else
+				{
+					$this->ctrl->setParameterByClass("ilmailsearchgui", "ref", "wsp");
+					$this->ctrl->redirectByClass("ilmailsearchgui");
+				}
 			
 			case "group":
 				$this->ctrl->setParameterByClass("ilmailsearchgroupsgui", "ref", "wsp");
@@ -267,7 +282,7 @@ class ilWorkspaceAccessGUI
 		{
 			$this->getAccessHandler()->addPermission($this->node_id, 
 				self::PERMISSION_ALL_PASSWORD, md5($form->getInput("password")));	
-			ilUtil::sendSuccess($this->lng->txt("wsp_permission_all_info"), true);
+			ilUtil::sendSuccess($this->lng->txt("wsp_permission_all_pw_info"), true);
 			$this->ctrl->redirect($this, "share");
 		}
 	

@@ -2,11 +2,13 @@
 /* Copyright (c) 1998-2009 ILIAS open source, Extended GPL, see docs/LICENSE */
 
 include_once "Services/Cron/classes/class.ilCronJob.php";
+include_once "./Modules/Forum/classes/class.ilForumMailNotification.php";
 
 /**
  * Forum notifications
  *
  * @author Michael Jansen <mjansen@databay.de>
+ * @author Nadia Matuschek <nmatuschek@databay.de>
  */
 class ilForumCronNotification extends ilCronJob
 {
@@ -15,6 +17,31 @@ class ilForumCronNotification extends ilCronJob
 	 */
 	protected $settings;
 
+	/**
+	 * @var array  ilForumCronNotificationDataProvider
+	 */
+	public static $providerObject = array();
+
+	/**
+	 * @var array frm_posts_deleted.deleted_id
+	 */
+	protected static $deleted_ids_cache = array();
+
+	/**
+	 * @var array
+	 */
+	protected static $ref_ids_by_obj_id = array();
+
+	/**
+	 * @var array
+	 */
+	protected static $accessible_ref_ids_by_user = array();
+	
+	/**
+	 * @var int
+	 */
+	protected $num_sent_messages = 0;
+	
 	/**
 	 *
 	 */
@@ -31,14 +58,14 @@ class ilForumCronNotification extends ilCronJob
 	public function getTitle()
 	{
 		global $lng;
-			
+
 		return $lng->txt("cron_forum_notification");
 	}
 	
 	public function getDescription()
 	{
 		global $lng;
-			
+
 		return $lng->txt("cron_forum_notification_crob_desc");
 	}
 	
@@ -70,6 +97,9 @@ class ilForumCronNotification extends ilCronJob
 		return true;
 	}
 
+	/**
+	 * @return ilCronJobResult
+	 */
 	public function run()
 	{
 		global $ilDB, $ilLog, $ilSetting, $lng;
@@ -84,11 +114,10 @@ class ilForumCronNotification extends ilCronJob
 		}
 
 		$numRows = 0;
-		$types   = array();
-		$values  = array();
+		$this->num_sent_messages = 0;
 
 		if($last_run_datetime != null &&
-		   checkDate(date('m', strtotime($last_run_datetime)), date('d', strtotime($last_run_datetime)), date('Y', strtotime($last_run_datetime))))
+			checkDate(date('m', strtotime($last_run_datetime)), date('d', strtotime($last_run_datetime)), date('Y', strtotime($last_run_datetime))))
 		{
 			$threshold = max(strtotime($last_run_datetime), strtotime('-' . (int)$this->settings->get('max_notification_age', 30) . ' days', time()));
 		}
@@ -98,156 +127,343 @@ class ilForumCronNotification extends ilCronJob
 		}
 
 		$date_condition = ' frm_posts.pos_date >= %s AND ';
-		$types[]        = 'timestamp';
-		$values[]       = date('Y-m-d H:i:s', $threshold);
+		$types          = array('timestamp');
+		$values         = array(date('Y-m-d H:i:s', $threshold));
 
 		$cj_start_date = date('Y-m-d H:i:s');
-
-		/*** FORUMS ***/
+		
+		/*** new posts ***/
 		$res = $ilDB->queryf('
 			SELECT 	frm_threads.thr_subject thr_subject, 
 					frm_data.top_name top_name, 
 					frm_data.top_frm_fk obj_id, 
 					frm_notification.user_id user_id, 
+					frm_threads.thr_pk thread_id,
 					frm_posts.* 
 			FROM 	frm_notification, frm_posts, frm_threads, frm_data 
 			WHERE	'.$date_condition.' frm_posts.pos_thr_fk = frm_threads.thr_pk
-			AND 	frm_threads.thr_top_fk = frm_data.top_pk 
-			AND 	frm_data.top_frm_fk = frm_notification.frm_id
+			AND 	((frm_threads.thr_top_fk = frm_data.top_pk AND 	frm_data.top_frm_fk = frm_notification.frm_id)
+					OR (frm_threads.thr_pk = frm_notification.thread_id 
+			AND 	frm_data.top_pk = frm_threads.thr_top_fk) )
+			AND 	frm_posts.pos_display_user_id != frm_notification.user_id
 			ORDER BY frm_posts.pos_date ASC',
 			$types,
 			$values
 		);
 		
-		$numRows += $this->sendMails($res);
+		if($numRows = $ilDB->numRows($res) > 0)
+		{
+			$this->sendCronForumNotification($res, ilForumMailNotification::TYPE_POST_NEW);
+		}
 
-		/*** THREADS ***/
+		/*** updated posts ***/
+		$updated_condition = ' frm_posts.pos_update > frm_posts.pos_date AND frm_posts.pos_update >= %s AND ';
+		$types             = array('timestamp');
+		$values            = array(date('Y-m-d H:i:s', $threshold));
+
 		$res = $ilDB->queryf('
 			SELECT 	frm_threads.thr_subject thr_subject, 
 					frm_data.top_name top_name, 
 					frm_data.top_frm_fk obj_id, 
-					frm_notification.user_id user_id, 
+					frm_notification.user_id user_id,
+					frm_threads.thr_pk thread_id,
 					frm_posts.* 
 			FROM 	frm_notification, frm_posts, frm_threads, frm_data 
-			WHERE 	'.$date_condition.' frm_posts.pos_thr_fk = frm_threads.thr_pk
-			AND		frm_threads.thr_pk = frm_notification.thread_id 
-			AND 	frm_data.top_pk = frm_threads.thr_top_fk 
+			WHERE	'.$updated_condition.' frm_posts.pos_thr_fk = frm_threads.thr_pk
+			AND 	((frm_threads.thr_top_fk = frm_data.top_pk AND 	frm_data.top_frm_fk = frm_notification.frm_id)
+					OR (frm_threads.thr_pk = frm_notification.thread_id 
+			AND 	frm_data.top_pk = frm_threads.thr_top_fk) )
+			AND 	frm_posts.pos_display_user_id != frm_notification.user_id
+			ORDER BY frm_posts.pos_date ASC',
+			$types,
+			$values
+		);
+
+		if($numRows = $ilDB->numRows($res) > 0)
+		{
+			$this->sendCronForumNotification($res, ilForumMailNotification::TYPE_POST_UPDATED);
+		}
+
+		/*** censored posts ***/
+		$censored_condition = ' frm_posts.pos_cens = %s AND frm_posts.pos_cens_date >= %s AND ';
+		$types              = array('integer', 'timestamp');
+		$values             = array(1, date('Y-m-d H:i:s', $threshold));
+
+		$res = $ilDB->queryf('
+			SELECT 	frm_threads.thr_subject thr_subject, 
+					frm_data.top_name top_name, 
+					frm_data.top_frm_fk obj_id, 
+					frm_notification.user_id user_id,
+					frm_threads.thr_pk thread_id,
+					frm_posts.* 
+			FROM 	frm_notification, frm_posts, frm_threads, frm_data 
+			WHERE	'.$censored_condition.' frm_posts.pos_thr_fk = frm_threads.thr_pk
+			AND 	((frm_threads.thr_top_fk = frm_data.top_pk AND 	frm_data.top_frm_fk = frm_notification.frm_id)
+					OR (frm_threads.thr_pk = frm_notification.thread_id 
+			AND 	frm_data.top_pk = frm_threads.thr_top_fk) )
+			AND 	frm_posts.pos_display_user_id != frm_notification.user_id
 			ORDER BY frm_posts.pos_date ASC',
 			$types,
 			$values
 		);
 		
-		$numRows += $this->sendMails($res);
+		if($numRows = $ilDB->numRows($res) > 0)
+		{
+			$this->sendCronForumNotification($res, ilForumMailNotification::TYPE_POST_CENSORED);
+		}
+
+		/*** uncensored posts ***/
+		$uncensored_condition = ' frm_posts.pos_cens = %s AND frm_posts.pos_cens_date >= %s AND ';
+		$types              = array('integer', 'timestamp');
+		$values             = array(0, date('Y-m-d H:i:s', $threshold));
+
+		$res = $ilDB->queryf('
+			SELECT 	frm_threads.thr_subject thr_subject, 
+					frm_data.top_name top_name, 
+					frm_data.top_frm_fk obj_id, 
+					frm_notification.user_id user_id,
+					frm_threads.thr_pk thread_id,
+					frm_posts.* 
+			FROM 	frm_notification, frm_posts, frm_threads, frm_data 
+			WHERE	'.$uncensored_condition.' frm_posts.pos_thr_fk = frm_threads.thr_pk
+			AND 	((frm_threads.thr_top_fk = frm_data.top_pk AND 	frm_data.top_frm_fk = frm_notification.frm_id)
+					OR (frm_threads.thr_pk = frm_notification.thread_id 
+			AND 	frm_data.top_pk = frm_threads.thr_top_fk) )
+			AND 	frm_posts.pos_display_user_id != frm_notification.user_id
+			ORDER BY frm_posts.pos_date ASC',
+			$types,
+			$values
+		);
+		
+		if($numRows = $ilDB->numRows($res) > 0)
+		{
+			$this->sendCronForumNotification($res, ilForumMailNotification::TYPE_POST_UNCENSORED);
+		}
+
+		/*** deleted threads ***/
+		$res = $ilDB->queryF('
+			SELECT 	frm_posts_deleted.thread_title thr_subject, 
+					frm_posts_deleted.forum_title  top_name, 
+					frm_posts_deleted.obj_id obj_id, 
+					frm_notification.user_id user_id, 
+					frm_posts_deleted.pos_display_user_id,
+					frm_posts_deleted.pos_usr_alias,
+					frm_posts_deleted.deleted_id,
+					frm_posts_deleted.post_date pos_date,
+					frm_posts_deleted.post_title pos_subject,
+					frm_posts_deleted.post_message pos_message
+					
+			FROM 	frm_notification, frm_posts_deleted
+			
+			WHERE 	( frm_posts_deleted.obj_id = frm_notification.frm_id
+					OR frm_posts_deleted.thread_id = frm_notification.thread_id) 
+			AND 	frm_posts_deleted.pos_display_user_id != frm_notification.user_id
+			AND 	frm_posts_deleted.is_thread_deleted = %s
+			ORDER BY frm_posts_deleted.post_date ASC',
+			array('integer'), array(1));
+		$numRows = $ilDB->numRows($res);
+		if($numRows > 0)
+		{
+			$this->sendCronForumNotification($res, ilForumMailNotification::TYPE_THREAD_DELETED);
+			if(count(self::$deleted_ids_cache) > 0)
+			{
+				$ilDB->manipulate('DELETE FROM frm_posts_deleted WHERE '. $ilDB->in('deleted_id', self::$deleted_ids_cache, false, 'integer'));
+				$ilLog->write(__METHOD__ . ':DELETED ENTRIES: frm_posts_deleted');
+			}
+		}
+
+		/*** deleted posts ***/
+		$res = $ilDB->queryF('
+			SELECT 	frm_posts_deleted.thread_title thr_subject, 
+					frm_posts_deleted.forum_title  top_name, 
+					frm_posts_deleted.obj_id obj_id, 
+					frm_notification.user_id user_id, 
+					frm_posts_deleted.pos_display_user_id,
+					frm_posts_deleted.pos_usr_alias,
+					frm_posts_deleted.deleted_id,
+					frm_posts_deleted.post_date pos_date,
+					frm_posts_deleted.post_title pos_subject,
+					frm_posts_deleted.post_message pos_message
+					
+			FROM 	frm_notification, frm_posts_deleted
+			
+			WHERE 	( frm_posts_deleted.obj_id = frm_notification.frm_id
+					OR frm_posts_deleted.thread_id = frm_notification.thread_id) 
+			AND 	frm_posts_deleted.pos_display_user_id != frm_notification.user_id
+			AND 	frm_posts_deleted.is_thread_deleted = %s
+			ORDER BY frm_posts_deleted.post_date ASC',
+			array('integer'), array(0));
+		
+		$numRows = $ilDB->numRows($res);
+		if($numRows > 0)
+		{
+			$this->sendCronForumNotification($res, ilForumMailNotification::TYPE_POST_DELETED);
+			if(count(self::$deleted_ids_cache) > 0)
+			{
+				$ilDB->manipulate('DELETE FROM frm_posts_deleted WHERE '. $ilDB->in('deleted_id', self::$deleted_ids_cache, false, 'integer')); 
+				$ilLog->write(__METHOD__ . ':DELETED ENTRIES: frm_posts_deleted');
+			}
+		}
 
 		$ilSetting->set('cron_forum_notification_last_date', $cj_start_date);
 
-		$mess = 'Send '.$numRows.' messages.';
-		$ilLog->write(__METHOD__.': '.$mess);		
+		$mess = 'Sent '.$this->num_sent_messages.' messages.';
+		$ilLog->write(__METHOD__.': '.$mess);
 
 		$result = new ilCronJobResult();
-		if($numRows)
+		if($this->num_sent_messages)
 		{
 			$status = ilCronJobResult::STATUS_OK;
 			$result->setMessage($mess);
-		};				
-		$result->setStatus($status);		
+		};
+		$result->setStatus($status);
 		return $result;
 	}
-	
-	protected function sendMails($res)
-	{		
-		global $ilAccess, $ilDB, $lng;
 
-		static $cache = array();
-		static $attachments_cache = array();
-
-		include_once 'Modules/Forum/classes/class.ilObjForum.php';
-		include_once 'Services/Mail/classes/class.ilMail.php';
-		include_once 'Services/User/classes/class.ilObjUser.php';
-		include_once 'Services/Language/classes/class.ilLanguage.php';
-		
-		$forumObj = new ilObjForum();
-		$frm = $forumObj->Forum;
-
-		$numRows = 0;
-		$mail_obj = new ilMail(ANONYMOUS_USER_ID);
-		$mail_obj->enableSOAP(false);
-		while($row = $ilDB->fetchAssoc($res))
+	/**
+	 * @param int $a_obj_id
+	 * @return array
+	 */
+	protected function getRefIdsByObjId($a_obj_id)
+	{
+		if(!array_key_exists($a_obj_id, self::$ref_ids_by_obj_id))
 		{
-			// don not send a notification to the post author
-			if($row['pos_display_user_id'] != $row['user_id'])
-			{
-				// GET AUTHOR OF NEW POST	
-				if($row['pos_display_user_id'])
-				{
-					$row['pos_usr_name'] = ilObjUser::_lookupLogin($row['pos_display_user_id']);
-				}
-				else if(strlen($row['pos_usr_alias']))
-				{
-					$row['pos_usr_name'] = $row['pos_usr_alias'].' ('.$lng->txt('frm_pseudonym').')';
-				}
-				
-				if($row['pos_usr_name'] == '')
-				{
-					$row['pos_usr_name'] = $lng->txt('forums_anonymous');
-				}
-				
-				// get all references of obj_id
-				if(!isset($cache[$row['obj_id']]))		
-					$cache[$row['obj_id']] = ilObject::_getAllReferences($row['obj_id']);				
-				
-				// check for attachments
-				$has_attachments = false;
-				if(!isset($attachments_cache[$row['obj_id']][$row['pos_pk']]))
-				{
-					$fileDataForum = new ilFileDataForum($row['obj_id'], $row['pos_pk']);
-					$filesOfPost   = $fileDataForum->getFilesOfPost();
-					foreach($filesOfPost as $attachment)
-					{
-						$attachments_cache[$row['obj_id']][$row['pos_pk']][] = $attachment['name'];
-						$has_attachments = true;
-					}
-				}
-				else 
-				{
-					$has_attachments = true;
-				}
-		
-				// do rbac check before sending notification
-				$send_mail = false;
-				foreach((array)$cache[$row['obj_id']] as $ref_id)
-				{
-					if($ilAccess->checkAccessOfUser($row['user_id'], 'read', '', $ref_id))
-					{
-						$row['ref_id'] = $ref_id;
-						$send_mail = true;
-						break;
-					}
-				}
-				$attached_files = array();
-				if($has_attachments == true)
-				{
-					$attached_files = $attachments_cache[$row['obj_id']][$row['pos_pk']];
-				}
-	
-				if($send_mail)
-				{
-					$frm->setLanguage(ilForum::_getLanguageInstanceByUsrId($row['user_id']));
-					$mail_obj->sendMail(
-						ilObjUser::_lookupLogin($row['user_id']), '', '',
-						$frm->formatNotificationSubject($row),
-						$frm->formatNotification($row, 1, $attached_files, $row['user_id']),
-						array(), array(
-							'normal'
-						));
-					$numRows++;
-				}
-			}
+			self::$ref_ids_by_obj_id[$a_obj_id] = ilObject::_getAllReferences($a_obj_id);
 		}
-		
-		return $numRows;
+
+		return (array)self::$ref_ids_by_obj_id[$a_obj_id];
 	}
 
+	/**
+	 * @param int $a_user_id
+	 * @param int $a_obj_id
+	 * @return int
+	 */
+	protected function getFirstAccessibleRefIdBUserAndObjId($a_user_id, $a_obj_id)
+	{
+		/**
+		 * @var $ilAccess ilAccessHandler
+		 */
+		global $ilAccess;
+
+		if(!array_key_exists($a_user_id, self::$accessible_ref_ids_by_user))
+		{
+			self::$accessible_ref_ids_by_user[$a_user_id] = array();
+		}
+
+		if(!array_key_exists($a_obj_id, self::$accessible_ref_ids_by_user[$a_user_id]))
+		{
+			$accessible_ref_id = 0;
+			foreach($this->getRefIdsByObjId($a_obj_id) as $ref_id)
+			{
+				if($ilAccess->checkAccessOfUser($a_user_id, 'read', '', $ref_id))
+				{
+					$accessible_ref_id = $ref_id;
+					break;
+				}
+			}
+			self::$accessible_ref_ids_by_user[$a_user_id][$a_obj_id] = $accessible_ref_id;
+		}
+
+		return (int)self::$accessible_ref_ids_by_user[$a_user_id][$a_obj_id];
+	}
+
+	/**
+	 * @param $res
+	 * @param $notification_type
+	 */
+	public function sendCronForumNotification($res, $notification_type)
+	{
+		/**
+		 * @var $ilDB  ilDBInterface
+		 * @var $ilLog ilLog
+		 */
+		global $ilDB, $ilLog;
+		
+		include_once './Modules/Forum/classes/class.ilForumCronNotificationDataProvider.php';
+		include_once './Modules/Forum/classes/class.ilForumMailNotification.php';
+
+		while($row = $ilDB->fetchAssoc($res))
+		{
+			if($notification_type == ilForumMailNotification::TYPE_POST_DELETED
+				|| $notification_type == ilForumMailNotification::TYPE_THREAD_DELETED)
+			{
+				// important! save the deleted_id to cache before proceeding getFirstAccessibleRefIdBUserAndObjId !
+				self::$deleted_ids_cache[$row['deleted_id']] = $row['deleted_id'];
+			}
+			
+			$ref_id = $this->getFirstAccessibleRefIdBUserAndObjId($row['user_id'], $row['obj_id']);
+			if($ref_id < 1)
+			{
+				$ilLog->write(__METHOD__.': User-Id: '.$row['user_id'].' has no read permission for object id: '.$row['obj_id']);
+				continue;
+			}
+
+			$row['ref_id'] = $ref_id;
+
+			if($this->existsProviderObject($row['pos_pk']))
+			{
+				self::$providerObject[$row['pos_pk']]->addRecipient($row['user_id']);
+			}	
+			else
+			{
+				$this->addProviderObject($row);
+			}
+		}
+
+		foreach(self::$providerObject as  $provider)
+		{
+			$mailNotification = new ilForumMailNotification($provider);
+			$mailNotification->setIsCronjob(true);
+			$mailNotification->setType($notification_type);
+			$mailNotification->setRecipients(array_unique($provider->getCronRecipients()));
+
+			$mailNotification->send();
+	
+			$this->num_sent_messages += count($provider->getCronRecipients());
+			$ilLog->write(__METHOD__.':SUCCESSFULLY SEND: NotificationType: '.$notification_type.' -> Recipients: '. implode(', ',$provider->getCronRecipients()));
+		}
+		
+		$this->resetProviderCache();
+	}
+
+	/**
+	 * @param $post_id
+	 * @return bool
+	 */
+	public function existsProviderObject($post_id)
+	{
+		if(isset(self::$providerObject[$post_id]))
+		{
+			return true;
+		}	
+		return false;
+	}
+
+	/**
+	 * @param $row
+	 */
+	private function addProviderObject($row)
+	{
+		$tmp_provider = new ilForumCronNotificationDataProvider($row);
+
+		self::$providerObject[$row['pos_pk']] = $tmp_provider;
+		self::$providerObject[$row['pos_pk']]->addRecipient($row['user_id']);
+	}
+
+	/**
+	 * 
+	 */
+	private function resetProviderCache()
+	{
+		self::$providerObject = array();
+	}
+	
+	/**
+	 * @param int   $a_form_id
+	 * @param array $a_fields
+	 * @param bool  $a_is_active
+	 */
 	public function addToExternalSettingsForm($a_form_id, array &$a_fields, $a_is_active)
 	{
 		/**
@@ -265,6 +481,9 @@ class ilForumCronNotification extends ilCronJob
 		}
 	}
 
+	/**
+	 * @param bool $a_currently_active
+	 */
 	public function activationWasToggled($a_currently_active)
 	{		
 		global $ilSetting;
@@ -306,6 +525,7 @@ class ilForumCronNotification extends ilCronJob
 
 	/**
 	 * @param ilPropertyFormGUI $a_form
+	 * @return bool
 	 */
 	public function saveCustomSettings(ilPropertyFormGUI $a_form)
 	{

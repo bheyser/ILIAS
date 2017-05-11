@@ -404,7 +404,7 @@ class assTextQuestion extends assQuestion implements ilObjQuestionScoringAdjusta
 				array('float','integer','integer','integer'),
 				array($points, $active_id, $this->getId(), $pass)
 			);
-			$this->_updateTestPassResults($active_id, $pass);
+			self::_updateTestPassResults($active_id, $pass);
 			return TRUE;
 		}
 			else
@@ -573,7 +573,7 @@ class assTextQuestion extends assQuestion implements ilObjQuestionScoringAdjusta
 	 * @param boolean $returndetails (deprecated !!)
 	 * @return integer/array $points/$details (array $details is deprecated !!)
 	 */
-	public function calculateReachedPoints($active_id, $pass = NULL, $returndetails = FALSE)
+	public function calculateReachedPoints($active_id, $pass = NULL, $authorizedSolution = true, $returndetails = FALSE)
 	{
 		if( $returndetails )
 		{
@@ -587,11 +587,8 @@ class assTextQuestion extends assQuestion implements ilObjQuestionScoringAdjusta
 		{
 			$pass = $this->getSolutionMaxPass($active_id);
 		}
-		
-		$result = $ilDB->queryF("SELECT * FROM tst_solutions WHERE active_fi = %s AND question_fi = %s AND pass = %s",
-			array('integer','integer','integer'),
-			array($active_id, $this->getId(), $pass)
-		);
+
+		$result = $this->getCurrentSolutionResultSet($active_id, $pass, $authorizedSolution);
 		
 		// Return min points when no answer was given.
 		if ($ilDB->numRows($result) == 0)
@@ -617,7 +614,7 @@ class assTextQuestion extends assQuestion implements ilObjQuestionScoringAdjusta
 	 * @param integer $pass Test pass
 	 * @return boolean $status
 	 */
-	public function saveWorkingData($active_id, $pass = NULL)
+	public function saveWorkingData($active_id, $pass = NULL, $authorized = true)
 	{
 		global $ilDB;
 		global $ilUser;
@@ -629,65 +626,28 @@ class assTextQuestion extends assQuestion implements ilObjQuestionScoringAdjusta
 			$pass = ilObjTest::_getPass($active_id);
 		}
 
-		$this->getProcessLocker()->requestUserSolutionUpdateLock();
-
-		$affectedRows = $ilDB->manipulateF("DELETE FROM tst_solutions WHERE active_fi = %s AND question_fi = %s AND pass = %s",
-			array('integer','integer','integer'),
-			array($active_id, $this->getId(), $pass)
-		);
-		
-		$text = $this->getSolutionSubmit();
-		
 		$entered_values = 0;
-		if (strlen($text))
-		{
-			$next_id = $ilDB->nextId('tst_solutions');
-			$affectedRows = $ilDB->insert("tst_solutions", array(
-				"solution_id" => array("integer", $next_id),
-				"active_fi" => array("integer", $active_id),
-				"question_fi" => array("integer", $this->getId()),
-				"value1" => array("clob", trim($text)),
-				"value2" => array("clob", null),
-				"pass" => array("integer", $pass),
-				"tstamp" => array("integer", time())
-			));
-			require_once './Modules/TestQuestionPool/classes/class.ilAnswerProgressHistorizing.php';
-			$case_id = array('active_fi' => $active_id, 'question_fi' => $this->getId(), 'pass' => $pass);
-			if(ilAnswerProgressHistorizing::caseExists($case_id))
-			{
-				$old_data = ilAnswerProgressHistorizing::getCurrentRecordByCase($case_id);
-				if($old_data['value1'] != trim($text))
-				{
-					ilAnswerProgressHistorizing::updateHistorizedData(
-						$case_id,
-						array('solution_id' => $next_id, 'value1' => trim($text), 'value2' => '', 'tstamp' => 0),
-						$ilUser->getId(),
-						time(),
-						false
-					);
-				}
-			} 
-			else 
-			{
-				ilAnswerProgressHistorizing::createNewHistorizedCase(
-					$case_id,
-					array('solution_id' => $next_id, 'value1' => trim($text), 'value2' => '', 'tstamp' => 0),
-					$ilUser->getId(),
-					time(),
-					false
-				);
-			}
-			$entered_values++;
-		}
 
-		$this->getProcessLocker()->releaseUserSolutionUpdateLock();
+		$this->getProcessLocker()->executeUserSolutionUpdateLockOperation(function() use (&$entered_values, $active_id, $pass, $authorized) {
+
+			$this->removeCurrentSolution($active_id, $pass, $authorized);
+
+			$text = $this->getSolutionSubmit();
+
+			if(strlen($text))
+			{
+				$this->saveCurrentSolution($active_id, $pass, trim($text), null, $authorized);
+				$entered_values++;
+			}
+
+		});
 
 		if ($entered_values)
 		{
 			include_once ("./Modules/Test/classes/class.ilObjAssessmentFolder.php");
 			if (ilObjAssessmentFolder::_enabledAssessmentLogging())
 			{
-				$this->logAction($this->lng->txtlng("assessment", "log_user_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
+				assQuestion::logAction($this->lng->txtlng("assessment", "log_user_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
 			}
 		}
 		else
@@ -695,7 +655,7 @@ class assTextQuestion extends assQuestion implements ilObjQuestionScoringAdjusta
 			include_once ("./Modules/Test/classes/class.ilObjAssessmentFolder.php");
 			if (ilObjAssessmentFolder::_enabledAssessmentLogging())
 			{
-				$this->logAction($this->lng->txtlng("assessment", "log_user_not_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
+				assQuestion::logAction($this->lng->txtlng("assessment", "log_user_not_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
 			}
 		}
 		
@@ -735,7 +695,7 @@ class assTextQuestion extends assQuestion implements ilObjQuestionScoringAdjusta
 
 	public function saveAdditionalQuestionDataToDb()
 	{
-		/** @var ilDB $ilDB */
+		/** @var ilDBInterface $ilDB */
 		global $ilDB;
 		$ilDB->manipulateF( "DELETE FROM " . $this->getAdditionalTableName() . " WHERE question_fi = %s",
 							array( "integer" ),
@@ -759,7 +719,7 @@ class assTextQuestion extends assQuestion implements ilObjQuestionScoringAdjusta
 
 	public function saveAnswerSpecificDataToDb()
 	{
-		/** @var ilDB $ilDB */
+		/** @var ilDBInterface $ilDB */
 		global $ilDB;
 
 		$ilDB->manipulateF( "DELETE FROM qpl_a_essay WHERE question_fi = %s",
@@ -784,14 +744,9 @@ class assTextQuestion extends assQuestion implements ilObjQuestionScoringAdjusta
 	}
 
 	/**
-	 * Reworks the allready saved working data if neccessary
-	 *
-	 * @access protected
-	 * @param integer $active_id
-	 * @param integer $pass
-	 * @param boolean $obligationsAnswered
+	 * {@inheritdoc}
 	 */
-	protected function reworkWorkingData($active_id, $pass, $obligationsAnswered)
+	protected function reworkWorkingData($active_id, $pass, $obligationsAnswered, $authorized)
 	{
 		// nothing to rework!
 	}
@@ -870,30 +825,34 @@ class assTextQuestion extends assQuestion implements ilObjQuestionScoringAdjusta
 	}
 
 	/**
-	* Creates an Excel worksheet for the detailed cumulated results of this question
-	*
-	* @param object $worksheet Reference to the parent excel worksheet
-	* @param object $startrow Startrow of the output in the excel worksheet
-	* @param object $active_id Active id of the participant
-	* @param object $pass Test pass
-	* @param object $format_title Excel title format
-	* @param object $format_bold Excel bold format
-	* @param array $eval_data Cumulated evaluation data
-	* @access public
-	*/
-	public function setExportDetailsXLS(&$worksheet, $startrow, $active_id, $pass, &$format_title, &$format_bold)
+	 * {@inheritdoc}
+	 */
+	public function setExportDetailsXLS($worksheet, $startrow, $active_id, $pass)
 	{
-		include_once ("./Services/Excel/classes/class.ilExcelUtils.php");
+		parent::setExportDetailsXLS($worksheet, $startrow, $active_id, $pass);
+
 		$solutions = $this->getSolutionValues($active_id, $pass);
-		$worksheet->writeString($startrow, 0, ilExcelUtils::_convert_text($this->lng->txt($this->getQuestionType())), $format_title);
-		$worksheet->writeString($startrow, 1, ilExcelUtils::_convert_text($this->getTitle()), $format_title);
+		
 		$i = 1;
-		$worksheet->writeString($startrow + $i, 0, ilExcelUtils::_convert_text($this->lng->txt("result")), $format_bold);
+		$worksheet->setCell($startrow + $i, 0, $this->lng->txt("result"));
+		$worksheet->setBold($worksheet->getColumnCoord(0) . ($startrow + $i));
+		
+		require_once 'Modules/Test/classes/class.ilObjAssessmentFolder.php';
+		$assessment_folder = new ilObjAssessmentFolder();
+
+		$string_escaping_org_value = $worksheet->getStringEscaping();
+		if($assessment_folder->getExportEssayQuestionsWithHtml() == 1)
+		{
+			$worksheet->setStringEscaping(false);
+		}
+
 		if (strlen($solutions[0]["value1"]))
 		{
-			$worksheet->write($startrow + $i, 1, ilExcelUtils::_convert_text($solutions[0]["value1"]));
+			$worksheet->setCell($startrow + $i, 1, $solutions[0]["value1"]);
 		}
 		$i++;
+
+		$worksheet->setStringEscaping($string_escaping_org_value);
 		return $startrow + $i + 1;
 	}
 	
@@ -1103,7 +1062,7 @@ class assTextQuestion extends assQuestion implements ilObjQuestionScoringAdjusta
 	 * @param integer $pass
 	 * @return boolean $answered
 	 */
-	public function isAnswered($active_id, $pass)
+	public function isAnswered($active_id, $pass = NULL)
 	{
 		$numExistingSolutionRecords = assQuestion::getNumExistingSolutionRecords($active_id, $pass, $this->getId());
 

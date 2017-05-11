@@ -152,6 +152,33 @@ class ilObjQuestionPoolSettingsGeneralGUI
 
 	private function performSaveForm(ilPropertyFormGUI $form)
 	{
+		include_once 'Services/MetaData/classes/class.ilMD.php';
+		$md_obj = new ilMD($this->poolOBJ->getId(), 0, "qpl");
+		$md_section = $md_obj->getGeneral();
+
+		// title
+		$md_section->setTitle($form->getItemByPostVar('title')->getValue());
+		$md_section->update();
+
+		// Description
+		$md_desc_ids = $md_section->getDescriptionIds();
+		if ($md_desc_ids)
+		{
+			$md_desc = $md_section->getDescription(array_pop($md_desc_ids));
+			$md_desc->setDescription($form->getItemByPostVar('description')->getValue());
+			$md_desc->update();
+		}
+		else
+		{
+			$md_desc = $md_section->addDescription();
+			$md_desc->setDescription($form->getItemByPostVar('description')->getValue());
+			$md_desc->save();
+		}
+
+		$this->poolOBJ->setTitle($form->getItemByPostVar('title')->getValue());
+		$this->poolOBJ->setDescription($form->getItemByPostVar('description')->getValue());
+		$this->poolOBJ->update();
+
 		$online = $form->getItemByPostVar('online');
 		$this->poolOBJ->setOnline($online->getChecked());
 
@@ -161,6 +188,12 @@ class ilObjQuestionPoolSettingsGeneralGUI
 		$navTax = $form->getItemByPostVar('nav_taxonomy');
 		$this->poolOBJ->setNavTaxonomyId($navTax->getValue());
 
+		if( $this->formPropertyExists($form, 'skill_service') )
+		{
+			$skillService = $form->getItemByPostVar('skill_service');
+			$this->poolOBJ->setSkillServiceEnabled($skillService->getChecked());
+		}
+		
 		$this->poolOBJ->saveToDb();
 	}
 	
@@ -174,7 +207,28 @@ class ilObjQuestionPoolSettingsGeneralGUI
 		
 		$form->setTitle($this->lng->txt('qpl_form_general_settings'));
 		$form->setId('properties');
-		
+
+		include_once 'Services/MetaData/classes/class.ilMD.php';
+		$md_obj = new ilMD($this->poolOBJ->getId(), 0, "qpl");
+		$md_section = $md_obj->getGeneral();
+
+		$title = new ilTextInputGUI($this->lng->txt("title"), "title");
+		$title->setRequired(true);
+		$title->setValue($md_section->getTitle());
+		$form->addItem($title);
+
+		$ids = $md_section->getDescriptionIds();
+		if($ids)
+		{
+			$desc_obj = $md_section->getDescription(array_pop($ids));
+
+			$desc = new ilTextAreaInputGUI($this->lng->txt("description"), "description");
+			$desc->setCols(50);
+			$desc->setRows(4);
+			$desc->setValue($desc_obj->getDescription());
+			$form->addItem($desc);
+		}
+
 		// online
 		
 		$online = new ilCheckboxInputGUI($this->lng->txt('qpl_settings_general_form_property_online'), 'online');
@@ -198,6 +252,15 @@ class ilObjQuestionPoolSettingsGeneralGUI
 			$navTax->setValue($this->poolOBJ->getNavTaxonomyId());
 			$navTax->setOptions($taxSelectOptions);
 		$showTax->addSubItem($navTax);
+
+		// skill service activation
+		
+		if( ilObjQuestionPool::isSkillManagementGloballyActivated() )
+		{
+			$skillService = new ilCheckboxInputGUI($this->lng->txt('tst_activate_skill_service'), 'skill_service');
+			$skillService->setChecked($this->poolOBJ->isSkillServiceEnabled());
+			$form->addItem($skillService);
+		}
 		
 		return $form;
 	}
@@ -214,5 +277,10 @@ class ilObjQuestionPoolSettingsGeneralGUI
 		}
 		
 		return $taxSelectOptions;
+	}
+
+	protected function formPropertyExists(ilPropertyFormGUI $form, $propertyId)
+	{
+		return $form->getItemByPostVar($propertyId) instanceof ilFormPropertyGUI;
 	}
 }

@@ -145,7 +145,7 @@ class ilCourseObjectiveMaterials
 		$query = "SELECT DISTINCT(ref_id) ref_id FROM crs_objective_lm ".
 			"WHERE objective_id = ".$ilDB->quote($a_objective_id ,'integer');
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$ref_ids[] = $row->ref_id;
 		}
@@ -168,6 +168,8 @@ class ilCourseObjectiveMaterials
 	{
 		global $tree,$ilDB;
 		
+		$container_obj_id = ilObject::_lookupObjId($a_container_id);
+		
 		$all_materials = $tree->getSubTree($tree->getNodeData($a_container_id),true);
 		$all_materials = ilUtil::sortArray($all_materials,'title','asc');
 		
@@ -177,7 +179,10 @@ class ilCourseObjectiveMaterials
 			switch($material['type'])
 			{
 				case 'tst':
-					if(ilLOSettings::getInstanceByObjId($a_container_id)->isObjectiveTest($material['child']))
+					
+					include_once './Modules/Course/classes/class.ilCourseObjectiveMaterials.php';
+					$type = ilLOTestAssignments::getInstance($container_obj_id)->getTypeByTest($material['child']);
+					if($type != ilLOSettings::TYPE_TEST_UNDEFINED)
 					{
 						continue;
 					}
@@ -220,7 +225,7 @@ class ilCourseObjectiveMaterials
 			"ORDER BY obd.title ";
 			
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$ref_ids[] = $row->ref_id;
 		}
@@ -371,8 +376,8 @@ class ilCourseObjectiveMaterials
 			$ilDB->quote($this->getType() ,'text').
 			")";
 		$res = $ilDB->manipulate($query);
-
-		return true;
+		
+		return (int) $next_id;
 	}
 	function delete($lm_id)
 	{
@@ -442,7 +447,7 @@ class ilCourseObjectiveMaterials
 			"ORDER BY position,obd.title,lmd.title";			
 			
 		$res = $this->db->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			if(!$tree->isInTree($row->ref_id) or !$tree->isGrandChild($container_ref_id,$row->ref_id))
 			{
@@ -460,6 +465,29 @@ class ilCourseObjectiveMaterials
 		
 		// end-patch lok
 		
+		return true;
+	}
+	
+	// begin-patch optes_lok_export
+	
+	/**
+	 * 
+	 * @param ilXmlWriter $writer
+	 */
+	public function toXml(ilXmlWriter $writer)
+	{
+		foreach($this->getMaterials() as $material)
+		{
+			$writer->xmlElement(
+				'Material',
+				array(
+					'refId'		=> $material['ref_id'],
+					'objId'		=> $material['obj_id'],
+					'type'		=> $material['type'],
+					'position'	=> $material['position']
+				)
+			);
+		}
 		return true;
 	}
 	

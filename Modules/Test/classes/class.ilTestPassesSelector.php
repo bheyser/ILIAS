@@ -18,9 +18,11 @@ class ilTestPassesSelector
 	
 	private $activeId;
 	
-	private $lastFinishedPass;
+	private $lastFinishedPass = null;
 	
-	public function __construct(ilDB $db, ilObjTest $testOBJ)
+	private $passes = null;
+	
+	public function __construct(ilDBInterface $db, ilObjTest $testOBJ)
 	{
 		$this->db = $db;
 		$this->testOBJ = $testOBJ;
@@ -55,22 +57,64 @@ class ilTestPassesSelector
 
 	public function setLastFinishedPass($lastFinishedPass)
 	{
+		$lastFinishedPass = $lastFinishedPass === null ? -1 : $lastFinishedPass;
 		$this->lastFinishedPass = $lastFinishedPass;
+	}
+	
+	private function passesLoaded()
+	{
+		return is_array($this->passes);
+	}
+	
+	private function ensureLoadedPasses()
+	{
+		if( !$this->passesLoaded() )
+		{
+			$this->loadPasses();
+		}
+	}
+	private function loadPasses()
+	{
+		$query = "
+			SELECT DISTINCT tst_pass_result.* FROM tst_pass_result
+			LEFT JOIN tst_test_result
+			ON tst_pass_result.pass = tst_test_result.pass
+			AND tst_pass_result.active_fi = tst_test_result.active_fi
+			WHERE tst_pass_result.active_fi = %s
+			ORDER BY tst_pass_result.pass
+		";
+		
+		$res = $this->db->queryF(
+			$query, array('integer'), array($this->getActiveId())
+		);
+		
+		$this->passes = array();
+		
+		while( $row = $this->db->fetchAssoc($res) )
+		{
+			$this->passes[$row['pass']] = $row;
+		}
+	}
+	
+	private function getLazyLoadedPasses()
+	{
+		$this->ensureLoadedPasses();
+		return $this->passes;
 	}
 
 	public function getExistingPasses()
 	{
-		return $this->loadExistingPasses();
+		return array_keys($this->getLazyLoadedPasses());
 	}
 
 	public function getNumExistingPasses()
 	{
-		return count($this->loadExistingPasses());
+		return count($this->getExistingPasses());
 	}
 
 	public function getClosedPasses()
 	{
-		$existingPasses = $this->loadExistingPasses();
+		$existingPasses = $this->getExistingPasses();
 		$closedPasses = $this->fetchClosedPasses($existingPasses);
 
 		return $closedPasses;
@@ -78,40 +122,11 @@ class ilTestPassesSelector
 
 	public function getReportablePasses()
 	{
-		$existingPasses = $this->loadExistingPasses();
-		
-		if( $this->isAdminModeEnabled() )
-		{
-			return $existingPasses;
-		}
+		$existingPasses = $this->getExistingPasses();
 			
 		$reportablePasses = $this->fetchReportablePasses($existingPasses);
 
 		return $reportablePasses;
-	}
-	
-	private function loadExistingPasses()
-	{
-		$query = "
-			SELECT DISTINCT tst_pass_result.pass FROM tst_pass_result
-			LEFT JOIN tst_test_result
-			ON tst_pass_result.pass = tst_test_result.pass
-			AND tst_pass_result.active_fi = tst_test_result.active_fi
-			WHERE tst_pass_result.active_fi = %s
-		";
-		
-		$res = $this->db->queryF(
-			$query, array('integer'), array($this->getActiveId())
-		);
-
-		$existingPasses = array();
-		
-		while( $row = $this->db->fetchAssoc($res) )
-		{
-			$existingPasses[] = $row['pass'];
-		}
-		
-		return $existingPasses;
 	}
 	
 	private function fetchReportablePasses($existingPasses)
@@ -186,8 +201,18 @@ class ilTestPassesSelector
 		return false;
 	}
 	
+	private function checkLastFinishedPassInitialised()
+	{
+		if( $this->getLastFinishedPass() === null )
+		{
+			return ilTestException('invalid object state: last finished pass was not set!');
+		}
+	}
+	
 	private function isClosedPass($pass)
 	{
+		$this->checkLastFinishedPassInitialised();
+		
 		if( $pass <= $this->getLastFinishedPass() )
 		{
 			return true;
@@ -232,5 +257,19 @@ class ilTestPassesSelector
 		}
 
 		return $this->testOBJ->isMaxProcessingTimeReached($startingTime, $this->getActiveId());
+	}
+	
+	/**
+	 * @return int timestamp
+	 */
+	public function getLastFinishedPassTimestamp()
+	{
+		if( $this->getLastFinishedPass() === null )
+		{
+			return null;
+		}
+		
+		$passes = $this->getLazyLoadedPasses();
+		return $passes[$this->getLastFinishedPass()]['tstamp'];
 	}
 }

@@ -2,6 +2,7 @@
 /* Copyright (c) 1998-2009 ILIAS open source, Extended GPL, see docs/LICENSE */
 
 require_once "./Services/Object/classes/class.ilObjectGUI.php";
+require_once('./Services/Repository/classes/class.ilObjectPlugin.php');
 
 /**
  * Class ilObjSystemFolderGUI
@@ -27,15 +28,16 @@ class ilObjSystemFolderGUI extends ilObjectGUI
 	* Constructor
 	* @access public
 	*/
-	function ilObjSystemFolderGUI($a_data,$a_id,$a_call_by_reference)
+	function __construct($a_data,$a_id,$a_call_by_reference)
 	{
 		$this->type = "adm";
-		$this->ilObjectGUI($a_data,$a_id,$a_call_by_reference, false);
+		parent::__construct($a_data,$a_id,$a_call_by_reference, false);
 
 		$this->lng->loadLanguageModule("administration");
+		$this->lng->loadLanguageModule("adm");
 	}
 
-	function &executeCommand()
+	function executeCommand()
 	{
 		global $ilTabs;
 
@@ -46,7 +48,7 @@ class ilObjSystemFolderGUI extends ilObjectGUI
 		{
 			case 'ilpermissiongui':
 				include_once("Services/AccessControl/classes/class.ilPermissionGUI.php");
-				$perm_gui =& new ilPermissionGUI($this);
+				$perm_gui = new ilPermissionGUI($this);
 				$ret =& $this->ctrl->forwardCommand($perm_gui);
 				break;
 			
@@ -270,7 +272,8 @@ class ilObjSystemFolderGUI extends ilObjectGUI
 				{
 					if ($objDefinition->isPlugin($t))
 					{
-						$ts[$t] = ilPlugin::lookupTxt("rep_robj", $t, "obj_".$t);
+						$pl = ilObjectPlugin::getRepoPluginObjectByType($t);
+						$ts[$t] = $pl->txt("obj_".$t);
 					}
 					else
 					{
@@ -829,7 +832,7 @@ class ilObjSystemFolderGUI extends ilObjectGUI
 	}
 
 	// get tabs
-	function getAdminTabs(&$tabs_gui)
+	function getAdminTabs()
 	{
 		global $rbacsystem, $ilHelp;
 		
@@ -840,7 +843,7 @@ class ilObjSystemFolderGUI extends ilObjectGUI
 		// general settings
 		if ($rbacsystem->checkAccess("write",$this->object->getRefId()))
 		{
-			$tabs_gui->addTarget("general_settings",
+			$this->tabs_gui->addTarget("general_settings",
 				$this->ctrl->getLinkTarget($this, "showBasicSettings"),
 				array("showBasicSettings", "saveBasicSettings"), get_class($this));
 		}
@@ -848,26 +851,26 @@ class ilObjSystemFolderGUI extends ilObjectGUI
 		// server info
 		if ($rbacsystem->checkAccess("visible,read",$this->object->getRefId()))
 		{
-			$tabs_gui->addTarget("server",
+			$this->tabs_gui->addTarget("server",
 				$this->ctrl->getLinkTarget($this, "showServerInfo"),
 				array("showServerInfo", "view"), get_class($this));
 		}
 
 		if ($rbacsystem->checkAccess("write",$this->object->getRefId()))
 		{
-			$tabs_gui->addTarget("cron_jobs",
+			$this->tabs_gui->addTarget("cron_jobs",
 				$this->ctrl->getLinkTargetByClass("ilCronManagerGUI", ""), "", get_class($this));
-			
-			$tabs_gui->addTarget("system_check",
-				$this->ctrl->getLinkTarget($this, "check"), array("check","viewScanLog","saveCheckParams","saveCheckCron"), get_class($this));
 
-			$tabs_gui->addTarget("benchmarks",
+//			$tabs_gui->addTarget("system_check",
+//				$this->ctrl->getLinkTarget($this, "check"), array("check","viewScanLog","saveCheckParams","saveCheckCron"), get_class($this));
+
+			$this->tabs_gui->addTarget("benchmarks",
 				$this->ctrl->getLinkTarget($this, "benchmark"), "benchmark", get_class($this));
 		}
 
 		if ($rbacsystem->checkAccess('edit_permission',$this->object->getRefId()))
 		{
-			$tabs_gui->addTarget("perm_settings",
+			$this->tabs_gui->addTarget("perm_settings",
 				$this->ctrl->getLinkTargetByClass(array(get_class($this),'ilpermissiongui'), "perm"), array("perm","info","owner"), 'ilpermissiongui');
 		}
 	}
@@ -1023,11 +1026,6 @@ class ilObjSystemFolderGUI extends ilObjectGUI
 		$ne->setValue((PATH_TO_JAVA) ? PATH_TO_JAVA : $not_set);
 		$this->form->addItem($ne);
 		
-		// htmldoc
-		$ne = new ilNonEditableValueGUI($lng->txt("path_to_htmldoc"), "");
-		$ne->setValue((PATH_TO_HTMLDOC) ? PATH_TO_HTMLDOC : $not_set);
-		$this->form->addItem($ne);
-
 		// mkisofs
 		$ne = new ilNonEditableValueGUI($lng->txt("path_to_mkisofs"), "");
 		$ne->setValue((PATH_TO_MKISOFS) ? PATH_TO_MKISOFS : $not_set);
@@ -1410,7 +1408,6 @@ class ilObjSystemFolderGUI extends ilObjectGUI
 	 * forum_notification => migrated
 	 * mail_notification => migrated
 	 * disk_quota/enabled => migrated
-	 * payment_notification => migrated
 	 * crsgrp_ntf => migrated 
 	 * cron_upd_adrbook => migrated		
 	 */		
@@ -1537,22 +1534,36 @@ class ilObjSystemFolderGUI extends ilObjectGUI
 		$this->form->addItem($ti);
 		
 		// feedback recipient
-		$ti = new ilEmailInputGUI($this->lng->txt("feedback_recipient"), "feedback_recipient");
+		/* currently used in:
+		- footer
+		- terms of service: no document found message
+		*/
+		/*$ti = new ilEmailInputGUI($this->lng->txt("feedback_recipient"), "feedback_recipient");
 		$ti->setInfo(sprintf($this->lng->txt("feedback_recipient_info"), $this->lng->txt("contact_sysadmin")));
 		$ti->setMaxLength(64);
 		$ti->setSize(40);
 		$ti->setRequired(true);
 		$ti->allowRFC822(true);
 		$ti->setValue($ilSetting->get("feedback_recipient"));		
+		$this->form->addItem($ti);*/
+
+		// System support contacts
+		include_once("./Modules/SystemFolder/classes/class.ilSystemSupportContacts.php");
+		$ti = new ilTextInputGUI($this->lng->txt("adm_support_contacts"), "adm_support_contacts");
+		$ti->setMaxLength(500);
+		$ti->setValue(ilSystemSupportContacts::getList());
+		//$ti->setSize();
+		$ti->setInfo($this->lng->txt("adm_support_contacts_info"));
 		$this->form->addItem($ti);
+
 		
 		// error recipient
-		$ti = new ilEmailInputGUI($this->lng->txt("error_recipient"), "error_recipient");
+		/*$ti = new ilEmailInputGUI($this->lng->txt("error_recipient"), "error_recipient");
 		$ti->setMaxLength(64);
 		$ti->setSize(40);
 		$ti->allowRFC822(true);
 		$ti->setValue($ilSetting->get("error_recipient"));
-		$this->form->addItem($ti);
+		$this->form->addItem($ti);*/
 		
 		$this->form->addCommandButton("saveContactInformation", $lng->txt("save"));
 	                
@@ -1579,12 +1590,15 @@ class ilObjSystemFolderGUI extends ilObjectGUI
 		{
 			$fs = array("admin_firstname", "admin_lastname", "admin_title", "admin_position", 
 				"admin_institution", "admin_street", "admin_zipcode", "admin_city", 
-				"admin_country", "admin_phone", "admin_email",
-				"feedback_recipient", "error_recipient");
+				"admin_country", "admin_phone", "admin_email");
 			foreach ($fs as $f)
 			{
 				$ilSetting->set($f, $_POST[$f]);
 			}
+
+			include_once("./Modules/SystemFolder/classes/class.ilSystemSupportContacts.php");
+			ilSystemSupportContacts::setList($_POST["adm_support_contacts"]);
+
 			ilUtil::sendSuccess($lng->txt("msg_obj_modified"), true);
 			$ilCtrl->redirect($this, "showContactInformation");
 		}
@@ -1975,7 +1989,7 @@ class ilObjSystemFolderGUI extends ilObjectGUI
 				'<img src="'.ilUtil::getImagePath('icon_not_ok.svg').'" /> '.
 				$this->lng->txt('proxy_not_connectable')
 			);
-			ilUtil::sendFailure($this->lng->txt('proxy_pear_net_socket_error').': '.$e->getMessage());
+			ilUtil::sendFailure(sprintf($this->lng->txt('proxy_socket_error'), $e->getMessage()));
 		}
 	}
 	

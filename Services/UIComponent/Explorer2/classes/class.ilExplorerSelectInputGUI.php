@@ -149,7 +149,7 @@ abstract class ilExplorerSelectInputGUI extends ilFormPropertyGUI implements ilT
 	 */
 	function render($a_mode = "property_form")
 	{
-		global $lng, $ilCtrl, $ilObjDataCache, $tree;
+		global $lng;
 		
 		include_once("./Services/YUI/classes/class.ilYuiUtil.php");
 		ilYuiUtil::initPanel();
@@ -157,6 +157,10 @@ abstract class ilExplorerSelectInputGUI extends ilFormPropertyGUI implements ilT
 		
 		$tpl = new ilTemplate("tpl.prop_expl_select.html", true, true, "Services/UIComponent/Explorer2");
 
+		if ($a_mode != "property_form")
+		{
+			$tpl->touchBlock("tiny_presentation");
+		}
 
 		// set values		
 		$val = $this->getValue();
@@ -190,8 +194,19 @@ abstract class ilExplorerSelectInputGUI extends ilFormPropertyGUI implements ilT
 		$tpl->setVariable("POST_VAR", $this->getPostVar());
 		$tpl->setVariable("ID", $this->getFieldId());
 //		$tpl->setVariable("PROPERTY_VALUE", ilUtil::prepareFormOutput($this->getValue()));
-		$tpl->setVariable("TXT_SELECT", $lng->txt("select"));
-		$tpl->setVariable("TXT_RESET", $lng->txt("reset"));
+		
+		//added disabled
+		if(!$this->disabled) {
+			$tpl->setCurrentBlock("txt_select");
+			$tpl->setVariable("TXT_SELECT", $lng->txt("select"));
+			$tpl->setVariable("ID_TXT_SELECT", $this->getFieldId());
+			$tpl->parseCurrentBlock();
+
+			$tpl->setCurrentBlock("txt_reset");
+			$tpl->setVariable("TXT_RESET", $lng->txt("reset"));
+			$tpl->setVariable("ID_TXT_RESET", $this->getFieldId());
+			$tpl->parseCurrentBlock();
+		}
 		
 		$tpl->setVariable("EXPL", $this->explorer_gui->getHTML());
 		

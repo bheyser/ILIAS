@@ -15,7 +15,7 @@ require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionList.php';
 class ilTestDynamicQuestionSet
 {
 	/**
-	 * @var ilDB
+	 * @var ilDBInterface
 	 */
 	private $db = null;
 	
@@ -54,7 +54,7 @@ class ilTestDynamicQuestionSet
 	 * 
 	 * @param ilObjTest $testOBJ
 	 */
-	public function __construct(ilDB $db, ilLanguage $lng, ilPluginAdmin $pluginAdmin, ilObjTest $testOBJ)
+	public function __construct(ilDBInterface $db, ilLanguage $lng, ilPluginAdmin $pluginAdmin, ilObjTest $testOBJ)
 	{
 		$this->db = $db;
 		$this->lng = $lng;
@@ -83,9 +83,9 @@ class ilTestDynamicQuestionSet
 
 	private function initCompleteQuestionList(ilObjTestDynamicQuestionSetConfig $dynamicQuestionSetConfig, $answerStatusActiveId)
 	{
-		$questionList = new ilAssQuestionList(
-				$this->db, $this->lng, $this->pluginAdmin, $dynamicQuestionSetConfig->getSourceQuestionPoolId()
-		);
+		$questionList = new ilAssQuestionList($this->db, $this->lng, $this->pluginAdmin);
+
+		$questionList->setParentObjId($dynamicQuestionSetConfig->getSourceQuestionPoolId());
 
 		$questionList->setAnswerStatusActiveId($answerStatusActiveId);
 		
@@ -96,9 +96,9 @@ class ilTestDynamicQuestionSet
 	
 	private function initFilteredQuestionList(ilObjTestDynamicQuestionSetConfig $dynamicQuestionSetConfig, ilTestDynamicQuestionSetFilterSelection $filterSelection)
 	{
-		$questionList = new ilAssQuestionList(
-				$this->db, $this->lng, $this->pluginAdmin, $dynamicQuestionSetConfig->getSourceQuestionPoolId()
-		);
+		$questionList = new ilAssQuestionList($this->db, $this->lng, $this->pluginAdmin);
+
+		$questionList->setParentObjId($dynamicQuestionSetConfig->getSourceQuestionPoolId());
 
 		$questionList->setAnswerStatusActiveId($filterSelection->getAnswerStatusActiveId());
 
@@ -117,7 +117,9 @@ class ilTestDynamicQuestionSet
 			
 			foreach($filterSelection->getTaxonomySelection() as $taxId => $taxNodes)
 			{
-				$questionList->addTaxonomyFilter($taxId, $taxNodes);
+				$questionList->addTaxonomyFilter(
+					$taxId, $taxNodes, $this->testOBJ->getId(), $this->testOBJ->getType()
+				);
 			}
 		}
 		elseif( $dynamicQuestionSetConfig->getOrderingTaxonomyId() )

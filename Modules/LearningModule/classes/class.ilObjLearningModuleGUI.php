@@ -10,11 +10,12 @@ require_once("./Modules/LearningModule/classes/class.ilObjContentObjectGUI.php")
 *
 * @author Alex Killing <alex.killing@gmx.de>
 * @version $Id$
-* @ilCtrl_Calls ilObjLearningModuleGUI: ilLMPageObjectGUI, ilStructureObjectGUI, ilObjStyleSheetGUI, ilMDEditorGUI
+* @ilCtrl_Calls ilObjLearningModuleGUI: ilLMPageObjectGUI, ilStructureObjectGUI, ilObjStyleSheetGUI, ilObjectMetaDataGUI
 * @ilCtrl_Calls ilObjLearningModuleGUI: ilLearningProgressGUI, ilPermissionGUI, ilInfoScreenGUI, ilObjectCopyGUI
 * @ilCtrl_Calls ilObjLearningModuleGUI: ilExportGUI, ilCommonActionDispatcherGUI, ilPageMultiLangGUI, ilObjectTranslationGUI
+* @ilCtrl_Calls ilObjLearningModuleGUI: ilLMMultiSrtUploadGUI, ilLMImportGUI
 *
-* @ingroup ModulesIliasLearningModule
+* @ingroup ModulesLearningModule
 */
 class ilObjLearningModuleGUI extends ilObjContentObjectGUI
 {
@@ -23,11 +24,11 @@ class ilObjLearningModuleGUI extends ilObjContentObjectGUI
 	* Constructor
 	* @access	public
 	*/
-	function ilObjLearningModuleGUI($a_data,$a_id = 0,$a_call_by_reference = true, $a_prepare_output = true)
+	function __construct($a_data,$a_id = 0,$a_call_by_reference = true, $a_prepare_output = true)
 	{
 		$this->type = "lm";
 
-		parent::ilObjContentObjectGUI($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
+		parent::__construct($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
 
 		# BETTER DO IT HERE THAN IN PARENT CLASS ( PROBLEMS FOR import, create)
 		$this->assignObject();
@@ -35,19 +36,8 @@ class ilObjLearningModuleGUI extends ilObjContentObjectGUI
 		// SAME REASON
 		if($a_id != 0)
 		{
-			$this->lm_tree =& $this->object->getLMTree();
+			$this->lm_tree = $this->object->getLMTree();
 		}
-		/*
-		global $ilias, $tpl, $lng, $objDefinition;
-
-		$this->ilias =& $ilias;
-		$this->tpl =& $tpl;
-		$this->lng =& $lng;
-		$this->objDefinition =& $objDefinition;
-		$this->lm_tree =& $a_tree;
-		*/
-
-		//$this->read(); todo
 	}
 
 	function assignObject()
@@ -55,7 +45,7 @@ class ilObjLearningModuleGUI extends ilObjContentObjectGUI
 		include_once("./Modules/LearningModule/classes/class.ilObjLearningModule.php");
 
 		$this->link_params = "ref_id=".$this->ref_id;
-		$this->object =& new ilObjLearningModule($this->id, true);
+		$this->object = new ilObjLearningModule($this->id, true);
 	}
 
 	/*

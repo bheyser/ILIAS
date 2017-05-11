@@ -33,9 +33,9 @@ class ilSCORM2004PageNode extends ilSCORM2004Node
 	 * Constructor
 	 * @access	public
 	 */
-	function ilSCORM2004PageNode($a_slm_object, $a_id = 0)
+	function __construct($a_slm_object, $a_id = 0)
 	{
-		parent::ilSCORM2004Node($a_slm_object, $a_id);
+		parent::__construct($a_slm_object, $a_id);
 		$this->setType("page");
 		$this->id = $a_id;
 
@@ -51,7 +51,7 @@ class ilSCORM2004PageNode extends ilSCORM2004Node
 	/**
 	 * Destructor
 	 */
-	function __descruct()
+	function __destruct()
 	{
 		if(is_object($this->page_object))
 		{
@@ -82,7 +82,7 @@ class ilSCORM2004PageNode extends ilSCORM2004Node
 		include_once("./Modules/Scorm2004/classes/class.ilSCORM2004Page.php");
 		if(!is_object($this->page_object))
 		{
-			$this->page_object =& new ilSCORM2004Page($this->slm_object->getType());
+			$this->page_object = new ilSCORM2004Page($this->slm_object->getType());
 		}
 		$this->page_object->setId($this->getId());
 		$this->page_object->setParentId($this->getSLMId());
@@ -141,6 +141,35 @@ class ilSCORM2004PageNode extends ilSCORM2004Node
 	}
 
 	/**
+	 * Copy page from learning module
+	 */
+	static function copyPageFromLM($a_target_slm, $a_lm_page)
+	{
+		// copy page
+		$slm_page = new ilSCORM2004PageNode($a_target_slm);
+		$slm_page->setTitle($a_lm_page->getTitle());
+		$slm_page->setSLMId($a_target_slm->getId());
+		$slm_page->setType("page");
+		$slm_page->create(true);		// setting "upload" flag to true prevents creating of meta data
+
+		// copy meta data
+		include_once("Services/MetaData/classes/class.ilMD.php");
+		$md = new ilMD($a_lm_page->getLMId(), $a_lm_page->getId(), $a_lm_page->getType());
+		$md->cloneMD($a_target_slm->getId(), $slm_page->getId(), "page");
+
+		// copy page content
+		$page = $slm_page->getPageObject();
+		$clone_mobs = true;
+		$a_lm_page->getPageObject()->copy($page->getId(), $page->getParentType(), $page->getParentId(), $clone_mobs);
+
+		$slm_page = new ilSCORM2004PageNode($a_target_slm, $slm_page->getId());
+		$slm_page->getPageObject()->removeInvalidLinks();
+
+		return $slm_page;
+	}
+
+
+	/**
 	 * copy a page to another content object (learning module / dlib book)
 	 */
 	function &copyToOtherContObject(&$a_cont_obj)
@@ -148,7 +177,7 @@ class ilSCORM2004PageNode extends ilSCORM2004Node
 		// @todo
 		/*
 		 // copy page
-		 $lm_page =& new ilLMPageObject($a_cont_obj);
+		 $lm_page = new ilLMPageObject($a_cont_obj);
 		 $lm_page->setTitle($this->getTitle());
 		 $lm_page->setLMId($a_cont_obj->getId());
 		 $lm_page->setType($this->getType());
@@ -178,7 +207,7 @@ class ilSCORM2004PageNode extends ilSCORM2004Node
 	 */
 	function assignPageObject(&$a_page_obj)
 	{
-		$this->page_object =& $a_page_obj;
+		$this->page_object = $a_page_obj;
 	}
 
 

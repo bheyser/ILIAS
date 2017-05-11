@@ -16,7 +16,7 @@ class ilObjRepositorySettingsGUI extends ilObjectGUI
 {
 	public function __construct($a_data, $a_id, $a_call_by_reference = true, $a_prepare_output = true)
 	{		
-		parent::ilObjectGUI($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
+		parent::__construct($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
 
 		$this->type = 'reps';
 		$this->lng->loadLanguageModule('rep');
@@ -32,7 +32,7 @@ class ilObjRepositorySettingsGUI extends ilObjectGUI
 
 		$this->prepareOutput();
 
-		if(!$ilAccess->checkAccess('write', '', $this->object->getRefId()))
+		if(!$ilAccess->checkAccess('read', '', $this->object->getRefId()))
 		{
 			$ilErr->raiseError($this->lng->txt('no_permission'), $ilErr->WARNING);
 		}
@@ -42,7 +42,7 @@ class ilObjRepositorySettingsGUI extends ilObjectGUI
 			case 'ilpermissiongui':
 				$this->tabs_gui->setTabActive('perm_settings');
 				include_once("Services/AccessControl/classes/class.ilPermissionGUI.php");
-				$perm_gui =& new ilPermissionGUI($this);
+				$perm_gui = new ilPermissionGUI($this);
 				$this->ctrl->forwardCommand($perm_gui);
 				break;
 
@@ -91,7 +91,7 @@ class ilObjRepositorySettingsGUI extends ilObjectGUI
 	
 	protected function initSettingsForm()
 	{				
-		global $ilSetting;
+		global $ilSetting, $ilAccess;
 		
 		include_once('Services/Form/classes/class.ilPropertyFormGUI.php');
 		$form = new ilPropertyFormGUI();
@@ -179,7 +179,8 @@ class ilObjRepositorySettingsGUI extends ilObjectGUI
 		// change event
 		require_once 'Services/Tracking/classes/class.ilChangeEvent.php';
 		$this->lng->loadLanguageModule("trac");
-		$event = new ilCheckboxInputGUI($this->lng->txt('trac_repository_changes'), 'change_event_tracking');
+		$event = new ilCheckboxInputGUI($this->lng->txt('trac_show_repository_views'), 'change_event_tracking');
+		$event->setInfo($this->lng->txt("trac_show_repository_views_info"));
 		$event->setChecked(ilChangeEvent::_isActive());		
 		$form->addItem($event);
 		
@@ -225,15 +226,22 @@ class ilObjRepositorySettingsGUI extends ilObjectGUI
 		$pltags->setChecked($ilSetting->get('comments_tagging_in_lists_tags'));
 		$pl->addSubItem($pltags);
 				
-		
-		$form->addCommandButton('saveSettings', $this->lng->txt('save'));
+		if($ilAccess->checkAccess('write','',$this->object->getRefId()))
+		{
+			$form->addCommandButton('saveSettings', $this->lng->txt('save'));
+		}
 		
 		return $form;
 	}
 	
 	public function saveSettings()
 	{
-		global $ilSetting;
+		global $ilSetting, $ilAccess;
+		
+		if(!$ilAccess->checkAccess('write','',$this->object->getRefId()))
+		{
+			$this->ctrl->redirect($this, "view");
+		}
 	
 		$form = $this->initSettingsForm();
 		if ($form->checkInput())
@@ -298,7 +306,7 @@ class ilObjRepositorySettingsGUI extends ilObjectGUI
 	
 	protected function initCustomIconsForm()
 	{
-		global $ilSetting;
+		global $ilSetting, $ilAccess;
 		
 		include_once "Services/Form/classes/class.ilPropertyFormGUI.php";
 		include_once "Services/Form/classes/class.ilCombinationInputGUI.php";
@@ -310,71 +318,28 @@ class ilObjRepositorySettingsGUI extends ilObjectGUI
 		$cb->setInfo($this->lng->txt("enable_custom_icons_info"));
 		$cb->setChecked($ilSetting->get("custom_icons"));
 		$form->addItem($cb);
-		
-		/*
-		$size_big = new ilCombinationInputGUI($this->lng->txt("custom_icon_size_big"));
-		$form->addItem($size_big);
-		
-		$width = new ilNumberInputGUI("", "custom_icon_big_width");
-		$width->setSize(3);
-		$width->setValue($ilSetting->get("custom_icon_big_width"));
-		$size_big->addCombinationItem("bgw", $width, $this->lng->txt("width"));
-		
-		$height = new ilNumberInputGUI("", "custom_icon_big_height");
-		$height->setSize(3);
-		$height->setValue($ilSetting->get("custom_icon_big_height"));
-		$size_big->addCombinationItem("bgh", $height, $this->lng->txt("height"));
-		
-		
-		$size_small = new ilCombinationInputGUI($this->lng->txt("custom_icon_size_standard"));
-		$form->addItem($size_small);
-		
-		$width = new ilNumberInputGUI("", "custom_icon_small_width");
-		$width->setSize(3);
-		$width->setValue($ilSetting->get("custom_icon_small_width"));
-		$size_small->addCombinationItem("smw", $width, $this->lng->txt("width"));
-		
-		$height = new ilNumberInputGUI("", "custom_icon_small_height");
-		$height->setSize(3);
-		$height->setValue($ilSetting->get("custom_icon_small_height"));
-		$size_small->addCombinationItem("smh", $height, $this->lng->txt("height"));
-		
-		
-		$size_tiny = new ilCombinationInputGUI($this->lng->txt("custom_icon_size_tiny"));
-		$form->addItem($size_tiny);
-		
-		$width = new ilNumberInputGUI("", "custom_icon_tiny_width");
-		$width->setSize(3);
-		$width->setValue($ilSetting->get("custom_icon_tiny_width"));
-		$size_tiny->addCombinationItem("tnw", $width, $this->lng->txt("width"));
-		
-		$height = new ilNumberInputGUI("", "custom_icon_tiny_height");
-		$height->setSize(3);
-		$height->setValue($ilSetting->get("custom_icon_tiny_height"));
-		$size_tiny->addCombinationItem("tnh", $height, $this->lng->txt("height"));
-		*/
-		
-		$form->addCommandButton('saveCustomIcons', $this->lng->txt('save'));
+
+		if($ilAccess->checkAccess('write','',$this->object->getRefId()))
+		{
+			$form->addCommandButton('saveCustomIcons', $this->lng->txt('save'));
+		}
 		
 		return $form;
 	}
 	
 	public function saveCustomIcons()
 	{
-		global $ilSetting;
+		global $ilSetting, $ilAccess;
+		
+		if(!$ilAccess->checkAccess('write','',$this->object->getRefId()))
+		{
+			$this->ctrl->redirect($this, "customIcons");
+		}
 	
-		$form = $this->initSettingsForm();
+		$form = $this->initCustomIconsForm();
 		if ($form->checkInput())
 		{
 			$ilSetting->set("custom_icons", (int)$form->getInput("custom_icons"));
-			/*
-			$ilSetting->set("custom_icon_big_width", (int)$form->getInput("custom_icon_big_width"));
-			$ilSetting->set("custom_icon_big_height", (int)$form->getInput("custom_icon_big_height"));
-			$ilSetting->set("custom_icon_small_width", (int)$form->getInput("custom_icon_small_width"));
-			$ilSetting->set("custom_icon_small_height", (int)$form->getInput("custom_icon_small_height"));
-			$ilSetting->set("custom_icon_tiny_width", (int)$form->getInput("custom_icon_tiny_width"));
-			$ilSetting->set("custom_icon_tiny_height", (int)$form->getInput("custom_icon_tiny_height"));
-			*/
 			ilUtil::sendSuccess($this->lng->txt("msg_obj_modified"), true);
 			$this->ctrl->redirect($this, "customIcons");
 		}
@@ -400,20 +365,25 @@ class ilObjRepositorySettingsGUI extends ilObjectGUI
 	
 	protected function listModules()
 	{		
+		global $ilAccess;
+		
 		$this->setModuleSubTabs("list_mods");
 				
+		$has_write = $ilAccess->checkAccess('write','',$this->object->getRefId());
+		
 		include_once("./Services/Repository/classes/class.ilModulesTableGUI.php");
-		$comp_table = new ilModulesTableGUI($this, "listModules");
+		$comp_table = new ilModulesTableGUI($this, "listModules", $has_write);
 				
 		$this->tpl->setContent($comp_table->getHTML());
 	}
 	
 	protected function saveModules()
 	{
-		global $ilSetting, $ilCtrl, $lng;
+		global $ilSetting, $ilCtrl, $lng, $ilAccess;
 		
 		if(!is_array($_POST["obj_grp"]) || 
-			!is_array($_POST["obj_pos"]))
+			!is_array($_POST["obj_pos"]) ||
+			!$ilAccess->checkAccess('write','',$this->object->getRefId()))		
 		{
 			$ilCtrl->redirect($this, "listModules");	
 		}
@@ -467,18 +437,23 @@ class ilObjRepositorySettingsGUI extends ilObjectGUI
 	
 	protected function listNewItemGroups()
 	{
-		global $ilToolbar;
+		global $ilToolbar, $ilAccess;
 		
 		$this->setModuleSubTabs("new_item_groups");
 		
-		$ilToolbar->addButton($this->lng->txt("rep_new_item_group_add"), 
-			$this->ctrl->getLinkTarget($this, "addNewItemGroup"));
+		$has_write = $ilAccess->checkAccess('write','',$this->object->getRefId());
 		
-		$ilToolbar->addButton($this->lng->txt("rep_new_item_group_add_separator"), 
-			$this->ctrl->getLinkTarget($this, "addNewItemGroupSeparator"));
+		if($has_write)
+		{
+			$ilToolbar->addButton($this->lng->txt("rep_new_item_group_add"), 
+				$this->ctrl->getLinkTarget($this, "addNewItemGroup"));
+		
+			$ilToolbar->addButton($this->lng->txt("rep_new_item_group_add_separator"), 
+				$this->ctrl->getLinkTarget($this, "addNewItemGroupSeparator"));
+		}
 		
 		include_once("./Services/Repository/classes/class.ilNewItemGroupTableGUI.php");
-		$grp_table = new ilNewItemGroupTableGUI($this, "listNewItemGroups");
+		$grp_table = new ilNewItemGroupTableGUI($this, "listNewItemGroups", $has_write);
 				
 		$this->tpl->setContent($grp_table->getHTML());
 	}
@@ -726,7 +701,7 @@ class ilObjRepositorySettingsGUI extends ilObjectGUI
 			case ilAdministrationSettingsFormHandler::FORM_LP:
 				
 				require_once 'Services/Tracking/classes/class.ilChangeEvent.php';		
-				$fields = array('trac_repository_changes' => array(ilChangeEvent::_isActive(), ilAdministrationSettingsFormHandler::VALUE_BOOL));
+				$fields = array('trac_show_repository_views' => array(ilChangeEvent::_isActive(), ilAdministrationSettingsFormHandler::VALUE_BOOL));
 												
 				return array(array("view", $fields));	
 				

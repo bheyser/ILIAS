@@ -21,6 +21,7 @@ require_once("./Modules/MediaPool/classes/class.ilMediaPoolItem.php");
 class ilObjMediaPool extends ilObject
 {
 	var $tree;
+	var $for_translation = 0;
 
 	/**
 	* Constructor
@@ -28,11 +29,11 @@ class ilObjMediaPool extends ilObject
 	* @param	integer	reference_id or object_id
 	* @param	boolean	treat the id as reference_id (true) or object_id (false)
 	*/
-	function ilObjMediaPool($a_id = 0,$a_call_by_reference = true)
+	function __construct($a_id = 0,$a_call_by_reference = true)
 	{
 		// this also calls read() method! (if $a_id is set)
 		$this->type = "mep";
-		$this->ilObject($a_id,$a_call_by_reference);
+		parent::__construct($a_id,$a_call_by_reference);
 	}
 
 	/**
@@ -74,7 +75,27 @@ class ilObjMediaPool extends ilObject
 	{
 		return $this->default_height;
 	}
-	
+
+	/**
+	 * Set for translation
+	 *
+	 * @param bool $a_val lm has been imported for translation purposes
+	 */
+	function setForTranslation($a_val)
+	{
+		$this->for_translation = $a_val;
+	}
+
+	/**
+	 * Get for translation
+	 *
+	 * @return bool lm has been imported for translation purposes
+	 */
+	function getForTranslation()
+	{
+		return $this->for_translation;
+	}
+
 	/**
 	* Read pool data
 	*/
@@ -91,6 +112,7 @@ class ilObjMediaPool extends ilObject
 		{
 			$this->setDefaultWidth($rec["default_width"]);
 			$this->setDefaultHeight($rec["default_height"]);
+			$this->setForTranslation($rec["for_translation"]);
 		}
 		$this->tree = ilObjMediaPool::getPoolTree($this->getId());
 	}
@@ -122,10 +144,11 @@ class ilObjMediaPool extends ilObject
 		parent::create();
 
 		$ilDB->manipulate("INSERT INTO mep_data ".
-			"(id, default_width, default_height) VALUES (".
+			"(id, default_width, default_height, for_translation) VALUES (".
 			$ilDB->quote($this->getId(), "integer").", ".
 			$ilDB->quote($this->getDefaultWidth(), "integer").", ".
-			$ilDB->quote($this->getDefaultHeight(), "integer").
+			$ilDB->quote($this->getDefaultHeight(), "integer").", ".
+			$ilDB->quote($this->getForTranslation(), "integer").
 			")");
 
 		$this->createMepTree();
@@ -173,7 +196,8 @@ class ilObjMediaPool extends ilObject
 		// put here object specific stuff
 		$ilDB->manipulate("UPDATE mep_data SET ".
 			" default_width = ".$ilDB->quote($this->getDefaultWidth(), "integer").",".
-			" default_height = ".$ilDB->quote($this->getDefaultHeight(), "integer").
+			" default_height = ".$ilDB->quote($this->getDefaultHeight(), "integer").",".
+			" for_translation = ".$ilDB->quote($this->getForTranslation(), "integer")." ".
 			" WHERE id = ".$ilDB->quote($this->getId(), "integer")
 			);
 
@@ -219,88 +243,11 @@ class ilObjMediaPool extends ilObject
 						$mob->delete();
 					}
 					break;
-
-/*				case "fold":
-					if  (ilObject::_lookupType($fid) == "fold")
-					{
-						include_once("./Modules/Folder/classes/class.ilObjFolder.php");
-						$fold = new ilObjFolder($fid, false);
-						$fold->delete();
-					}
-					break;*/
 			}
 		}
 		
 		return true;
 	}
-
-
-	/**
-	* notifys an object about an event occured
-	* Based on the event happend, each object may decide how it reacts.
-	*
-	* If you are not required to handle any events related to your module, just delete this method.
-	* (For an example how this method is used, look at ilObjGroup)
-	*
-	* @access	public
-	* @param	string	event
-	* @param	integer	reference id of object where the event occured
-	* @param	array	passes optional parameters if required
-	* @return	boolean
-	*/
-	function notify($a_event,$a_ref_id,$a_parent_non_rbac_id,$a_node_id,$a_params = 0)
-	{
-		global $tree;
-
-		switch ($a_event)
-		{
-			case "link":
-
-				//var_dump("<pre>",$a_params,"</pre>");
-				//echo "Module name ".$this->getRefId()." triggered by link event. Objects linked into target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-
-			case "cut":
-
-				//echo "Module name ".$this->getRefId()." triggered by cut event. Objects are removed from target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-
-			case "copy":
-
-				//var_dump("<pre>",$a_params,"</pre>");
-				//echo "Module name ".$this->getRefId()." triggered by copy event. Objects are copied into target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-
-			case "paste":
-
-				//echo "Module name ".$this->getRefId()." triggered by paste (cut) event. Objects are pasted into target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-
-			case "new":
-
-				//echo "Module name ".$this->getRefId()." triggered by paste (new) event. Objects are applied to target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-		}
-
-		// At the beginning of the recursive process it avoids second call of the notify function with the same parameter
-		if ($a_node_id==$_GET["ref_id"])
-		{
-			$parent_obj =& $this->ilias->obj_factory->getInstanceByRefId($a_node_id);
-			$parent_type = $parent_obj->getType();
-			if($parent_type == $this->getType())
-			{
-				$a_node_id = (int) $tree->getParentId($a_node_id);
-			}
-		}
-
-		parent::notify($a_event,$a_ref_id,$a_parent_non_rbac_id,$a_node_id,$a_params);
-	}
-
 
 	/**
 	* get childs of node
@@ -344,8 +291,6 @@ class ilObjMediaPool extends ilObject
 	*/
 	function getChildsExceptFolders($obj_id = "")
 	{
-		$objs = array();
-		$mobs = array();
 		if ($obj_id == "")
 		{
 			$obj_id = $this->tree->getRootId();
@@ -422,10 +367,12 @@ class ilObjMediaPool extends ilObject
 		return $objs;
 	}
 
+
 	/**
-	 * Get all media object ids
+	 * @param int $a_id of the media pool
+	 * @return array of obj_id's (int) of media objects
 	 */
-	function getAllMobIds($a_id)
+	public static function getAllMobIds($a_id)
 	{
 		global $ilDB;
 
@@ -517,10 +464,6 @@ class ilObjMediaPool extends ilObject
 	 */
 	function deleteChild($obj_id)
 	{
-		$fid = ilMediaPoolItem::lookupForeignId($obj_id);
-		$type = ilMediaPoolItem::lookupType($obj_id);
-		$title = ilMediaPoolItem::lookupTitle($obj_id);
-		
 		$node_data = $this->tree->getNodeData($obj_id);
 		$subtree = $this->tree->getSubtree($node_data);
 
@@ -538,7 +481,7 @@ class ilObjMediaPool extends ilObject
 			{
 				if (ilObject::_lookupType($fid) == "mob")
 				{
-					$obj =& new ilObjMediaObject($fid);
+					$obj = new ilObjMediaObject($fid);
 					$obj->delete();
 				}
 			}
@@ -555,7 +498,7 @@ class ilObjMediaPool extends ilObject
 			if ($node["type"] == "pg")
 			{
 				include_once("./Modules/MediaPool/classes/class.ilMediaPoolPage.php");
-				if (ilMediaPoolPage::_exists($node["child"]))
+				if (ilPageObject::_exists("mep", $node["child"]))
 				{
 					$pg = new ilMediaPoolPage($node["child"]);
 					$pg->delete();
@@ -637,11 +580,9 @@ class ilObjMediaPool extends ilObject
 	 * @param int target ref_id
 	 * @param int copy id
 	 */
-	public function cloneObject($a_target_id,$a_copy_id = 0)
+	public function cloneObject($a_target_id,$a_copy_id = 0, $a_omit_tree = false)
 	{
-		global $ilDB, $ilUser, $ilias;
-
-		$new_obj = parent::cloneObject($a_target_id,$a_copy_id);
+		$new_obj = parent::cloneObject($a_target_id,$a_copy_id, $a_omit_tree);
 	 	
 		$new_obj->setTitle($this->getTitle());
 		$new_obj->setDescription($this->getDescription());
@@ -695,9 +636,6 @@ class ilObjMediaPool extends ilObject
 					
 					// copy page
 					$page->copy($new_page->getId(), $new_page->getParentType(), $new_page->getParentId(), true);
-					//$new_page->setXMLContent($page->copyXMLContent(true));
-					//$new_page->buildDom();
-					//$new_page->update();
 					break;
 					
 				case "fold":
@@ -713,6 +651,23 @@ class ilObjMediaPool extends ilObject
 			$this->copyTreeContent($a_new_obj, $item->getId(), $node["child"]);
 		}
 	}
-	
+
+	/**
+	 * Export
+	 *
+	 * @param
+	 */
+	function exportXML($a_master_only = false)
+	{
+		if ($a_master_only)
+		{
+			include_once("./Services/Export/classes/class.ilExport.php");
+			$exp = new ilExport();
+			$conf = $exp->getConfig("Modules/MediaPool");
+			$conf->setMasterLanguageOnly(true);
+			$exp->exportObject($this->getType(),$this->getId(), "4.4.0");
+		}
+	}
+
 }
 ?>

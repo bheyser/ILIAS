@@ -16,7 +16,7 @@ class ilBookmarkImportExport
 	* bookmarks and folders
 	* @param	string		file
 	*/
-	function _parseFile($file)
+	static function _parseFile($file)
 	{
 		if (file_exists($file) && is_file($file))
 		{
@@ -37,7 +37,7 @@ class ilBookmarkImportExport
 	* @param	int		filepointer
 	* @access	private
 	*/
-	function __parseNetscape(&$fp)
+	static function __parseNetscape(&$fp)
 	{
 		$result=array();
 		$parent=array();
@@ -110,7 +110,7 @@ class ilBookmarkImportExport
 	* @param	bool		true for recursive export
 	* @param	string		title of html page
 	*/
-	function _exportBookmark ($obj_ids,$recursive = true,$title = '')
+	static function _exportBookmark ($obj_ids,$recursive = true,$title = '')
 	{
 		$htmlCont='<!DOCTYPE NETSCAPE-Bookmark-file-1>'."\n";
 		$htmlCont.='<!-- Created by ilias - www.ilias.de -->'."\n";
@@ -135,7 +135,7 @@ class ilBookmarkImportExport
 	* @param	bool	true for recursive export
 	* @access	private
 	*/
-	function __parseExport ($object,$depth=1,$recursive = true)
+	static function __parseExport ($object,$depth=1,$recursive = true)
 	{
 		switch ($object['type'])
 		{
@@ -177,7 +177,7 @@ class ilBookmarkImportExport
 	* @param	string	string to decode
 	* @access	public
 	*/
-	function _decodeEntities($string)
+	static function _decodeEntities($string)
 	{
 		if (function_exists('html_entity_decode'))
 		{
@@ -188,8 +188,20 @@ class ilBookmarkImportExport
 			$trans_table = array_flip(get_html_translation_table(HTML_ENTITIES, ENT_QUOTES));
 			$string = strtr($string, $trans_table );
 		}
-		$string= preg_replace('/&#(\d+);/me',"chr(\\1)",$string); #decimal notation
-		$string= preg_replace('/&#x([a-f0-9]+);/mei',"chr(0x\\1)",$string);  #hex notation
+		$string= preg_replace_callback(
+            '/&#(\d+);/m',
+            function($hit){
+                return chr($hit[1]);
+            },
+            $string
+        ); #decimal notation
+		$string= preg_replace_callback(
+            '/&#x([a-f0-9]+);/mi',
+            function($hit) {
+                return chr(hexdec($hit[1]));
+            },
+            $string
+        );  #hex notation
 		return $string;
 	}
 	/**
@@ -200,7 +212,7 @@ class ilBookmarkImportExport
 	* @param	string	to charset
 	* @access	public
 	*/
-	function _convertCharset($string,$from_charset='',$to_charset='UTF-8')
+	static function _convertCharset($string,$from_charset='',$to_charset='UTF-8')
 	{
 		if (extension_loaded("mbstring"))
 		{

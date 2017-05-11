@@ -33,20 +33,27 @@ class ilMailingList
 	private $user_id = 0;
 	private $title = '';
 	private $description = '';
-	private $createdate = '0000-00-00 00:00:00';
-	private $changedate = '0000-00-00 00:00:00';
-	
-	private $user = null;	
-	private $db = null;
+	private $createdate = null;
+	private $changedate = null;
+
+	/**
+	 * @var ilObjUser
+	 */
+	private $user;
+
+	/**
+	 * @var ilDBInterface
+	 */
+	private $db;
 	
 	const MODE_ADDRESSBOOK = 1;
 	const MODE_TEMPORARY = 2;
 	
 	public function __construct(ilObjUser $user, $id = 0)
 	{
-		global $ilDB;
+		global $DIC;
 
-		$this->db = $ilDB;
+		$this->db   = $DIC['ilDB'];
 		$this->user = $user;
 		
 		$this->mail_id = $id;
@@ -159,7 +166,7 @@ class ilMailingList
 				array('integer', 'integer'),
 				array($this->getId(), $this->getUserId())); 
 	
-			$row = $res->fetchRow(DB_FETCHMODE_OBJECT);
+			$row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT);
 	
 			if (is_object($row))
 			{
@@ -176,83 +183,68 @@ class ilMailingList
 		
 		return true;
 	}
-	
+
 	public function getAssignedEntries()
 	{
-		if($this->getMode() == self::MODE_ADDRESSBOOK)
-		{
-			$res = $this->db->queryf('
-				SELECT * FROM addressbook_mlist_ass 
-				INNER JOIN addressbook ON addressbook.addr_id = addressbook_mlist_ass.addr_id 
-				WHERE ml_id = %s',
-				array('integer'),
-				array($this->getId()));
-		}
-		else
-		{
-			$res = $this->db->queryf('
-				SELECT * FROM addressbook_mlist_ass 
-				INNER JOIN usr_data ON addressbook_mlist_ass.addr_id = usr_data.usr_id 
-				WHERE ml_id = %s',
-				array('integer'),
-				array($this->getId()));
-		}
-		
+		$res = $this->db->queryf(
+			'SELECT a_id, usr_data.usr_id FROM addressbook_mlist_ass INNER JOIN usr_data ON usr_data.usr_id = addressbook_mlist_ass.usr_id WHERE ml_id = %s',
+			array('integer'),
+			array($this->getId())
+		);
+
 		$entries = array();
-		
 		$counter = 0;
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
-		{			
-			$entries[$counter] = array('a_id' => $row->a_id, 
-									   'addr_id' => $row->addr_id,
-									   'login' => $row->login,
-									   'email' => $row->email,
-									   'firstname' => $row->firstname,
-									   'lastname' => $row->lastname									   
-									   );
-			
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
+		{
+			$entries[$row->a_id] = array(
+				'a_id'   => $row->a_id,
+				'usr_id' => $row->usr_id
+			);
 			++$counter;
 		}
 		
 		return $entries;
 	}
-	
-	public function assignAddressbookEntry($addr_id = 0)	
+
+	/**
+	 * @param int $usr_id
+	 * @return bool
+	 */
+	public function assignUser($usr_id = 0)
 	{
 		$nextId = $this->db->nextId('addressbook_mlist_ass');
-		$statement = $this->db->manipulateF('
-			INSERT INTO addressbook_mlist_ass 
-			( 	a_id, 
-				ml_id,
-				addr_id
-			)
-			VALUES(%s,%s,%s )',
+		$this->db->manipulateF(
+			'INSERT INTO addressbook_mlist_ass (a_id, ml_id, usr_id) VALUES(%s, %s, %s)',
 			array('integer', 'integer', 'integer'),
-			array($nextId, $this->getId(), $addr_id));
-		
+			array($nextId, $this->getId(), $usr_id)
+		);
 		return true;
 	}
-	
-	public function deassignAddressbookEntry($a_id = 0)	
+
+	/**
+	 * @param int $a_id
+	 * @return bool
+	 */
+	public function deleteEntry($a_id = 0)
 	{
-	
-		$statement = $this->db->manipulateF('	
-		DELETE FROM addressbook_mlist_ass 
-			WHERE a_id = %s',
+		$this->db->manipulateF(
+			'DELETE FROM addressbook_mlist_ass WHERE a_id = %s',
 			array('integer'),
-			array($a_id));
-		
+			array($a_id)
+		);
 		return true;
 	}
-	
-	public function deassignAllEntries()	
+
+	/**
+	 * @return bool
+	 */
+	public function deassignAllEntries()
 	{
-		$statement = $this->db->manipulateF('	
-		DELETE FROM addressbook_mlist_ass 
-				WHERE ml_id = %s',
-				array('integer'),
-				array($this->getId()));
-			
+		$this->db->manipulateF(
+			'DELETE FROM addressbook_mlist_ass WHERE ml_id = %s',
+			array('integer'),
+			array($this->getId())
+		);
 		return true;
 	}
 	
@@ -288,7 +280,7 @@ class ilMailingList
 	{
 		return $this->description;
 	}
-	public function setCreatedate($_createdate = '0000-00-00 00:00:00')
+	public function setCreatedate($_createdate)
 	{
 		$this->createdate = $_createdate;
 	}
@@ -296,11 +288,8 @@ class ilMailingList
 	{
 		return $this->createdate;
 	}
-	public function setChangedate($a_changedate = '0000-00-00 00:00:00')
+	public function setChangedate($a_changedate)
 	{
-		if($a_changedate == '0000-00-00 00:00:00')
-		$this->changedate = NULL;
-		else
 		$this->changedate = $a_changedate;
 	}
 	public function getChangedate()
@@ -310,15 +299,15 @@ class ilMailingList
 	
 	public static function _isOwner($a_ml_id, $a_usr_id)
 	{
-		global $ilDB;
-		
-		$res = $ilDB->queryf('
-			SELECT * FROM addressbook_mlist 
-			WHERE ml_id = %s
-			AND user_id =%s',
+		/** @var $ilDB ilDBInterface */
+		global $DIC;
+		$ilDB = $DIC['ilDB'];
+
+		$res = $ilDB->queryf(
+			'SELECT * FROM addressbook_mlist WHERE ml_id = %s AND user_id =%s',
 			array('integer', 'integer'),
-			array($a_ml_id, $a_usr_id));
-			
+			array($a_ml_id, $a_usr_id)
+		);
 		$row = $ilDB->fetchObject($res);
 		
 		return is_object($row) ? true : false;
@@ -336,6 +325,17 @@ class ilMailingList
 	public function getMode()
 	{
 		return $this->mode;
-	}	
+	}
+
+	/**
+	 * @param int $usr_id
+	 */
+	public static function removeAssignmentsByUserId($usr_id)
+	{
+		/** @var $ilDB ilDBInterface */
+		global $DIC;
+		$ilDB = $DIC['ilDB'];
+
+		$ilDB->manipulate('DELETE FROM addressbook_mlist_ass WHERE usr_id = ' . $ilDB->quote($usr_id, 'integer'));
+	}
 }
-?>

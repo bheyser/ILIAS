@@ -54,15 +54,18 @@ class ilContainerStartObjectsGUI
 					$new_page_object->createFromXML();
 					unset($new_page_object);
 				}
-				
+
+				$this->tpl->setVariable("LOCATION_CONTENT_STYLESHEET",
+					ilObjStyleSheet::getContentStylePath(ilObjStyleSheet::getEffectiveContentStyleId(
+						$this->object->getStyleSheetId(), $this->object->getType())));
+
 				$this->ctrl->setReturnByClass("ilcontainerstartobjectspagegui", "edit");				
 				include_once "Services/Container/classes/class.ilContainerStartObjectsPageGUI.php";
-				$pgui = new ilContainerStartObjectsPageGUI($this->object->getId());			
-				
-				// needed for editor?
-				include_once("./Services/Style/classes/class.ilObjStyleSheet.php");
-				$pgui->setStyleId(ilObjStyleSheet::getEffectiveContentStyleId(0));		
-				
+				$pgui = new ilContainerStartObjectsPageGUI($this->object->getId());
+				include_once("./Services/Style/Content/classes/class.ilObjStyleSheet.php");
+				$pgui->setStyleId(ilObjStyleSheet::getEffectiveContentStyleId(
+					$this->object->getStyleSheetId(), $this->object->getType()));
+
 				$ret = $this->ctrl->forwardCommand($pgui);
 				if($ret)
 				{
@@ -160,7 +163,7 @@ class ilContainerStartObjectsGUI
 		$cgui->setFormAction($this->ctrl->getFormAction($this, "listStructure"));
 		$cgui->setHeaderText($this->lng->txt("crs_starter_delete_sure"));
 		$cgui->setCancel($this->lng->txt("cancel"), "listStructure");
-		$cgui->setConfirm($this->lng->txt("delete"), "deleteStarter");
+		$cgui->setConfirm($this->lng->txt("remove"), "deleteStarter");
 
 		// list objects that should be deleted		
 		$all = $this->start_object->getStartObjects();		
@@ -236,7 +239,7 @@ class ilContainerStartObjectsGUI
 			ilUtil::sendFailure($this->lng->txt('crs_starters_already_assigned'), true);
 			$this->ctrl->redirect($this, "selectStarter");		
 		}
-	}	
+	}
 }
 
 ?>

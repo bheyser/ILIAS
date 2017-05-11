@@ -25,11 +25,11 @@ class ilCtrl
 	/**
 	 * control class constructor
 	 */
-	function ilCtrl()
+	function __construct()
 	{
 		global $ilBench;
 
-		$this->bench =& $ilBench;
+		$this->bench = $ilBench;
 		
 		// initialisation
 		$this->init();
@@ -72,7 +72,7 @@ class ilCtrl
 		$this->parent = array();			// parent array (reverse forward)
 		$this->save_parameter = array();	// save parameter array
 		$this->parameter = array();			// save parameter array
-		$this->return = "";					// return commmands
+		$this->return = array();			// return commmands
 		$this->location = array();
 		$this->tab = array();
 		$this->current_node = 0;
@@ -146,7 +146,7 @@ class ilCtrl
 		
 		// forward processing to base class
 		$this->getCallStructure(strtolower($baseClass));
-		$base_class_gui =& new $class();
+		$base_class_gui = new $class();
 		$this->forwardCommand($base_class_gui);
 	}
 
@@ -167,7 +167,7 @@ class ilCtrl
 	 *						the flow of control
 	 * @return	mixed		return data of invoked executeCommand() method
 	 */
-	function &forwardCommand(&$a_gui_object)
+	function forwardCommand($a_gui_object)
 	{
 		$class = strtolower(get_class($a_gui_object));
 //echo "<br>class:".$class.":";
@@ -205,7 +205,7 @@ class ilCtrl
 	 * @param	object		gui object that returns the HTML block
 	 * @return	string		HTML
 	 */
-	function &getHTML(&$a_gui_object)
+	function getHTML($a_gui_object)
 	{
 		$class = strtolower(get_class($a_gui_object));
 
@@ -541,7 +541,7 @@ class ilCtrl
 	 *	include_once "classes/class.ilRepositoryGUI.php";
 	 *	$ilCtrl->setTargetScript("ilias.php");
 	 *	$ilCtrl->getCallStructure("ilrepositorygui");
-	 *	$repository_gui =& new ilRepositoryGUI();
+	 *	$repository_gui = new ilRepositoryGUI();
 	 *	$ilCtrl->forwardCommand($repository_gui);
 	 *
 	 * @param	string		$a_class	gui class name
@@ -677,7 +677,7 @@ class ilCtrl
 	 *
 	 * @access	public
 	 */
-	public function saveParameter(&$a_obj, $a_parameter)
+	public function saveParameter($a_obj, $a_parameter)
 	{
 		if (is_object($a_obj))
 		{
@@ -729,7 +729,7 @@ class ilCtrl
 	 * @param	string		$a_parameter	parameter name
 	 * @param	string		$a_parameter	parameter value
 	 */
-	public function setParameter(&$a_obj, $a_parameter, $a_value)
+	public function setParameter($a_obj, $a_parameter, $a_value)
 	{
 		$this->parameter[strtolower(get_class($a_obj))][$a_parameter] = $a_value;
 	}
@@ -754,7 +754,7 @@ class ilCtrl
 	 *
 	 * @param	object		$a_obj			gui object
 	 */
-	public function clearParameters(&$a_obj)
+	public function clearParameters($a_obj)
 	{
 		$this->clearParametersByClass(strtolower(get_class($a_obj)));
 	}
@@ -769,6 +769,83 @@ class ilCtrl
 	{
 		$this->parameter[strtolower($a_class)] = array();
 	}
+	
+	protected function checkLPSettingsForward($a_gui_obj, $a_cmd_node)
+	{			
+		global $objDefinition;
+		
+		// forward to learning progress settings if possible and accessible			
+		if($_GET["gotolp"] &&
+			$a_gui_obj)
+		{						
+			$ref_id = $_GET["ref_id"];
+			if(!$ref_id)
+			{
+				$ref_id = $_REQUEST["ref_id"];
+			}		
+			
+			$gui_class = get_class($a_gui_obj);
+			
+			if($gui_class == "ilSAHSEditGUI")
+			{
+				// #1625 - because of scorm "sub-types" this is all very special
+				include_once "./Modules/ScormAicc/classes/class.ilObjSAHSLearningModule.php";
+				$obj_id = ilObject::_lookupObjectId($ref_id);
+				switch(ilObjSAHSLearningModule::_lookupSubType($obj_id))
+				{
+					case "scorm2004":
+						$class = "ilObjSCORM2004LearningModuleGUI";
+						break;
+				
+					case "scorm":
+						$class = "ilObjSCORMLearningModuleGUI";
+						break;
+
+					case "aicc":
+						$class = "ilObjAICCLearningModuleGUI";
+						break;
+
+					case "hacp":
+						$class = "ilObjHACPLearningModuleGUI";
+						break;
+				}
+				if($GLOBALS["ilAccess"]->checkAccess("edit_learning_progress", "", $ref_id))
+				{
+					$this->redirectByClass(array($gui_class, $class, "illearningprogressgui", "illplistofsettingsgui"), "");
+				}
+			}
+			// special case: cannot use any presentation GUIs
+			else if($gui_class == "ilLMPresentationGUI")
+			{
+				$this->setParameterByClass("ilObjLearningModuleGUI", "gotolp", 1);
+				$this->redirectByClass(array("ilLMEditorGUI", "ilObjLearningModuleGUI"), "");			
+			}
+						
+			include_once "Services/Object/classes/class.ilObjectLP.php";	
+			$type = ilObject::_lookupType($ref_id, true);
+			$class = "ilObj".$objDefinition->getClassName($type)."GUI";		
+			
+			if($gui_class == $class &&
+				ilObjectLP::isSupportedObjectType($type) &&
+				$GLOBALS["ilAccess"]->checkAccess("edit_learning_progress", "", $ref_id))
+			{					
+				// add path to repository object gui if missing from cmdNode
+				if(!$a_cmd_node)
+				{
+					$repo_node = $this->getNodeIdForTargetClass(null, "ilrepositorygui");							
+					$obj_node = $this->getNodeIdForTargetClass($repo_node["node_id"], $gui_class);	
+					$a_cmd_node = $obj_node["node_id"];
+				}			
+				// find path to lp settings
+				$lp_node = $this->getNodeIdForTargetClass($a_cmd_node, "illearningprogressgui");												
+				$lp_settings_node = $this->getNodeIdForTargetClass($lp_node["node_id"], "illplistofsettingsgui");																		
+				$_GET["cmdNode"] = $lp_settings_node["node_id"];								
+				$_GET["cmdClass"] = "ilLPListOfSettingsGUI";								
+				$_GET["cmd"] = "";							
+				return "illearningprogressgui";				
+			}
+		}						
+	}
 
 	/**
 	 * Get next class in the control path from the current class
@@ -778,13 +855,15 @@ class ilCtrl
 	 *
 	 * @return	string		class name of next class
 	 */
-	function getNextClass()
+	function getNextClass($a_gui_class = null)
 	{
 		$cmdNode = $this->getCmdNode();
 //echo "<br>getNextClass (current node: ".$this->current_node."; cmd node: ".$cmdNode.") ";
 		if ($cmdNode == "")
 		{
-			return false;
+			return ($class = $this->checkLPSettingsForward($a_gui_class, $cmdNode))
+				? $class
+				: false;
 		}
 		else
 		{
@@ -792,7 +871,9 @@ class ilCtrl
 			{
 //echo "1:".$this->call_node[$cmdNode]["class"]."<br>";
 				//return $this->call_node[$cmdNode]["class"];
-				return "";
+				return ($class = $this->checkLPSettingsForward($a_gui_class, $cmdNode))
+					? $class
+					: "";
 			}
 			else
 			{
@@ -1082,7 +1163,7 @@ class ilCtrl
 	 * @param	bool		xml style t/f
 	 * @return	string		script url
 	 */
-	function getFormAction(&$a_gui_obj, $a_fallback_cmd = "", $a_anchor = "", $a_asynch = false,
+	function getFormAction($a_gui_obj, $a_fallback_cmd = "", $a_anchor = "", $a_asynch = false,
 		$xml_style = true)
 	{
 		$script =  $this->getFormActionByClass(strtolower(get_class($a_gui_obj)),
@@ -1295,7 +1376,7 @@ class ilCtrl
 	 * @param	string		command
 	 * @param	string		anchor
 	 */
-	public function redirect(&$a_gui_obj, $a_cmd = "", $a_anchor = "", $a_asynch = false)
+	public function redirect($a_gui_obj, $a_cmd = "", $a_anchor = "", $a_asynch = false)
 	{
 		global $ilBench;
 		
@@ -1358,7 +1439,7 @@ class ilCtrl
 	 *
 	 * @return	string		target link
 	 */
-	function getLinkTarget(&$a_gui_obj, $a_cmd = "", $a_anchor = "", $a_asynch = false,
+	function getLinkTarget($a_gui_obj, $a_cmd = "", $a_anchor = "", $a_asynch = false,
 		$xml_style = true)
 	{
 		$script = $this->getLinkTargetByClass(strtolower(get_class($a_gui_obj)), $a_cmd, $a_anchor, $a_asynch,
@@ -1413,7 +1494,7 @@ class ilCtrl
 	/**
 	 * Set return command
 	 */
-	function setReturn(&$a_gui_obj, $a_cmd)
+	function setReturn($a_gui_obj, $a_cmd)
 	{
 		$script = $this->getTargetScript();
 		$script = $this->getUrlParameters(strtolower(get_class($a_gui_obj)), $script, $a_cmd);
@@ -1438,7 +1519,7 @@ class ilCtrl
 	/**
 	 * Redirects to next parent class that used setReturn
 	 */
-	function returnToParent(&$a_gui_obj, $a_anchor = "")
+	function returnToParent($a_gui_obj, $a_anchor = "")
 	{
 		$script = $this->getParentReturn($a_gui_obj);
 
@@ -1468,7 +1549,7 @@ class ilCtrl
 	/**
 	 * Get return script url
 	 */
-	function getParentReturn(&$a_gui_obj)
+	function getParentReturn($a_gui_obj)
 	{
 		return $this->getParentReturnByClass(strtolower(get_class($a_gui_obj)));
 	}
@@ -1554,7 +1635,7 @@ class ilCtrl
 	/**
 	 * Get all set/save parameters for a gui object
 	 */
-	public function getParameterArray(&$a_gui_obj, $a_cmd = "")
+	public function getParameterArray($a_gui_obj, $a_cmd = "")
 	{
 		$par_arr = $this->getParameterArrayByClass(strtolower(get_class($a_gui_obj)), $a_cmd);
 

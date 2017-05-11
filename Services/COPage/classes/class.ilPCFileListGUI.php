@@ -21,16 +21,16 @@ class ilPCFileListGUI extends ilPageContentGUI
 	* Constructor
 	* @access	public
 	*/
-	function ilPCFileListGUI(&$a_pg_obj, &$a_content_obj, $a_hier_id, $a_pc_id = "")
+	function __construct(&$a_pg_obj, &$a_content_obj, $a_hier_id, $a_pc_id = "")
 	{
-		parent::ilPageContentGUI($a_pg_obj, $a_content_obj, $a_hier_id, $a_pc_id);
+		parent::__construct($a_pg_obj, $a_content_obj, $a_hier_id, $a_pc_id);
 		$this->setCharacteristics(array("FileListItem" => $this->lng->txt("cont_FileListItem")));
 	}
 
 	/**
 	* execute command
 	*/
-	function &executeCommand()
+	function executeCommand()
 	{
 		// get next class that processes or forwards current command
 		$next_class = $this->ctrl->getNextClass($this);
@@ -43,7 +43,7 @@ class ilPCFileListGUI extends ilPageContentGUI
 		switch($next_class)
 		{
 			default:
-				$ret =& $this->$cmd();
+				$ret = $this->$cmd();
 				break;
 		}
 
@@ -241,6 +241,9 @@ class ilPCFileListGUI extends ilPageContentGUI
 	function create()
 	{
 		include_once("./Modules/File/classes/class.ilObjFile.php");
+
+		$form = $this->initEditForm("create");
+		$form->checkInput();
 
 		// from personal workspace
 		if(substr($_POST["file_ref_id"], 0, 4) == "wsp_")
@@ -718,6 +721,10 @@ class ilPCFileListGUI extends ilPageContentGUI
 			ilUtil::sendFailure($lng->txt("upload_error_file_not_found"));
 			return false;
 		}
+
+		$form = $this->initEditForm();
+		$form->checkInput();
+
 		include_once("./Modules/File/classes/class.ilObjFile.php");
 		$fileObj = new ilObjFile();
 		$fileObj->setType("file");

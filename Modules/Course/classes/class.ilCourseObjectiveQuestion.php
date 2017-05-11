@@ -42,17 +42,44 @@ class ilCourseObjectiveQuestion
 	public $questions;
 	protected $tests = array();
 
-	function ilCourseObjectiveQuestion($a_objective_id)
+	/**
+	 * Constructor
+	 * @global type $ilDB
+	 * @param type $a_objective_id
+	 */
+	public function __construct($a_objective_id)
 	{
 		global $ilDB;
 
-		$this->db =& $ilDB;
+		$this->db = $ilDB;
 	
 		$this->objective_id = $a_objective_id;
 
 		$this->__read();
 	}
 	
+	
+	/**
+	 * Lookup objective for test question
+	 * @global type $ilDB
+	 * @param type $a_test_ref_id
+	 * @param type $a_qid
+	 * @return int
+	 */
+	public static function lookupObjectivesOfQuestion($a_qid)
+	{
+		global $ilDB;
+		
+		$query = 'SELECT objective_id FROM crs_objective_qst '.
+				'WHERE question_id = '.$ilDB->quote($a_qid,'integer');
+		$res = $ilDB->query($query);
+		$objectiveIds = array();
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
+		{
+			$objectiveIds[] = $row->objective_id;
+		}
+		return $objectiveIds;
+	}
 	
 	/**
 	 * Check if test is assigned to objective
@@ -93,10 +120,11 @@ class ilCourseObjectiveQuestion
 		$mappings = $cwo->getMappings();
 		foreach($this->getQuestions() as $question)
 		{
-			if(!isset($mappings["$question[ref_id]"]) or !$mappings["$question[ref_id]"])
+			$mapping_key = $question['ref_id'].'_question_'.$question['question_id'];
+			if(!isset($mappings[$mapping_key]) or !$mappings[$mapping_key])
 			{
 				continue;
-			}
+			}			
 			$question_ref_id = $question['ref_id'];
 			$question_obj_id = $question['obj_id'];
 			$question_qst_id = $question['question_id'];
@@ -105,22 +133,24 @@ class ilCourseObjectiveQuestion
 			
 			if($new_obj_id == $question_obj_id)
 			{
-				$ilLog->write(__METHOD__.': Test has been linked. Keeping question id.');
+				ilLoggerFactory::getLogger('crs')->info('Test has been linked. Keeping question id');
 				// Object has been linked
 				$new_question_id = $question_qst_id;
 			}
 			else
 			{
-				$new_question_info = $mappings[$question_ref_id.'_'.$question_qst_id];
+				$new_question_info = $mappings[$question_ref_id.'_question_'.$question_qst_id];
 				$new_question_arr = explode('_',$new_question_info);
-				if(!isset($new_question_arr[1]) or !$new_question_arr[1])
+				if(!isset($new_question_arr[2]) or !$new_question_arr[2])
 				{
+					ilLoggerFactory::getLogger('crs')->debug('found invalid format of question id mapping: ' . print_r($new_question_arr,TRUE));
 					continue;
 				}
-				$new_question_id = $new_question_arr[1];
-				$ilLog->write(__METHOD__.': New question id is: '.$new_question_id);
+				$new_question_id = $new_question_arr[2];
+				ilLoggerFactory::getLogger('crs')->info('New question id is: '.$new_question_id);
 			}
 	
+			ilLoggerFactory::getLogger('crs')->debug('Copying question assignments');
 			$new_question = new ilCourseObjectiveQuestion($a_new_objective);
 			$new_question->setTestRefId($new_ref_id);
 			$new_question->setTestObjId($new_obj_id);
@@ -204,7 +234,7 @@ class ilCourseObjectiveQuestion
 		$res = $this->db->query($query);
 		
 		$limit = 100;
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$limit = $row->tst_limit_p;
 		}
@@ -290,7 +320,7 @@ class ilCourseObjectiveQuestion
 			"ORDER BY title ";
 
 		$res = $this->db->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$test['test_objective_id'] = $row->test_objective_id;
 			$test['objective_id']		= $row->objective_id;
@@ -343,7 +373,7 @@ class ilCourseObjectiveQuestion
 		return $final ? $final : array();
 	}
 	
-	function _getTest($a_test_objective_id)
+	public static function _getTest($a_test_objective_id)
 	{
 		global $ilDB;
 
@@ -351,7 +381,7 @@ class ilCourseObjectiveQuestion
 			"WHERE test_objective_id = ".$ilDB->quote($a_test_objective_id ,'integer')." ";
 
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$test['test_objective_id'] = $row->test_objective_id;
 			$test['objective_id']		= $row->objective_id;
@@ -696,7 +726,7 @@ class ilCourseObjectiveQuestion
 			"WHERE qst_ass_id = ".$ilDB->quote($qst_id ,'integer')." ";
 
 		$res = $this->db->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$test_rid = $row->ref_id;
 			$test_oid = $row->obj_id;
@@ -798,7 +828,7 @@ class ilCourseObjectiveQuestion
 		$query = "SELECT * FROM crs_objective_tst ".
 			"WHERE objective_id = ".$ilDB->quote($this->getObjectiveId() ,'integer')." ";
 		$res = $this->db->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$this->tests[$row->ref_id]['test_objective_id'] = $row->test_objective_id;
 			$this->tests[$row->ref_id]['ref_id'] = $row->ref_id;
@@ -814,7 +844,7 @@ class ilCourseObjectiveQuestion
 			"ORDER BY title";
 
 		$res = $this->db->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			if(!$tree->isInTree($row->ref_id) or !$tree->isGrandChild($container_ref_id,$row->ref_id))
 			{
@@ -850,7 +880,7 @@ class ilCourseObjectiveQuestion
 	 * @param
 	 * @return
 	 */
-	public function _hasTests($a_course_id)
+	public static function _hasTests($a_course_id)
 	{
 		global $ilDB;
 		
@@ -862,7 +892,7 @@ class ilCourseObjectiveQuestion
 	}
 	
 	
-	function _isAssigned($a_objective_id,$a_tst_ref_id,$a_question_id)
+	static function _isAssigned($a_objective_id,$a_tst_ref_id,$a_question_id)
 	{
 		global $ilDB;
 
@@ -873,7 +903,7 @@ class ilCourseObjectiveQuestion
 			"AND question_id = ".$ilDB->quote($a_question_id ,'integer')." ";
 
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$objective_id = $row->objective_id;
 		}
@@ -891,10 +921,8 @@ class ilCourseObjectiveQuestion
 				'AND obj_id = '.$ilDB->quote($a_test_id,'integer');
 		$res = $ilDB->query($query);
 		
-		$GLOBALS['ilLog']->write($query);
-		
 		$questions = array();
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$questions[] = $row->question_id;
 		}
@@ -909,11 +937,40 @@ class ilCourseObjectiveQuestion
 				'WHERE objective_id = '.$ilDB->quote($a_objective_id,'integer').' '.
 				'AND obj_id = '.$ilDB->quote($a_test_id,'integer');
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			return (int) $row->tst_limit_p;
 		}
 		return 0;
+	}
+	
+	/**
+	 * To xml
+	 * @param ilXmlWriter $writer
+	 */
+	public function toXml(ilXmlWriter $writer)
+	{
+		foreach($this->getTests() as $test)
+		{
+			include_once './Modules/Course/classes/Objectives/class.ilLOXmlWriter.php';
+			$writer->xmlStartTag(
+				'Test',
+				array(
+					'type' => ilLOXmlWriter::TYPE_TST_ALL,
+					'refId' => $test['ref_id'],
+					'testType' => $test['tst_status'],
+					'limit' => $test['tst_limit']
+				)
+			);
+			
+			// questions
+			foreach($this->getQuestionsByTest($test['ref_id']) as $question_id)
+			{
+				$writer->xmlElement('Question', array('id' => $question_id));
+			}
+			$writer->xmlEndTag('Test');
+		}
+		
 	}
 	
 	// end-patch lok

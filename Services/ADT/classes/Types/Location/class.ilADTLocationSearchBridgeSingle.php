@@ -20,7 +20,6 @@ class ilADTLocationSearchBridgeSingle extends ilADTSearchBridgeSingle
 		if($value !== null)
 		{
 			// :TODO:
-			// $this->getADT()->setDate(new ilDateTime($value, IL_CAL_DATETIME));
 		}
 	}
 	
@@ -81,7 +80,10 @@ class ilADTLocationSearchBridgeSingle extends ilADTSearchBridgeSingle
 		$post = $this->extractPostValues($a_post);
 				
 		if($post && $this->shouldBeImportedFromPost($post))
-		{													
+		{						
+			$tgl = $this->getForm()->getItemByPostVar($this->addToElementId("tgl"));
+			$tgl->setChecked(true);
+			
 			$item = $this->getForm()->getItemByPostVar($this->getElementId());
 			$item->setLongitude($post["longitude"]);
 			$item->setLatitude($post["latitude"]);
@@ -168,6 +170,7 @@ class ilADTLocationSearchBridgeSingle extends ilADTSearchBridgeSingle
 			return serialize(array(
 				"lat" => $this->getADT()->getLatitude()
 				,"long" => $this->getADT()->getLongitude()
+				,"zoom" => $this->getADT()->getZoom()
 				,"radius" => (int)$this->radius
 			));
 		}		
@@ -179,7 +182,8 @@ class ilADTLocationSearchBridgeSingle extends ilADTSearchBridgeSingle
 		if(is_array($a_value))
 		{
 			$this->getADT()->setLatitude($a_value["lat"]);			
-			$this->getADT()->setLongitude($a_value["long"]);			
+			$this->getADT()->setLongitude($a_value["long"]);	
+			$this->getADT()->setZoom($a_value["zoom"]);			
 			$this->radius = (int)$a_value["radius"];			
 		}		
 	}

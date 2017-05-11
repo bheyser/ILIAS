@@ -10,7 +10,7 @@ include_once("./Services/Object/classes/class.ilObjectGUI.php");
  * @author Alex Killing <alex.killing@gmx.de>
  * @version $Id$
  *
- * @ilCtrl_Calls ilObjSkillManagementGUI: ilPermissionGUI, ilSkillProfileGUI
+ * @ilCtrl_Calls ilObjSkillManagementGUI: ilPermissionGUI, ilSkillProfileGUI, ilExportGUI
  * @ilCtrl_isCalledBy ilObjSkillManagementGUI: ilAdministrationGUI
  *
  * @ingroup ServicesSkill
@@ -29,7 +29,7 @@ class ilObjSkillManagementGUI extends ilObjectGUI
 		global $ilCtrl;
 
 		$this->type = 'skmg';
-		parent::ilObjectGUI($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
+		parent::__construct($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
 
 		$this->lng->loadLanguageModule('skmg');
 
@@ -123,8 +123,17 @@ class ilObjSkillManagementGUI extends ilObjectGUI
 			case 'ilpermissiongui':
 				$this->tabs_gui->activateTab('permissions');
 				include_once("Services/AccessControl/classes/class.ilPermissionGUI.php");
-				$perm_gui =& new ilPermissionGUI($this);
+				$perm_gui = new ilPermissionGUI($this);
 				$ret = $this->ctrl->forwardCommand($perm_gui);
+				break;
+
+			case "ilexportgui":
+				$this->tabs_gui->activateTab('export');
+				include_once("./Services/Export/classes/class.ilExportGUI.php");
+				$exp_gui = new ilExportGUI($this);
+				$exp_gui->addFormat("xml");
+				//$exp_gui->addFormat("html", "", $this, "exportHTML");
+				$ret = $this->ctrl->forwardCommand($exp_gui);
 				break;
 
 			default:
@@ -174,6 +183,13 @@ class ilObjSkillManagementGUI extends ilObjectGUI
 				$lng->txt("skmg_skill_profiles"),
 				$this->ctrl->getLinkTargetByClass("ilskillprofilegui"));
 
+			if ($ilAccess->checkAccess("write", "", $this->object->getRefId()))
+			{
+				$this->tabs_gui->addTab("export",
+						$lng->txt("export"),
+						$this->ctrl->getLinkTargetByClass("ilexportgui", ""));
+			}
+
 			if (DEVMODE == 1)
 			{
 				$this->tabs_gui->addTab("test",
@@ -216,7 +232,10 @@ class ilObjSkillManagementGUI extends ilObjectGUI
 		$form->addItem($cb_prop);
 		
 		// command buttons
-		$form->addCommandButton("saveSettings", $lng->txt("save"));
+		if ($this->checkPermissionBool("write"))
+		{
+			$form->addCommandButton("saveSettings", $lng->txt("save"));
+		}
 
 		$this->tpl->setContent($form->getHTML());
 	}
@@ -227,7 +246,12 @@ class ilObjSkillManagementGUI extends ilObjectGUI
 	public function saveSettings()
 	{
 		global $ilCtrl, $ilSetting;
-		
+
+		if (!$this->checkPermissionBool("write"))
+		{
+			return;
+		}
+
 		include_once("./Services/Skill/classes/class.ilSkillManagementSettings.php");
 		$skmg_set = new ilSkillManagementSettings();
 		$skmg_set->activate((int) $_POST["enable_skmg"]);
@@ -417,6 +441,7 @@ class ilObjSkillManagementGUI extends ilObjectGUI
 					$html.= $tab->getHTML()."<br/><br/>";
 				}
 				$tpl->setContent($html);
+				$ilCtrl->saveParameter($a_gui, "tmpmode");
 				$ilToolbar->addButton($lng->txt("back"),
 					$ilCtrl->getLinkTarget($a_gui, "cancelDelete"));
 				ilUtil::sendFailure($lng->txt("skmg_cannot_delete_nodes_in_use"));

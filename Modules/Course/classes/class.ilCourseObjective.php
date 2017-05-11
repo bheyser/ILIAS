@@ -22,18 +22,31 @@ class ilCourseObjective
 	protected $passes = 0;
 	// end-patch lok
 	
-	function ilCourseObjective(&$course_obj,$a_objective_id = 0)
+	/**
+	 * Constructor
+	 * @param ilObject $course_obj
+	 * @param int $a_objective_id
+	 */
+	public function __construct($course_obj,$a_objective_id = 0)
 	{
 		global $ilDB;
 
-		$this->db =& $ilDB;
-		$this->course_obj =& $course_obj;
+		$this->db = $ilDB;
+		$this->course_obj = $course_obj;
 
 		$this->objective_id = $a_objective_id;
 		if($this->objective_id)
 		{
 			$this->__read();
 		}
+	}
+	
+	/**
+	 * @return ilObjCourse
+	 */
+	public function getCourse()
+	{
+		return $this->course_obj;
 	}
 	
 	/**
@@ -51,7 +64,7 @@ class ilCourseObjective
 		$query = "SELECT crs_id FROM crs_objectives ".
 			"WHERE objective_id = ".$ilDB->quote($a_objective_id ,'integer');
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			return $row->crs_id;
 		}
@@ -79,26 +92,32 @@ class ilCourseObjective
 		$query = 'SELECT passes from crs_objectives '.
 				'WHERE objective_id = '.$ilDB->quote($a_objective_id,'integer');
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			return (int) $row->passes;
 		}
 		return 0;
 	}
 	
-	public static function lookupObjectiveTitle($a_objective_id)
+	public static function lookupObjectiveTitle($a_objective_id, $a_add_description = false)
 	{
 		global $ilDB;
 		
-		$query = 'SELECT title from crs_objectives '.
+		$query = 'SELECT title,description from crs_objectives '.
 				'WHERE objective_id = '.$ilDB->quote($a_objective_id,'integer');
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $ilDB->fetchAssoc($res))
 		{
-			return $row->title;
+			if(!$a_add_description)
+			{
+				return $row['title'];				
+			}
+			else
+			{
+				return $row;
+			}
 		}
 		return "";
-		
 	}
 	// end-patch lok
 	
@@ -114,7 +133,7 @@ class ilCourseObjective
 	{
 		global $ilLog;
 		
-		$ilLog->write(__METHOD__.': Start cloning learning objectives...');
+		ilLoggerFactory::getLogger('crs')->debug('Start cloning learning objectives');
 		
 	 	$query = "SELECT * FROM crs_objectives ".
 	 		"WHERE crs_id  = ".$this->db->quote($this->course_obj->getId() ,'integer').' '.
@@ -122,38 +141,67 @@ class ilCourseObjective
 	 	$res = $this->db->query($query);
 	 	if(!$res->numRows())
 	 	{
-			$ilLog->write(__METHOD__.': ... no objectives found.');
+			ilLoggerFactory::getLogger('crs')->debug('.. no objectives found');
 	 		return true;
 	 	}
 	 	
 	 	if(!is_object($new_course = ilObjectFactory::getInstanceByRefId($a_target_id,false)))
 	 	{
-			$ilLog->write(__METHOD__.': Cannot init new course object.');
+			ilLoggerFactory::getLogger('crs')->warning('Cannot create course instance');
 	 		return true;
 	 	}
-	 	while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+	 	while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 	 	{
 			$new_objective = new ilCourseObjective($new_course);
 			$new_objective->setTitle($row->title);
 			$new_objective->setDescription($row->description);
 			$new_objective->setActive($row->active);
 			$objective_id = $new_objective->add();
-			$ilLog->write(__METHOD__.': Added new objective nr: '.$objective_id);
+			ilLoggerFactory::getLogger('crs')->debug('Added new objective nr: ' . $objective_id);
 			
 			// Clone crs_objective_tst entries
 			include_once('Modules/Course/classes/class.ilCourseObjectiveQuestion.php');
 			$objective_qst = new ilCourseObjectiveQuestion($row->objective_id);
 			$objective_qst->cloneDependencies($objective_id,$a_copy_id);
 			
+			include_once './Modules/Course/classes/Objectives/class.ilLORandomTestQuestionPools.php';
+			include_once './Modules/Course/classes/Objectives/class.ilLOSettings.php';
+			$random_i = new ilLORandomTestQuestionPools(
+				$this->getCourse()->getId(),
+				$row->objective_id,
+				ilLOSettings::TYPE_TEST_INITIAL
+			);
+			$random_i->copy($a_copy_id, $new_course->getId(), $objective_id);
+			
+			$random_q = new ilLORandomTestQuestionPools(
+				$this->getCourse()->getId(),
+				$row->objective_id,
+				ilLOSettings::TYPE_TEST_QUALIFIED
+			);
+			$random_q->copy($a_copy_id, $new_course->getId(), $objective_id);
+			
+			include_once './Modules/Course/classes/Objectives/class.ilLOTestAssignments.php';
+			$assignments = ilLOTestAssignments::getInstance($this->course_obj->getId());
+			$assignment_it = $assignments->getAssignmentByObjective($row->objective_id, ilLOSettings::TYPE_TEST_INITIAL);
+			if($assignment_it)
+			{
+				$assignment_it->cloneSettings($a_copy_id, $new_course->getId(), $objective_id);
+			}
 
-			$ilLog->write(__METHOD__.': Finished objective question dependencies: '.$objective_id);
+			$assignment_qt = $assignments->getAssignmentByObjective($row->objective_id, ilLOSettings::TYPE_TEST_QUALIFIED);
+			if($assignment_qt)
+			{
+				$assignment_qt->cloneSettings($a_copy_id, $new_course->getId(), $objective_id);
+			}
+
+			ilLoggerFactory::getLogger('crs')->debug('Finished copying question dependencies');
 			
 			// Clone crs_objective_lm entries (assigned course materials)
 			include_once('Modules/Course/classes/class.ilCourseObjectiveMaterials.php');
 			$objective_material = new ilCourseObjectiveMaterials($row->objective_id);
 			$objective_material->cloneDependencies($objective_id,$a_copy_id);
 	 	}
-		$ilLog->write(__METHOD__.': Finished cloning objectives.');
+		ilLoggerFactory::getLogger('crs')->debug('Finished copying objectives');
 	}
 	
 	// begin-patch lok
@@ -207,6 +255,13 @@ class ilCourseObjective
 	{
 		return $this->objective_id;
 	}
+	
+	// begin-patch optes_lok_export
+	public function setPosition($a_pos)
+	{
+		$this->position = $a_pos;
+	}
+	// end-patch optes_lok_export
 
 	function add()
 	{
@@ -288,12 +343,12 @@ class ilCourseObjective
 		
 		include_once './Modules/Course/classes/class.ilCourseObjectiveQuestion.php';
 
-		$tmp_obj_qst =& new ilCourseObjectiveQuestion($this->getObjectiveId());
+		$tmp_obj_qst = new ilCourseObjectiveQuestion($this->getObjectiveId());
 		$tmp_obj_qst->deleteAll();
 
 		include_once './Modules/Course/classes/class.ilCourseObjectiveMaterials.php';
 
-		$tmp_obj_lm =& new ilCourseObjectiveMaterials($this->getObjectiveId());
+		$tmp_obj_lm = new ilCourseObjectiveMaterials($this->getObjectiveId());
 		$tmp_obj_lm->deleteAll();
 
 
@@ -402,7 +457,7 @@ class ilCourseObjective
 
 
 			$res = $this->db->query($query);
-			while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+			while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 			{
 				// begin-patch lok
 				$this->setActive($row->active);
@@ -456,7 +511,7 @@ class ilCourseObjective
 			"WHERE crs_id = ".$ilDB->quote($this->course_obj->getId() ,'integer')." ";
 
 		$res = $this->db->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			return $row->pos;
 		}
@@ -484,7 +539,7 @@ class ilCourseObjective
 		}
 
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$ids[] = $row->objective_id;
 		}
@@ -493,7 +548,7 @@ class ilCourseObjective
 	}
 	// end-patch lok
 
-	function _deleteAll($course_id)
+	static function _deleteAll($course_id)
 	{
 		global $ilDB;
 
@@ -526,5 +581,44 @@ class ilCourseObjective
 
 		return true;
 	}
+	
+	// begin-patch optes_lok_export
+	/**
+	 * write objective xml
+	 * @param ilXmlWriter $writer
+	 */
+	public function toXml(ilXmlWriter $writer)
+	{
+		$writer->xmlStartTag(
+			'Objective',
+			array(
+				'online' => (int) $this->isActive(),
+				'position' => (int) $this->position,
+				'id' => (int) $this->getObjectiveId()
+			)
+		);
+		$writer->xmlElement('Title',array(), $this->getTitle());
+		$writer->xmlElement('Description',array(), $this->getDescription());
+		
+		// materials
+		include_once './Modules/Course/classes/class.ilCourseObjectiveMaterials.php';
+		$materials = new ilCourseObjectiveMaterials($this->getObjectiveId());
+		$materials->toXml($writer);
+		
+		// test/questions
+		include_once './Modules/Course/classes/class.ilCourseObjectiveQuestion.php';
+		$test = new ilCourseObjectiveQuestion($this->getObjectiveId());
+		$test->toXml($writer);
+		
+		include_once './Modules/Course/classes/Objectives/class.ilLOTestAssignments.php';
+		$assignments = ilLOTestAssignments::getInstance($this->course_obj->getId());
+		$assignments->toXml($writer, $this->getObjectiveId());
+		
+		include_once './Modules/Course/classes/Objectives/class.ilLORandomTestQuestionPools.php';
+		ilLORandomTestQuestionPools::toXml($writer, $this->getObjectiveId());
+		
+		$writer->xmlEndTag('Objective');
+	}
+	// end-patch optes_lok_export
 }
 ?>

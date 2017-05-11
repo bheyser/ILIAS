@@ -10,7 +10,7 @@ require_once 'Services/Mail/classes/class.ilMailFormCall.php';
 *
 * @defgroup ServicesMail Services/Mail
 * @ingroup ServicesMail
-* @ilCtrl_Calls ilMailGUI: ilMailFolderGUI, ilMailFormGUI, ilMailAddressbookGUI, ilMailOptionsGUI, ilMailAttachmentGUI, ilMailSearchGUI, ilObjUserGUI
+* @ilCtrl_Calls ilMailGUI: ilMailFolderGUI, ilMailFormGUI, ilContactGUI, ilMailOptionsGUI, ilMailAttachmentGUI, ilMailSearchGUI, ilObjUserGUI
 */
 class ilMailGUI
 {
@@ -60,6 +60,8 @@ class ilMailGUI
 	{
 		if ($_GET["type"] == "search_res")
 		{
+			ilMailFormCall::storeReferer($_GET);
+
 			$this->ctrl->setParameterByClass("ilmailformgui", "cmd", "searchResults");
 			$this->ctrl->redirectByClass("ilmailformgui");
 		}
@@ -150,19 +152,12 @@ class ilMailGUI
 		$this->forwardClass = $this->ctrl->getNextClass($this);
 		
 		$this->showHeader();
-		
+
 		if('tree' == ilSession::get(self::VIEWMODE_SESSION_KEY) &&
 			$this->ctrl->getCmd() != "showExplorer")
 		{
 			$this->showExplorer();
 		}
-
-		include_once "Services/jQuery/classes/class.iljQueryUtil.php";
-		iljQueryUtil::initjQuery();
-
-		// always load ui framework
-		include_once("./Services/UICore/classes/class.ilUIFramework.php");
-		ilUIFramework::init();
 
 		switch($this->forwardClass)
 		{			
@@ -172,10 +167,10 @@ class ilMailGUI
 				$this->ctrl->forwardCommand(new ilMailFormGUI());
 				break;
 
-			case 'ilmailaddressbookgui':
-				include_once 'Services/Contact/classes/class.ilMailAddressbookGUI.php';
-
-				$this->ctrl->forwardCommand(new ilMailAddressbookGUI());
+			case 'ilcontactgui':
+				require_once 'Services/Contact/classes/class.ilContactGUI.php';
+				$this->tpl->setTitle($this->lng->txt('mail_addressbook'));
+				$this->ctrl->forwardCommand(new ilContactGUI());
 				break;
 
 			case 'ilmailoptionsgui':
@@ -240,11 +235,10 @@ class ilMailGUI
 
 		$ilMainMenu->setActive("mail");
 
-//		$this->tpl->getStandardTemplate();
-		$this->tpl->addBlockFile("CONTENT", "content", "tpl.adm_content.html");
-		$this->tpl->addBlockFile("STATUSLINE", "statusline", "tpl.statusline.html");
+		$this->tpl->getStandardTemplate();
+
 		$this->tpl->setTitleIcon(ilUtil::getImagePath("icon_mail.svg"));
-		
+
 		// display infopanel if something happened
 		ilUtil::infoPanel();
 		
@@ -252,7 +246,7 @@ class ilMailGUI
 		$this->ctrl->setParameterByClass('ilmailformgui', 'type', 'new');
 		$ilTabs->addTarget('compose', $this->ctrl->getLinkTargetByClass('ilmailformgui'));
 		$this->ctrl->clearParametersByClass('ilmailformgui');
-		$ilTabs->addTarget('mail_addressbook', $this->ctrl->getLinkTargetByClass('ilmailaddressbookgui'));
+		$ilTabs->addTarget('mail_addressbook', $this->ctrl->getLinkTargetByClass('ilcontactgui'));
 		$ilTabs->addTarget('options', $this->ctrl->getLinkTargetByClass('ilmailoptionsgui'));
 		
 		switch($this->forwardClass)
@@ -261,7 +255,7 @@ class ilMailGUI
 				$ilTabs->setTabActive('compose');
 				break;
 				
-			case 'ilmailaddressbookgui':
+			case 'ilcontactgui':
 				$ilTabs->setTabActive('mail_addressbook');
 				break;
 				

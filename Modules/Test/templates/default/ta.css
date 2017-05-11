@@ -1,16 +1,10 @@
-/**
- * ILIAS Open Source Test & Assessment styles
- *
- * @revision        $Id$
- */
-
 .kiosk {
 	padding: 2em;
 	background-color: #fafafa;
 }
 
 .fullwidth_invisible {
-	background-color: transparent!important;
+	background-color: transparent !important;
 }
 
 .feedback {
@@ -28,7 +22,7 @@
 	font-size: 150%;
 }
 
-.2col {
+.col2 {
 	width: 100%;
 	float: left;
 }
@@ -124,12 +118,19 @@ div.ilc_Question {
 
 .questionTitle {
 	margin-top: 5px;
-	margin-bottom: 20px;
+	margin-bottom: 5px;
 	font-size: 140%;
 	padding-bottom: 3px;
 	border-bottom-width: 1px;
 	border-bottom-style: solid;
 	border-color: #000000;
+}
+
+.ilTestQuestionRelatedObjectivesInfo
+{
+    font-size: 0.7em;
+    font-style: italic;
+    margin: 5px 0;
 }
 
 .questionPrintview {
@@ -404,32 +405,34 @@ ul.shortlist {
 	padding: 0;
 }
 
+/* fau: testNav - icon for answered/unanswered questions in shortlist */
 ul.shortlist li {
-	padding: 0 0 6px 0;
+	padding: 0 0 6px 15px;
+    background-repeat: no-repeat;
+    background-size: 10px;
+    background-position: 0px 5px;
 }
+
+ul.shortlist li.answered {
+    background-image: url('../../../../templates/default/images/answered.svg');
+}
+
+ul.shortlist li.unanswered {
+    background-image: url('../../../../templates/default/images/answered_not.svg');
+}
+/* fau. */
 
 ul.shortlist li.active {
 	font-weight: bold;
 }
 
-div.shortlist input[type="submit"]
+ul.shortlist li.listEntry a
 {
-	background-color: transparent;
 	text-decoration:none;
 	color:#0033AA;
-	border: none;
-	font-size: 100%;
-	display: block;
-	white-space: normal;
-	text-align: left;
 }
 
-div.shortlist input[type="submit"].active
-{
-	font-weight: bold;
-}
-
-div.shortlist input[type="submit"]:hover
+ul.shortlist li.listEntry a:hover
 {
 	text-decoration: underline;
 }
@@ -491,10 +494,34 @@ span.result {
 	font-style: italic;
 }
 
-div.ilAssQuestionRelatedNavigationContainer
+div.ilc_Page.readonly div.ilc_question_Standard
 {
-	margin: 20px 0;
-	text-align: center;
+	background-color: #f3f3f3;
+	background-image: url(../../../../templates/default/images/qmark-ro.svg);
+}
+
+ul.ilAssQuestionRelatedNavigationContainer
+{
+	margin: 15px 0;
+	float: none;
+}
+
+ul.ilAssQuestionRelatedNavigationContainer div.navbar
+{
+	padding-right: 12px;
+	min-height: unset;
+	margin-bottom: 10px;
+}
+
+div.tstModalConfirmationText
+{
+	margin-bottom: 20px;
+}
+
+div.tstModalConfirmationButtons a,
+div.tstModalConfirmationButtons input
+{
+	margin-right: 20px;
 }
 
 div.ilTestOutputBlock_DynTestFinished
@@ -516,20 +543,19 @@ a.il_question_answer_list_back_anchor
 
 tr.ilBorderlessRow
 {
-    border: none;
+    margin-right: 20px;
 }
 
-td.ilBottomAlignedCell
+td.ilAssQuestSkillAssignQuestTitle div
 {
-    vertical-align: bottom;
+    margin-right: 20px;
 }
 
-div.tst_mark_output
+.ilAssQuestionLacExprWizard td,
+.ilAssQuestionLacExprWizard th
 {
+	padding-right: 10px;
 }
-
-div.tst_mark_output.failed { color: red; }
-div.tst_mark_output.passed { color: green; }
 
 a.il_participant_block_back_anchor,
 a.il_question_answer_list_back_anchor
@@ -551,7 +577,8 @@ a.il_question_answer_list_back_anchor
     margin-top: 0;
 }
 
-p.ilAssKprimInstruction
+p.ilAssKprimInstruction,
+p.ilAdditionalAssQuestionInstruction
 {
     font-style: italic;
     font-size: 0.9em;
@@ -568,9 +595,54 @@ table.imagemapareas tr.active-area, table.imagemapareas tr.active-area td {
 	background-color: #fdfabb !important;
 }
 
-.ilTstMarkQuestionButton {
-	width: 16px;
-	height: 16px;
+/* fau: testNav - added and changed styles */
+
+td.ilc_Page {
+    padding: 15px;
+}
+
+.ilTestQuestionSubtitleBlocks
+{
+    margin-top: -12px;
+}
+
+.ilTestMarkQuestionIcon {
+	width: 12px;
+	height: 12px;
+}
+
+.ilTestAnswerStatusIcon {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-top: -3px;
+}
+
+.ilTestQuestionAction.disabled a {
+    color: #b0b0b0!important;
+}
+/* fau. */
+
+div.ilAssClozeTest
+{
+	line-height: 2.5em;
+}
+div.ilAssClozeTest input
+{
+	line-height: 1.25em;
+}
+
+div.ilc_Page.readonly img.imagemap,
+div.ilc_Page.readonly div.filesContainer,
+div.ilc_Page.readonly div.filesContainer a,
+div.ilc_Page.readonly div.uploadContainer input,
+div.ilc_Page.readonly div.ilAssErrorText span,
+div.ilc_Page.readonly input[disabled],
+div.ilc_Page.readonly select[disabled],
+div.ilc_Page.readonly textarea[disabled]
+{
+	pointer-events: all !important;
+	cursor: not-allowed !important;
 }
 
 .tstAutosaveMsg
@@ -582,4 +654,12 @@ table.imagemapareas tr.active-area, table.imagemapareas tr.active-area td {
 	z-index:99999999999;
 	top:0;
 	left:0;
+}
+
+.textarea {
+	cursor: not-allowed !important;
+	border: 1px solid rgb(169, 169, 169);
+	padding: 2px;
+	background-color: rgb(235, 235, 228);
+	min-height: 200px;
 }

@@ -19,10 +19,13 @@ class ilTestEvaluation
 	 * @var integer
 	 */
 	protected $testId;
+
 	/**
-	 * @param ilDB $db
+	 * ilTestEvaluation constructor.
+	 * @param ilDBInterface $db
+	 * @param $testId
 	 */
-	public function __construct(ilDB $db, $testId)
+	public function __construct(ilDBInterface $db, $testId)
 	{
 		$this->db = $db;
 		$this->testId = $testId;
@@ -41,12 +44,10 @@ class ilTestEvaluation
 			ON active_fi = active_id
 			WHERE test_fi = %s
 		";
-
 		
 		$res = $this->db->queryF($query, array('integer'), array($this->testId));
-
+		
 		$passes = array();
-
 		
 		while($row = $this->db->fetchAssoc($res))
 		{

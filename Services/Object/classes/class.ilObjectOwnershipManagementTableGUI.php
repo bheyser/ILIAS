@@ -2,6 +2,7 @@
 /* Copyright (c) 1998-2010 ILIAS open source, Extended GPL, see docs/LICENSE */
 
 include_once ('./Services/Table/classes/class.ilTable2GUI.php');
+require_once('./Services/Repository/classes/class.ilObjectPlugin.php');
 
 /**
 * Table for object role permissions
@@ -36,53 +37,53 @@ class ilObjectOwnershipManagementTableGUI extends ilTable2GUI
 		
 		$this->setDefaultOrderField("title");
 		$this->setDefaultOrderDirection("asc");
-		
-		if($a_data)
-		{
-			$this->initItems($a_data);
-		}
+			
+		$this->initItems($a_data);		
 	}
 	
 	protected function initItems($a_data)
 	{		
-		global $ilAccess, $lng, $tree;
+		global $ilAccess, $tree;
 				
 		$data = array();
 		
-		if(!$this->user_id)
+		if(sizeof($a_data))
 		{
-			$is_admin = $ilAccess->checkAccess("visible", "", SYSTEM_FOLDER_ID);
-		}
-				
-		foreach($a_data as $id => $item)
-		{
-			// workspace objects won't have references
-			$refs = ilObject::_getAllReferences($id);
-			if($refs)
-			{						
-				foreach($refs as $idx => $ref_id)
+			if(!$this->user_id)
+			{
+				$is_admin = $ilAccess->checkAccess("visible", "", SYSTEM_FOLDER_ID);
+			}
+
+			foreach($a_data as $id => $item)
+			{
+				// workspace objects won't have references
+				$refs = ilObject::_getAllReferences($id);
+				if($refs)
 				{						
-					// objects in trash are hidden
-					if(!$tree->isDeleted($ref_id))
-					{
-						if($this->user_id)
+					foreach($refs as $idx => $ref_id)
+					{						
+						// objects in trash are hidden
+						if(!$tree->isDeleted($ref_id))
 						{
-							$readable = $ilAccess->checkAccessOfUser($this->user_id, "read", "", $ref_id, $a_type);	
-						}
-						else
-						{
-							$readable = $is_admin;
-						}
-												
-						$data[$ref_id] = array("obj_id" => $id,
-							"ref_id" => $ref_id,
-							"type" => ilObject::_lookupType($id),
-							"title" => $item,
-							"path" => $this->buildPath($ref_id),
-							"readable" => $readable);							
-					}					
-				}				
-			}														
+							if($this->user_id)
+							{
+								$readable = $ilAccess->checkAccessOfUser($this->user_id, "read", "", $ref_id, $a_type);	
+							}
+							else
+							{
+								$readable = $is_admin;
+							}
+
+							$data[$ref_id] = array("obj_id" => $id,
+								"ref_id" => $ref_id,
+								"type" => ilObject::_lookupType($id),
+								"title" => $item,
+								"path" => $this->buildPath($ref_id),
+								"readable" => $readable);							
+						}					
+					}				
+				}														
+			}
 		}
 
 		$this->setData($data);			
@@ -100,7 +101,7 @@ class ilObjectOwnershipManagementTableGUI extends ilTable2GUI
 		else
 		{
 			include_once("./Services/Component/classes/class.ilPlugin.php");
-			$txt_type = ilPlugin::lookupTxt("rep_robj", $row["type"], "obj_".$row["type"]);						
+			$txt_type = ilObjectPlugin::lookupTxtById($row["type"], "obj_".$row["type"]);
 		}
 		
 		$this->tpl->setVariable("TITLE", $row["title"]);
@@ -140,7 +141,7 @@ class ilObjectOwnershipManagementTableGUI extends ilTable2GUI
 			$ilCtrl->getLinkTarget($this->parent_obj, "changeOwner"),
 			"", "", "");		
 		
-		if(!in_array($a_type, array("crsr", "catr")) && $objDefinition->allowExport($a_type))
+		if(!in_array($a_type, array("crsr", "catr", "grpr")) && $objDefinition->allowExport($a_type))
 		{
 			$agui->addItem($lng->txt("export"), "", 
 				$ilCtrl->getLinkTarget($this->parent_obj, "export"),

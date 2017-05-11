@@ -1,4 +1,5 @@
 <?php
+/* Copyright (c) 1998-2016 ILIAS open source, Extended GPL, see docs/LICENSE */
 
 require_once 'Services/Object/classes/class.ilObjectGUI.php';
 require_once 'Modules/Chatroom/classes/class.ilObjChatroom.php';
@@ -18,10 +19,7 @@ require_once 'Modules/Chatroom/classes/class.ilChatroomObjectGUI.php';
 class ilObjChatroomAdminGUI extends ilChatroomObjectGUI
 {
 	/**
-	 * Constructor
-	 * @param array   $a_data
-	 * @param int     $a_id
-	 * @param boolean $a_call_by_reference
+	 * {@inheritdoc}
 	 */
 	public function __construct($a_data = null, $a_id = null, $a_call_by_reference = true)
 	{
@@ -47,14 +45,24 @@ class ilObjChatroomAdminGUI extends ilChatroomObjectGUI
 	}
 
 	/**
-	 * Returns object definition by calling getDefaultDefinitionWithCustomTaskPath
+	 * Overwrites $_GET['ref_id'] with given $ref_id.
+	 * @param int $ref_id
+	 */
+	public static function _goto($ref_id)
+	{
+		include_once 'Services/Object/classes/class.ilObjectGUI.php';
+		ilObjectGUI::_gotoRepositoryNode($ref_id, 'view');
+	}
+
+	/**
+	 * Returns object definition by calling getDefaultDefinitionWithCustomGUIPath
 	 * method in ilChatroomObjectDefinition.
 	 * @return ilChatroomObjectDefinition
 	 */
 	protected function getObjectDefinition()
 	{
-		return ilChatroomObjectDefinition::getDefaultDefinitionWithCustomTaskPath(
-			'Chatroom', 'admintasks'
+		return ilChatroomObjectDefinition::getDefaultDefinitionWithCustomGUIPath(
+			'Chatroom', 'admin'
 		);
 	}
 
@@ -68,7 +76,7 @@ class ilObjChatroomAdminGUI extends ilChatroomObjectGUI
 	}
 
 	/**
-	 * Dispatches the command to the related executor class.
+	 * {@inheritdoc}
 	 */
 	public function executeCommand()
 	{
@@ -79,9 +87,9 @@ class ilObjChatroomAdminGUI extends ilChatroomObjectGUI
 
 		$next_class = $ilCtrl->getNextClass();
 
-		require_once 'Modules/Chatroom/classes/class.ilChatroomTabFactory.php';
+		require_once 'Modules/Chatroom/classes/class.ilChatroomTabGUIFactory.php';
 
-		$tabFactory = new ilChatroomTabFactory($this);
+		$tabFactory = new ilChatroomTabGUIFactory($this);
 		$tabFactory->getAdminTabsForCommand($ilCtrl->getCmd());
 
 		switch($next_class)
@@ -95,7 +103,11 @@ class ilObjChatroomAdminGUI extends ilChatroomObjectGUI
 
 			default:
 				$res = explode('-', $ilCtrl->getCmd(), 2);
-				$this->dispatchCall($res[0], $res[1] ? $res[1] : '');
+				if(!array_key_exists(1, $res))
+				{
+					$res[1] = '';
+				}
+				$this->dispatchCall($res[0], $res[1]);
 		}
 	}
 
@@ -111,16 +123,6 @@ class ilObjChatroomAdminGUI extends ilChatroomObjectGUI
 		$connector = new ilChatroomServerConnector($settings);
 
 		return $connector;
-	}
-
-	/**
-	 * Overwrites $_GET['ref_id'] with given $ref_id.
-	 * @param int  $ref_id
-	 */
-	public static function _goto($ref_id)
-	{
-		include_once 'Services/Object/classes/class.ilObjectGUI.php';
-		ilObjectGUI::_gotoRepositoryNode($ref_id, 'view');
 	}
 
 	/**

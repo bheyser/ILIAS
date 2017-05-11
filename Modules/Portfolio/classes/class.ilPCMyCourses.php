@@ -37,10 +37,10 @@ class ilPCMyCourses extends ilPageContent
 	/**
 	* Set node
 	*/
-	function setNode(&$a_node)
+	function setNode($a_node)
 	{
 		parent::setNode($a_node);		// this is the PageContent node
-		$this->cach_node =& $a_node->first_child();		// this is the courses node
+		$this->mcrs_node =& $a_node->first_child();		// this is the courses node
 	}
 
 	/**
@@ -60,11 +60,12 @@ class ilPCMyCourses extends ilPageContent
 	/**
 	 * Set courses settings
 	 */
-	function setData()
+	function setData($a_sort)
 	{
 		global $ilUser;
 		
 		$this->mcrs_node->set_attribute("User", $ilUser->getId());
+		$this->mcrs_node->set_attribute("Sort", $a_sort);
 		
 		/* remove all children first
 		$children = $this->cach_node->child_nodes();
@@ -76,6 +77,14 @@ class ilPCMyCourses extends ilPageContent
 			}
 		}
 		*/
+	}
+	
+	function getSorting()
+	{
+		if (is_object($this->mcrs_node))
+		{
+			return $this->mcrs_node->get_attribute("Sort");
+		}
 	}
 }
 

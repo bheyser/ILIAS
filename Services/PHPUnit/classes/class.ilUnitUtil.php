@@ -18,7 +18,9 @@ class ilUnitUtil
 		 */
 		global $ilErr;
 
-		define('IL_PHPUNIT_TEST', true);
+		if (!defined('IL_PHPUNIT_TEST')) {
+			define('IL_PHPUNIT_TEST', true);
+		}
 
 		session_id('phpunittest');
 		$_SESSION = array();
@@ -29,7 +31,8 @@ class ilUnitUtil
 		ilContext::init(ilContext::CONTEXT_UNITTEST);
 
 		include_once('Services/Init/classes/class.ilInitialisation.php');
-		ilInitialisation::initILIAS();
+		ilInitialisation::reinitILIAS();
+		$GLOBALS['DIC']['ilAuthSession']->setUserId($_SESSION["AccountId"]);
 		ilInitialisation::initUserAccount();
 
 		$ilUnitUtil = new self();

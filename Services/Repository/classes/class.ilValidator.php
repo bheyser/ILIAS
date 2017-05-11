@@ -8,7 +8,7 @@
 * @version	$Id$
 *
 */
-class ilValidator extends PEAR
+class ilValidator
 {
 	protected $media_pool_ids = null;
 	
@@ -32,7 +32,7 @@ class ilValidator extends PEAR
 	// Werner, 2007-04-16
 	var $object_types_exclude = array("adm","root","mail","usrf","objf","lngf",
 		"trac","taxf","auth","rolf","assf","svyf","extt","adve","fold");
-	
+
 	/**
 	* set mode
 	* @var	array
@@ -113,17 +113,14 @@ class ilValidator extends PEAR
 	* @access	public
 	* @param	integer	mode
 	*/
-	function ilValidator($a_log = false)
+	function __construct($a_log = false)
 	{
 		global $objDefinition, $ilDB;
 		
-		$this->PEAR();
 		$this->db =& $ilDB;
 		$this->rbac_object_types = "'".implode("','",$objDefinition->getAllRBACObjects())."'";
 		$this->rbac_object_types = $objDefinition->getAllRBACObjects();
 
-        $this->setErrorHandling(PEAR_ERROR_CALLBACK,array(&$this, 'handleErr'));
-		
 		if ($a_log === true)
 		{
 			$this->logging = true;
@@ -136,6 +133,7 @@ class ilValidator extends PEAR
 			$this->deleteScanLog();
 		
 			// create scan log
+			include_once './Services/Logging/classes/class.ilLog.php';
 			$this->scan_log = new ilLog(CLIENT_DATA_DIR,"scanlog.log");
 			$this->scan_log->setLogFormat("");
 			$this->writeScanLogLine($this->scan_log_separator);
@@ -582,7 +580,7 @@ class ilValidator extends PEAR
 			 ")";
 		$r = $this->db->query($q);
 		
-		while ($row = $r->fetchRow(DB_FETCHMODE_OBJECT))
+		while ($row = $r->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			#if (!in_array($row->type,$this->object_types_exclude))
 			if(!$this->isExcludedFromRecovery($row->type,$row->obj_id))
@@ -647,7 +645,7 @@ class ilValidator extends PEAR
 			 "AND object_data.type='rolf'";
 		$r = $this->db->query($q);
 		
-		while ($row = $r->fetchRow(DB_FETCHMODE_OBJECT))
+		while ($row = $r->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$this->invalid_rolefolders[] = array(
 												"obj_id"		=> $row->obj_id,
@@ -670,7 +668,7 @@ class ilValidator extends PEAR
 			 "AND object_data.type='rolf'";
 		$r = $this->db->query($q);
 		
-		while ($row = $r->fetchRow(DB_FETCHMODE_OBJECT))
+		while ($row = $r->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$this->invalid_rolefolders[] = array(
 												"obj_id"		=> $row->obj_id,
@@ -728,7 +726,7 @@ class ilValidator extends PEAR
 			 "AND object_data.type='rolf'";
 		$r = $this->db->query($q);
 		
-		while ($row = $r->fetchRow(DB_FETCHMODE_OBJECT))
+		while ($row = $r->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$this->invalid_rolefolders[] = array(
 												"obj_id"		=> $row->obj_id,
@@ -751,7 +749,7 @@ class ilValidator extends PEAR
 			 "AND object_data.type='rolf'";
 		$r = $this->db->query($q);
 		
-		while ($row = $r->fetchRow(DB_FETCHMODE_OBJECT))
+		while ($row = $r->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$this->invalid_rolefolders[] = array(
 												"obj_id"		=> $row->obj_id,
@@ -825,7 +823,7 @@ class ilValidator extends PEAR
 			 "OR ".$ilDB->in('object_data.type',$this->rbac_object_types,true,'text');
 		$r = $this->db->query($q);
 
-		while ($row = $r->fetchRow(DB_FETCHMODE_OBJECT))
+		while ($row = $r->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$this->invalid_references[] = array(
 											"ref_id"	=> $row->ref_id,
@@ -888,7 +886,7 @@ class ilValidator extends PEAR
 			 "LEFT JOIN object_data ON object_reference.obj_id = object_data.obj_id ".
 			 "WHERE object_reference.ref_id IS NULL or object_data.obj_id IS NULL";
 		$r = $this->db->query($q);
-		while ($row = $r->fetchRow(DB_FETCHMODE_OBJECT))
+		while ($row = $r->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$this->invalid_childs[] = array(
 											"child"		=> $row->child,
@@ -952,7 +950,7 @@ class ilValidator extends PEAR
 			 "WHERE (T2.tree!=1 OR T2.tree IS NULL) AND T1.parent!=0";
 		$r = $this->db->query($q);
 		
-		while ($row = $r->fetchRow(DB_FETCHMODE_OBJECT))
+		while ($row = $r->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			// exclude deleted nodes
 			if ($row->deleted === NULL)
@@ -1011,7 +1009,7 @@ class ilValidator extends PEAR
 		$r = $this->db->query($query);
 		
 		include_once './Services/Calendar/classes/class.ilDateTime.php';
-		while ($row = $r->fetchRow(DB_FETCHMODE_OBJECT))
+		while ($row = $r->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$tmp_date = new ilDateTime($row->deleted,IL_CAL_DATETIME);
 			
@@ -2070,17 +2068,17 @@ restore starts here
 		$q = 'SELECT child FROM tree GROUP BY child HAVING COUNT(*) > 1';
 		$r = $this->db->query($q);
 		$duplicateNodes = array();
-		while ($row = $r->fetchRow(DB_FETCHMODE_OBJECT))
+		while ($row = $r->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$duplicateNodes[] = $row->child;
-		}		
+		}
 		
 		// dump tree
-		$q = "SELECT tree.*,ref.ref_id,dat.obj_id objobj_id,ref.obj_id refobj_id,ref.deleted,dat.*,usr.login "
+		$q = "SELECT tree.*,ref.ref_id,dat.obj_id objobj_id,ref.obj_id refobj_id,ref.deleted,dat.* "
 			."FROM tree "
 			."RIGHT JOIN object_reference ref ON tree.child = ref.ref_id "
 			."RIGHT JOIN object_data dat ON ref.obj_id = dat.obj_id "
-			."LEFT JOIN usr_data usr ON usr.usr_id = dat.owner "
+//			."LEFT JOIN usr_data usr ON usr.usr_id = dat.owner "
 		 	."ORDER BY tree, lft, type, dat.title";
 		$r = $this->db->query($q);
 		
@@ -2107,7 +2105,7 @@ restore starts here
 		
 		$this->initWorkspaceObjects();
 		
-		while ($row = $r->fetchRow(DB_FETCHMODE_OBJECT))
+		while ($row = $r->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			// workspace objects are not to be processed
 			if($this->workspace_object_ids && 
@@ -2233,10 +2231,12 @@ restore starts here
 				$this->writeScanLogLine('<tr><td>&nbsp;</td></tr>');
 			} 
 			// Pop old stack entries
+			
+			
 			while (count($stack) > 0 && $stack[count($stack) - 1]->rgt < $row->lft) 
 			{
 				$popped = array_pop($stack);
-				
+
 				// check for gap
 				$gap = $popped->rgt - $previousNumber - 1;
 				if ($gap > 0)
@@ -2292,24 +2292,30 @@ restore starts here
 					$isParentOkay = false;
 					$isRowOkay = false;
 				}
-				if ($parent->lft >= $row->lft)
+				if($GLOBALS['ilSetting']->get('main_tree_impl','ns') == 'ns')
+				{				
+					if ($parent->lft >= $row->lft)
+					{
+						$isLftOkay = false;
+						$isRowOkay = false;
+					}
+					if ($parent->rgt <= $row->rgt)
+					{
+						$isRgtOkay = false;
+						$isRowOkay = false;
+					}
+				}
+			}
+
+			// Check lft rgt
+			if($GLOBALS['ilSetting']->get('main_tree_impl','ns') == 'ns')
+			{
+				if ($row->lft >= $row->rgt)
 				{
 					$isLftOkay = false;
-					$isRowOkay = false;
-				}
-				if ($parent->rgt <= $row->rgt)
-				{
 					$isRgtOkay = false;
 					$isRowOkay = false;
 				}
-			}
-			
-			// Check lft rgt
-			if ($row->lft >= $row->rgt)
-			{
-				$isLftOkay = false;
-				$isRgtOkay = false;
-				$isRowOkay = false;
 			}
 			if (in_array($row->child, $duplicateNodes))
 			{
@@ -2338,74 +2344,77 @@ restore starts here
 
 			// Check for gap between siblings,
 			// and eventually write a log line
-			$gap = $row->lft - $previousNumber - 1;
-			$previousNumber = $row->lft;
-			if ($gap > 0)
+			if($GLOBALS['ilSetting']->get('main_tree_impl','ns') == 'ns')
 			{
-				$this->writeScanLogLine(
-					'<tr>'
-					.'<td colspan=2><div align="right">'
-					.'<font color=#00cc00>*gap* for '.($gap/2).' nodes between&nbsp;</font>'
-					.'</div></td>'
-					.'<td>'
-					.'<font color=#00cc00>siblings</font>'
-					.'</td>'
-					.'</tr>'
-				);
+				$gap = $row->lft - $previousNumber - 1;
+				$previousNumber = $row->lft;
+				if ($gap > 0)
+				{
+					$this->writeScanLogLine(
+						'<tr>'
+						.'<td colspan=2><div align="right">'
+						.'<font color=#00cc00>*gap* for '.($gap/2).' nodes between&nbsp;</font>'
+						.'</div></td>'
+						.'<td>'
+						.'<font color=#00cc00>siblings</font>'
+						.'</td>'
+						.'</tr>'
+					);
+				}
 			}
 						
 			// Write log line
 			// -------------------
 			$this->writeScanLogLine(
-				'<tr>'
-				.'<td>'
-				.(($isRowOkay) ? '' : '<font color=#ff0000>')
-				.$row->tree.', '
-				.$row->child.', '
-				.(($isParentOkay) ? '' : 'parent:<b>')
-				.$row->parent
-				.(($isParentOkay) ? '' : '</b>')
-				.', '
-				.(($isLftOkay) ? '' : 'lft:<b>')
-				.$row->lft
-				.(($isLftOkay) ? '' : '</b>')
-				.', '
-				.(($isRgtOkay) ? '' : 'rgt:<b>')
-				.$row->rgt
-				.(($isRgtOkay) ? '' : '</b>')
-				.', '
-				.(($isDepthOkay) ? '' : 'depth:<b>')
-				.$row->depth
-				.(($isDepthOkay) ? '' : '</b>')
-				.(($isRowOkay) ? '' : '</font>')
-				.'</td><td>'
-				.(($isRowOkay) ? '' : '<font color=#ff0000>')
-				.(($isRefRefOkay && $isChildOkay) ? '' : 'ref.ref_id:<b>')
-				.$row->ref_id
-				.(($isRefRefOkay && $isChildOkay) ? '' : '</b>')
-				.', '
-				.(($isRefObjOkay) ? '' : 'ref.obj_id:<b>')
-				.$row->refobj_id
-				.(($isRefObjOkay) ? '' : '</b>')
-				.(($isRowOkay) ? '' : '<font color=#ff0000>')
-				.(($row->tree < 0) ? ', '.$row->deleted : '')
-				.'</td><td>'
-				.(($isRowOkay) ? '' : '<font color=#ff0000>')
-				.$indent
-				.$row->obj_id.', '
-				.$row->type.', '
-				.$row->login.', '
-				.$row->title
-				.(($isRowOkay) ? '' : ' <b>*ERROR*</b><font color=#ff0000>')
-				.'</td>'
-				.'</tr>'
+					'<tr>'
+					. '<td>'
+					. (($isRowOkay) ? '' : '<font color=#ff0000>')
+					. $row->tree . ', '
+					. $row->child . ', '
+					. (($isParentOkay) ? '' : 'parent:<b>')
+					. $row->parent
+					. (($isParentOkay) ? '' : '</b>')
+					. ', '
+					. (($isLftOkay) ? '' : 'lft:<b>')
+					. $row->lft
+					. (($isLftOkay) ? '' : '</b>')
+					. ', '
+					. (($isRgtOkay) ? '' : 'rgt:<b>')
+					. $row->rgt
+					. (($isRgtOkay) ? '' : '</b>')
+					. ', '
+					. (($isDepthOkay) ? '' : 'depth:<b>')
+					. $row->depth
+					. (($isDepthOkay) ? '' : '</b>')
+					. (($isRowOkay) ? '' : '</font>')
+					. '</td><td>'
+					. (($isRowOkay) ? '' : '<font color=#ff0000>')
+					. (($isRefRefOkay && $isChildOkay) ? '' : 'ref.ref_id:<b>')
+					. $row->ref_id
+					. (($isRefRefOkay && $isChildOkay) ? '' : '</b>')
+					. ', '
+					. (($isRefObjOkay) ? '' : 'ref.obj_id:<b>')
+					. $row->refobj_id
+					. (($isRefObjOkay) ? '' : '</b>')
+					. (($isRowOkay) ? '' : '<font color=#ff0000>')
+					. (($row->tree < 0) ? ', ' . $row->deleted : '')
+					. '</td><td>'
+					. (($isRowOkay) ? '' : '<font color=#ff0000>')
+					. $indent
+					. $row->obj_id . ', '
+					. $row->type . ', '
+					. $row->login . ', '
+					. $row->title
+					. (($isRowOkay) ? '' : ' <b>*ERROR*</b><font color=#ff0000>')
+					. '</td>'
+					. '</tr>'
 			);
 
 			// Update stack
 			// -------------------
 			// Push node on stack
 			$stack[] = $row;
-			
+
 			// Count nodes
 			// -----------------
 			if ($row->tree == 1)
@@ -2419,15 +2428,15 @@ restore starts here
 			else
 			{
 				$other_trees_count++;
-			}		
-			
+			}
 		}
 		//
 		// Pop remaining stack entries
+
 		while (count($stack) > 0) 
 		{
 			$popped = array_pop($stack);
-			
+
 			// check for gap
 			$gap = $popped->rgt - $previousNumber - 1;
 			if ($gap > 0)
@@ -2540,7 +2549,7 @@ restore starts here
 	}
 	
 	protected function filterWorkspaceObjects(array &$a_data, $a_index = "obj_id")
-	{		
+	{
 		if(sizeof($a_data))
 		{			
 			$this->initWorkspaceObjects();

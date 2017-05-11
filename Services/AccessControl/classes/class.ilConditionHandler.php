@@ -145,7 +145,7 @@ class ilConditionHandler
 		$query = 'SELECT hidden_status FROM conditions '.
 				'WHERE target_ref_id = '.$ilDB->quote($a_target_ref_id,'integer');
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			return $row->hidden_status;
 		}
@@ -199,7 +199,7 @@ class ilConditionHandler
 		
 		$query = "SELECT DISTINCT target_ref_id ref FROM conditions ";
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$ref_ids[] = $row->ref;
 		}
@@ -434,7 +434,7 @@ class ilConditionHandler
 	{
 		global $objDefinition;
 		
-		$trigger_types =  array('crs','exc','tst','sahs', 'svy', 'lm');
+		$trigger_types =  array('crs','exc','tst','sahs', 'svy', 'lm', 'iass');
 
 		foreach($objDefinition->getPlugins() as $p_type => $p_info)
 		{
@@ -671,7 +671,7 @@ class ilConditionHandler
 	* get all conditions of trigger object
 	* @static
 	*/
-	function _getConditionsOfTrigger($a_trigger_obj_type, $a_trigger_id)
+	static function _getConditionsOfTrigger($a_trigger_obj_type, $a_trigger_id)
 	{
 		global $ilDB;
 
@@ -680,7 +680,7 @@ class ilConditionHandler
 			" AND trigger_type = ".$ilDB->quote($a_trigger_obj_type,'text');
 
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$tmp_array['id']			= $row->condition_id;
 			$tmp_array['target_ref_id'] = $row->target_ref_id;
@@ -779,7 +779,7 @@ class ilConditionHandler
 	 * @param
 	 * @return
 	 */
-	function preloadConditionsForTargetRecords($a_type, $a_obj_ids)
+	static function preloadConditionsForTargetRecords($a_type, $a_obj_ids)
 	{
 		global $ilDB;
 
@@ -805,7 +805,7 @@ class ilConditionHandler
 		}
 	}
 
-	function _getCondition($a_id)
+	static function _getCondition($a_id)
 	{
 		global $ilDB;
 
@@ -813,7 +813,7 @@ class ilConditionHandler
 			"WHERE condition_id = ".$ilDB->quote($a_id,'integer');
 
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$tmp_array['id']			= $row->condition_id;
 			$tmp_array['target_ref_id'] = $row->target_ref_id;
@@ -840,7 +840,7 @@ class ilConditionHandler
 	* every trigger object type must implement a static method
 	* _checkCondition($a_operator, $a_value)
 	*/
-	function _checkCondition($a_id,$a_usr_id = 0)
+	static function _checkCondition($a_id,$a_usr_id = 0)
 	{
 		global $ilUser, $objDefinition;
 		
@@ -897,6 +897,29 @@ class ilConditionHandler
 			$opt[] = $con;
 		}
 		return $opt;
+	}
+	
+	/**
+	 * Lookup obligatory conditions of target
+	 * @param type $a_target_ref_id
+	 * @param type $a_target_obj_id
+	 */
+	public static function lookupObligatoryConditionsOfTarget($a_target_ref_id, $a_target_obj_id)
+	{
+		global $ilDB;
+		
+		$query = 'SELECT max(num_obligatory) obl from conditions WHERE '.
+			'target_ref_id = '.$ilDB->quote($a_target_ref_id,'integer').' '.
+			'AND target_obj_id = '.$ilDB->quote($a_target_obj_id,'integer').' '.
+			'GROUP BY (num_obligatory)';
+		$res = $ilDB->query($query);
+		
+		$obl = 0;
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
+		{
+			$obl = $row->obl;
+		}
+		return $obl;
 	}
 
 	/**
@@ -962,7 +985,7 @@ class ilConditionHandler
 	/**
 	* checks wether all conditions of a target object are fulfilled
 	*/
-	function _checkAllConditionsOfTarget($a_target_ref_id,$a_target_id, $a_target_type = "",$a_usr_id = 0)
+	static function _checkAllConditionsOfTarget($a_target_ref_id,$a_target_id, $a_target_type = "",$a_usr_id = 0)
 	{
 		global $ilBench,$ilUser,$tree;
 		
@@ -1066,6 +1089,57 @@ class ilConditionHandler
 			}
 		}
 		return $this->circle;
+	}
+	
+	public static function cloneDependencies($a_src_ref_id, $a_target_ref_id, $a_copy_id)
+	{		
+		include_once './Services/CopyWizard/classes/class.ilCopyWizardOptions.php';
+		$cwo = ilCopyWizardOptions::_getInstance($a_copy_id);
+		$mappings = $cwo->getMappings();
+
+		$valid = 0;
+		$conditions = ilConditionHandler::_getConditionsOfTarget($a_src_ref_id, ilObject::_lookupObjId($a_src_ref_id));
+		foreach($conditions as $con)
+		{
+			if($mappings[$con['trigger_ref_id']])
+			{
+				$newCondition = new ilConditionHandler();
+
+				$target_obj = ilObject::_lookupObjId($a_target_ref_id);
+				$target_typ = ilObject::_lookupType($target_obj);
+
+				$newCondition->setTargetRefId($a_target_ref_id);
+				$newCondition->setTargetObjId($target_obj);
+				$newCondition->setTargetType($target_typ);
+
+				$trigger_ref = $mappings[$con['trigger_ref_id']];
+				$trigger_obj = ilObject::_lookupObjId($trigger_ref);
+				$trigger_typ = ilObject::_lookupType($trigger_obj);
+
+				$newCondition->setTriggerRefId($trigger_ref);
+				$newCondition->setTriggerObjId($trigger_obj);
+				$newCondition->setTriggerType($trigger_typ);
+				$newCondition->setOperator($con['operator']);
+				$newCondition->setValue($con['value']);
+				$newCondition->setReferenceHandlingType($con['ref_handling']);
+				$newCondition->setObligatory($con['obligatory']);
+				
+				// :TODO: not sure about this
+				$newCondition->setHiddenStatus(self::lookupHiddenStatusByTarget($a_src_ref_id));
+				
+				if($newCondition->storeCondition())
+				{
+					$valid++;
+				}
+			}
+		}
+		if($valid)
+		{
+			$tgt_obj_id = ilObject::_lookupObjId($a_target_ref_id);
+			
+			// num_obligatory
+			self::calculateRequiredTriggers($a_target_ref_id, $tgt_obj_id, ilObject::_lookupType($tgt_obj_id), true);
+		}
 	}
 }
 

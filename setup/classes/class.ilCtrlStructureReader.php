@@ -16,7 +16,7 @@ class ilCtrlStructureReader
 	var $class_childs;
 	var $executed;
 
-	function ilCtrlStructureReader()
+	function __construct()
 	{
 		$this->class_script = array();
 		$this->class_childs = array();
@@ -141,7 +141,7 @@ class ilCtrlStructureReader
 				// files
 				if (@is_file($a_cdir."/".$file))
 				{
-					if (eregi("^class.*php$", $file) || eregi("^ilSCORM13Player.php$", $file))
+					if (preg_match("~^class.*php$~i", $file) || preg_match("~^ilSCORM13Player.php$~i", $file))
 					{
 						$handle = fopen($a_cdir."/".$file, "r");
 //echo "<br>".$a_cdir."/".$file;
@@ -225,7 +225,7 @@ class ilCtrlStructureReader
 								}
 							}
 							
-							if (eregi("^class\.(.*GUI)\.php$", $file, $res))
+							if (preg_match("~^class\.(.*GUI)\.php$~i", $file, $res))
 							{
 								$cl = strtolower($res[1]);
 								$pos = strpos(strtolower($line), "class ".$cl);
@@ -290,12 +290,15 @@ class ilCtrlStructureReader
 			{
 				foreach($this->class_childs[$parent] as $child)
 				{
-					// store call entry
-					$ilDB->manipulate(sprintf("INSERT INTO ctrl_calls (parent, child, comp_prefix) ".
-						"VALUES (%s,%s,%s)",
-						$ilDB->quote($parent, "text"),
-						$ilDB->quote($child, "text"),
-						$ilDB->quote($this->comp_prefix, "text")));
+					if(strlen(trim($child)) and strlen(trim($parent)))
+					{
+						// store call entry
+						$ilDB->manipulate(sprintf("INSERT INTO ctrl_calls (parent, child, comp_prefix) ".
+							"VALUES (%s,%s,%s)",
+							$ilDB->quote($parent, "text"),
+							$ilDB->quote($child, "text"),
+							$ilDB->quote($this->comp_prefix, "text")));
+					}
 				}
 			}
 		}

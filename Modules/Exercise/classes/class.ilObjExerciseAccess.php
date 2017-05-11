@@ -77,7 +77,7 @@ class ilObjExerciseAccess extends ilObjectAccess implements ilConditionHandling
 	 *		array("permission" => "write", "cmd" => "edit", "lang_var" => "edit"),
 	 *	);
 	 */
-	function _getCommands()
+	static function _getCommands()
 	{
 		$commands = array
 		(
@@ -90,7 +90,7 @@ class ilObjExerciseAccess extends ilObjectAccess implements ilConditionHandling
 		return $commands;
 	}
 	
-	function _lookupRemainingWorkingTimeString($a_obj_id)
+	static function _lookupRemainingWorkingTimeString($a_obj_id)
 	{
 		global $ilDB;
 		
@@ -99,7 +99,7 @@ class ilObjExerciseAccess extends ilObjectAccess implements ilConditionHandling
 		$dl = null;
 		$cnt = array();
 		
-		$q = "SELECT id, time_stamp, peer_dl".
+		$q = "SELECT id, time_stamp, deadline2, peer_dl".
 			" FROM exc_assignment WHERE exc_id = ".$ilDB->quote($a_obj_id, "integer").
 			" AND (time_stamp > ".$ilDB->quote(time(), "integer").
 			" OR (peer_dl > ".$ilDB->quote(time(), "integer").
@@ -112,6 +112,13 @@ class ilObjExerciseAccess extends ilObjectAccess implements ilConditionHandling
 			{
 				$dl = $row["time_stamp"];
 			}
+			/* extended deadline should not be presented anywhere
+			if($row["deadline2"] > time() && 
+				($row["deadline2"] < $dl || !$dl))
+			{
+				$dl = $row["deadline2"];
+			}			 
+			*/
 			if($row["peer_dl"] > time() && 
 				($row["peer_dl"] < $dl || !$dl))
 			{
@@ -119,6 +126,8 @@ class ilObjExerciseAccess extends ilObjectAccess implements ilConditionHandling
 			}
 			$cnt[$row["id"]] = true;			
 		}
+		
+		// :TODO: mind personal deadline?
 		
 		if($dl)
 		{
@@ -128,13 +137,13 @@ class ilObjExerciseAccess extends ilObjectAccess implements ilConditionHandling
 		return array(
 			"mtime" => $dl,
 			"cnt" => sizeof($cnt)
-		);
+		);		
 	}
 	
 	/**
 	* check whether goto script will succeed
 	*/
-	function _checkGoto($a_target)
+	static function _checkGoto($a_target)
 	{
 		global $ilAccess;
 		

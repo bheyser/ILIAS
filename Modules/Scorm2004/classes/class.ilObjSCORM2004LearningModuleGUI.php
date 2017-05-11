@@ -4,8 +4,8 @@
 require_once("./Modules/ScormAicc/classes/class.ilObjSCORMLearningModuleGUI.php");
 require_once("./Modules/Scorm2004/classes/class.ilObjSCORM2004LearningModule.php");
 require_once("./Modules/Scorm2004/classes/class.ilSCORM2004Export.php");
-include_once("./Services/Style/classes/class.ilObjStyleSheetGUI.php");
-include_once("./Services/Style/classes/class.ilPageLayout.php");
+include_once("./Services/Style/Content/classes/class.ilObjStyleSheetGUI.php");
+include_once("./Services/COPage/Layout/classes/class.ilPageLayout.php");
 
 /**
 * Class ilObjSCORMLearningModuleGUI
@@ -13,7 +13,7 @@ include_once("./Services/Style/classes/class.ilPageLayout.php");
 * @author Alex Killing <alex.killing@gmx.de>, Hendrik Holtmann <holtmann@mac.com>, Uwe Kohnle <kohnle@internetlehrer-gmbh.de>
 * $Id: class.ilObjSCORMLearningModuleGUI.php 13133 2007-01-30 11:13:06Z akill $
 *
-* @ilCtrl_Calls ilObjSCORM2004LearningModuleGUI: ilFileSystemGUI, ilMDEditorGUI, ilPermissionGUI, ilLearningProgressGUI
+* @ilCtrl_Calls ilObjSCORM2004LearningModuleGUI: ilFileSystemGUI, ilObjectMetaDataGUI, ilPermissionGUI, ilLearningProgressGUI
 * @ilCtrl_Calls ilObjSCORM2004LearningModuleGUI: ilInfoScreenGUI, ilSCORM2004ChapterGUI, ilSCORM2004SeqChapterGUI, ilSCORM2004PageNodeGUI, ilSCORM2004ScoGUI
 * @ilCtrl_Calls ilObjSCORM2004LearningModuleGUI: ilCertificateGUI, ilObjStyleSheetGUI, ilNoteGUI, ilSCORM2004AssetGUI
 * @ilCtrl_Calls ilObjSCORM2004LearningModuleGUI: ilLicenseGUI, ilCommonActionDispatcherGUI
@@ -28,7 +28,7 @@ class ilObjSCORM2004LearningModuleGUI extends ilObjSCORMLearningModuleGUI
 	*
 	* @access	public
 	*/
-	function ilObjSCORM2004LearningModuleGUI($a_data,$a_id,$a_call_by_reference, $a_prepare_output = true)
+	function __construct($a_data,$a_id,$a_call_by_reference, $a_prepare_output = true)
 	{
 		global $lng;
 
@@ -37,8 +37,8 @@ class ilObjSCORM2004LearningModuleGUI extends ilObjSCORMLearningModuleGUI
 		$lng->loadLanguageModule("search");
 		$lng->loadLanguageModule("exp");
 		$this->type = "sahs";
-		$this->ilObjectGUI($a_data,$a_id,$a_call_by_reference,false);
-		#$this->tabs_gui =& new ilTabsGUI();
+		parent::__construct($a_data,$a_id,$a_call_by_reference,false);
+		#$this->tabs_gui = new ilTabsGUI();
 	}
 
 	/**
@@ -180,38 +180,7 @@ class ilObjSCORM2004LearningModuleGUI extends ilObjSCORMLearningModuleGUI
 	{
 		if ($this->object->getEditable())	// show editing frameset
 		{
-$this->ctrl->redirect($this, "properties");
-			include_once("./Services/Frameset/classes/class.ilFramesetGUI.php");
-			$fs_gui = new ilFramesetGUI();
-			$fs_gui->setFramesetTitle($this->lng->txt("editor"));
-			$fs_gui->setMainFrameName("content");
-			$fs_gui->setSideFrameName("tree");
-			$this->ctrl->setParameter($this, "active_node", $_GET["obj_id"]);
-			$fs_gui->setSideFrameSource($this->ctrl->getLinkTarget($this, "showTree"));
-			$this->ctrl->setParameter($this, "activeNode", "");
-			if ($_GET["obj_id"] > 0)
-			{
-				include_once("./Modules/Scorm2004/classes/class.ilSCORM2004Node.php");
-				$type = ilSCORM2004Node::_lookupType($_GET["obj_id"]);
-			}
-			if (in_array($type, array("sco", "chap", "seqc", "page")))
-			{
-				$this->ctrl->setParameter($this, "obj_id", $_GET["obj_id"]);
-				$fs_gui->setMainFrameSource($this->ctrl->getLinkTarget($this, "jumpToNode"));
-			}
-			else
-			{
-				if ($a_to_organization)
-				{
-					$fs_gui->setMainFrameSource($this->ctrl->getLinkTarget($this, "showOrganization"));
-				}
-				else
-				{
-					$fs_gui->setMainFrameSource($this->ctrl->getLinkTarget($this, "properties"));
-				}
-			}
-			$fs_gui->show();
-			exit;
+			$this->ctrl->redirect($this, "properties");
 		}
 		else						// otherwise show standard frameset
 		{
@@ -361,6 +330,20 @@ $this->ctrl->redirect($this, "properties");
 		$this->form->setFormAction($ilCtrl->getFormAction($this));
 		$this->form->setTitle($this->lng->txt("cont_lm_properties"));
 
+		//check/select only once
+		$this->object->checkMasteryScoreValues();
+		
+		//title
+		$ti = new ilTextInputGUI($this->lng->txt("title"), "Fobject_title");
+		$ti->setMaxLength(200);
+		$ti->setValue($this->object->getTitle());
+		$this->form->addItem($ti);
+		
+		//description
+		$ti = new ilTextAreaInputGUI($this->lng->txt("description"), "Fobject_description");
+		$ti->setValue($this->object->getDescription());
+		$this->form->addItem($ti);
+
 		// SCORM-type
 		$ne = new ilNonEditableValueGUI($this->lng->txt("type"), "");
 		$ne->setValue($this->lng->txt( "lm_type_" . ilObjSAHSLearningModule::_lookupSubType( $this->object->getID() ) ) );
@@ -369,7 +352,15 @@ $this->ctrl->redirect($this, "properties");
 		// version
 		$ne = new ilNonEditableValueGUI($this->lng->txt("cont_sc_version"), "");
 		$ne->setValue($this->object->getModuleVersion());
+		$ne->setInfo($this->lng->txt("cont_sc_version_info"));
 		$this->form->addItem($ne);
+
+		//
+		// activation
+		//
+		$sh = new ilFormSectionHeaderGUI();
+		$sh->setTitle($this->lng->txt("activation"));
+		$this->form->addItem($sh);
 		
 		// online
 		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_online"), "cobj_online");
@@ -378,8 +369,9 @@ $this->ctrl->redirect($this, "properties");
 		{
 			$cb->setChecked(true);
 		}
+		$cb->setInfo($this->lng->txt("cont_online_info"));
 		$this->form->addItem($cb);
-
+		
 		// offline Mode
 		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_offline_mode_allow"), "cobj_offline_mode");
 		$cb->setValue("y");
@@ -401,42 +393,87 @@ $this->ctrl->redirect($this, "properties");
 		$this->form->addItem($sh);
 		
 		// display mode (open)
-		$options = array(
-			"0" => $this->lng->txt("cont_open_normal"),
-			"1" => $this->lng->txt("cont_open_iframe_max"),
-			"2" => $this->lng->txt("cont_open_iframe_defined"),
-			"5" => $this->lng->txt("cont_open_window_undefined"),
-			"6" => $this->lng->txt("cont_open_window_defined")
-			);
-		$si = new ilSelectInputGUI($this->lng->txt("cont_open"), "open_mode");
-		$si->setOptions($options);
-		$si->setValue($this->object->getOpenMode());
-		$this->form->addItem($si);
-		
+		// $options = array(
+			// "0" => $this->lng->txt("cont_open_normal"),
+			// "1" => $this->lng->txt("cont_open_iframe_max"),
+			// "2" => $this->lng->txt("cont_open_iframe_defined"),
+			// "5" => $this->lng->txt("cont_open_window_undefined"),
+			// "6" => $this->lng->txt("cont_open_window_defined")
+			// );
+		// $si = new ilSelectInputGUI($this->lng->txt("cont_open"), "open_mode");
+		// $si->setOptions($options);
+		// $si->setValue($this->object->getOpenMode());
+		// $this->form->addItem($si);
+
+		$radg = new ilRadioGroupInputGUI($lng->txt("cont_open"), "open_mode");
+		$op0 = new ilRadioOption($this->lng->txt("cont_open_normal"), "0");
+		$radg->addOption($op0);
+		$op1 = new ilRadioOption($this->lng->txt("cont_open_iframe"), "1");
+		$radg->addOption($op1);
+		$op2 = new ilRadioOption($this->lng->txt("cont_open_window"), "5");
+		$radg->addOption($op2);
+		$radg->setValue($this->object->getOpenMode()); //ACHTUNG: DATENBANK
 		// width
-		$ni = new ilNumberInputGUI($this->lng->txt("cont_width"), "width");
+		$ni = new ilNumberInputGUI($this->lng->txt("cont_width"), "width_0");
 		$ni->setMaxLength(4);
 		$ni->setSize(4);
 		$ni->setValue($this->object->getWidth());
-		$this->form->addItem($ni);
-		
+		$op1->addSubItem($ni);
+		$ni = new ilNumberInputGUI($this->lng->txt("cont_width"), "width_1");
+		$ni->setMaxLength(4);
+		$ni->setSize(4);
+		$ni->setValue($this->object->getWidth());
+		$op2->addSubItem($ni);
 		// height
-		$ni = new ilNumberInputGUI($this->lng->txt("cont_height"), "height");
+		$ni = new ilNumberInputGUI($this->lng->txt("cont_height"), "height_0");
 		$ni->setMaxLength(4);
 		$ni->setSize(4);
 		$ni->setValue($this->object->getHeight());
-		$this->form->addItem($ni);
+		$ni->setInfo($this->lng->txt("cont_width_height_info"));
+		$op1->addSubItem($ni);
+		$ni = new ilNumberInputGUI($this->lng->txt("cont_height"), "height_1");
+		$ni->setMaxLength(4);
+		$ni->setSize(4);
+		$ni->setValue($this->object->getHeight());
+		$ni->setInfo($this->lng->txt("cont_width_height_info"));
+		$op2->addSubItem($ni);
+		
+		// set IE compatibility mode
+		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_ie_compatibility"), "cobj_ie_compatibility_0");
+		$cb->setValue("y");
+		$cb->setChecked($this->object->getIe_compatibility());
+		$cb->setInfo($this->lng->txt("cont_ie_compatibility_info"));
+		$op0->addSubItem($cb);
+		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_ie_compatibility"), "cobj_ie_compatibility_1");
+		$cb->setValue("y");
+		$cb->setChecked($this->object->getIe_compatibility());
+		$cb->setInfo($this->lng->txt("cont_ie_compatibility_info"));
+		$op2->addSubItem($cb);
+
+		// force IE to render again
+		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_ie_force_render"), "cobj_ie_force_render");
+		$cb->setValue("y");
+		$cb->setChecked($this->object->getIe_force_render());
+		$cb->setInfo($this->lng->txt("cont_ie_force_render_info"));
+		$op2->addSubItem($cb);
+
+		$this->form->addItem($radg);
+
 		
 		// disable top menu
+		//Hide Top Navigation Bar
 		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_nomenu"), "cobj_nomenu");
 		$cb->setValue("y");
 		$cb->setChecked($this->object->getNoMenu());
+		$cb->setInfo($this->lng->txt("cont_nomenu_info"));
 		$this->form->addItem($cb);
 		
 		// disable left-side navigation
+		// Hide Left Navigation Tree
 		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_hidenavig"), "cobj_hidenavig");
 		$cb->setValue("y");
 		$cb->setChecked($this->object->getHideNavig());
+		$cb->setInfo($this->lng->txt("cont_hidenavig_info"));
 		$this->form->addItem($cb);
 		
 		// auto navigation to last visited item
@@ -446,19 +483,6 @@ $this->ctrl->redirect($this, "properties");
 		$cb->setInfo($this->lng->txt("cont_auto_last_visited_info"));
 		$this->form->addItem($cb);
 
-		// set IE compatibility mode
-		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_ie_compatibility"), "cobj_ie_compatibility");
-		$cb->setValue("y");
-		$cb->setChecked($this->object->getIe_compatibility());
-		$cb->setInfo($this->lng->txt("cont_ie_compatibility_info"));
-		$this->form->addItem($cb);
-
-		// force IE to render again
-		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_ie_force_render"), "cobj_ie_force_render");
-		$cb->setValue("y");
-		$cb->setChecked($this->object->getIe_force_render());
-		$cb->setInfo($this->lng->txt("cont_ie_force_render_info"));
-		$this->form->addItem($cb);
 
 		//
 		// scorm options
@@ -468,11 +492,12 @@ $this->ctrl->redirect($this, "properties");
 		$this->form->addItem($sh);
 
 		// max attempts
-		$ni = new ilNumberInputGUI($this->lng->txt("cont_sc_max_attempt"), "max_attempt");
-		$ni->setMaxLength(3);
-		$ni->setSize(3);
-		$ni->setValue($this->object->getMaxAttempt());
-		$this->form->addItem($ni);
+		//ACHTUNG: DATENBANK KORRIGIEREN
+		// $ni = new ilNumberInputGUI($this->lng->txt("cont_sc_max_attempt"), "max_attempt");
+		// $ni->setMaxLength(3);
+		// $ni->setSize(3);
+		// $ni->setValue($this->object->getMaxAttempt());
+		// $this->form->addItem($ni);
 		
 		// lesson mode
 		$options = array("normal" => $this->lng->txt("cont_sc_less_mode_normal"),
@@ -500,12 +525,23 @@ $this->ctrl->redirect($this, "properties");
 			"c" => $this->lng->txt("cont_sc_auto_review_completed"),
 			"d" => $this->lng->txt("cont_sc_auto_review_completed_and_passed"),
 			"y" => $this->lng->txt("cont_sc_auto_review_completed_or_passed"),
+			"s" => $this->lng->txt("cont_sc_store_if_previous_score_was_lower")
 			);
 		$si = new ilSelectInputGUI($this->lng->txt("cont_sc_auto_review_2004"), "auto_review");
 		$si->setOptions($options);
 		$si->setValue($this->object->getAutoReviewChar());
 		$si->setInfo($this->lng->txt("cont_sc_auto_review_info_2004"));
 		$this->form->addItem($si);
+
+		// mastery_score
+		if ($this->object->getMasteryScoreValues() != "") {
+			$ni = new ilNumberInputGUI($this->lng->txt("cont_mastery_score_2004"), "mastery_score");
+			$ni->setMaxLength(3);
+			$ni->setSize(3);
+			$ni->setValue($this->object->getMasteryScore());
+			$ni->setInfo($this->lng->txt("cont_mastery_score_2004_info").$this->object->getMasteryScoreValues());
+			$this->form->addItem($ni);
+		}
 
 		//
 		// rte settings
@@ -539,18 +575,21 @@ $this->ctrl->redirect($this, "properties");
 		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_interactions"), "cobj_interactions");
 		$cb->setValue("y");
 		$cb->setChecked($this->object->getInteractions());
+		$cb->setInfo($this->lng->txt("cont_interactions_info"));
 		$this->form->addItem($cb);
 		
 		// objectives
 		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_objectives"), "cobj_objectives");
 		$cb->setValue("y");
 		$cb->setChecked($this->object->getObjectives());
+		$cb->setInfo($this->lng->txt("cont_objectives_info"));
 		$this->form->addItem($cb);
 
 		// comments
 		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_comments"), "cobj_comments");
 		$cb->setValue("y");
 		$cb->setChecked($this->object->getComments());
+		$cb->setInfo($this->lng->txt("cont_comments_info"));
 		$this->form->addItem($cb);
 
 		// time from lms
@@ -564,6 +603,7 @@ $this->ctrl->redirect($this, "properties");
 		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_check_values"), "cobj_check_values");
 		$cb->setValue("y");
 		$cb->setChecked($this->object->getCheck_values());
+		$cb->setInfo($this->lng->txt("cont_check_values_info"));
 		$this->form->addItem($cb);
 
 		// auto cmi.exit to suspend
@@ -726,19 +766,45 @@ $this->ctrl->redirect($this, "properties");
 				}
 			}
 
+			if (isset($_POST["mastery_score"])){
+				$this->object->setMasteryScore($_POST["mastery_score"]);
+				// $this->object->updateMasteryScoreValues();
+			}
+			
+			$t_auto_review = $_POST["auto_review"];
+			$t_auto_suspend = ilUtil::yn2tf($_POST["cobj_auto_suspend"]);
+			$t_session = ilUtil::yn2tf($_POST["cobj_session"]);
+			if ($t_auto_review == "s") {
+				$t_auto_suspend = true;
+				//if not storing without session
+				$t_session = true;
+			}
+			
+			$t1_ie_compatibility = false;
+			if (ilUtil::yn2tf($_POST["cobj_ie_compatibility_0"]) != $this->object->getIe_compatibility()) $t_ie_compatibility = ilUtil::yn2tf($_POST["cobj_ie_compatibility_0"]);
+			if (ilUtil::yn2tf($_POST["cobj_ie_compatibility_1"]) != $this->object->getIe_compatibility()) $t_ie_compatibility = ilUtil::yn2tf($_POST["cobj_ie_compatibility_1"]);
+			
+			$t_height = $this->object->getHeight();
+			if ($_POST["height_0"] != $this->object->getHeight()) $t_height = $_POST["height_0"];
+			if ($_POST["height_1"] != $this->object->getHeight()) $t_height = $_POST["height_1"];
+
+			$t_width = $this->object->getWidth();
+			if ($_POST["width_0"] != $this->object->getWidth()) $t_width = $_POST["width_0"];
+			if ($_POST["width_1"] != $this->object->getWidth()) $t_width = $_POST["width_1"];
+
 			$this->object->setOnline(ilUtil::yn2tf($_POST["cobj_online"]));
 			$this->object->setOpenMode($_POST["open_mode"]);
-			$this->object->setWidth($_POST["width"]);
-			$this->object->setHeight($_POST["height"]);
+			$this->object->setWidth($t_width);
+			$this->object->setHeight($t_height);
 			$this->object->setCreditMode($_POST["credit_mode"]);
 			$this->object->setMaxAttempt($_POST["max_attempt"]);
-			$this->object->setAutoReviewChar($_POST["auto_review"]);
+			$this->object->setAutoReviewChar($t_auto_review);
 			$this->object->setDefaultLessonMode($_POST["lesson_mode"]);
-			$this->object->setSession(ilUtil::yn2tf($_POST["cobj_session"]));
+			$this->object->setSession($t_session);
 			$this->object->setNoMenu(ilUtil::yn2tf($_POST["cobj_nomenu"]));
 			$this->object->setHideNavig(ilUtil::yn2tf($_POST["cobj_hidenavig"]));
 			$this->object->setAuto_last_visited(ilUtil::yn2tf($_POST["cobj_auto_last_visited"]));
-			$this->object->setIe_compatibility(ilUtil::yn2tf($_POST["cobj_ie_compatibility"]));
+			$this->object->setIe_compatibility($t_ie_compatibility);
 			$this->object->setIe_force_render(ilUtil::yn2tf($_POST["cobj_ie_force_render"]));
 			$this->object->setFourth_edition($tmpFourth_edition);
 			$this->object->setSequencing($tmpSequencing);
@@ -747,10 +813,13 @@ $this->ctrl->redirect($this, "properties");
 			$this->object->setComments(ilUtil::yn2tf($_POST["cobj_comments"]));
 			$this->object->setTime_from_lms(ilUtil::yn2tf($_POST["cobj_time_from_lms"]));
 			$this->object->setCheck_values(ilUtil::yn2tf($_POST["cobj_check_values"]));
-			$this->object->setAutoSuspend(ilUtil::yn2tf($_POST["cobj_auto_suspend"]));
+			$this->object->setAutoSuspend($t_auto_suspend);
 			$this->object->setOfflineMode($tmpOfflineMode);
 			$this->object->setDebug(ilUtil::yn2tf($_POST["cobj_debug"]));
 			//$this->object->setDebugPw($_POST["debug_pw"]);
+			
+			$this->object->setTitle($_POST["Fobject_title"]);
+			$this->object->setDescription($_POST["Fobject_description"]);
 
 		}
 		else
@@ -850,7 +919,6 @@ $this->ctrl->redirect($this, "properties");
 			$newObj->createReference();
 			$newObj->putInTree($parent_ref_id);
 			$newObj->setPermissions($parent_ref_id);
-			$newObj->notify("new",$parent_ref_id,$_GET["parent_non_rbac_id"],$parent_ref_id,$newObj->getRefId());
 			
 			// perform save
 			$this->object->setAssignedGlossary($newObj->getId());
@@ -927,11 +995,11 @@ $this->ctrl->redirect($this, "properties");
 		{
 			if ($this->call_by_reference)
 			{
-				$this->object =& new ilObjSCORM2004LearningModule($this->id, true);
+				$this->object = new ilObjSCORM2004LearningModule($this->id, true);
 			}
 			else
 			{
-				$this->object =& new ilObjSCORM2004LearningModule($this->id, false);
+				$this->object = new ilObjSCORM2004LearningModule($this->id, false);
 			}
 		}
 	}
@@ -1175,33 +1243,6 @@ $this->ctrl->redirect($this, "properties");
 	}
 
 	
-	/**
-	* Confirmed tracking deletion
-	*
-	*/
-	function confirmedDeleteTracking()
-	{
-	 	foreach ($_POST["user"] as $user)
-	 	{
-			include_once("./Modules/Scorm2004/classes/class.ilSCORM2004DeleteData.php");
-			ilSCORM2004DeleteData::removeCMIDataForUserAndPackage($user,$this->object->getId());
-
-			include_once("./Services/Tracking/classes/class.ilLPStatusWrapper.php");	
-			ilLPStatusWrapper::_updateStatus($this->object->getId(), $user);
-	 	}
-
-	 	$this->ctrl->redirect($this, "modifyTrackingItems");
-	}
-	
-	//UK may be erased
-	function deleteTrackingData()
-	{
-		if (is_array($_POST["id"]))
-		{
-			$this->object->deleteTrackingDataOfUsers($_POST["id"]);
-		}
-		$this->modifyTrackingItems();
-	}
 
 	/**
 	 * Show Editing Tree
@@ -1582,7 +1623,7 @@ $this->ctrl->redirect($this, "properties");
 	 *
 	 * @param	object		$tabs_gui		ilTabsGUI object
 	 */
-	function getTabs(&$tabs_gui)
+	function getTabs()
 	{
 		global $ilAccess, $ilHelp;
 
@@ -1593,13 +1634,13 @@ $this->ctrl->redirect($this, "properties");
 
 		if (!$this->object->getEditable())
 		{
-			return parent::getTabs($tabs_gui);
+			return parent::getTabs();
 		}
 		
 		$ilHelp->setScreenIdComponent("sahsed");
 
 		// organization
-		$tabs_gui->addTarget("sahs_organization",
+		$this->tabs_gui->addTarget("sahs_organization",
 		$this->ctrl->getLinkTarget($this, "showOrganization"), "showOrganization",
 		get_class($this));
 
@@ -1607,12 +1648,12 @@ $this->ctrl->redirect($this, "properties");
 		$force_active = ($this->ctrl->getNextClass() == "ilinfoscreengui")
 		? true
 		: false;
-		$tabs_gui->addTarget("info_short",
+		$this->tabs_gui->addTarget("info_short",
 		$this->ctrl->getLinkTargetByClass("ilinfoscreengui", "showSummary"), "",
 			"ilinfoscreengui", "", $force_active);
 			
 		// settings
-		$tabs_gui->addTarget("settings",
+		$this->tabs_gui->addTarget("settings",
 		$this->ctrl->getLinkTarget($this, "properties"), "properties",
 		get_class($this));
 
@@ -1624,12 +1665,12 @@ $this->ctrl->redirect($this, "properties");
 			*/
 		
 		// objective alignment
-		$tabs_gui->addTarget("sahs_objectives_alignment",
+		$this->tabs_gui->addTarget("sahs_objectives_alignment",
 		$this->ctrl->getLinkTarget($this, "showLearningObjectivesAlignment"), "showLearningObjectivesAlignment",
 		get_class($this));
 
 		// sequencing
-		$tabs_gui->addTarget("sahs_sequencing",
+		$this->tabs_gui->addTarget("sahs_sequencing",
 		$this->ctrl->getLinkTarget($this, "showSequencing"), "showSequencing",
 			get_class($this));
 
@@ -1646,26 +1687,32 @@ $this->ctrl->redirect($this, "properties");
 			*/
 
 		// edit meta
-		$tabs_gui->addTarget("meta_data",
-		$this->ctrl->getLinkTargetByClass('ilmdeditorgui',''),
-			 "", "ilmdeditorgui");
+		include_once "Services/Object/classes/class.ilObjectMetaDataGUI.php";
+		$mdgui = new ilObjectMetaDataGUI($this->object);					
+		$mdtab = $mdgui->getTab();
+		if($mdtab)
+		{
+			$this->tabs_gui->addTarget("meta_data",
+				$mdtab,
+				"", "ilmdeditorgui");
+		}
 
 		// export
-		$tabs_gui->addTarget("export",
+		$this->tabs_gui->addTarget("export",
 		$this->ctrl->getLinkTarget($this, "showExportList"), array("showExportList", 'confirmDeleteExportFile'),
 		get_class($this));
 
 		// perm
 		if ($ilAccess->checkAccess('edit_permission', '', $this->object->getRefId()))
 		{
-			$tabs_gui->addTarget("perm_settings",
+			$this->tabs_gui->addTarget("perm_settings",
 			$this->ctrl->getLinkTargetByClass(array(get_class($this),'ilpermissiongui'), "perm"), array("perm","info","owner"), 'ilpermissiongui');
 		}
 		
 		if ($this->object->editable==1)
 		{
 			// preview
-			$tabs_gui->addNonTabbedLink("preview",
+			$this->tabs_gui->addNonTabbedLink("preview",
 				$this->lng->txt("cont_sc_preview"),
 				$this->ctrl->getLinkTarget($this, "preview"),
 				"_blank");
@@ -1676,7 +1723,7 @@ $this->ctrl->redirect($this, "properties");
 	/**
 	 * Set sub tabs
 	 */
-	function setSubTabs($a_main_tab, $a_active)
+	function setSubTabs($a_main_tab = "", $a_active = "")
 	{
 		global $ilTabs, $ilCtrl, $lng;
 
@@ -1822,7 +1869,7 @@ $this->ctrl->redirect($this, "properties");
 
 		include_once("./Modules/Scorm2004/classes/class.ilSCORM2004OrganizationHFormGUI.php");
 
-		$slm_tree =& new ilTree($this->object->getId());
+		$slm_tree = new ilTree($this->object->getId());
 		$slm_tree->setTreeTablePK("slm_id");
 		$slm_tree->setTableNames('sahs_sc13_tree', 'sahs_sc13_tree_node');
 
@@ -1872,7 +1919,7 @@ $this->ctrl->redirect($this, "properties");
 
 		include_once("./Modules/Scorm2004/classes/class.ilSCORM2004OrganizationHFormGUI.php");
 
-		$slm_tree =& new ilTree($this->object->getId());
+		$slm_tree = new ilTree($this->object->getId());
 		$slm_tree->setTreeTablePK("slm_id");
 		$slm_tree->setTableNames('sahs_sc13_tree', 'sahs_sc13_tree_node');
 
@@ -1923,7 +1970,7 @@ $this->ctrl->redirect($this, "properties");
 
 		include_once("./Modules/Scorm2004/classes/class.ilSCORM2004OrganizationHFormGUI.php");
 
-		$slm_tree =& new ilTree($this->object->getId());
+		$slm_tree = new ilTree($this->object->getId());
 		$slm_tree->setTreeTablePK("slm_id");
 		$slm_tree->setTableNames('sahs_sc13_tree', 'sahs_sc13_tree_node');
 
@@ -1974,7 +2021,7 @@ $this->ctrl->redirect($this, "properties");
 
 		include_once("./Modules/Scorm2004/classes/class.ilSCORM2004OrganizationHFormGUI.php");
 
-		$slm_tree =& new ilTree($this->object->getId());
+		$slm_tree = new ilTree($this->object->getId());
 		$slm_tree->setTreeTablePK("slm_id");
 		$slm_tree->setTableNames('sahs_sc13_tree', 'sahs_sc13_tree_node');
 
@@ -2097,7 +2144,7 @@ $this->ctrl->redirect($this, "properties");
 
 		include_once("./Modules/Scorm2004/classes/class.ilSCORM2004OrganizationHFormGUI.php");
 
-		$slm_tree =& new ilTree($this->object->getId());
+		$slm_tree = new ilTree($this->object->getId());
 		$slm_tree->setTreeTablePK("slm_id");
 		$slm_tree->setTableNames('sahs_sc13_tree', 'sahs_sc13_tree_node');
 
@@ -2228,7 +2275,7 @@ $this->ctrl->redirect($this, "properties");
 
 		include_once("./Modules/Scorm2004/classes/class.ilSCORM2004OrganizationHFormGUI.php");
 
-		$slm_tree =& new ilTree($this->object->getId());
+		$slm_tree = new ilTree($this->object->getId());
 		$slm_tree->setTreeTablePK("slm_id");
 		$slm_tree->setTableNames('sahs_sc13_tree', 'sahs_sc13_tree_node');
 
@@ -2604,6 +2651,78 @@ $this->ctrl->redirect($this, "properties");
 			"node_".ilSCORM2004OrganizationHFormGUI::getPostNodeId());
 	}
 
+	/**
+	 * Insert chapter from clipboard
+	 */
+	function insertLMChapterClip($a_confirm = false, $a_perform = false)
+	{
+		global $ilCtrl, $tpl, $ilToolbar, $ilCtrl, $lng, $ilTabs;
+
+		include_once("./Modules/Scorm2004/classes/class.ilSCORM2004OrganizationHFormGUI.php");
+
+
+		$pf = "";
+		foreach (ilSCORM2004OrganizationHFormGUI::getPostFields() as $f => $v)
+		{
+			$pf.= '<input type="hidden" name="'.$f.'" value="'.$v.'" />';
+		}
+		if ($a_confirm && is_array($_POST["node"]))
+		{
+			foreach ($_POST["node"] as $f => $v)
+			{
+				$pf.= '<input type="hidden" name="node['.$f.']" value="'.$v.'" />';
+			}
+		}
+
+
+		$node_id = ilSCORM2004OrganizationHFormGUI::getPostNodeId();
+		$first_child = ilSCORM2004OrganizationHFormGUI::getPostFirstChild();
+
+		include_once("./Modules/Scorm2004/classes/class.ilLMChapterImportForm.php");
+		$form = new ilLMChapterImportForm($this->object, $node_id, $first_child, $a_confirm);
+		$tpl->setContent($form->getHTML().$pf."</form>");
+
+		$ilTabs->clearTargets();
+		$ilToolbar->setFormAction($ilCtrl->getFormAction($this));
+		if ($a_confirm)
+		{
+			if ($form->isCorrect())
+			{
+				$ilToolbar->addFormButton($lng->txt("insert"), "performLMChapterInsert");
+			}
+			$ilToolbar->addFormButton($lng->txt("back"), "insertLMChapterClip");
+		}
+		else
+		{
+			$ilToolbar->addFormButton($lng->txt("check"), "confirmLMChapterInsert");
+		}
+		$ilToolbar->addFormButton($lng->txt("cancel"), "showOrganization");
+		$ilToolbar->setCloseFormTag(false);
+
+	}
+
+	/**
+	 * Confirm lm chapter insert
+	 */
+	function confirmLMChapterInsert()
+	{
+		$this->insertLMChapterClip(true);
+	}
+
+	/**
+	 * Perform lm chapter insert
+	 */
+	function performLMChapterInsert()
+	{
+		$node_id = ilSCORM2004OrganizationHFormGUI::getPostNodeId();
+		$first_child = ilSCORM2004OrganizationHFormGUI::getPostFirstChild();
+
+		include_once("./Modules/Scorm2004/classes/class.ilLMChapterImportForm.php");
+		$form = new ilLMChapterImportForm($this->object, $node_id, $first_child);
+		$form->performInserts();
+		ilUtil::sendSuccess($this->lng->txt("msg_obj_modified"), true);
+		$this->ctrl->redirect($this, "showOrganization");
+	}
 
 	function exportScorm2004_4th()
 	{

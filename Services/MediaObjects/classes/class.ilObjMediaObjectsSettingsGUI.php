@@ -24,7 +24,7 @@ class ilObjMediaObjectsSettingsGUI extends ilObjectGUI
 	public function __construct($a_data, $a_id, $a_call_by_reference = true, $a_prepare_output = true)
 	{
 		$this->type = 'mobs';
-		parent::ilObjectGUI($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
+		parent::__construct($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
 
 		$this->lng->loadLanguageModule('mob');
 		$this->lng->loadLanguageModule('mep');
@@ -56,8 +56,8 @@ class ilObjMediaObjectsSettingsGUI extends ilObjectGUI
 			case 'ilpermissiongui':
 				$this->tabs_gui->setTabActive('perm_settings');
 				include_once("Services/AccessControl/classes/class.ilPermissionGUI.php");
-				$perm_gui =& new ilPermissionGUI($this);
-				$ret =& $this->ctrl->forwardCommand($perm_gui);
+				$perm_gui = new ilPermissionGUI($this);
+				$ret = $this->ctrl->forwardCommand($perm_gui);
 				break;
 
 			default:
@@ -104,8 +104,6 @@ class ilObjMediaObjectsSettingsGUI extends ilObjectGUI
 	{
 		global $tpl;
 		
-		$this->checkPermission("write");
-		
 		if (!$a_omit_init)
 		{
 			$this->initMediaObjectsSettingsForm();
@@ -121,6 +119,8 @@ class ilObjMediaObjectsSettingsGUI extends ilObjectGUI
 	{
 		global $tpl, $lng, $ilCtrl;
 	
+		$this->checkPermission("write");
+		
 		$this->initMediaObjectsSettingsForm();
 		if ($this->form->checkInput())
 		{
@@ -145,7 +145,7 @@ class ilObjMediaObjectsSettingsGUI extends ilObjectGUI
 	 */
 	public function initMediaObjectsSettingsForm()
 	{
-		global $lng, $ilCtrl;
+		global $lng, $ilCtrl, $ilAccess;
 		
 	
 		include_once("Services/Form/classes/class.ilPropertyFormGUI.php");
@@ -179,10 +179,11 @@ class ilObjMediaObjectsSettingsGUI extends ilObjectGUI
 		$tx_prop->setInfo($lng->txt("mob_upload_dir_info"));
 		$this->form->addItem($tx_prop);
 
+		if($ilAccess->checkAccess('write','',$this->object->getRefId()))
+		{
+			$this->form->addCommandButton("saveSettings", $lng->txt("save"));
+		}
 
-
-		$this->form->addCommandButton("saveSettings", $lng->txt("save"));
-	                
 		$this->form->setTitle($lng->txt("settings"));
 		$this->form->setFormAction($ilCtrl->getFormAction($this));
 	}

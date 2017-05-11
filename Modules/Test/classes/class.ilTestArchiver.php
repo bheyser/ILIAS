@@ -82,7 +82,7 @@ class ilTestArchiver
 	protected $test_obj_id;				/** @var $test_obj_id integer Object-ID of the test, the archiver is instantiated for */
 	protected $archive_data_index;		/** @var $archive_data_index array[string[]] Archive data index as associative array */
 
-	protected $ilDB;					/** @var $ilDB ilDB */
+	protected $ilDB;					/** @var $ilDB ilDBInterface */
 	
 	/**
 	 * @var ilTestParticipantData
@@ -402,7 +402,7 @@ class ilTestArchiver
 		$output_template = $gui->createUserResults(true, false, true, $array_of_actives);
 
 		require_once 'class.ilTestPDFGenerator.php';
-		$filename = $this->getTestArchive() . self::DIR_SEP . 'participant_pass_overview.pdf';
+		$filename = realpath($this->getTestArchive()) . self::DIR_SEP . 'participant_pass_overview.pdf';
 		ilTestPDFGenerator::generatePDF($output_template->get(), ilTestPDFGenerator::PDF_OUTPUT_FILE, $filename);
 
 		return;
@@ -602,7 +602,7 @@ class ilTestArchiver
 	{
 		// Data are taken from the current user as the implementation expects the first interaction of the pass
 		// takes place from the usage/behaviour of the current user.
-
+		
 		if( $this->getParticipantData() )
 		{
 			$usrData = $this->getParticipantData()->getUserDataByActiveId($active_fi);
@@ -758,11 +758,16 @@ class ilTestArchiver
 	protected function logArchivingProcess($message)
 	{
 		$archive = $this->getTestArchive() . self::DIR_SEP . self::ARCHIVE_LOG;
-		if( file_exists($archive) ) $oldContent = file_get_contents($archive) . "\n";
-		else $oldContent = '';
-		file_put_contents($archive, $oldContent.$message);
+		if( file_exists($archive) )
+		{
+			$content = file_get_contents($archive). "\n" . $message;
+		}
+		else
+		{
+			$content = $message;
+		}
 
-		return;
+		file_put_contents($archive, $content);
 	}
 
 	/**

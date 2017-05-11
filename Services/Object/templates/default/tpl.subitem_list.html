@@ -13,10 +13,14 @@
 			<!-- END is_type -->
 		</td>
 		<td>
-			<a href="{LINK}" target="{TARGET}">{TITLE}</a>
+			<a href="{LINK}" target="{TARGET}"> {TITLE}</a>
 		</td>
 		<td width="20%" align="right">
-			{SUB_REL}
+                    <!-- BEGIN relevance -->
+                    <div style="width:100px;">
+                            {REL_PBAR}
+                    </div>
+                    <!-- END relevance -->
 		</td>
 	</tr>
 	<tr>
@@ -26,7 +30,7 @@
 			<!-- END is_linked_image -->
 		</td>
 		<td>
-			<!-- BEGIN sea_fragment  --><div class="il_SearchFragment">{TXT_FRAGMENT} ...</div><!-- END sea_fragment -->
+			<!-- BEGIN sea_fragment  --><div class="il_SearchFragment ilPreventBreakOut">{TXT_FRAGMENT} ...</div><!-- END sea_fragment -->
 		</td>
 		<td></td>
 	</tr>

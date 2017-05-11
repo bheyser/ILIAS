@@ -16,9 +16,10 @@ include_once 'Services/UIComponent/AdvancedSelectionList/classes/class.ilAdvance
 * @ilCtrl_Calls ilPersonalDesktopGUI: ilPersonalProfileGUI, ilBookmarkAdministrationGUI
 * @ilCtrl_Calls ilPersonalDesktopGUI: ilObjUserGUI, ilPDNotesGUI, ilLearningProgressGUI
 * @ilCtrl_Calls ilPersonalDesktopGUI: ilColumnGUI, ilPDNewsGUI, ilCalendarPresentationGUI
-* @ilCtrl_Calls ilPersonalDesktopGUI: ilMailSearchGUI, ilMailAddressbookGUI
+* @ilCtrl_Calls ilPersonalDesktopGUI: ilMailSearchGUI, ilContactGUI
 * @ilCtrl_Calls ilPersonalDesktopGUI: ilPersonalWorkspaceGUI, ilPersonalSettingsGUI
 * @ilCtrl_Calls ilPersonalDesktopGUI: ilPortfolioRepositoryGUI, ilPersonalSkillsGUI, ilObjChatroomGUI
+* @ilCtrl_Calls ilPersonalDesktopGUI: ilBadgeProfileGUI
 *
 */
 class ilPersonalDesktopGUI
@@ -37,15 +38,15 @@ class ilPersonalDesktopGUI
 	/**
 	* constructor
 	*/
-	function ilPersonalDesktopGUI()
+	function __construct()
 	{
 		global $ilias, $tpl, $lng, $rbacsystem, $ilCtrl, $ilMainMenu, $ilUser, $tree;
 		
 		
-		$this->tpl =& $tpl;
-		$this->lng =& $lng;
-		$this->ilias =& $ilias;
-		$this->ctrl =& $ilCtrl;
+		$this->tpl = $tpl;
+		$this->lng = $lng;
+		$this->ilias = $ilias;
+		$this->ctrl = $ilCtrl;
 		
 		$ilCtrl->setContext($ilUser->getId(),
 				"user");
@@ -55,7 +56,7 @@ class ilPersonalDesktopGUI
 		$this->lng->loadLanguageModule("pd"); // #16813
 		
 		// catch hack attempts
-		if ($_SESSION["AccountId"] == ANONYMOUS_USER_ID)
+		if ($GLOBALS['DIC']['ilUser']->getId() == ANONYMOUS_USER_ID)
 		{
 			$this->ilias->raiseError($this->lng->txt("msg_not_available_for_anon"),$this->ilias->error_obj->MESSAGE);
 		}
@@ -69,9 +70,9 @@ class ilPersonalDesktopGUI
 	/**
 	* execute command
 	*/
-	function &executeCommand()
+	function executeCommand()
 	{
-		global $ilSetting, $rbacsystem;
+		global $ilSetting, $rbacsystem, $ilErr;
 
 		$next_class = $this->ctrl->getNextClass();
 		$this->ctrl->setReturn($this, "show");
@@ -85,20 +86,6 @@ class ilPersonalDesktopGUI
 		}
 		$this->__storeLastClass($next_class);
 
-
-		// check for permission to view contacts
-		if (
-			$next_class == 'ilmailaddressbookgui' && ($this->ilias->getSetting("disable_contacts") || 
-			(
-				!$this->ilias->getSetting("disable_contacts_require_mail") &&
-				!$rbacsystem->checkAccess('internal_mail', ilMailGlobalServices::getMailObjectRefId())
-			))
-		) // if
-		{
-			$next_class = '';
-			ilUtil::sendFailure($this->lng->txt('no_permission'));
-		}
-
 		switch($next_class)
 		{
 			case "ilbookmarkadministrationgui":
@@ -110,13 +97,9 @@ class ilPersonalDesktopGUI
 				}				
 				include_once("./Services/Bookmarks/classes/class.ilBookmarkAdministrationGUI.php");
 				$bookmark_gui = new ilBookmarkAdministrationGUI();
-				if ($bookmark_gui->getMode() == 'tree') {
-					$this->getTreeModeTemplates();
-				} else {
-					$this->getStandardTemplates();
-				}
+				$this->getStandardTemplates();
 				$this->setTabs();
-				$ret =& $this->ctrl->forwardCommand($bookmark_gui);
+				$ret = $this->ctrl->forwardCommand($bookmark_gui);
 				break;
 			
 				// profile
@@ -125,7 +108,7 @@ class ilPersonalDesktopGUI
 				$this->setTabs();
 				include_once("./Services/User/classes/class.ilPersonalProfileGUI.php");
 				$profile_gui = new ilPersonalProfileGUI();
-				$ret =& $this->ctrl->forwardCommand($profile_gui);
+				$ret = $this->ctrl->forwardCommand($profile_gui);
 				break;
 				
 			// settings
@@ -134,14 +117,14 @@ class ilPersonalDesktopGUI
 				$this->setTabs();
 				include_once("./Services/User/classes/class.ilPersonalSettingsGUI.php");
 				$settings_gui = new ilPersonalSettingsGUI();
-				$ret =& $this->ctrl->forwardCommand($settings_gui);
+				$ret = $this->ctrl->forwardCommand($settings_gui);
 				break;
 			
 				// profile
 			case "ilobjusergui":
 				include_once('./Services/User/classes/class.ilObjUserGUI.php');
 				$user_gui = new ilObjUserGUI("",$_GET["user"], false, false);
-				$ret =& $this->ctrl->forwardCommand($user_gui);
+				$ret = $this->ctrl->forwardCommand($user_gui);
 				break;
 			
 			case 'ilcalendarpresentationgui':
@@ -157,7 +140,7 @@ class ilPersonalDesktopGUI
 			
 				// pd notes
 			case "ilpdnotesgui":
-				if ($ilSetting->get('disable_notes'))
+				if ($ilSetting->get('disable_notes') && $ilSetting->get('disable_comments'))
 				{
 					ilUtil::sendFailure($this->lng->txt('permission_denied'), true);					
 					ilUtil::redirect('ilias.php?baseClass=ilPersonalDesktopGUI');
@@ -168,7 +151,7 @@ class ilPersonalDesktopGUI
 				$this->setTabs();
 				include_once("./Services/Notes/classes/class.ilPDNotesGUI.php");
 				$pd_notes_gui = new ilPDNotesGUI();
-				$ret =& $this->ctrl->forwardCommand($pd_notes_gui);
+				$ret = $this->ctrl->forwardCommand($pd_notes_gui);
 				break;
 			
 			// pd news
@@ -177,7 +160,7 @@ class ilPersonalDesktopGUI
 				$this->setTabs();
 				include_once("./Services/News/classes/class.ilPDNewsGUI.php");
 				$pd_news_gui = new ilPDNewsGUI();
-				$ret =& $this->ctrl->forwardCommand($pd_news_gui);
+				$ret = $this->ctrl->forwardCommand($pd_news_gui);
 				break;
 
 			case "illearningprogressgui":
@@ -185,7 +168,7 @@ class ilPersonalDesktopGUI
 				$this->setTabs();
 				include_once './Services/Tracking/classes/class.ilLearningProgressGUI.php';
 				$new_gui = new ilLearningProgressGUI(ilLearningProgressGUI::LP_CONTEXT_PERSONAL_DESKTOP,0);
-				$ret =& $this->ctrl->forwardCommand($new_gui);
+				$ret = $this->ctrl->forwardCommand($new_gui);
 				
 				break;		
 
@@ -198,20 +181,24 @@ class ilPersonalDesktopGUI
 				$this->show();
 				break;
 
-			// contacts
-			case 'ilmailaddressbookgui':
+			case 'ilcontactgui':
+				require_once 'Services/Contact/BuddySystem/classes/class.ilBuddySystem.php';
+				if(!ilBuddySystem::getInstance()->isEnabled())
+				{
+					$ilErr->raiseError($this->lng->txt('msg_no_perm_read'), $ilErr->MESSAGE);
+				}
+
 				$this->getStandardTemplates();
 				$this->setTabs();
-				$this->tpl->setTitle($this->lng->txt("mail_addressbook"));
+				$this->tpl->setTitle($this->lng->txt('mail_addressbook'));
 
-				include_once 'Services/Contact/classes/class.ilMailAddressbookGUI.php';
-				$mailgui = new ilMailAddressbookGUI();
-				$ret = $this->ctrl->forwardCommand($mailgui);
+				require_once 'Services/Contact/classes/class.ilContactGUI.php';
+				$this->ctrl->forwardCommand(new ilContactGUI());
 				break;
 
 			case 'ilpersonalworkspacegui':		
-				$this->getStandardTemplates();
-				$this->setTabs();
+				// $this->getStandardTemplates();
+				// $this->setTabs();
 				include_once 'Services/PersonalWorkspace/classes/class.ilPersonalWorkspaceGUI.php';
 				$wsgui = new ilPersonalWorkspaceGUI();
 				$ret = $this->ctrl->forwardCommand($wsgui);								
@@ -233,6 +220,15 @@ class ilPersonalDesktopGUI
 				$skgui = new ilPersonalSkillsGUI();
 				$this->getStandardTemplates();
 				$ret = $this->ctrl->forwardCommand($skgui);
+				$this->tpl->show();
+				break;
+			
+			case 'ilbadgeprofilegui':		
+				$this->getStandardTemplates();
+				$this->setTabs();
+				include_once './Services/Badge/classes/class.ilBadgeProfileGUI.php';
+				$bgui = new ilBadgeProfileGUI();
+				$ret = $this->ctrl->forwardCommand($bgui);
 				$this->tpl->show();
 				break;
 			
@@ -275,19 +271,6 @@ class ilPersonalDesktopGUI
 	function getStandardTemplates()
 	{
 		$this->tpl->getStandardTemplate();
-		// add template for content
-//		$this->tpl->addBlockFile("CONTENT", "content", "tpl.adm_content.html");
-//		$this->tpl->addBlockFile("STATUSLINE", "statusline", "tpl.statusline.html");
-	}
-	
-	/**
-	* get tree mode templates
-	*/
-	function getTreeModeTemplates()
-	{
-		// add template for content
-		$this->tpl->addBlockFile("CONTENT", "content", "tpl.adm_content.html");
-		$this->tpl->addBlockFile("STATUSLINE", "statusline", "tpl.statusline.html");
 	}
 	
 	/**
@@ -295,14 +278,13 @@ class ilPersonalDesktopGUI
 	*/
 	function show()
 	{
-		
 		// preload block settings
 		include_once("Services/Block/classes/class.ilBlockSetting.php");
 		ilBlockSetting::preloadPDBlockSettings();
 
 		// add template for content
 		$this->pd_tpl = new ilTemplate("tpl.usr_personaldesktop.html", true, true, "Services/PersonalDesktop");
-		$this->tpl->getStandardTemplate();
+//		$this->tpl->getStandardTemplate();
 
 		// display infopanel if something happened
 		ilUtil::infoPanel();
@@ -612,7 +594,6 @@ class ilPersonalDesktopGUI
 
 		$this->show();
 	}
-	
 
 	/**
 	 * workaround for menu in calendar only
@@ -684,6 +665,21 @@ class ilPersonalDesktopGUI
 	}
 
 	/**
+	 * workaround for menu in calendar only
+	 */
+	function jumpToComments()
+	{
+		if ($this->ilias->getSetting('disable_comments'))
+		{
+			ilUtil::sendFailure($this->lng->txt('permission_denied'), true);
+			ilUtil::redirect('ilias.php?baseClass=ilPersonalDesktopGUI');
+			return;
+		}
+
+		$this->ctrl->redirectByClass("ilpdnotesgui", "showPublicComments");
+	}
+
+	/**
 	* workaround for menu in calendar only
 	*/
 	function jumpToNews()
@@ -712,7 +708,7 @@ class ilPersonalDesktopGUI
 	 */
 	function jumpToContacts()
 	{
-		$this->ctrl->redirectByClass("ilmailaddressbookgui");
+		$this->ctrl->redirectByClass(array('ilpersonaldesktopgui', 'ilcontactgui'));
 	}
 
 	/**
@@ -739,6 +735,14 @@ class ilPersonalDesktopGUI
 		}
 		
 		$this->ctrl->redirectByClass("ilpersonalworkspacegui", $cmd);
+	}
+	
+	/**
+	 * Jump to badges
+	 */
+	function jumpToBadges()
+	{
+		$this->ctrl->redirectByClass("ilbadgeprofilegui");
 	}
 	
 	/**

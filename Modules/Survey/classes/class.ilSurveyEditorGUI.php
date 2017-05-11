@@ -175,7 +175,7 @@ class ilSurveyEditorGUI
 		
 		$this->questionsSubtabs("questions");
 
-		$hasDatasets = $this->object->_hasDatasets($this->object->getSurveyId());
+		$hasDatasets = ilObjSurvey::_hasDatasets($this->object->getSurveyId());
 		$read_only = $hasDatasets;
 		
 
@@ -194,7 +194,7 @@ class ilSurveyEditorGUI
 			include_once "Services/Form/classes/class.ilPropertyFormGUI.php";
 			$types = new ilSelectInputGUI($this->lng->txt("create_new"), "sel_question_types");
 			$types->setOptions($qtypes);
-			$ilToolbar->addInputItem($types, "");
+			$ilToolbar->addStickyItem($types, "");
 			
 			
 			include_once "Services/UIComponent/Button/classes/class.ilLinkButton.php";
@@ -203,7 +203,7 @@ class ilSurveyEditorGUI
 			$button = ilSubmitButton::getInstance();
 			$button->setCaption("svy_create_question");								
 			$button->setCommand("createQuestion");
-			$ilToolbar->addButtonInstance($button);		
+			$ilToolbar->addStickyItem($button);		
 			
 			if($this->object->isPoolActive())
 			{
@@ -217,7 +217,7 @@ class ilSurveyEditorGUI
 				$button = ilLinkButton::getInstance();
 				$button->setCaption("browse_for_questions");								
 				$button->setUrl($this->ctrl->getLinkTarget($this, $cmd));										
-				$ilToolbar->addButtonInstance($button);						
+				$ilToolbar->addStickyItem($button);						
 			}
 
 			$ilToolbar->addSeparator();
@@ -225,7 +225,7 @@ class ilSurveyEditorGUI
 			$button = ilLinkButton::getInstance();
 			$button->setCaption("add_heading");								
 			$button->setUrl($this->ctrl->getLinkTarget($this, "addHeading"));										
-			$ilToolbar->addButtonInstance($button);		
+			$ilToolbar->addInputItem($button);		
 		}
 		if ($hasDatasets)
 		{
@@ -1038,7 +1038,7 @@ class ilSurveyEditorGUI
 		
 		if($a_block_id)
 		{
-			$questionblock = $this->object->getQuestionblock($a_block_id);
+			$questionblock = ilObjSurvey::_getQuestionblock($a_block_id);
 			$title->setValue($questionblock["title"]);
 			$toggle_blocktitle->setChecked($questionblock["show_blocktitle"]);
 			$toggle_questiontitle->setChecked($questionblock["show_questiontext"]);
@@ -1266,7 +1266,34 @@ class ilSurveyEditorGUI
 		global $ilToolbar;
 		
 		$this->questionsSubtabs("print");
+			
+		if(!isset($_POST["export_label"]))
+		{
+			$_POST["export_label"] = $this->object->getShowQuestionTitles();
+		}
+		$current_title = (int)$_POST["export_label"];
 		
+		include_once "Services/Form/classes/class.ilSelectInputGUI.php";
+		$label = new ilSelectInputGUI($this->lng->txt("title")."/".$this->lng->txt("label"), "export_label");
+		$label->setOptions(array(
+			0 => $this->lng->txt('none'), 
+			1 => $this->lng->txt('svy_print_title_only'), 
+			2 => $this->lng->txt('svy_print_label_only'), 			
+			3 => $this->lng->txt('svy_print_title_label')
+			));
+		$label->setValue($current_title);
+		$ilToolbar->addStickyItem($label, true);
+		
+		$ilToolbar->setFormAction($this->ctrl->getFormAction($this, "printView"));
+		
+		include_once "Services/UIComponent/Button/classes/class.ilSubmitButton.php";
+		$button = ilSubmitButton::getInstance();
+		$button->setCaption("show");
+		$button->setCommand("printView");			
+		$ilToolbar->addStickyItem($button);
+		
+		$ilToolbar->addSeparator();
+	
 		include_once "Services/UIComponent/Button/classes/class.ilLinkButton.php";
 		$button = ilLinkButton::getInstance();
 		$button->setCaption("print");								
@@ -1277,9 +1304,11 @@ class ilSurveyEditorGUI
 		include_once './Services/WebServices/RPC/classes/class.ilRPCServerSettings.php';
 		if(ilRPCServerSettings::getInstance()->isEnabled())
 		{
+			$this->ctrl->setParameter($this, "export_label", $current_title);
 			$this->ctrl->setParameter($this, "pdf", "1");
 			$pdf_url = $this->ctrl->getLinkTarget($this, "printView");
 			$this->ctrl->setParameter($this, "pdf", "");
+			$this->ctrl->setParameter($this, "export_label", "");
 			
 			$button = ilLinkButton::getInstance();
 			$button->setCaption("pdf_export");								
@@ -1288,16 +1317,23 @@ class ilSurveyEditorGUI
 			$ilToolbar->addButtonInstance($button);	
 		}
 		
-		
+        // defer rendering of tex to fo processing
+		if (array_key_exists("pdf", $_GET) && ($_GET["pdf"] == 1))
+		{
+			require_once('Services/MathJax/classes/class.ilMathJax.php');
+			ilMathJax::getInstance()->init(ilMathJax::PURPOSE_DEFERRED_PDF);
+		}
+
 		$template = new ilTemplate("tpl.il_svy_svy_printview.html", TRUE, TRUE, "Modules/Survey");
 	
 		$pages =& $this->object->getSurveyPages();
+		$required = false;
 		foreach ($pages as $page)
 		{
 			if (count($page) > 0)
 			{
 				foreach ($page as $question)
-				{
+				{					
 					$questionGUI = $this->object->getQuestionGUI($question["type_tag"], $question["question_id"]);
 					if (is_object($questionGUI))
 					{
@@ -1308,8 +1344,13 @@ class ilSurveyEditorGUI
 							$template->parseCurrentBlock();
 						}
 						$template->setCurrentBlock("question");
-						$template->setVariable("QUESTION_DATA", $questionGUI->getPrintView($this->object->getShowQuestionTitles(), $question["questionblock_show_questiontext"], $this->object->getSurveyId()));
+						$template->setVariable("QUESTION_DATA", $questionGUI->getPrintView($current_title, $question["questionblock_show_questiontext"], $this->object->getSurveyId()));
 						$template->parseCurrentBlock();
+						
+						if($question["obligatory"])
+						{
+							$required = true;
+						}
 					}
 				}
 				if (count($page) > 1 && $page[0]["questionblock_show_blocktitle"])
@@ -1325,7 +1366,14 @@ class ilSurveyEditorGUI
 				}
 			}
 		}
-		$this->tpl->addCss("./Modules/Survey/templates/default/survey_print.css", "print");
+		
+		// #6412
+		if($required)
+		{
+			$template->setVariable("TEXT_REQUIRED", $this->lng->txt("required_field"));
+		}			
+		
+		// $this->tpl->addCss("./Modules/Survey/templates/default/survey_print.css", "print");
 		if (array_key_exists("pdf", $_GET) && ($_GET["pdf"] == 1))
 		{
 			$printbody = new ilTemplate("tpl.il_as_tst_print_body.html", TRUE, TRUE, "Modules/Test");
@@ -1334,6 +1382,14 @@ class ilSurveyEditorGUI
 			$printoutput = $printbody->get();
 			$printoutput = preg_replace("/href=\".*?\"/", "", $printoutput);		
 			$fo = $this->object->processPrintoutput2FO($printoutput);
+
+            // render tex as fo graphics
+			require_once('Services/MathJax/classes/class.ilMathJax.php');
+			$fo = ilMathJax::getInstance()
+				->init(ilMathJax::PURPOSE_PDF)
+				->setRendering(ilMathJax::RENDER_PNG_AS_FO_FILE)
+				->insertLatexImages($fo);
+
 			// #11436
 			if(!$fo || !$this->object->deliverPDFfromFO($fo))
 			{

@@ -60,7 +60,11 @@ class ilColumnGUI
 		'ilPDTaggingBlockGUI' => 'Services/Tagging/',
 		'ilChatroomBlockGUI' => 'Modules/Chatroom/',
 		'ilPollBlockGUI' => 'Modules/Poll/',
-		'ilClassificationBlockGUI' => 'Services/Classification/',	
+		'ilClassificationBlockGUI' => 'Services/Classification/',
+		'ilPDPortfolioBlockGUI' => 'Modules/Portfolio/',
+		"ilPDStudyProgrammeSimpleListGUI" => "Modules/StudyProgramme/",
+		"ilPDStudyProgrammeExpandableListGUI" => "Modules/StudyProgramme/",
+		"ilForumPostingDraftsBlockGUI" => "Modules/Forum/"
 	);
 	
 	static protected $block_types = array(
@@ -80,6 +84,10 @@ class ilColumnGUI
 		'ilChatroomBlockGUI' => 'chatviewer',
 		'ilPollBlockGUI' => 'poll',
 		'ilClassificationBlockGUI' => 'clsfct',
+		'ilPDPortfolioBlockGUI' => 'pdportf',
+		"ilPDStudyProgrammeSimpleListGUI" => "prgsimplelist",
+		"ilPDStudyProgrammeExpandableListGUI" => "prgexpandablelist",
+		"ilForumPostingDraftsBlockGUI" => "pdfrmpostdraft"
 	);
 	
 		
@@ -104,15 +112,19 @@ class ilColumnGUI
 			"ilNewsForContextBlockGUI" => IL_COL_RIGHT),
 		"pd" => array(
 			"ilPDCalendarBlockGUI" => IL_COL_RIGHT,
+			"ilPDPortfolioBlockGUI" => IL_COL_RIGHT,
 			"ilPDSysMessageBlockGUI" => IL_COL_LEFT,
 			"ilPDNewsBlockGUI" => IL_COL_LEFT,
+			"ilPDStudyProgrammeSimpleListGUI" => IL_COL_CENTER,
+			"ilPDStudyProgrammeExpandableListGUI" => IL_COL_CENTER,
 			"ilPDSelectedItemsBlockGUI" => IL_COL_CENTER,
 			"ilPDMailBlockGUI" => IL_COL_RIGHT,
 			"ilPDNotesBlockGUI" => IL_COL_RIGHT,
-			"ilUsersOnlineBlockGUI" => IL_COL_RIGHT,
+			//"ilUsersOnlineBlockGUI" => IL_COL_RIGHT,
 			"ilBookmarkBlockGUI" => IL_COL_RIGHT,
 			"ilPDTaggingBlockGUI" => IL_COL_RIGHT,
-			"ilChatroomBlockGUI" => IL_COL_RIGHT
+			"ilChatroomBlockGUI" => IL_COL_RIGHT,
+			"ilForumPostingDraftsBlockGUI" => IL_COL_RIGHT
 			)
 		);
 
@@ -140,9 +152,13 @@ class ilColumnGUI
 			"pdusers" => true,
 			"pdbookm" => true,
 			"pdtag" => true,
+			"pdsysmess" => true,
 			"pdnotes" => true,
 			"chatviewer" => true,
-			"tagcld" => true);
+			"pdfrmpostdraft" => true,
+			"tagcld" => true,
+			"pdportf" => true,
+			"clsfct" => true);
 			
 	protected $check_nr_limit =
 		array("pdfeed" => true);
@@ -419,7 +435,7 @@ class ilColumnGUI
 	/**
 	* execute command
 	*/
-	function &executeCommand()
+	function executeCommand()
 	{
 		global $ilCtrl;
 		
@@ -894,6 +910,10 @@ class ilColumnGUI
 					{
 						$nr = -10;
 					}
+					if ($type == "clsfct")		// mkunkel wants to have this on top
+					{
+						$nr = -16;
+					}
 					$side = ilBlockSetting::_lookupSide($type, $user_id);
 					if ($side === false)
 					{
@@ -1032,8 +1052,8 @@ class ilColumnGUI
 	*/
 	protected function isGloballyActivated($a_type)
 	{
+		global $ilSetting, $ilCtrl;
 
-		global $ilSetting;
 		if (isset($this->check_global_activation[$a_type]) && $this->check_global_activation[$a_type])
 		{
 			if ($a_type == 'pdbookm')
@@ -1051,7 +1071,19 @@ class ilColumnGUI
 					return true;
 				}
 				return false;
-			}	
+			}
+			else if ($a_type == 'pdportf')
+			{
+				if ($ilSetting->get("user_portfolios"))
+				{
+					$prfa_set = new ilSetting("prfa");
+					if ($prfa_set->get("pd_block", false))
+					{
+						return true;
+					}
+				}
+				return false;
+			}
 			elseif($a_type == 'news')
 			{
 				include_once 'Services/Container/classes/class.ilContainer.php';
@@ -1062,6 +1094,11 @@ class ilColumnGUI
 							'cont_show_news',
 							true
 					);
+			}
+			else if($a_type == 'pdsysmess')
+			{
+				require_once 'Services/Mail/classes/class.ilObjMail.php';
+				return ((int)$ilSetting->get('pd_sys_msg_mode')) == ilObjMail::PD_SYS_MSG_OWN_BLOCK;
 			}
 			else if ($ilSetting->get("block_activated_".$a_type))
 			{
@@ -1081,7 +1118,16 @@ class ilColumnGUI
 			elseif($a_type == "tagcld")
 			{
 				$tags_active = new ilSetting("tags");
-				return (bool)$tags_active->get("enable", false);			
+				return (bool)$tags_active->get("enable", false);
+			}
+			elseif($a_type == "clsfct")
+			{
+				if ($ilCtrl->getContextObjType() == "cat")	// taxonomy presentation in classification block
+				{
+					return true;
+				}
+				$tags_active = new ilSetting("tags");		// tags presentation in classification block
+				return (bool)$tags_active->get("enable", false);
 			}
 			return false;
 		}

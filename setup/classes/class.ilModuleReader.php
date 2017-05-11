@@ -35,9 +35,9 @@ include_once("./setup/classes/class.ilObjDefReader.php");
 class ilModuleReader extends ilObjDefReader
 {
 
-	function ilModuleReader($a_path, $a_name, $a_type)
+	function __construct($a_path, $a_name, $a_type)
 	{
-		parent::ilObjDefReader($a_path, $a_name, $a_type);
+		parent::__construct($a_path, $a_name, $a_type);
 	}
 	
 	function getModules()
@@ -79,7 +79,6 @@ class ilModuleReader extends ilObjDefReader
 	{
 		global $ilDB;
 
-		parent::handlerBeginTag($a_xml_parser,$a_name,$a_attribs);
 		
 		switch ($a_name)
 		{
@@ -89,6 +88,8 @@ class ilModuleReader extends ilObjDefReader
 				$ilDB->manipulateF("INSERT INTO il_component (type, name, id) ".
 					"VALUES (%s,%s,%s)", array("text", "text", "text"),
 					array($this->type, $this->name, $a_attribs["id"]));
+				
+				$this->setComponentId($a_attribs['id']);
 				break;
 				
 			case 'baseclass':
@@ -98,6 +99,9 @@ class ilModuleReader extends ilObjDefReader
 				break;
 				
 		}
+
+		// smeyer: first read outer xml
+		parent::handlerBeginTag($a_xml_parser,$a_name,$a_attribs);
 	}
 			
 	/**

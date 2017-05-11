@@ -11,7 +11,7 @@
 class ilTestParticipantData
 {
 	/**
-	 * @var ilDB
+	 * @var ilDBInterface
 	 */
 	protected $db;
 
@@ -50,7 +50,7 @@ class ilTestParticipantData
 	 */
 	private $byAnonymousId;
 	
-	public function __construct(ilDB $db, ilLanguage $lng)
+	public function __construct(ilDBInterface $db, ilLanguage $lng)
 	{
 		$this->db = $db;
 		$this->lng = $lng;
@@ -180,6 +180,15 @@ class ilTestParticipantData
 	public function getFormatedFullnameByActiveId($activeId)
 	{
 		return $this->buildFormatedFullname($this->byActiveId[$activeId]);
+	}
+
+	public function getFileSystemCompliantFullnameByActiveId($activeId)
+	{
+		$fullname = str_replace(' ', '', $this->byActiveId[$activeId]['lastname']);
+		$fullname .= '_'.str_replace(' ', '', $this->byActiveId[$activeId]['firstname']);
+		$fullname .= '_'.$this->byActiveId[$activeId]['login'];
+		
+		return ilUtil::getASCIIFilename($fullname);
 	}
 	
 	public function getOptionArray()

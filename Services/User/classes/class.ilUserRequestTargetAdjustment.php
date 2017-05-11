@@ -54,15 +54,10 @@ class ilUserRequestTargetAdjustment
 	 */
 	protected function storeRequest()
 	{
-		/**
-		 * @var $http ilHTTPS
-		 */
-		global $https;
-
 		if(!ilSession::get('orig_request_target'))
 		{
 			//#16324 don't use the complete REQUEST_URI
-			$url = substr($_SERVER['REQUEST_URI'], (strrpos($_SERVER['REQUEST_URI'], "/")+1));
+			$url = substr($_SERVER['REQUEST_URI'], (strrpos($_SERVER['REQUEST_URI'], '/') +1 ));
 
 			ilSession::set('orig_request_target', $url);
 		}
@@ -75,22 +70,27 @@ class ilUserRequestTargetAdjustment
 	{
 		if(defined('IL_CERT_SSO'))
 		{
+			$GLOBALS['DIC']->logger()->init()->debug('CERT SSO request. No adjustment.');
 			return false;
 		}
 		else if(!ilContext::supportsRedirects())
 		{
+			$GLOBALS['DIC']->logger()->init()->debug('Context does not support redirects. No adjustment.');
 			return false;
 		}
 		else if($this->ctrl->isAsynch())
 		{
+			$GLOBALS['DIC']->logger()->init()->debug('Async request. No adjustment.');
 			return false;
 		}
 		else if(in_array(basename($_SERVER['PHP_SELF']), array('logout.php')))
 		{
+			$GLOBALS['DIC']->logger()->init()->debug('Logout request. No adjustment.');
 			return false;
 		}
 		else if(!$this->user->getId() || $this->user->isAnonymous())
 		{
+			$GLOBALS['DIC']->logger()->init()->debug('Anyonymous request. No adjustment.');
 			return false;
 		}
 
@@ -98,11 +98,14 @@ class ilUserRequestTargetAdjustment
 		{
 			if($case->isInFulfillment())
 			{
+				$GLOBALS['DIC']->logger()->init()->debug('Case is in fullfillment:' . get_class($case));
 				return false;
 			}
 
 			if($case->shouldAdjustRequest())
 			{
+				
+				$GLOBALS['DIC']->logger()->init()->debug('Case required adjustment:' . get_class($case));
 				if($case->shouldStoreRequestTarget())
 				{
 					$this->storeRequest();

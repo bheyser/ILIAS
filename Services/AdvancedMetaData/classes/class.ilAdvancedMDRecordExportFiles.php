@@ -39,9 +39,13 @@ class ilAdvancedMDRecordExportFiles
 	 * @access public
 	 * 
 	 */
-	public function __construct()
+	public function __construct($a_obj_id = null)
 	{
 	 	$this->export_dir = ilUtil::getDataDir().'/ilAdvancedMetaData/export';
+		if($a_obj_id)
+		{
+			$this->export_dir .= "_".$a_obj_id;
+		}
 	 	$this->init();
 	}
 	
@@ -109,12 +113,14 @@ class ilAdvancedMDRecordExportFiles
 	 */
 	public function create($a_xml)
 	{
-		 global $ilLog,$ilErr;
+		 global $ilLog;
 		 
 		 if(!$fp = @fopen($this->export_dir.'/'.time().'.xml','w+'))
 		 {
 		 	$ilLog->write(__METHOD__.': Cannot open file '.$this->export_dir.'/'.time().'.xml');
-		 	$ilErr->raiseError('Cannot write export file.',$ilErr->WARNING);
+
+			require_once './Services/Exceptions/classes/class.ilException.php';
+			throw new ilException('Cannot write export file.');
 		 }
 		 
 		 @fwrite($fp,$a_xml);

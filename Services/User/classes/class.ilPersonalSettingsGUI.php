@@ -42,7 +42,7 @@ class ilPersonalSettingsGUI
 	/**
 	* execute command
 	*/
-	function &executeCommand()
+	function executeCommand()
 	{
 		global $ilUser, $ilCtrl, $tpl, $ilTabs, $lng;
 		
@@ -50,7 +50,15 @@ class ilPersonalSettingsGUI
 
 		switch($next_class)
 		{
-			
+			case 'ilpersonalchatsettingsformgui':
+				$this->__initSubTabs($this->ctrl->getCmd());
+				$this->setHeader();
+
+				require_once 'Modules/Chatroom/classes/class.ilPersonalChatSettingsFormGUI.php';
+				$chatSettingsGui = new ilPersonalChatSettingsFormGUI();
+				$this->ctrl->forwardCommand($chatSettingsGui);
+				break;
+
 			default:
 				$cmd = $this->ctrl->getCmd("showGeneralSettings");
 				$this->$cmd();
@@ -239,54 +247,6 @@ class ilPersonalSettingsGUI
 		$this->tpl->show();
 	}
 
-/*	function showjsMath()
-	{
-		global $lng, $ilCtrl, $tpl, $ilUser;
-
-		$this->__initSubTabs("showjsMath");
-		$this->setHeader();
-
-		include_once("./Services/Form/classes/class.ilPropertyFormGUI.php");
-		$form = new ilPropertyFormGUI();
-		$form->setFormAction($ilCtrl->getFormAction($this));
-		$form->setTitle($lng->txt("jsmath_settings"));
-
-		// Enable jsMath
-		include_once "./Services/Administration/classes/class.ilSetting.php";
-		$jsMathSetting = new ilSetting("jsMath");
-		$enable = new ilCheckboxInputGUI($lng->txt("jsmath_enable_user"), "enable");
-		$checked = ($ilUser->getPref("js_math") === FALSE) ? $jsMathSetting->get("makedefault") : $ilUser->getPref("js_math");
-		$enable->setChecked($checked);
-		$enable->setInfo($lng->txt("jsmath_enable_user_desc"));
-		$form->addItem($enable);
-
-		$form->addCommandButton("savejsMath", $lng->txt("save"));
-		$form->addCommandButton("showjsMath", $lng->txt("cancel"));
-
-		$this->tpl->setVariable("ADM_CONTENT", $form->getHTML());
-		$this->tpl->show();
-	}
-
-	function savejsMath()
-	{
-		global $ilCtrl, $ilUser;
-
-		include_once "./Services/Administration/classes/class.ilSetting.php";
-		$jsMathSetting = new ilSetting("jsMath");
-		if ($jsMathSetting->get("enable"))
-		{
-			if ($_POST["enable"])
-			{
-				$ilUser->writePref("js_math", "1");
-			}
-			else
-			{
-				$ilUser->writePref("js_math", "0");
-			}
-		}
-		$ilCtrl->redirect($this, "showjsMath");
-	}
-*/
 	// init sub tabs
 	function __initSubTabs($a_cmd)
 	{
@@ -300,8 +260,6 @@ class ilPersonalSettingsGUI
 		$showPassword = ($a_cmd == 'showPassword') ? true : false;
 		$showGeneralSettings = ($a_cmd == 'showGeneralSettings') ? true : false;
 		$showMailOptions = ($a_cmd == 'showMailOptions') ? true : false;
-//		$showjsMath = ($a_cmd == 'showjsMath') ? true : false;
-		$showChatOptions = ($a_cmd == 'showChatOptions') ? true : false;
 
 		// old profile
 
@@ -322,24 +280,17 @@ class ilPersonalSettingsGUI
 			$ilTabs->addTarget("mail_settings", $this->ctrl->getLinkTarget($this, "showMailOptions"), "", "", "", $showMailOptions);
 		}
 
-		$chatSettings = new ilSetting('chatroom');
-		$notificationSettings = new ilSetting('notifications');
-		if(
-			$chatSettings->get('chat_enabled', false) &&
-			$notificationSettings->get('enable_osd', false) &&
-			$chatSettings->get('play_invitation_sound', false)
-		)
-		{		
-			$ilTabs->addTarget('chat_settings', $this->ctrl->getLinkTarget($this, 'showChatOptions'), '', '', '', $showChatOptions);
+		require_once 'Modules/Chatroom/classes/class.ilPersonalChatSettingsFormGUI.php';
+		$chatSettingsGui = new ilPersonalChatSettingsFormGUI(false);
+		if($chatSettingsGui->isAccessible())
+		{
+			/** @var $ilTabs ilTabsGUI */
+			$ilTabs->addTarget(
+				'chat_settings', $this->ctrl->getLinkTarget($chatSettingsGui, 'showChatOptions'), '', 'ilPersonalChatSettingsFormGUI', '', method_exists($chatSettingsGui, $a_cmd)
+			);
 		}
 
 		include_once "./Services/Administration/classes/class.ilSetting.php";
-/*		$jsMathSetting = new ilSetting("jsMath");
-		if ($jsMathSetting->get("enable"))
-		{
-			$ilTabs->addTarget("jsmath_extt_jsmath", $this->ctrl->getLinkTarget($this, "showjsMath"),
-									 "", "", "", $showjsMath);
-		}*/
 		
 		if((bool)$ilSetting->get('user_delete_own_account') &&
 			$ilUser->getId() != SYSTEM_USER_ID)
@@ -350,120 +301,12 @@ class ilPersonalSettingsGUI
 	}
 
 	/**
-	 * @return ilPropertyFormGUI
-	 */
-	private function getChatSettingsForm()
-	{
-		/**
-		 * @var $ilSetting ilSetting
-		 * @var $lng       ilLanguage
-		 */
-		global $lng;
-
-		include_once 'Services/Form/classes/class.ilPropertyFormGUI.php';
-		$form = new ilPropertyFormGUI();
-
-		$form->setFormAction($this->ctrl->getFormAction($this, 'saveChatOptions'));
-		$form->setTitle($lng->txt("chat_settings"));
-
-		$chb = new ilCheckboxInputGUI('', 'play_invitation_sound');
-		$chb->setOptionTitle($this->lng->txt('play_invitation_sound'));
-		$form->addItem($chb);
-
-		$form->addCommandButton("saveChatOptions", $lng->txt("save"));
-
-		return $form;
-	}
-
-	/**
-	 *
-	 */
-	public function saveChatOptions()
-	{
-		/**
-		 * @var $ilUser    ilObjUser
-		 * @var $ilSetting ilSetting
-		 * @var $lng       ilLanguage
-		 * @var $ilCtrl    ilCtrl
-		 */
-		global $ilUser, $lng, $ilCtrl;
-
-		$chatSettings         = new ilSetting('chatroom');
-		$notificationSettings = new ilSetting('notifications');
-		if(!(
-			$chatSettings->get('chat_enabled', false) &&
-			$notificationSettings->get('enable_osd', false) &&
-			$chatSettings->get('play_invitation_sound', false)
-		)
-		)
-		{
-			$ilCtrl->redirect($this);
-		}
-
-		$form = $this->getChatSettingsForm();
-		if(!$form->checkInput())
-		{
-			$this->showChatOptions($form);
-			return;
-		}
-
-		$ilUser->setPref('chat_play_invitation_sound', (int)$form->getInput('play_invitation_sound'));
-		$ilUser->writePrefs();
-
-		ilUtil::sendSuccess($lng->txt('saved_successfully'));
-		$this->showChatOptions($form);
-	}
-
-	/**
 	 * Set header
 	 */
 	public function setHeader()
 	{
 		$this->tpl->setVariable('HEADER', $this->lng->txt('personal_settings'));
 	}
-
-	/**
-	 * @param ilPropertyFormGUI $form
-	 */
-	public function showChatOptions(ilPropertyFormGUI $form = null)
-	{
-		/**
-		 * @var $ilUser ilObjUser
-		 * @var $ilCtrl ilCtrl
-		 */
-		global $ilUser, $ilCtrl;
-
-		$chatSettings = new ilSetting('chatroom');
-		$notificationSettings = new ilSetting('notifications');
-		if(!(
-			$chatSettings->get('chat_enabled', false) &&
-			$notificationSettings->get('enable_osd', false) &&
-			$chatSettings->get('play_invitation_sound', false)
-		))
-		{
-			$ilCtrl->redirect($this);
-		}
-
-		$this->__initSubTabs('showChatOptions');
-		$this->setHeader();
-
-		if($form)
-		{
-			$form->setValuesByPost();
-		}
-		else
-		{
-			$form = $this->getChatSettingsForm();
-			$form->setValuesByArray(array(
-				'play_invitation_sound' => $ilUser->getPref('chat_play_invitation_sound')
-			));
-		}
-
-		$this->tpl->setContent($form->getHTML());
-		$this->tpl->show();
-	}
-	
-	
 	//
 	//
 	//	PASSWORD FORM
@@ -545,19 +388,8 @@ class ilPersonalSettingsGUI
 			$ipass->setRequired(true);
 			$ipass->setInfo(ilUtil::getPasswordRequirementsInfo());
 
-			if ($ilSetting->get("passwd_auto_generate") == 1)	// auto generation list
-			{
-				$ipass->setPreSelection(true);
-				
-				$this->form->addItem($ipass);
-				$this->form->addCommandButton("savePassword", $lng->txt("save"));
-				$this->form->addCommandButton("showPassword", $lng->txt("new_list_password"));
-			}
-			else  								// user enters password
-			{
-				$this->form->addItem($ipass);
-				$this->form->addCommandButton("savePassword", $lng->txt("save"));
-			}
+			$this->form->addItem($ipass);
+			$this->form->addCommandButton("savePassword", $lng->txt("save"));
 			
 			switch ($ilUser->getAuthMode(true))
 			{
@@ -567,8 +399,8 @@ class ilPersonalSettingsGUI
 					
 				case AUTH_SHIBBOLETH :
 				case AUTH_CAS:
-					require_once 'Services/WebDAV/classes/class.ilDAVServer.php';
-					if (ilDAVServer::_isActive())
+					require_once ('Services/WebDAV/classes/class.ilDAVActivationChecker.php');
+					if (ilDAVActivationChecker::_isActive())
 					{
 						$this->form->setTitle($lng->txt("chg_ilias_and_webfolder_password"));
 					}
@@ -601,8 +433,7 @@ class ilPersonalSettingsGUI
 		if ($ilUser->getAuthMode(true) != AUTH_LOCAL &&
 			($ilUser->getAuthMode(true) != AUTH_CAS || !$ilSetting->get("cas_allow_local")) &&
 			($ilUser->getAuthMode(true) != AUTH_SHIBBOLETH || !$ilSetting->get("shib_auth_allow_local")) &&
-			($ilUser->getAuthMode(true) != AUTH_SOAP || !$ilSetting->get("soap_auth_allow_local")) &&
-			($ilUser->getAuthMode(true) != AUTH_OPENID)
+			($ilUser->getAuthMode(true) != AUTH_SOAP || !$ilSetting->get("soap_auth_allow_local"))
 			)
 		{
 			return false;
@@ -651,17 +482,7 @@ class ilPersonalSettingsGUI
 				}
 			}
 
-			// select password from auto generated passwords
-			if ($this->ilias->getSetting("passwd_auto_generate") == 1 &&
-				(!ilUtil::isPassword($_POST["new_password"])))
-			{
-				$error = true;
-				$np->setAlert($this->lng->txt("passwd_not_selected"));
-			}
-				
-	
-			if ($this->ilias->getSetting("passwd_auto_generate") != 1 &&
-				!ilUtil::isPassword($_POST["new_password"],$custom_error))
+			if(!ilUtil::isPassword($_POST["new_password"],$custom_error))
 			{
 				$error = true;
 				if ($custom_error != '')
@@ -674,18 +495,15 @@ class ilPersonalSettingsGUI
 				}
 			}
 			$error_lng_var = '';
-			if(
-				$this->ilias->getSetting("passwd_auto_generate") != 1 &&
-				!ilUtil::isPasswordValidForUserContext($_POST["new_password"], $ilUser, $error_lng_var)
-			)
+			if(!ilUtil::isPasswordValidForUserContext($_POST["new_password"], $ilUser, $error_lng_var))
 			{
 				ilUtil::sendFailure($this->lng->txt('form_input_not_valid'));
 				$np->setAlert($this->lng->txt($error_lng_var));
 				$error = true;
 			}
-			if ($this->ilias->getSetting("passwd_auto_generate") != 1 &&
+			if(
 				($ilUser->isPasswordExpired() || $ilUser->isPasswordChangeDemanded()) &&
-				($_POST["current_password"] == $_POST["new_password"]))
+				$_POST["current_password"] == $_POST["new_password"])
 			{
 				$error = true;
 				$np->setAlert($this->lng->txt("new_pass_equals_old_pass"));
@@ -825,31 +643,25 @@ class ilPersonalSettingsGUI
 		}
 
 		// skin/style
-		include_once("./Services/Style/classes/class.ilObjStyleSettings.php");
 		if ($this->userSettingVisible("skin_style"))
 		{
-			$templates = $styleDefinition->getAllTemplates();
-			if (is_array($templates))
-			{ 
+			$skins = $styleDefinition->getAllSkins();
+			if (is_array($skins))
+			{
 				$si = new ilSelectInputGUI($this->lng->txt("skin_style"), "skin_style");
-				
-				$options = array();
-				foreach($templates as $template)
-				{
-					// get styles information of template
-					$styleDef = new ilStyleDefinition($template["id"]);
-					$styleDef->startParsing();
-					$styles = $styleDef->getStyles();
 
-					foreach($styles as $style)
+				$options = array();
+				foreach($skins as $skin)
+				{
+					foreach($skin->getStyles() as $style)
 					{
-						if (!ilObjStyleSettings::_lookupActivatedStyle($template["id"],$style["id"]))
+						include_once("./Services/Style/System/classes/class.ilSystemStyleSettings.php");
+						if (!ilSystemStyleSettings::_lookupActivatedStyle($skin->getId(),$style->getId()) || $style->isSubstyle())
 						{
 							continue;
 						}
 
-						$options[$template["id"].":".$style["id"]] =
-							$styleDef->getTemplateName()." / ".$style["name"];
+						$options[$skin->getId().":".$style->getId()] = $skin->getName()." / ".$style->getName();
 					}
 				}
 				$si->setOptions($options);
@@ -891,6 +703,7 @@ class ilPersonalSettingsGUI
 		}
 
 		// Users Online
+		/*
 		if ($this->userSettingVisible("show_users_online"))
 		{
 			$si = new ilSelectInputGUI($this->lng->txt("show_users_online"), "show_users_online");
@@ -903,7 +716,7 @@ class ilPersonalSettingsGUI
 			$si->setValue($ilUser->prefs["show_users_online"]);
 			$si->setDisabled($ilSetting->get("usr_settings_disable_show_users_online"));
 			$this->form->addItem($si);
-		}
+		}*/
 
 		// Store last visited
 		$lv = new ilSelectInputGUI($this->lng->txt("user_store_last_visited"), "store_last_visited");
@@ -916,14 +729,28 @@ class ilPersonalSettingsGUI
 		$this->form->addItem($lv);
 
 		// hide_own_online_status
-		if ($this->userSettingVisible("hide_own_online_status"))
-		{ 
-			$cb = new ilCheckboxInputGUI($this->lng->txt("hide_own_online_status"), "hide_own_online_status");
+		$awrn_set = new ilSetting("awrn");
+		if ($awrn_set->get("awrn_enabled", false) && $this->userSettingVisible("hide_own_online_status"))
+		{
+			$this->lng->loadLanguageModule("awrn");
+			$cb = new ilCheckboxInputGUI($this->lng->txt("awrn_hide_from_awareness"), "hide_own_online_status");
+			$cb->setInfo($this->lng->txt("awrn_hide_from_awareness_info"));
 			$cb->setChecked($ilUser->prefs["hide_own_online_status"] == "y");
 			$cb->setDisabled($ilSetting->get("usr_settings_disable_hide_own_online_status"));
 			$this->form->addItem($cb);
 		}
-		
+
+		require_once 'Services/Contact/BuddySystem/classes/class.ilBuddySystem.php';
+		if(ilBuddySystem::getInstance()->isEnabled() && $this->userSettingVisible('bs_allow_to_contact_me'))
+		{
+			$this->lng->loadLanguageModule('buddysystem');
+			$allow_to_contact_be = new ilCheckboxInputGUI($this->lng->txt('buddy_allow_to_contact_me'), 'bs_allow_to_contact_me');
+			$allow_to_contact_be->setInfo($this->lng->txt('buddy_allow_to_contact_me_info'));
+			$allow_to_contact_be->setChecked($ilUser->prefs['bs_allow_to_contact_me'] == 'y');
+			$allow_to_contact_be->setDisabled($ilSetting->get('usr_settings_disable_bs_allow_to_contact_me'));
+			$this->form->addItem($allow_to_contact_be);
+		}
+
 		include_once 'Services/Authentication/classes/class.ilSessionReminder.php';
 		if(ilSessionReminder::isGloballyActivated())
 		{
@@ -934,7 +761,7 @@ class ilPersonalSettingsGUI
 
 			$expires = ilSession::getSessionExpireValue();
 			$lead_time_gui = new ilNumberInputGUI($this->lng->txt('session_reminder_lead_time'), 'session_reminder_lead_time');
-			$lead_time_gui->setInfo(sprintf($this->lng->txt('session_reminder_lead_time_info'), ilFormat::_secondsToString($expires, true)));
+			$lead_time_gui->setInfo(sprintf($this->lng->txt('session_reminder_lead_time_info'), ilDatePresentation::secondsToString($expires, true)));
 
 			$min_value = ilSessionReminder::MIN_LEAD_TIME;
 			$max_value = max($min_value, ((int)$expires / 60) - 1);
@@ -1017,6 +844,7 @@ class ilPersonalSettingsGUI
 			// starting point: repository object
 			$repobj = new ilRadioOption($lng->txt("adm_user_starting_point_object"), ilUserUtil::START_REPOSITORY_OBJ);
 			$repobj_id = new ilTextInputGUI($lng->txt("adm_user_starting_point_ref_id"), "usr_start_ref_id");
+			$repobj_id->setInfo($lng->txt("adm_user_starting_point_ref_id_info"));
 			$repobj_id->setRequired(true);
 			$repobj_id->setSize(5);
 			if($si->getValue() == ilUserUtil::START_REPOSITORY_OBJ)
@@ -1097,10 +925,11 @@ class ilPersonalSettingsGUI
 			}
 
 			// set show users online
+			/*
 			if ($this->workWithUserSetting("show_users_online"))
 			{
 				$ilUser->setPref("show_users_online", $_POST["show_users_online"]);
-			}
+			}*/
 			
 			// store last visited?
 			global $ilNavigationHistory;
@@ -1124,6 +953,19 @@ class ilPersonalSettingsGUI
 				else
 				{
 					$ilUser->setPref("hide_own_online_status","n");
+				}
+			}
+
+			require_once 'Services/Contact/BuddySystem/classes/class.ilBuddySystem.php';
+			if(ilBuddySystem::getInstance()->isEnabled() && $this->workWithUserSetting('bs_allow_to_contact_me'))
+			{
+				if(isset($_POST['bs_allow_to_contact_me']) && $_POST['bs_allow_to_contact_me'] == 1)
+				{
+					$ilUser->setPref('bs_allow_to_contact_me', 'y');
+				}
+				else
+				{
+					$ilUser->setPref('bs_allow_to_contact_me', 'n');
 				}
 			}
 
@@ -1170,7 +1012,7 @@ class ilPersonalSettingsGUI
 			$user_settings->setTimeFormat((int)$this->form->getInput("time_format"));
 			$user_settings->save();
 						
-			ilUtil::sendSuccess($lng->txt("msg_obj_modified"), true);
+			ilUtil::sendSuccess($lng->txtlng("common", "msg_obj_modified", $ilUser->getLanguage()), true);
 			$ilCtrl->redirect($this, "showGeneralSettings");
 		}
 
@@ -1252,8 +1094,7 @@ class ilPersonalSettingsGUI
 				
 		// see ilStartupGUI::showLogout()
 		ilSession::setClosingContext(ilSession::SESSION_CLOSE_USER);		
-		$ilAuth->logout();
-		session_destroy();
+		$GLOBALS['DIC']['ilAuthSession']->logout();
 		
 		ilUtil::redirect("login.php?target=usr_".md5("usrdelown"));		
 	}
@@ -1343,9 +1184,7 @@ class ilPersonalSettingsGUI
 		$ilUser->delete();
 
 		// terminate session
-		$ilAuth->logout();
-		session_destroy();		
-		
+		$GLOBALS['DIC']['ilAuthSession']->logout();
 		ilUtil::redirect("login.php?accdel=1");		 		
 	}
 }

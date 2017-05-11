@@ -26,6 +26,7 @@ class ilPluginsOverviewTableGUI extends ilTable2GUI
 		$this->setId("cmpspl");
 				
 		$this->addColumn($lng->txt("cmps_plugin"), "plugin_name");
+		$this->addColumn($lng->txt("id"), "plugin_id");
 		$this->addColumn($lng->txt("cmps_plugin_slot"), "slot_name");
 		$this->addColumn($lng->txt("cmps_component"), "component_name");			
 		$this->addColumn($lng->txt("active"), "plugin_active");
@@ -155,12 +156,12 @@ class ilPluginsOverviewTableGUI extends ilTable2GUI
 			}
 							
 			$action[$lng->txt("cmps_deactivate")] = 
-				$ilCtrl->getLinkTarget($this->parent_obj, "deactivatePlugin");	
+				$ilCtrl->getLinkTarget($this->parent_obj, "deactivatePlugin");						
 		}
 		else if ($a_set["activation_possible"])		
 		{
 			$action[$lng->txt("cmps_activate")] = 
-				$ilCtrl->getLinkTarget($this->parent_obj, "activatePlugin");	
+				$ilCtrl->getLinkTarget($this->parent_obj, "activatePlugin");						
 		}
 		
 		// update button
@@ -169,6 +170,10 @@ class ilPluginsOverviewTableGUI extends ilTable2GUI
 			$action[$lng->txt("cmps_update")] =	
 				$ilCtrl->getLinkTarget($this->parent_obj, "updatePlugin");
 		}
+						
+		// #17428
+		$action[$lng->txt("cmps_uninstall")] = 
+			$ilCtrl->getLinkTarget($this->parent_obj, "confirmUninstallPlugin");	
 		
 		$ilCtrl->setParameter($this->parent_obj, "pname", "");
 
@@ -194,6 +199,7 @@ class ilPluginsOverviewTableGUI extends ilTable2GUI
 			? "<b>".$lng->txt("yes")."</b>"
 			: $lng->txt("no");
 		$this->tpl->setVariable("TXT_PLUGIN_NAME", $a_set["plugin_name"]);		
+		$this->tpl->setVariable("TXT_PLUGIN_ID", $a_set["plugin_id"]);		
 		$this->tpl->setVariable("TXT_ACTIVE", $act_str);		
 	}
 }

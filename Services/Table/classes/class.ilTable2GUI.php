@@ -35,6 +35,7 @@ class ilTable2GUI extends ilTableGUI
 	protected $selected_column = array();
 	protected $show_templates = false;
 	protected $show_rows_selector = true; // JF, 2014-10-27
+	protected $rows_selector_off = false;
 
 	protected $nav_determined= false;
 	protected $limit_determined = false;
@@ -314,7 +315,7 @@ class ilTable2GUI extends ilTableGUI
 	/**
 	 * Execute command.
 	 */
-	function &executeCommand()
+	function executeCommand()
 	{
 		global $ilCtrl;
 		
@@ -662,8 +663,7 @@ class ilTable2GUI extends ilTableGUI
 
 			case self::FILTER_DATE:
 				include_once("./Services/Form/classes/class.ilDateTimeInputGUI.php");
-				$item = new ilDateTimeInputGUI($caption, $id);
-				$item->setMode(ilDateTimeInputGUI::MODE_INPUT);
+				$item = new ilDateTimeInputGUI($caption, $id);			
 				break;
 
 			case self::FILTER_TEXT:
@@ -707,8 +707,7 @@ class ilTable2GUI extends ilTableGUI
 				$item->addCombinationItem("from", $combi_item, $lng->txt("from"));
 				$combi_item = new ilDateTimeInputGUI("", $id."_to");
 				$item->addCombinationItem("to", $combi_item, $lng->txt("to"));
-				$item->setComparisonMode(ilCombinationInputGUI::COMPARISON_ASCENDING);
-				$item->setMode(ilDateTimeInputGUI::MODE_INPUT);
+				$item->setComparisonMode(ilCombinationInputGUI::COMPARISON_ASCENDING);				
 				break;
 			
 			case self::FILTER_DATETIME_RANGE:
@@ -721,8 +720,7 @@ class ilTable2GUI extends ilTableGUI
 				$combi_item = new ilDateTimeInputGUI("", $id."_to");
 				$combi_item->setShowTime(true);
 				$item->addCombinationItem("to", $combi_item, $lng->txt("to"));
-				$item->setComparisonMode(ilCombinationInputGUI::COMPARISON_ASCENDING);
-				$item->setMode(ilDateTimeInputGUI::MODE_INPUT);
+				$item->setComparisonMode(ilCombinationInputGUI::COMPARISON_ASCENDING);				
 				break;
 
 			case self::FILTER_DURATION_RANGE:
@@ -952,7 +950,7 @@ class ilTable2GUI extends ilTableGUI
 	*
 	* @param	string	$a_formname	Form name
 	*/
-	function setFormName($a_formname)
+	function setFormName($a_formname = "")
 	{
 		$this->formname = $a_formname;
 	}
@@ -1191,10 +1189,10 @@ class ilTable2GUI extends ilTableGUI
 	
 	/**
 	 * Add Command button instance
-	 * 
-	 * @param ilButton $a_button
+	  
+	 * @param ilButtonBase $a_button
 	 */
-	function addCommandButtonInstance(ilButton $a_button)
+	function addCommandButtonInstance(ilButtonBase $a_button)
 	{
 		$this->buttons[] = $a_button;
 	}
@@ -1305,7 +1303,7 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 	 * @param	string		Width string
 	 */
 	final public function addColumn($a_text, $a_sort_field = "", $a_width = "",
-		$a_is_checkbox_action_column = false, $a_class = "", $a_tooltip = "")
+		$a_is_checkbox_action_column = false, $a_class = "", $a_tooltip = "", $a_tooltip_with_html = false)
 	{
 		$this->column[] = array(
 			"text" => $a_text,
@@ -1313,7 +1311,8 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 			"width" => $a_width,
 			"is_checkbox_action_column" => $a_is_checkbox_action_column,
 			"class" => $a_class,
-			"tooltip" => $a_tooltip
+			"tooltip" => $a_tooltip,
+			"tooltip_html" => (bool)$a_tooltip_with_html
 			);
 		if ($a_sort_field != "")
 		{
@@ -1382,12 +1381,12 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 		foreach ((array) $this->column as $column)
 		{
 			$ccnt++;
-			
 			//tooltip
 			if ($column["tooltip"] != "")
-			{
+			{				
 				include_once("./Services/UIComponent/Tooltip/classes/class.ilTooltipGUI.php");
-				ilTooltipGUI::addTooltip("thc_".$this->getId()."_".$ccnt, $column["tooltip"]);
+				ilTooltipGUI::addTooltip("thc_".$this->getId()."_".$ccnt, $column["tooltip"], 
+					"", "bottom center", "top center", !$column["tooltip_html"]);
 			}
 			if (!$this->enabled["sort"] || $column["sort_field"] == "" || $column["is_checkbox_action_column"])
 			{
@@ -1395,6 +1394,10 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 				if ($column["width"] != "")
 				{
 					$this->tpl->setVariable("TBL_COLUMN_WIDTH_NO_LINK"," width=\"".$column["width"]."\"");
+				}
+				if ($column["class"] != "")
+				{
+					$this->tpl->setVariable("TBL_COLUMN_CLASS_NO_LINK"," class=\"".$column["class"]."\"");
 				}
 				if (!$column["is_checkbox_action_column"])
 				{
@@ -1407,7 +1410,6 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 						ilUtil::img(ilUtil::getImagePath("spacer.png"), $lng->txt("action")));
 				}
 				$this->tpl->setVariable("HEAD_CELL_NL_ID", "thc_".$this->getId()."_".$ccnt);
-				
 				if ($column["class"] != "")
 				{
 					$this->tpl->setVariable("TBL_HEADER_CLASS"," " . $column["class"]);
@@ -1439,6 +1441,10 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 			if ($column["width"] != "")
 			{
 				$this->tpl->setVariable("TBL_COLUMN_WIDTH"," width=\"".$column["width"]."\"");
+			}
+			if ($column["class"] != "")
+			{
+				$this->tpl->setVariable("TBL_COLUMN_CLASS"," class=\"".$column["class"]."\"");
 			}
 
 			$lng_sort_column = $this->lng->txt("sort_by_this_column");
@@ -1989,31 +1995,68 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 	}
 	
 	/**
+	 * Check if filter element is based on adv md
+	 * 
+	 * @param ilAdvancedMDRecordGUI $a_gui
+	 * @param type $a_element
+	 * @return boolean
+	 */
+	protected function isAdvMDFilter(ilAdvancedMDRecordGUI $a_gui, $a_element)
+	{		
+		foreach($a_gui->getFilterElements(false) as $item)
+		{
+			if($item === $a_element)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
 	* Write filter values to session
 	*/
 	public function writeFilterToSession()
-	{
-		global $lng;
-		
-		$filter = $this->getFilterItems();
-		$opt_filter = $this->getFilterItems(true);
-		
-		foreach ($filter as $item)
+	{				
+		$advmd_record_gui = null;
+		if(method_exists($this, "getAdvMDRecordGUI"))
 		{
+			$advmd_record_gui = $this->getAdvMDRecordGUI();
+		}
+	
+		foreach ($this->getFilterItems() as $item)
+		{				
+			if($advmd_record_gui &&
+				$this->isAdvMDFilter($advmd_record_gui, $item))
+			{
+				continue;
+			}					
+			
 			if ($item->checkInput())
 			{
 				$item->setValueByArray($_POST);
 				$item->writeToSession();
 			}
 		}
-		foreach ($opt_filter as $item)
+		foreach ($this->getFilterItems(true) as $item)
 		{
+			if($advmd_record_gui &&
+				$this->isAdvMDFilter($advmd_record_gui, $item))
+			{
+				continue;
+			}	
+			
 			if ($item->checkInput())
 			{
 				$item->setValueByArray($_POST);
 				$item->writeToSession();
 			}
 		}
+		
+		if($advmd_record_gui)
+		{	
+			$advmd_record_gui->importFilter();
+		}	
 		
 		// #13209
 		unset($_REQUEST["tbltplcrt"]);
@@ -2322,7 +2365,7 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 				if ($this->getShowRowsSelector() && 
 					is_object($ilUser) &&
 					$this->getId() &&
-					$this->getLimit() < 9999) // JF, 2014-10-27
+					!$this->rows_selector_off) // JF, 2014-10-27
 				{
 					include_once("./Services/UIComponent/AdvancedSelectionList/classes/class.ilAdvancedSelectionListGUI.php");
 					$alist = new ilAdvancedSelectionListGUI();
@@ -2564,7 +2607,7 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 			{
 				if(!is_array($button))
 				{
-					if($button instanceof ilButton)
+					if($button instanceof ilButtonBase)
 					{	
 						$this->tpl->setVariable('BUTTON_OBJ', $button->render());	
 						
@@ -3138,19 +3181,19 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 			switch($format)
 			{
 				case self::EXPORT_EXCEL:
-					include_once "./Services/Excel/classes/class.ilExcelUtils.php";
-					include_once "./Services/Excel/classes/class.ilExcelWriterAdapter.php";
-					$adapter = new ilExcelWriterAdapter($filename.".xls", $send);
-					$workbook = $adapter->getWorkbook();
-					$worksheet = $workbook->addWorksheet();
-					$row = 0;
+					include_once "./Services/Excel/classes/class.ilExcel.php";
+					$excel = new ilExcel();			
+					$excel->addSheet($this->title 
+						? $this->title
+						: $this->lng->txt("export"));		
+					$row = 1;
 					
 					ob_start();
-					$this->fillMetaExcel($worksheet, $row); // row must be increment in fillMetaExcel()! (optional method)
+					$this->fillMetaExcel($excel, $row); // row must be increment in fillMetaExcel()! (optional method)
 					
 					// #14813
 					$pre = $row;
-					$this->fillHeaderExcel($worksheet, $row); // row should NOT be incremented in fillHeaderExcel()! (required method)
+					$this->fillHeaderExcel($excel, $row); // row should NOT be incremented in fillHeaderExcel()! (required method)
 					if($pre == $row)
 					{
 						$row++; 
@@ -3158,12 +3201,19 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 					
 					foreach($this->row_data as $set)
 					{						
-						$this->fillRowExcel($worksheet, $row, $set);
+						$this->fillRowExcel($excel, $row, $set);
 						$row++; // #14760
 					}
 					ob_end_clean();
 
-					$workbook->close();					
+					if($send)
+					{
+						$excel->sendToClient($filename);
+					}
+					else
+					{
+						$excel->writeToFile($filename);
+					}
 					break;
 
 				case self::EXPORT_CSV:
@@ -3209,10 +3259,10 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 	 * Add meta information to excel export. Likely to
 	 * be overwritten by derived class.
 	 *
-	 * @param	object	$a_worksheet	current sheet
-	 * @param	int		$a_row			row counter
+	 * @param	ilExcel	$a_excel	excel wrapper
+	 * @param	int		$a_row		row counter
 	 */
-	protected function fillMetaExcel($worksheet, &$a_row)
+	protected function fillMetaExcel(ilExcel $a_excel, &$a_row)
 	{
 
 	}
@@ -3221,10 +3271,10 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 	 * Excel Version of Fill Header. Likely to
 	 * be overwritten by derived class.
 	 *
-	 * @param	object	$a_worksheet	current sheet
-	 * @param	int		$a_row			row counter
+	 * @param	ilExcel	$a_excel	excel wrapper
+	 * @param	int		$a_row		row counter
 	 */
-	protected function fillHeaderExcel($worksheet, &$a_row)
+	protected function fillHeaderExcel(ilExcel $a_excel, &$a_row)
 	{
 		$col = 0;
 		foreach ($this->column as $column)
@@ -3232,31 +3282,30 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 			$title = strip_tags($column["text"]);
 			if($title)
 			{
-				$worksheet->write($a_row, $col, $title);
-				$col++;
+				$a_excel->setCell($a_row, $col++, $title);
 			}
 		}		
+		$a_excel->setBold("A".$a_row.":".$a_excel->getColumnCoord($col-1).$a_row);
 	}
 
 	/**
 	* Excel Version of Fill Row. Most likely to
 	* be overwritten by derived class.
 	*
-	* @param	object	$a_worksheet	current sheet
-	* @param	int		$a_row			row counter
-	* @param	array	$a_set			data array
+	* @param	ilExcel	$a_excel	excel wrapper
+	* @param	int		$a_row		row counter
+	* @param	array	$a_set		data array
 	*/
-	protected function fillRowExcel($a_worksheet, &$a_row, $a_set)
+	protected function fillRowExcel(ilExcel $a_excel, &$a_row, $a_set)
 	{
 		$col = 0;
-		foreach ($a_set as $key => $value)
+		foreach ($a_set as $value)
 		{
 			if(is_array($value))
 			{
 				$value = implode(', ', $value);
 			}
-			$a_worksheet->write($a_row, $col, strip_tags($value));
-			$col++;
+			$a_excel->setCell($a_row, $col++, $value);
 		}
 	}
 
@@ -3373,6 +3422,18 @@ echo "ilTabl2GUI->addSelectionButton() has been deprecated with 4.2. Please try 
 	public function getPreventDoubleSubmission()
 	{
 		return $this->prevent_double_submission;
+	}
+	
+	function setLimit($a_limit = 0, $a_default_limit = 0)
+	{
+		parent::setLimit($a_limit, $a_default_limit);
+		
+		// #17077 - if limit is set "manually" to 9999, force rows selector off
+		if($a_limit == 9999 &&
+			$this->limit_determined)
+		{		
+			$this->rows_selector_off = true;
+		}
 	}
 }
 

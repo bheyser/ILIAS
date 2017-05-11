@@ -17,7 +17,29 @@ include_once("./Services/DataSet/classes/class.ilDataSet.php");
  * @ingroup ServicesCOPage
  */
 class ilCOPageDataSet extends ilDataSet
-{	
+{
+	protected $master_lang_only = false;
+
+	/**
+	 * Set master language only
+	 *
+	 * @param bool $a_val export only master language
+	 */
+	function setMasterLanguageOnly($a_val)
+	{
+		$this->master_lang_only = $a_val;
+	}
+
+	/**
+	 * Get master language only
+	 *
+	 * @return bool export only master language
+	 */
+	function getMasterLanguageOnly()
+	{
+		return $this->master_lang_only;
+	}
+
 	/**
 	 * Get supported versions
 	 *
@@ -119,7 +141,7 @@ class ilCOPageDataSet extends ilDataSet
 		switch ($a_entity)
 		{
 			case "pgtp":
-				include_once("./Services/Style/classes/class.ilPageLayout.php");
+				include_once("./Services/COPage/Layout/classes/class.ilPageLayout.php");
 				$pt = new ilPageLayout();
 				$pt->setTitle($a_rec["Title"]);
 				$pt->setDescription($a_rec["Description"]);

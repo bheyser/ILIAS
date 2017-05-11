@@ -577,7 +577,7 @@ class ilCalendarSettings
 	 * @return
 	 */
 	private function readCalendarSettingsId()
-	{		
+	{
 		$query = "SELECT ref_id FROM object_reference obr ".
 			"JOIN object_data obd ON obd.obj_id = obr.obj_id ".
 			"WHERE type = 'cals'";

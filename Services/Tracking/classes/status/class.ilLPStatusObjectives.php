@@ -16,15 +16,15 @@ include_once 'Services/Tracking/classes/class.ilLPStatus.php';
 class ilLPStatusObjectives extends ilLPStatus
 {
 
-	function ilLPStatusObjectives($a_obj_id)
+	function __construct($a_obj_id)
 	{
 		global $ilDB;
 
-		parent::ilLPStatus($a_obj_id);
-		$this->db =& $ilDB;
+		parent::__construct($a_obj_id);
+		$this->db = $ilDB;
 	}
 	
-	function _getNotAttempted($a_obj_id)
+	static function _getNotAttempted($a_obj_id)
 	{
 		$users = array();
 		
@@ -40,7 +40,7 @@ class ilLPStatusObjectives extends ilLPStatus
 		return $users;
 	}
 
-	function _getInProgress($a_obj_id)
+	static function _getInProgress($a_obj_id)
 	{		
 		$objective_results = ilLPStatusWrapper::_getStatusInfo($a_obj_id);
 		$usr_ids = (array)$objective_results['user_status'][self::LP_STATUS_IN_PROGRESS_NUM];
@@ -63,7 +63,7 @@ class ilLPStatusObjectives extends ilLPStatus
 		return $usr_ids ? $usr_ids : array();
 	}
 
-	function _getCompleted($a_obj_id)
+	static function _getCompleted($a_obj_id)
 	{						
 		$objective_results = ilLPStatusWrapper::_getStatusInfo($a_obj_id);
 		$usr_ids = (array)$objective_results['user_status'][self::LP_STATUS_COMPLETED_NUM];
@@ -77,7 +77,7 @@ class ilLPStatusObjectives extends ilLPStatus
 		return $usr_ids ? $usr_ids : array();
 	}
 	
-	function _getFailed($a_obj_id)
+	static function _getFailed($a_obj_id)
 	{	
 		$objective_results = ilLPStatusWrapper::_getStatusInfo($a_obj_id);
 		$usr_ids = (array)$objective_results['user_status'][self::LP_STATUS_FAILED_NUM];		
@@ -91,7 +91,7 @@ class ilLPStatusObjectives extends ilLPStatus
 		return $usr_ids ? $usr_ids : array();		
 	}		
 	
-	function _getStatusInfo($a_obj_id)
+	static function _getStatusInfo($a_obj_id)
 	{
 		global $ilDB;
 
@@ -107,15 +107,26 @@ class ilLPStatusObjectives extends ilLPStatus
 			$in = $ilDB->in('objective_id',$status_info['objectives'],false,'integer');
 						
 			include_once "Modules/Course/classes/Objectives/class.ilLOUserResults.php";
-			foreach(ilLOUserResults::getSummarizedObjectiveStatusForLP($status_info['objectives']) as $user_id => $user_status)
+			foreach(ilLOUserResults::getSummarizedObjectiveStatusForLP($a_obj_id, $status_info['objectives']) as $user_id => $user_status)
 			{
 				$status_info['user_status'][$user_status][] = $user_id;							
-			}						
+			}		
+			
+			// change event should lead to "in progress" - see determineStatus()
+			include_once("./Services/Tracking/classes/class.ilChangeEvent.php");
+			foreach(ilChangeEvent::lookupUsersInProgress($a_obj_id) as $user_id)
+			{
+				if(!is_array($status_info['user_status'][ilLPStatus::LP_STATUS_IN_PROGRESS_NUM]) ||
+					!in_array($user_id, $status_info['user_status'][ilLPStatus::LP_STATUS_IN_PROGRESS_NUM]))
+				{
+					$status_info['user_status'][ilLPStatus::LP_STATUS_IN_PROGRESS_NUM][] = $user_id;
+				}
+			}
 			
 			// Read title/description
 			$query = "SELECT * FROM crs_objectives WHERE ".$in;
 			$res = $ilDB->query($query);
-			while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+			while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 			{
 				$status_info['objective_title'][$row->objective_id] = $row->title;
 				$status_info['objective_description'][$row->objective_id] = $row->description;
@@ -154,16 +165,20 @@ class ilLPStatusObjectives extends ilLPStatus
 				include_once("./Services/Tracking/classes/class.ilChangeEvent.php");
 				if (ilChangeEvent::hasAccessed($a_obj_id, $a_user_id))
 				{
-					// change_event is of no use when no objective has been tried
-					// $status = self::LP_STATUS_IN_PROGRESS_NUM;
+					// an initial test (only) should also lead to "in progress"
+					$status = self::LP_STATUS_IN_PROGRESS_NUM;
 
 					include_once 'Modules/Course/classes/class.ilCourseObjective.php';				
 					$objectives = ilCourseObjective::_getObjectiveIds($a_obj_id, true);					
 					if ($objectives)
 					{												
 						// #14051 - getSummarizedObjectiveStatusForLP() might return null
-						include_once "Modules/Course/classes/Objectives/class.ilLOUserResults.php";						
-						$status = (int)ilLOUserResults::getSummarizedObjectiveStatusForLP($objectives, $a_user_id);													
+						include_once "Modules/Course/classes/Objectives/class.ilLOUserResults.php";												
+						$objtv_status = ilLOUserResults::getSummarizedObjectiveStatusForLP($a_obj_id, $objectives, $a_user_id);													
+						if($objtv_status !== null)
+						{
+							$status = $objtv_status;
+						}
 					}					
 				}
 				break;			

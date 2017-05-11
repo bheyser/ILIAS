@@ -49,18 +49,19 @@ class ilRepositorySearchGUI
 	protected $search_title = '';
 	
 	var $search_type = 'usr';
+	protected $user_limitations = true;
 
 	/**
 	* Constructor
 	* @access public
 	*/
-	function ilRepositorySearchGUI()
+	function __construct()
 	{
 		global $ilCtrl,$tpl,$lng;
 
-		$this->ctrl =& $ilCtrl;
-		$this->tpl =& $tpl;
-		$this->lng =& $lng;
+		$this->ctrl = $ilCtrl;
+		$this->tpl = $tpl;
+		$this->lng = $lng;
 		$this->lng->loadLanguageModule('search');
 		$this->lng->loadLanguageModule('crs');
 
@@ -71,7 +72,7 @@ class ilRepositorySearchGUI
 
 		$this->result_obj = new ilSearchResult();
 		$this->result_obj->setMaxHits(1000000);
-		$this->settings =& new ilSearchSettings();
+		$this->settings = new ilSearchSettings();
 
 	}
 
@@ -125,7 +126,7 @@ class ilRepositorySearchGUI
 	 *
 	 * @return ilToolbarGUI
 	 */
-	public static function fillAutoCompleteToolbar($parent_object, ilToolbarGUI $toolbar = null, $a_options = array())
+	public static function fillAutoCompleteToolbar($parent_object, ilToolbarGUI $toolbar = null, $a_options = array(), $a_sticky = false)
 	{
 		global $ilToolbar, $lng, $ilCtrl, $tree;
 
@@ -147,6 +148,10 @@ class ilRepositorySearchGUI
 		{
 			$a_options['submit_name'] = $lng->txt('btn_add');
 		}
+		if(!isset($a_options['user_type_default']))
+		{
+			$a_options['user_type_default'] = null;
+		}
 		
 		$ajax_url = $ilCtrl->getLinkTargetByClass(array(get_class($parent_object),'ilRepositorySearchGUI'), 
 			'doUserAutoComplete', '', true,false);
@@ -155,22 +160,71 @@ class ilRepositorySearchGUI
 		$ul = new ilTextInputGUI($a_options['auto_complete_name'], 'user_login');
 		$ul->setDataSource($ajax_url);		
 		$ul->setSize($a_options['auto_complete_size']);
-		$toolbar->addInputItem($ul, true);
+		if(!$a_sticky)
+		{
+			$toolbar->addInputItem($ul, true);
+		}
+		else
+		{
+			$toolbar->addStickyItem($ul, true);
+		}
 
 		if(count((array) $a_options['user_type']))
 		{
 			include_once './Services/Form/classes/class.ilSelectInputGUI.php';
 			$si = new ilSelectInputGUI("", "user_type");
 			$si->setOptions($a_options['user_type']);
-			$toolbar->addInputItem($si);
+			$si->setValue($a_options['user_type_default']);
+			if(!$a_sticky)
+			{
+				$toolbar->addInputItem($si);
+			}
+			else
+			{
+				$toolbar->addStickyItem($si);
+			}
 		}
 		
-		include_once "Services/UIComponent/Button/classes/class.ilSubmitButton.php";
-		$button = ilSubmitButton::getInstance();
-		$button->setCaption($a_options['submit_name'], false);
-		$button->setCommand('addUserFromAutoComplete');
-		$toolbar->addButtonInstance($button);
+		include_once './Services/User/classes/class.ilUserClipboard.php';
+		$clip = ilUserClipboard::getInstance($GLOBALS['ilUser']->getId());
+		if($clip->hasContent())
+		{
+			include_once './Services/UIComponent/SplitButton/classes/class.ilSplitButtonGUI.php';
+			$action_button = ilSplitButtonGUI::getInstance();
 
+			include_once './Services/UIComponent/Button/classes/class.ilLinkButton.php';
+			$add_button = ilSubmitButton::getInstance();
+			$add_button->setCaption($a_options['submit_name'], false);
+			$add_button->setCommand('addUserFromAutoComplete');
+
+			$action_button->setDefaultButton($add_button);
+
+			include_once './Services/UIComponent/Button/classes/class.ilLinkButton.php';
+			$clip_button = ilSubmitButton::getInstance();
+			$clip_button->addCSSClass('btn btndefault');
+			$clip_button->setCaption('Add from clipboard', false);
+			$clip_button->setCommand('showClipboard');
+
+			$action_button->addMenuItem(new ilButtonToSplitButtonMenuItemAdapter($clip_button));
+
+			$toolbar->addButtonInstance($action_button);
+		}
+		else
+		{
+			include_once "Services/UIComponent/Button/classes/class.ilSubmitButton.php";
+			$button = ilSubmitButton::getInstance();
+			$button->setCaption($a_options['submit_name'], false);
+			$button->setCommand('addUserFromAutoComplete');
+			if(!$a_sticky)
+			{
+				$toolbar->addButtonInstance($button);
+			}
+			else
+			{
+				$toolbar->addStickyItem($button);
+			}
+		}
+		
 		if((bool)$a_options['add_search'] || 
 			is_numeric($a_options['add_from_container']))
 		{		
@@ -253,7 +307,7 @@ class ilRepositorySearchGUI
 
 		include_once './Services/User/classes/class.ilUserAutoComplete.php';
 		$auto = new ilUserAutoComplete();
-		
+
 		if(($_REQUEST['fetchall']))
 		{
 			$auto->setLimit(ilUserAutoComplete::MAX_ENTRIES);
@@ -263,6 +317,8 @@ class ilRepositorySearchGUI
 		$auto->setSearchFields($a_fields);
 		$auto->setResultField($result_field);
 		$auto->enableFieldSearchableCheck(true);
+		$auto->setUserLimitations($this->getUserLimitations());
+
 		echo $auto->getList($_REQUEST['term']);
 		exit();
 	}
@@ -285,7 +341,7 @@ class ilRepositorySearchGUI
 	* Control
 	* @access public
 	*/
-	function &executeCommand()
+	function executeCommand()
 	{
 		global $rbacsystem;
 
@@ -362,12 +418,91 @@ class ilRepositorySearchGUI
 			}
 		}
 
-		$user_type = isset($_POST['user_type']) ? $_POST['user_type'] : 0;
+		$user_type = isset($_REQUEST['user_type']) ? $_REQUEST['user_type'] : 0;
 
 		if(!$class->$method($user_ids,$user_type))
 		{
 			$GLOBALS['ilCtrl']->returnToParent($this);
 		}
+	}
+	
+	protected function showClipboard()
+	{
+		$GLOBALS['ilCtrl']->setParameter($this, 'user_type', (int) $_REQUEST['user_type']);
+		
+		ilLoggerFactory::getLogger('crs')->dump($_REQUEST);
+		
+		$GLOBALS['ilTabs']->clearTargets();
+		$GLOBALS['ilTabs']->setBackTarget(
+			$GLOBALS['lng']->txt('back'),
+			$GLOBALS['ilCtrl']->getParentReturn($this)
+		);
+		
+		include_once './Services/User/classes/class.ilUserClipboardTableGUI.php';
+		$clip = new ilUserClipboardTableGUI($this, 'showClipboard', $GLOBALS['ilUser']->getId());
+		$clip->setFormAction($GLOBALS['ilCtrl']->getFormAction($this));
+		$clip->init();
+		$clip->parse();
+		
+		$GLOBALS['tpl']->setContent($clip->getHTML());
+	}
+	
+	/**
+	 * add users from clipboard
+	 */
+	protected function addFromClipboard()
+	{
+		$GLOBALS['ilCtrl']->setParameter($this, 'user_type', (int) $_REQUEST['user_type']);
+		$users = (array) $_POST['uids'];
+		if(!count($users))
+		{
+			ilUtil::sendFailure($this->lng->txt('select_one'), true);
+			$GLOBALS['ilCtrl']->redirect($this, 'showClipboard');
+		}
+		$class = $this->callback['class'];
+		$method = $this->callback['method'];
+		$user_type = isset($_REQUEST['user_type']) ? $_REQUEST['user_type'] : 0;
+
+		if(!$class->$method($users,$user_type))
+		{
+			$GLOBALS['ilCtrl']->returnToParent($this);
+		}
+	}
+
+	/**
+	 * Remove from clipboard
+	 */
+	protected function removeFromClipboard()
+	{
+		$GLOBALS['ilCtrl']->setParameter($this, 'user_type', (int) $_REQUEST['user_type']);
+		$users = (array) $_POST['uids'];
+		if(!count($users))
+		{
+			ilUtil::sendFailure($this->lng->txt('select_one'), true);
+			$GLOBALS['ilCtrl']->redirect($this, 'showClipboard');
+		}
+
+		include_once './Services/User/classes/class.ilUserClipboard.php';
+		$clip = ilUserClipboard::getInstance($GLOBALS['ilUser']->getId());
+		$clip->delete($users);
+		$clip->save();
+		
+		ilUtil::sendSuccess($this->lng->txt('settings_saved'),true);
+		$this->ctrl->redirect($this, 'showClipboard');
+	}
+
+	/**
+	 * Remove from clipboard
+	 */
+	protected function emptyClipboard()
+	{
+		include_once './Services/User/classes/class.ilUserClipboard.php';
+		$clip = ilUserClipboard::getInstance($GLOBALS['ilUser']->getId());
+		$clip->clear();
+		$clip->save();
+		
+		ilUtil::sendSuccess($this->lng->txt('settings_saved'),true);
+		$this->ctrl->returnToParent($this);
 	}
 
 	/**
@@ -593,6 +728,9 @@ class ilRepositorySearchGUI
 			default:
 				echo 'not defined';
 		}
+		
+		$GLOBALS['DIC']->logger()->src()->dump($this->result_obj->getEntries());
+		
 		$this->result_obj->setRequiredPermission('read');
 		$this->result_obj->addObserver($this, 'searchResultFilterListener');
 		$this->result_obj->filter(ROOT_FOLDER_ID,QP_COMBINATION_OR);
@@ -670,6 +808,15 @@ class ilRepositorySearchGUI
 					break;
 
 				case FIELD_TYPE_SELECT:
+					
+					if($info['db'] == 'org_units')
+					{
+						$user_search = ilObjectSearchFactory::getUserOrgUnitAssignmentInstance($query_parser);
+						$result_obj = $user_search->performSearch();
+						$this->__storeEntries($result_obj);
+						break;
+					}
+					
 					// Do a phrase query for select fields
 					$query_parser = $this->__parseQueryString('"'.$query_string.'"', true, true);
 
@@ -688,6 +835,7 @@ class ilRepositorySearchGUI
 					$result_obj = $multi_search->performSearch();
 					$this->__storeEntries($result_obj);
 					break;
+				
 			}
 		}
 	}
@@ -943,6 +1091,7 @@ class ilRepositorySearchGUI
 		{
 			$table->addMultiCommand('addUser', $this->lng->txt('btn_add'));
 		}
+		$table->setUserLimitations($this->getUserLimitations());
 		$table->parseUserIds($a_usr_ids);
 		
 		$this->tpl->setVariable('RES_TABLE',$table->getHTML());
@@ -1110,6 +1259,25 @@ class ilRepositorySearchGUI
 
 		$this->ctrl->setParameter($this->callback["class"], "obj", implode(";", $_POST["obj"]));
 		$this->ctrl->redirect($this->callback["class"], $this->callback["method"]);
+	}
+
+	/**
+	 * allow user limitations like inactive and access limitations
+	 *
+	 * @param bool $a_limitations
+	 */
+	public function setUserLimitations($a_limitations)
+	{
+		$this->user_limitations = (bool) $a_limitations;
+	}
+
+	/**
+	 * allow user limitations like inactive and access limitations
+	 * @return bool
+	 */
+	public function getUserLimitations()
+	{
+		return $this->user_limitations;
 	}
 }
 ?>

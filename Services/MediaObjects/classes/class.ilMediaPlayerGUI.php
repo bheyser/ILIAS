@@ -234,19 +234,39 @@ class ilMediaPlayerGUI
 	{
 		return $this->download_link;
 	}
-	
+
+	/**
+	 * Init Javascript
+	 * @param null $a_tpl
+	 */
+	public static function initJavascript($a_tpl = null)
+	{
+		global $tpl;
+
+		if ($a_tpl == null)
+		{
+			$a_tpl = $tpl;
+		}
+
+		include_once("./Services/YUI/classes/class.ilYuiUtil.php");
+		ilYuiUtil::initConnection();
+
+		$a_tpl->addJavascript("./Services/MediaObjects/js/MediaObjects.js");
+
+		include_once("./Services/MediaObjects/classes/class.ilPlayerUtil.php");
+		ilPlayerUtil::initMediaElementJs($a_tpl);
+	}
+
+
 	/**
 	* Get Html for MP3 Player
 	*/
 	function getMp3PlayerHtml($a_preview = false)
 	{
 		global $tpl, $lng;
-		
-		include_once("./Services/YUI/classes/class.ilYuiUtil.php");
-		ilYuiUtil::initConnection();
-		
-		$tpl->addJavascript("./Services/MediaObjects/js/MediaObjects.js");
-		
+
+		self::initJavascript($tpl);
+
 		if (!self::$lightbox_initialized && $a_preview)
 		{
 			include_once("./Services/UIComponent/Lightbox/classes/class.ilLightboxGUI.php");
@@ -336,7 +356,6 @@ class ilMediaPlayerGUI
 		if (in_array($mimeType, array("video/mp4", "video/m4v", "video/rtmp",
 			"video/x-flv", "video/webm", "video/youtube", "video/vimeo", "video/ogg")))
 		{
-			ilPlayerUtil::initMediaElementJs();
 
 			if ($mimeType == "video/quicktime")
 			{
@@ -501,11 +520,14 @@ class ilMediaPlayerGUI
 			include_once("./Services/UIComponent/Glyph/classes/class.ilGlyphGUI.php");
 			$mp_tpl->setVariable("ICLOSE", ilGlyphGUI::get(ilGlyphGUI::CLOSE));
 			
-			$height = $this->getDisplayHeight();
-			$width = $this->getDisplayWidth();
- 
-			$mp_tpl->setVariable("IHEIGHT", $height);
-			$mp_tpl->setVariable("IWIDTH", $width);
+			if($this->event_callback_url)
+			{
+				$mp_tpl->setVariable("IMG_CALLBACK_URL", $this->event_callback_url);
+				$mp_tpl->setVariable("IMG_CALLBACK_PLAYER_NR", $this->id."_".$this->current_nr);
+			}
+			
+			$mp_tpl->setVariable("IHEIGHT", $this->getDisplayHeight());
+			$mp_tpl->setVariable("IWIDTH", $this->getDisplayWidth());
 			$mp_tpl->parseCurrentBlock();
 			
 			return $mp_tpl->get();

@@ -2,6 +2,8 @@
 /* Copyright (c) 1998-2013 ILIAS open source, Extended GPL, see docs/LICENSE */
 
 require_once 'Modules/Test/classes/class.ilTestSequence.php';
+require_once 'Modules/Test/interfaces/interface.ilTestRandomQuestionSequence.php';
+
 
 /**
  * @author		Björn Heyser <bheyser@databay.de>
@@ -9,11 +11,11 @@ require_once 'Modules/Test/classes/class.ilTestSequence.php';
  *
  * @package     Modules/Test
  */
-class ilTestSequenceRandomQuestionSet extends ilTestSequence
+class ilTestSequenceRandomQuestionSet extends ilTestSequence implements ilTestRandomQuestionSequence
 {
 	private $responsibleSourcePoolDefinitionByQuestion = array();
 
-	public function loadQuestions()
+	public function loadQuestions(ilTestQuestionSetConfig $testQuestionSetConfig = null, $taxonomyFilterSelection = array())
 	{
 		global $ilDB;
 

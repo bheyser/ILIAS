@@ -31,7 +31,7 @@ class ilLMObject
 	/**
 	* @param	object		$a_content_obj		content object (digi book or learning module)
 	*/
-	function ilLMObject($a_content_obj, $a_id = 0)
+	function __construct($a_content_obj, $a_id = 0)
 	{
 		global $ilias;
 
@@ -75,10 +75,20 @@ class ilLMObject
 					$md_des = $md_gen->getDescription($id);
 //					ilLMObject::_writeDescription($this->getId(),$md_des->getDescription());
 					break;
-				}
-
+				}				
 				break;
-
+				
+			case 'Educational':
+				include_once("./Services/Object/classes/class.ilObjectLP.php");				
+				$obj_lp = ilObjectLP::getInstance($this->getLMId());
+				if(in_array($obj_lp->getCurrentMode(), 
+					array(ilLPObjSettings::LP_MODE_TLT, ilLPObjSettings::LP_MODE_COLLECTION_TLT)))
+				{								 
+					include_once("./Services/Tracking/classes/class.ilLPStatusWrapper.php");				
+					ilLPStatusWrapper::_refreshStatus($this->getLMId());
+				}
+				break;
+			
 			default:
 		}
 		return true;
@@ -88,7 +98,7 @@ class ilLMObject
 	/**
 	* lookup named identifier (ILIAS_NID)
 	*/
-	function _lookupNID($a_lm_id, $a_lm_obj_id, $a_type)
+	static function _lookupNID($a_lm_id, $a_lm_obj_id, $a_type)
 	{
 		include_once 'Services/MetaData/classes/class.ilMD.php';
 //echo "-".$a_lm_id."-".$a_lm_obj_id."-".$a_type."-";
@@ -140,15 +150,15 @@ class ilLMObject
 		include_once("Services/MetaData/classes/class.ilMDGeneral.php");
 		include_once("Services/MetaData/classes/class.ilMDDescription.php");
 
-		$md =& new ilMD($this->getLMId(), $this->getId(), $this->getType());
-		$md_gen =& $md->getGeneral();
+		$md = new ilMD($this->getLMId(), $this->getId(), $this->getType());
+		$md_gen = $md->getGeneral();
 		$md_gen->setTitle($this->getTitle());
 
 		// sets first description (maybe not appropriate)
-		$md_des_ids =& $md_gen->getDescriptionIds();
+		$md_des_ids = $md_gen->getDescriptionIds();
 		if (count($md_des_ids) > 0)
 		{
-			$md_des =& $md_gen->getDescription($md_des_ids[0]);
+			$md_des = $md_gen->getDescription($md_des_ids[0]);
 //			$md_des->setDescription($this->getDescription());
 			$md_des->update();
 		}
@@ -297,7 +307,7 @@ class ilLMObject
 	}
 
 
-	function _writeTitle($a_obj_id, $a_title)
+	static function _writeTitle($a_obj_id, $a_title)
 	{
 		global $ilDB;
 
@@ -341,7 +351,7 @@ class ilLMObject
 
 	function setContentObject(&$a_content_obj)
 	{
-		$this->content_object =& $a_content_obj;
+		$this->content_object = $a_content_obj;
 	}
 
 	function &getContentObject()
@@ -396,7 +406,7 @@ class ilLMObject
 	* @param	string	$a_import_id		import id
 	* @access	public
 	*/
-	function _writeImportId($a_id, $a_import_id)
+	static function _writeImportId($a_id, $a_import_id)
 	{
 		global $ilDB;
 
@@ -465,7 +475,7 @@ class ilLMObject
 	* @param	integer	content object id
 	* @return	of the jedi
 	*/
-	function _writePublicAccessStatus($a_pages,$a_cont_obj_id)
+	static function _writePublicAccessStatus($a_pages,$a_cont_obj_id)
 	{
 		global $ilDB,$ilLog,$ilErr,$ilTree;
 		
@@ -585,7 +595,7 @@ class ilLMObject
 	*
 	* @return	int		id
 	*/
-	function _getIdForImportId($a_import_id)
+	static function _getIdForImportId($a_import_id)
 	{
 		global $ilDB;
 		
@@ -599,7 +609,8 @@ class ilLMObject
 
 			// link only in learning module, that is not trashed
 			include_once("./Services/Help/classes/class.ilObjHelpSettings.php");
-			if (ilObject::_hasUntrashedReference($lm_id) ||
+			$ref_ids  = ilObject::_getAllReferences($lm_id);	// will be 0 if import of lm is in progress (new import)
+			if (count($ref_ids) == 0 || ilObject::_hasUntrashedReference($lm_id) ||
 				ilObjHelpSettings::isHelpLM($lm_id))
 			{
 				return $obj_rec["obj_id"];
@@ -618,7 +629,7 @@ class ilLMObject
 	*
 	* @return	int		id
 	*/
-	function _getAllObjectsForImportId($a_import_id, $a_in_lm = 0)
+	static function _getAllObjectsForImportId($a_import_id, $a_in_lm = 0)
 	{
 		global $ilDB;
 		
@@ -652,7 +663,7 @@ class ilLMObject
 	*
 	* @return	boolean		true, if lm content object exists
 	*/
-	function _exists($a_id)
+	static function _exists($a_id)
 	{
 		global $ilDB;
 		
@@ -679,7 +690,7 @@ class ilLMObject
 	/**
 	* static
 	*/
-	function getObjectList($lm_id, $type = "")
+	static function getObjectList($lm_id, $type = "")
 	{
 		global $ilDB;
 		
@@ -707,12 +718,10 @@ class ilLMObject
 	/**
 	* delete all objects of content object (digi book / learning module)
 	*/
-	function _deleteAllObjectData(&$a_cobj)
+	static function _deleteAllObjectData(&$a_cobj)
 	{
 		global $ilDB;
 		
-		include_once './Services/Xml/classes/class.ilNestedSetXML.php';
-
 		$query = "SELECT * FROM lm_data ".
 			"WHERE lm_id= ".$ilDB->quote($a_cobj->getId(), "integer");
 		$obj_set = $ilDB->query($query);
@@ -734,7 +743,7 @@ class ilLMObject
 	/**
 	* get learning module / digibook id for lm object
 	*/
-	function _lookupContObjID($a_id)
+	static function _lookupContObjID($a_id)
 	{
 		global $ilDB;
 
@@ -778,12 +787,12 @@ class ilLMObject
 			if ($a_obj->getType() == "st")
 			{
 				$s_types = array("st", "pg");
-				$childs =& $tree->getChildsByTypeFilter($parent_id, $s_types);
+				$childs = $tree->getChildsByTypeFilter($parent_id, $s_types);
 			}
 			else
 			{
 				$s_types = "pg";
-				$childs =& $tree->getChildsByType($parent_id, $s_types);
+				$childs = $tree->getChildsByType($parent_id, $s_types);
 			}
 
 			if (count($childs) == 0)
@@ -825,7 +834,7 @@ class ilLMObject
 	/**
 	* Copy a set of chapters/pages into the clipboard
 	*/
-	function clipboardCut($a_cont_obj_id, $a_ids)
+	static function clipboardCut($a_cont_obj_id, $a_ids)
 	{
 		$tree = ilLMObject::getTree($a_cont_obj_id);
 		
@@ -884,9 +893,10 @@ class ilLMObject
 		
 		// put them into the clipboard
 		$time = date("Y-m-d H:i:s", time());
+		$order = 0;
 		foreach ($a_ids as $id)
 		{
-			$curnode = "";
+			$curnode = array();
 			if ($tree->isInTree($id))
 			{
 				$curnode = $tree->getNodeData($id);
@@ -1016,9 +1026,12 @@ class ilLMObject
 		}
 		if (is_array($a_titles))
 		{
+			include_once("./Services/Form/classes/class.ilFormPropertyGUI.php");
 			include_once("./Services/MetaData/classes/class.ilMD.php");
 			foreach($a_titles as $id => $title)
 			{
+				// see #20375
+				$title = ilFormPropertyGUI::removeProhibitedCharacters($title);
 				if ($a_lang == "-")
 				{
 					$lmobj = ilLMObjectFactory::getInstance($a_lm, $id, false);
@@ -1511,11 +1524,13 @@ class ilLMObject
 		
 		if ($a_node["type"] == "st")
 		{
-			return ilStructureObject::_getPresentationTitle($a_node["child"],
-				$a_include_numbers, $a_time_scheduled_activation, $a_lm_id, $a_lang);
+			include_once './Modules/LearningModule/classes/class.ilStructureObject.php';
+			return ilStructureObject::_getPresentationTitle($a_node["child"], IL_CHAPTER_TITLE,
+				$a_include_numbers, $a_time_scheduled_activation, $a_force_content, $a_lm_id, $a_lang);
 		}
 		else
 		{
+			include_once './Modules/LearningModule/classes/class.ilLMPageObject.php';
 			return ilLMPageObject::_getPresentationTitle($a_node["child"],
 				$a_mode, $a_include_numbers, $a_time_scheduled_activation,
 				$a_force_content, $a_lm_id, $a_lang);

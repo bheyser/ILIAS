@@ -28,10 +28,10 @@ class ilObjSAHSLearningModule extends ilObject
 	* @param	integer	reference_id or object_id
 	* @param	boolean	treat the id as reference_id (true) or object_id (false)
 	*/
-	function ilObjSAHSLearningModule($a_id = 0, $a_call_by_reference = true)
+	function __construct($a_id = 0, $a_call_by_reference = true)
 	{
 		$this->type = "sahs";
-		parent::ilObject($a_id,$a_call_by_reference);
+		parent::__construct($a_id,$a_call_by_reference);
 	}
 
 	/**
@@ -106,8 +106,9 @@ class ilObjSAHSLearningModule extends ilObject
 			$this->setAutoSuspend(ilUtil::yn2tf($lm_rec["auto_suspend"]));
 			$this->setIe_compatibility(ilUtil::yn2tf($lm_rec["ie_compatibility"]));
 			$this->setIe_force_render(ilUtil::yn2tf($lm_rec["ie_force_render"]));
+			$this->setMasteryScore($lm_rec["mastery_score"]);
 			
-			include_once("./Services/Style/classes/class.ilObjStyleSheet.php");
+			include_once("./Services/Style/Content/classes/class.ilObjStyleSheet.php");
 			if (ilObject::_lookupType($this->getStyleSheetId()) != "sty")
 			{
 				$this->setStyleSheetId(0);
@@ -118,7 +119,7 @@ class ilObjSAHSLearningModule extends ilObject
 	/**
 	* check wether scorm module is online
 	*/
-	function _lookupOnline($a_id)
+	static function _lookupOnline($a_id)
 	{
 		global $ilDB;
 		
@@ -134,7 +135,7 @@ class ilObjSAHSLearningModule extends ilObject
 	 * 
 	 * @param int $a_id scorm lm id
 	 */
-	function getAffectiveLocalization($a_id)
+	static function getAffectiveLocalization($a_id)
 	{
 		global $ilDB, $lng;
 		
@@ -154,7 +155,7 @@ class ilObjSAHSLearningModule extends ilObject
 	*
 	* @param	int		$a_id		object id
 	*/
-	function _lookupSubType($a_obj_id)
+	static function _lookupSubType($a_obj_id)
 	{
 		global $ilDB;
 
@@ -399,7 +400,7 @@ class ilObjSAHSLearningModule extends ilObject
 	}
 	
 	/**
-	* get max attempt
+	* get module version
 	*/
 	function getModuleVersion()
 	{
@@ -783,6 +784,94 @@ class ilObjSAHSLearningModule extends ilObject
 
 
 	/**
+	* get mastery_score
+	*/
+	function getMasteryScore()
+	{
+		return $this->mastery_score;
+	}
+
+	/**
+	* set mastery_score 
+	*/
+	function setMasteryScore($a_mastery_score)
+	{
+		$this->mastery_score = $a_mastery_score;
+	}
+	
+	/**
+	* check mastery_score / min_normalized_measure of SCOs (SCORM 1.2) / objectives (SCORM 2004)
+	*/
+	function checkMasteryScoreValues()
+	{
+		global $ilDB;
+		$s_result = "";
+		$a_result = array();
+		$type = $this->_lookupSubType( $this->getID() );
+
+		if ($type == "scorm2004") {
+			$set = $ilDB->query("SELECT minnormalmeasure FROM cp_objective, cp_node".
+				" WHERE satisfiedbymeasure=1 AND minnormalmeasure is not null AND cp_objective.cp_node_id=cp_node.cp_node_id AND".
+				" slm_id = ".$ilDB->quote($this->getID(), "integer"));
+			while ($rec  = $ilDB->fetchAssoc($set)) {
+				$tmpval = $rec["minnormalmeasure"]*100;
+				if (!in_array($tmpval,$a_result)) $a_result[] = $tmpval;
+			}
+		} else {
+			$set = $ilDB->query("SELECT masteryscore FROM sc_item,scorm_object".
+				" WHERE sc_item.masteryscore is not null AND sc_item.obj_id=scorm_object.obj_id AND".
+				" slm_id = ".$ilDB->quote($this->getID(), "integer"));
+			while ($rec  = $ilDB->fetchAssoc($set)) {
+				if (!in_array($rec["masteryscore"],$a_result)) $a_result[] = $rec["masteryscore"];
+			}
+		}
+		$s_result = implode(", ",$a_result);
+		$this->mastery_score_values = $s_result;
+	}
+
+	/**
+	* get mastery_score_values
+	*/
+	function getMasteryScoreValues()
+	{
+		return $this->mastery_score_values;
+	}
+	
+	/**
+	* update values for mastery_score / min_normalized_measure in database - not requested
+	*/
+	/*
+	function updateMasteryScoreValues()
+	{
+		global $ilDB;
+		$s_mastery_score = $this->getMasteryScore();
+		if ($s_mastery_score != "" && is_numeric($s_mastery_score)) {
+			$i_mastery_score = round(intval($s_mastery_score,10));
+			$type = $this->_lookupSubType( $this->getID() );
+
+			if ($type == "scorm2004") {
+				if ($i_mastery_score > 100) $i_mastery_score = 100;
+				$i_mastery_score = $i_mastery_score/100;
+				$statement = $ilDB->manipulateF(
+					'UPDATE cp_objective,cp_node SET minnormalmeasure = %s 
+					WHERE satisfiedbymeasure=1 AND minnormalmeasure is not null AND cp_objective.cp_node_id=cp_node.cp_node_id AND slm_id = %s',
+					array('text','integer'),
+					array($i_mastery_score,$this->getID())
+				);
+			} else {
+				if ($i_mastery_score > 127) $i_mastery_score = 127;
+				$statement = $ilDB->manipulateF(
+					'UPDATE sc_item,scorm_object SET sc_item.masteryscore = %s 
+					WHERE sc_item.masteryscore is not null AND sc_item.obj_id=scorm_object.obj_id AND slm_id = %s',
+					array('integer','integer'),
+					array($i_mastery_score,$this->getID())
+				);
+			}
+		}
+	}
+	*/
+	
+	/**
 	* update meta data only
 	*/
 /*
@@ -819,6 +908,9 @@ class ilObjSAHSLearningModule extends ilObject
 
 		$this->updateMetaData();
 		parent::update();
+		
+		$s_mastery_score = $this->getMasteryScore();
+		if ($s_mastery_score == "") $s_mastery_score = null;
 
 		$statement = $ilDB->manipulateF('
 			UPDATE sahs_lm  
@@ -857,7 +949,8 @@ class ilObjSAHSLearningModule extends ilObject
 				offline_mode = %s,
 				auto_suspend = %s,
 				ie_compatibility = %s, 
-				ie_force_render = %s
+				ie_force_render = %s,
+				mastery_score = %s
 			WHERE id = %s', 
 		array(	'text',
 				'text',
@@ -895,6 +988,7 @@ class ilObjSAHSLearningModule extends ilObject
 				'text',
 				'text',
 				'text',
+				'integer',
 				'integer'
 				), 
 		array(	ilUtil::tf2yn($this->getOnline()),
@@ -933,6 +1027,7 @@ class ilObjSAHSLearningModule extends ilObject
 				ilUtil::tf2yn($this->getAutoSuspend()),
 				ilUtil::tf2yn($this->getIe_compatibility()),
 				ilUtil::tf2yn($this->getIe_force_render()),
+				$s_mastery_score,
 				$this->getId())
 		);
 
@@ -1037,11 +1132,6 @@ class ilObjSAHSLearningModule extends ilObject
 		}
  
 		// delete meta data of scorm content object
-/*
-		$nested = new ilNestedSetXML();
-		$nested->init($this->getId(), $this->getType());
-		$nested->deleteAllDBData();
-*/
 		$this->deleteMetaData();
 
 		// delete data directory
@@ -1065,7 +1155,7 @@ class ilObjSAHSLearningModule extends ilObject
 				$items = $sc_tree->getSubTree($sc_tree->getNodeData($r_id));
 				foreach($items as $item)
 				{
-					$sc_object =& ilSCORMObject::_getInstance($item["obj_id"], $this->getId());
+					$sc_object = ilSCORMObject::_getInstance($item["obj_id"], $this->getId());
 					if (is_object($sc_object))
 					{
 						$sc_object->delete();
@@ -1125,69 +1215,6 @@ class ilObjSAHSLearningModule extends ilObject
 
 		// always call parent delete function at the end!!
 		return true;
-	}
-
-	/**
-	* notifys an object about an event occured
-	* Based on the event happend, each object may decide how it reacts.
-	*
-	* @access	public
-	* @param	string	event
-	* @param	integer	reference id of object where the event occured
-	* @param	array	passes optional paramters if required
-	* @return	boolean
-	*/
-	function notify($a_event,$a_ref_id,$a_parent_non_rbac_id,$a_node_id,$a_params = 0)
-	{
-		global $tree;
-
-		switch ($a_event)
-		{
-			case "link":
-
-				//var_dump("<pre>",$a_params,"</pre>");
-				//echo "SCORMLearningModule ".$this->getRefId()." triggered by link event. Objects linked into target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-
-			case "cut":
-
-				//echo "SCORMLearningModule ".$this->getRefId()." triggered by cut event. Objects are removed from target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-
-			case "copy":
-
-				//var_dump("<pre>",$a_params,"</pre>");
-				//echo "SCORMLearningModule ".$this->getRefId()." triggered by copy event. Objects are copied into target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-
-			case "paste":
-
-				//echo "SCORMLearningModule ".$this->getRefId()." triggered by paste (cut) event. Objects are pasted into target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-
-			case "new":
-
-				//echo "SCORMLearningModule ".$this->getRefId()." triggered by paste (new) event. Objects are applied to target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-		}
-
-		// At the beginning of the recursive process it avoids second call of the notify function with the same parameter
-		if ($a_node_id==$_GET["ref_id"])
-		{
-			$parent_obj =& $this->ilias->obj_factory->getInstanceByRefId($a_node_id);
-			$parent_type = $parent_obj->getType();
-			if($parent_type == $this->getType())
-			{
-				$a_node_id = (int) $tree->getParentId($a_node_id);
-			}
-		}
-
-		parent::notify($a_event,$a_ref_id,$a_parent_non_rbac_id,$a_node_id,$a_params);
 	}
 
 	/**
@@ -1268,11 +1295,11 @@ class ilObjSAHSLearningModule extends ilObject
 	 * @param int target ref_id
 	 * @param int copy id
 	 */
-	public function cloneObject($a_target_id,$a_copy_id = 0)
+	public function cloneObject($a_target_id,$a_copy_id = 0, $a_omit_tree = false)
 	{
 		global $ilDB, $ilUser, $ilias;
 
-		$new_obj = parent::cloneObject($a_target_id,$a_copy_id);
+		$new_obj = parent::cloneObject($a_target_id,$a_copy_id, $a_omit_tree);
 		$this->cloneMetaData($new_obj);
 
 		//copy online status if object is not the root copy object
@@ -1326,7 +1353,7 @@ class ilObjSAHSLearningModule extends ilObject
 
 
 		// set/copy stylesheet
-/*		include_once("./Services/Style/classes/class.ilObjStyleSheet.php");
+/*		include_once("./Services/Style/Content/classes/class.ilObjStyleSheet.php");
 		$style_id = $this->getStyleSheetId();
 		if ($style_id > 0 && !ilObjStyleSheet::_lookupStandard($style_id))
 		{

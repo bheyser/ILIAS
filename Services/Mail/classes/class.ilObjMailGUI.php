@@ -70,6 +70,11 @@ class ilObjMailGUI extends ilObjectGUI
 		$si->setInfo(sprintf($this->lng->txt('mail_settings_incoming_type_see_also'), $this->ctrl->getLinkTargetByClass('ilobjuserfoldergui', 'settings')));
 		$this->ctrl->clearParametersByClass('ilobjuserfoldergui');
 		$this->form->addItem($si);
+
+		$send_html = new ilCheckboxInputGUI($this->lng->txt('mail_send_html'), 'mail_send_html');
+		$send_html->setInfo($this->lng->txt('mail_send_html_info'));
+		$send_html->setValue(1);
+		$this->form->addItem($send_html);
 		
 		// noreply address
 		$ti = new ilTextInputGUI($this->lng->txt('mail_external_sender_noreply'), 'mail_external_sender_noreply');
@@ -77,16 +82,16 @@ class ilObjMailGUI extends ilObjectGUI
 		$ti->setMaxLength(255);
 		$this->form->addItem($ti);
 
-		$system_sender_name = new ilTextInputGUI($this->lng->txt('mail_system_sender_name'), 'mail_system_sender_name');
-		$system_sender_name->setInfo($this->lng->txt('mail_system_sender_name_info'));
-		$system_sender_name->setMaxLength(255);
-		$this->form->addItem($system_sender_name);
+		$system_from_name = new ilTextInputGUI($this->lng->txt('mail_system_from_name'), 'mail_system_from_name');
+		$system_from_name->setInfo($this->lng->txt('mail_system_from_name_info'));
+		$system_from_name->setMaxLength(255);
+		$this->form->addItem($system_from_name);
 
-		$cb = new ilCheckboxInputGUI($this->lng->txt('mail_use_pear_mail'), 'pear_mail_enable');
-		$cb->setInfo($this->lng->txt('mail_use_pear_mail_info'));
-		$cb->setValue(1);
-		$this->form->addItem($cb);
-		
+		$system_return_path = new ilTextInputGUI($this->lng->txt('mail_system_return_path'), 'mail_system_return_path');
+		$system_return_path->setInfo($this->lng->txt('mail_system_return_path_info'));
+		$system_return_path->setMaxLength(255);
+		$this->form->addItem($system_return_path);
+
 		// prevent smtp mails
 		$cb = new ilCheckboxInputGUI($this->lng->txt('mail_prevent_smtp_globally'), 'prevent_smtp_globally');
 		$cb->setValue(1);
@@ -136,20 +141,21 @@ class ilObjMailGUI extends ilObjectGUI
 		$this->form->setValuesByArray(array(
 			'mail_subject_prefix' => $settings['mail_subject_prefix'] ? $settings['mail_subject_prefix'] : '[ILIAS]',
 			'mail_incoming_mail' => (int)$settings['mail_incoming_mail'],
-			'pear_mail_enable' => $settings['pear_mail_enable'] ? true : false,
+			'mail_send_html' => (int)$settings['mail_send_html'],
 			'mail_external_sender_noreply' => $settings['mail_external_sender_noreply'],
 			'prevent_smtp_globally' => ($settings['prevent_smtp_globally'] == '1') ? true : false,
 			'mail_maxsize_attach' => $settings['mail_maxsize_attach'],
 			'mail_notification' => $settings['mail_notification'],			
-			'mail_system_sender_name' => $settings['mail_system_sender_name']
+			'mail_system_from_name' => $settings['mail_system_sender_name'],
+			'mail_system_return_path' => $settings['mail_system_return_path']
 		));
 	}
 	
 	public function saveObject()
 	{
-		global $ilAccess,$ilSetting;
+		global $rbacsystem, $ilSetting;
 		
-		if(!$ilAccess->checkAccess('write,read', '', $this->object->getRefId()))
+		if(!$rbacsystem->checkAccess('write', $this->object->getRefId()))
 		{
 			$this->ilias->raiseError($this->lng->txt('msg_no_perm_write'), $this->ilias->error_obj->WARNING);
 		}
@@ -157,14 +163,15 @@ class ilObjMailGUI extends ilObjectGUI
 		$this->initForm();		
 		if($this->form->checkInput())
 		{
+			$this->ilias->setSetting('mail_send_html',$this->form->getInput('mail_send_html'));
 			$this->ilias->setSetting('mail_subject_prefix',$this->form->getInput('mail_subject_prefix'));
 			$this->ilias->setSetting('mail_incoming_mail', (int)$this->form->getInput('mail_incoming_mail'));
 			$this->ilias->setSetting('mail_maxsize_attach', $this->form->getInput('mail_maxsize_attach'));
-			$this->ilias->setSetting('pear_mail_enable', (int)$this->form->getInput('pear_mail_enable'));
 			$this->ilias->setSetting('mail_external_sender_noreply', $this->form->getInput('mail_external_sender_noreply'));
 			$this->ilias->setSetting('prevent_smtp_globally', (int)$this->form->getInput('prevent_smtp_globally'));
 			$this->ilias->setSetting('mail_notification', (int)$this->form->getInput('mail_notification'));			
-			$ilSetting->set('mail_system_sender_name', $this->form->getInput('mail_system_sender_name'));
+			$ilSetting->set('mail_system_sender_name', $this->form->getInput('mail_system_from_name'));
+			$ilSetting->set('mail_system_return_path', $this->form->getInput('mail_system_return_path'));
 
 			ilUtil::sendSuccess($this->lng->txt('saved_successfully'));
 		}		
@@ -272,7 +279,7 @@ class ilObjMailGUI extends ilObjectGUI
 	{
 		include_once "./Services/Mail/classes/class.ilFileDataImportMail.php";
 
-		$this->file_obj =& new ilFileDataImportMail();
+		$this->file_obj = new ilFileDataImportMail();
 
 		return true;
 	}
@@ -285,13 +292,18 @@ class ilObjMailGUI extends ilObjectGUI
 			return false;
 		}
 
-		$this->parser_obj =& new ilMailImportParser($a_xml,$a_mode);
+		$this->parser_obj = new ilMailImportParser($a_xml,$a_mode);
 		
 		return true;
 	}
 	
-	function &executeCommand()
+	function executeCommand()
 	{
+		/**
+		 * @var $rbacsystem ilRbacSystem
+		 */
+		global $rbacsystem;
+
 		$next_class = $this->ctrl->getNextClass($this);
 		$cmd = $this->ctrl->getCmd();
 		$this->prepareOutput();
@@ -300,8 +312,18 @@ class ilObjMailGUI extends ilObjectGUI
 		{
 			case 'ilpermissiongui':
 				include_once("Services/AccessControl/classes/class.ilPermissionGUI.php");
-				$perm_gui =& new ilPermissionGUI($this);
+				$perm_gui = new ilPermissionGUI($this);
 				$ret =& $this->ctrl->forwardCommand($perm_gui);
+				break;
+
+			case 'ilmailtemplategui':
+				if(!$rbacsystem->checkAccess('write', $this->object->getRefId()))
+				{
+					$this->ilias->raiseError($this->lng->txt('msg_no_perm_write'), $this->ilias->error_obj->WARNING);
+				}
+
+				require_once 'Services/Mail/classes/class.ilMailTemplateGUI.php';
+				$this->ctrl->forwardCommand(new ilMailTemplateGUI());
 				break;
 
 			default:
@@ -317,29 +339,35 @@ class ilObjMailGUI extends ilObjectGUI
 		return true;
 	}
 	
-	function getAdminTabs(&$tabs_gui)
+	function getAdminTabs()
 	{
-		$this->getTabs($tabs_gui);
+		$this->getTabs();
 	}
 	
 	/**
-	* get tabs
-	* @access	public
-	* @param	object	tabs gui object
+	 * @param ilTabsGUI  $tabs_gui
 	*/
-	function getTabs(&$tabs_gui)
+	public function getTabs()
 	{
+		/**
+		 * @var $rbacsystem ilRbacSystem
+		 */
 		global $rbacsystem;
 
 		if ($rbacsystem->checkAccess("visible,read",$this->object->getRefId()))
 		{
-			$tabs_gui->addTarget("settings",
+			$this->tabs_gui->addTarget("settings",
 				$this->ctrl->getLinkTarget($this, "view"), array("view", 'save', ""), "", "");
+		}
+
+		if($rbacsystem->checkAccess('write', $this->object->getRefId()))
+		{
+			$this->tabs_gui->addTarget('mail_templates', $this->ctrl->getLinkTargetByClass('ilmailtemplategui', 'showTemplates'), '', 'ilmailtemplategui');
 		}
 
 		if ($rbacsystem->checkAccess('edit_permission',$this->object->getRefId()))
 		{
-			$tabs_gui->addTarget("perm_settings",
+			$this->tabs_gui->addTarget("perm_settings",
 				$this->ctrl->getLinkTargetByClass(array(get_class($this),'ilpermissiongui'), "perm"), array("perm","info","owner"), 'ilpermissiongui');
 		}
 	}
@@ -352,7 +380,7 @@ class ilObjMailGUI extends ilObjectGUI
 		global $ilAccess, $ilErr, $lng, $rbacsystem;
 
 		require_once 'Services/Mail/classes/class.ilMail.php';
-		$mail = new ilMail($_SESSION["AccountId"]);
+		$mail = new ilMail($GLOBALS['DIC']['ilUser']->getId());
 		if($rbacsystem->checkAccess('internal_mail', $mail->getMailObjectReferenceId()))
 		{
 			ilUtil::redirect("ilias.php?baseClass=ilMailGUI");

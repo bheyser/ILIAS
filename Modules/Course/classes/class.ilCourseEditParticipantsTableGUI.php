@@ -24,16 +24,20 @@
 include_once('./Services/Table/classes/class.ilTable2GUI.php');
 
 /**
-*
-* @author Stefan Meyer <smeyer.ilias@gmx.de>
-* @version $Id$
-*
-* @ingroup ModulesCourse
-*/
-
+ *
+ * @author Stefan Meyer <smeyer.ilias@gmx.de>
+ * @version $Id$
+ *
+ * @ingroup ModulesCourse
+ */
 class ilCourseEditParticipantsTableGUI extends ilTable2GUI
 {
 	public $container = null;
+	
+	/**
+	 * @var ilObject
+	 */
+	protected $rep_object = null;
         
 	/**
 	 * Holds the local roles of the course object.
@@ -52,7 +56,7 @@ class ilCourseEditParticipantsTableGUI extends ilTable2GUI
 	 * @param object parent gui object
 	 * @return void
 	 */
-	public function __construct($a_parent_obj)
+	public function __construct($a_parent_obj, $rep_object)
 	{
 	 	global $lng,$ilCtrl;
 	 	
@@ -61,11 +65,12 @@ class ilCourseEditParticipantsTableGUI extends ilTable2GUI
 	 	$this->ctrl = $ilCtrl;
 	 	
 	 	$this->container = $a_parent_obj;
+		$this->rep_object = $rep_object;
 	 	
 	 	include_once('./Services/PrivacySecurity/classes/class.ilPrivacySettings.php');
 	 	$this->privacy = ilPrivacySettings::_getInstance();
 	 	
-	 	$this->participants = ilCourseParticipants::_getInstanceByObjId($a_parent_obj->object->getId());
+	 	$this->participants = ilCourseParticipants::_getInstanceByObjId($this->rep_object->getId());
 	 	
 		parent::__construct($a_parent_obj,'editMembers');
 		$this->setFormName('participants');
@@ -80,11 +85,14 @@ class ilCourseEditParticipantsTableGUI extends ilTable2GUI
 	 	}
 	 	$this->addColumn($this->lng->txt('crs_passed'),'passed');
 	 	$this->addColumn($this->lng->txt('crs_blocked'),'blocked');
+		 // cognos-blu-patch: begin
+		$this->addColumn($this->lng->txt('crs_mem_contact'),'contact');
+		// cognos-blu-patch: end
 	 	$this->addColumn($this->lng->txt('crs_notification'),'notification');
 	 	$this->addColumn($this->lng->txt('objs_role'),'roles');
 
-		$this->addCommandButton('updateMembers',$this->lng->txt('save'));
-		$this->addCommandButton('members',$this->lng->txt('cancel'));
+		$this->addCommandButton('updateParticipants',$this->lng->txt('save'));
+		$this->addCommandButton('participants',$this->lng->txt('cancel'));
 	 	
 		$this->setRowTemplate("tpl.edit_participants_row.html","Modules/Course");
 		
@@ -96,7 +104,7 @@ class ilCourseEditParticipantsTableGUI extends ilTable2GUI
 		// Performance improvement: We read the local course roles 
 		// only once, instead of reading them for each row in method fillRow().
 		$this->localCourseRoles = array();
-		foreach($this->container->object->getLocalCourseRoles(false) as $title => $role_id)
+		foreach($this->rep_object->getLocalCourseRoles(false) as $title => $role_id)
 		{
 			$this->localCourseRoles[ilObjRole::_getTranslation($title)] = array('role_id'=>$role_id, 'title'=>$title);
 		}
@@ -113,7 +121,7 @@ class ilCourseEditParticipantsTableGUI extends ilTable2GUI
 		global $rbacsystem, $ilAccess, $ilUser;
 		$hasEditPermissionAccess = 
 			(
-				$ilAccess->checkAccess('edit_permission', '',$this->container->object->getRefId()) or
+				$ilAccess->checkAccess('edit_permission', '',$this->rep_object->getRefId()) or
 				$this->participants->isAdmin($ilUser->getId())
 			);
 		
@@ -126,6 +134,10 @@ class ilCourseEditParticipantsTableGUI extends ilTable2GUI
 		{
 			$this->tpl->setVariable('VAL_ACCESS',$a_set['access_time']);
 		}
+		// cognos-blu-patch: begin
+		$this->tpl->setVariable('VAL_CONTACT_CHECKED',$a_set['contact'] ? 'checked="checked"' : '');
+		// cognos-blu-patch: end
+		
 		$this->tpl->setVariable('VAL_NOTIFICATION_CHECKED',$a_set['notification'] ? 'checked="checked"' : '');
 		$this->tpl->setVariable('VAL_PASSED_CHECKED',$a_set['passed'] ? 'checked="checked"' : '');
 		$this->tpl->setVariable('VAL_BLOCKED_CHECKED',$a_set['blocked'] ? 'checked="checked"' : '');

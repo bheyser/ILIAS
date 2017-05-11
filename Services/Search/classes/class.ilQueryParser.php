@@ -53,13 +53,13 @@ class ilQueryParser
 	* Constructor
 	* @access public
 	*/
-	function ilQueryParser($a_query_str)
+	function __construct($a_query_str)
 	{
 		global $lng;
 
 		define(MIN_WORD_LENGTH,3);
 
-		$this->lng =& $lng;
+		$this->lng = $lng;
 
 		$this->query_str = $a_query_str;
 		$this->message = '';
@@ -82,7 +82,7 @@ class ilQueryParser
 		// Thus min_word_length cannot be set to values < 3 if the mysql fulltext is used.
 		if(!$a_force and $this->settings->enabledIndex() and $a_length < 3)
 		{
-			$GLOBALS['ilLog']->write(__METHOD__.': Disabled min word length');
+			ilLoggerFactory::getLogger('src')->debug('Disabled min word length');
 			return false;			
 		}
 		$this->min_word_length = $a_length;

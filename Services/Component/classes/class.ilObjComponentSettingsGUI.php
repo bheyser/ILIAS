@@ -24,7 +24,7 @@ class ilObjComponentSettingsGUI extends ilObjectGUI
 	public function __construct($a_data, $a_id, $a_call_by_reference = true, $a_prepare_output = true)
 	{
 		$this->type = 'cmps';
-		parent::ilObjectGUI($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
+		parent::__construct($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
 
 		$this->lng->loadLanguageModule('cmps');
 	}
@@ -54,8 +54,8 @@ class ilObjComponentSettingsGUI extends ilObjectGUI
 			case 'ilpermissiongui':
 				$this->tabs_gui->setTabActive('perm_settings');
 				include_once("Services/AccessControl/classes/class.ilPermissionGUI.php");
-				$perm_gui =& new ilPermissionGUI($this);
-				$ret =& $this->ctrl->forwardCommand($perm_gui);
+				$perm_gui = new ilPermissionGUI($this);
+				$ret = $this->ctrl->forwardCommand($perm_gui);
 				break;
 
 			default:
@@ -648,7 +648,69 @@ die ("ilObjComponentSettigsGUI::updatePluginDB: deprecated");
 		$ilCtrl->setParameter($this, "slot_id", $_GET["slot_id"]);
 		$ilCtrl->redirect($this, "listPlugins");
 	}
+	
+	function confirmUninstallPlugin()
+	{
+		global $ilCtrl, $tpl, $ilPluginAdmin;
+		
+		include_once("./Services/Component/classes/class.ilPlugin.php");
+		$pl = ilPlugin::getPluginObject($_GET["ctype"], $_GET["cname"],
+			$_GET["slot_id"], $_GET["pname"]);
+		
+		$pl_meta = $ilPluginAdmin->getAllData($_GET["ctype"], $_GET["cname"],
+			$_GET["slot_id"], $_GET["pname"]);
+		
+		$activation = ((bool)$pl_meta["activation_possible"] || (bool)$pl_meta["is_active"]); // #18827
+		$reason = $pl_meta["inactive_reason"];
+		
+		$question = $activation
+			? sprintf($this->lng->txt("cmps_uninstall_confirm"), $pl->getPluginName())
+			: sprintf($this->lng->txt("cmps_uninstall_inactive_confirm"), $pl->getPluginName(), $reason);		
+		
+		$ilCtrl->setParameter($this, "ctype", $_GET["ctype"]);
+		$ilCtrl->setParameter($this, "cname", $_GET["cname"]);
+		$ilCtrl->setParameter($this, "slot_id", $_GET["slot_id"]);
+		$ilCtrl->setParameter($this, "pname", $_GET["pname"]);
+		
+		include_once("./Services/Utilities/classes/class.ilConfirmationGUI.php");
+		$confirmation_gui = new ilConfirmationGUI();
+		$confirmation_gui->setFormAction($ilCtrl->getFormAction($this));
+		$confirmation_gui->setHeaderText($question);
+		$confirmation_gui->setCancel($this->lng->txt("cancel"), "listPlugins");
+		$confirmation_gui->setConfirm($this->lng->txt("cmps_uninstall"), "uninstallPlugin");
+		
+		$tpl->setContent($confirmation_gui->getHTML());
+	}
+	
+	function uninstallPlugin()
+	{		
+		global $ilCtrl;
+		
+		include_once("./Services/Component/classes/class.ilPlugin.php");
+		$pl = ilPlugin::getPluginObject($_GET["ctype"], $_GET["cname"],
+			$_GET["slot_id"], $_GET["pname"]);
 
-
+		try
+		{
+			$result = $pl->uninstall();
+			if ($result !== true)
+			{
+				ilUtil::sendFailure($result, true);
+			}
+			else
+			{
+				ilUtil::sendSuccess($this->lng->txt("cmps_plugin_uninstalled"), true);
+			}
+		}
+		catch(ilPluginException $e)
+		{
+			ilUtil::sendFailure($e->getMessage, true);
+		}
+		
+		$ilCtrl->setParameter($this, "ctype", $_GET["ctype"]);
+		$ilCtrl->setParameter($this, "cname", $_GET["cname"]);
+		$ilCtrl->setParameter($this, "slot_id", $_GET["slot_id"]);
+		$ilCtrl->redirect($this, "listPlugins");		
+	}
 }
 ?>

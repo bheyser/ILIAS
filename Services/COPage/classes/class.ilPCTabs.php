@@ -38,6 +38,7 @@ class ilPCTabs extends ilPageContent
 	var $tabs_node;
 	const ACCORDION_HOR = "HorizontalAccordion";
 	const ACCORDION_VER = "VerticalAccordion";
+	const CAROUSEL = "Carousel";
 
 	/**
 	* Init page content component.
@@ -50,10 +51,10 @@ class ilPCTabs extends ilPageContent
 	/**
 	* Set content node
 	*/
-	function setNode(&$a_node)
+	function setNode($a_node)
 	{
 		parent::setNode($a_node);		// this is the PageContent node
-		$this->tabs_node =& $a_node->first_child();		// this is the Tabs node
+		$this->tabs_node = $a_node->first_child();		// this is the Tabs node
 	}
 
 	/**
@@ -63,8 +64,8 @@ class ilPCTabs extends ilPageContent
 	{
 		$this->node = $this->createPageContentNode();
 		$a_pg_obj->insertContent($this, $a_hier_id, IL_INSERT_AFTER, $a_pc_id);
-		$this->tabs_node =& $this->dom->create_element("Tabs");
-		$this->tabs_node =& $this->node->append_child($this->tabs_node);
+		$this->tabs_node = $this->dom->create_element("Tabs");
+		$this->tabs_node = $this->node->append_child($this->tabs_node);
 	}
 
 	/**
@@ -99,6 +100,7 @@ class ilPCTabs extends ilPageContent
 		{
 			case ilPCTabs::ACCORDION_VER:
 			case ilPCTabs::ACCORDION_HOR:
+			case ilPCTabs::CAROUSEL:
 				$this->tabs_node->set_attribute("Type", $a_type);
 				break;
 		}
@@ -371,7 +373,66 @@ class ilPCTabs extends ilPageContent
 	 */
 	static function getLangVars()
 	{
-		return array("pc_vacc", "pc_hacc");
+		return array("pc_vacc", "pc_hacc", "pc_carousel");
+	}
+
+
+	/**
+	  * Set auto animation waiting time
+	  *
+	  * @param int $a_val auto animation time
+	  */
+	function setAutoTime($a_val)
+	{
+		$this->setTabsAttribute("AutoAnimWait", $a_val);
+	}
+
+	/**
+	 * Get auto animation waiting time
+	 *
+	 * @return int auto animation time
+	 */
+	function getAutoTime()
+	{
+		return $this->tabs_node->get_attribute("AutoAnimWait");
+	}
+
+	/**
+	 * Set random start
+	 *
+	 * @param bool $a_val random start
+	 */
+	function setRandomStart($a_val)
+	{
+		$this->setTabsAttribute("RandomStart", $a_val);
+	}
+
+	/**
+	 * Get random start
+	 *
+	 * @return bool random start
+	 */
+	function getRandomStart()
+	{
+		return $this->tabs_node->get_attribute("RandomStart");
+	}
+
+	/**
+	 * Get Javascript files
+	 */
+	function getJavascriptFiles($a_mode)
+	{
+		include_once("./Services/Accordion/classes/class.ilAccordionGUI.php");
+		return ilAccordionGUI::getLocalJavascriptFiles();
+	}
+
+	/**
+	 * Get Javascript files
+	 */
+	function getCssFiles($a_mode)
+	{
+		include_once("./Services/Accordion/classes/class.ilAccordionGUI.php");
+		return ilAccordionGUI::getLocalCssFiles();
 	}
 
 }

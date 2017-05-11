@@ -18,6 +18,7 @@ require_once './Modules/TestQuestionPool/interfaces/interface.ilGuiAnswerScoring
  * @version		$Id$
  * 
  * @ingroup 	ModulesTestQuestionPool
+ * @ilCtrl_Calls assClozeTestGUI: ilFormPropertyDispatchGUI          
  */
 class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdjustable, ilGuiAnswerScoringAdjustable
 {
@@ -55,14 +56,9 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 	}
 
 	/**
-	 * Evaluates a posted edit form and writes the form data in the question object
-	 *
-	 * @param bool $always
-	 *
-	 * @return integer A positive value, if one of the required fields wasn't set, else 0
-	 * @access private
+	 * {@inheritdoc}
 	 */
-	function writePostData($always = false)
+	protected function writePostData($always = false)
 	{
 		$hasErrors = (!$always) ? $this->editQuestion(true) : false;
 		if (!$hasErrors)
@@ -249,6 +245,8 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 
         include_once("./Services/Form/classes/class.ilPropertyFormGUI.php");
 		$form = new ilPropertyFormGUI();
+		$this->editForm = $form;
+
 		$form->setFormAction($this->ctrl->getFormAction($this));
 		$form->setTitle($this->outQuestionType());
 		$form->setMultipart(FALSE);
@@ -425,10 +423,33 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 		$form->addItem($cloze_text);
 
 		$tpl = new ilTemplate("tpl.il_as_qpl_cloze_gap_button_code.html", TRUE, TRUE, "Modules/TestQuestionPool");
-		$tpl->setVariable('INSERT_GAP', $this->lng->txt('insert_gap'));
-		$tpl->setVariable('CREATE_GAPS', $this->lng->txt('create_gaps'));
-		$tpl->parseCurrentBlock();
+
 		$button = new ilCustomInputGUI('&nbsp;','');
+		require_once 'Services/UIComponent/SplitButton/classes/class.ilSplitButtonGUI.php';
+		require_once 'Services/UIComponent/Button/classes/class.ilJsLinkButton.php';
+		$action_button = ilSplitButtonGUI::getInstance();
+
+		$sb_text_gap = ilJsLinkButton::getInstance();
+		$sb_text_gap->setCaption('text_gap');
+		$sb_text_gap->setName('gapbutton');
+		$sb_text_gap->setId('gaptrigger_text');
+		$action_button->setDefaultButton($sb_text_gap);
+
+		$sb_sel_gap = ilJsLinkButton::getInstance();
+		$sb_sel_gap->setCaption('select_gap');
+		$sb_sel_gap->setName('gapbutton_select');
+		$sb_sel_gap->setId('gaptrigger_select');
+		$action_button->addMenuItem(new ilButtonToSplitButtonMenuItemAdapter($sb_sel_gap));
+
+		$sb_num_gap = ilJsLinkButton::getInstance();
+		$sb_num_gap->setCaption('numeric_gap');
+		$sb_num_gap->setName('gapbutton_numeric');
+		$sb_num_gap->setId('gaptrigger_numeric');
+		$action_button->addMenuItem(new ilButtonToSplitButtonMenuItemAdapter($sb_num_gap));
+
+		$tpl->setVariable('BUTTON', $action_button->render());
+		$tpl->parseCurrentBlock();
+
 		$button->setHtml($tpl->get());
 		$form->addItem($button);
 
@@ -849,7 +870,7 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 					break;
 				case CLOZE_SELECT:
 					$gaptemplate = new ilTemplate("tpl.il_as_qpl_cloze_question_gap_select.html", TRUE, TRUE, "Modules/TestQuestionPool");
-					foreach ($gap->getItems() as $item)
+					foreach ($gap->getItems($this->object->getShuffler()) as $item)
 					{
 						$gaptemplate->setCurrentBlock("select_gap_option");
 						$gaptemplate->setVariable("SELECT_GAP_VALUE", $item->getOrder());
@@ -958,7 +979,7 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 				if ($graphicalOutput)
 				{
 					// output of ok/not ok icons for user entered solutions
-					$details = $this->object->calculateReachedPoints($active_id, $pass, TRUE);
+					$details = $this->object->calculateReachedPoints($active_id, $pass, true, TRUE);
 					$check = $details[$gap_index];
 					
 					$assClozeGapCombinationObject 	= new assClozeGapCombination();
@@ -1089,9 +1110,11 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 					}
 					else
 					{
-						$solutiontext = ilUtil::prepareFormOutput($gap->getBestSolutionOutput());
+						$solutiontext = ilUtil::prepareFormOutput($gap->getBestSolutionOutput(
+							$this->object->getShuffler()
+						));
 					}
-					$gaptemplate->setVariable("SOLUTION", $solutiontext);
+					$this->populateSolutiontextToGapTpl($gaptemplate, $gap, $solutiontext);
 					$output = preg_replace("/\[gap\].*?\[\/gap\]/", $gaptemplate->get(), $output, 1);
 					break;
 				case CLOZE_SELECT:
@@ -1123,9 +1146,11 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 					}
 					else
 					{
-						$solutiontext = ilUtil::prepareFormOutput($gap->getBestSolutionOutput());
+						$solutiontext = ilUtil::prepareFormOutput($gap->getBestSolutionOutput(
+							$this->object->getShuffler()
+						));
 					}
-					$gaptemplate->setVariable("SOLUTION", $solutiontext);
+					$this->populateSolutiontextToGapTpl($gaptemplate, $gap, $solutiontext);
 					$output = preg_replace("/\[gap\].*?\[\/gap\]/", $gaptemplate->get(), $output, 1);
 					break;
 				case CLOZE_NUMERIC:
@@ -1146,9 +1171,11 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 					}
 					else
 					{
-						$solutiontext = ilUtil::prepareFormOutput($gap->getBestSolutionOutput());
+						$solutiontext = ilUtil::prepareFormOutput($gap->getBestSolutionOutput(
+							$this->object->getShuffler()
+						));
 					}
-					$gaptemplate->setVariable("SOLUTION", $solutiontext);
+					$this->populateSolutiontextToGapTpl($gaptemplate, $gap, $solutiontext);
 					$output = preg_replace("/\[gap\].*?\[\/gap\]/", $gaptemplate->get(), $output, 1);
 					break;
 			}
@@ -1169,8 +1196,11 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 		$feedback = '';
 		if($show_feedback)
 		{
-			$fb = $this->getGenericFeedbackOutput($active_id, $pass);
-			$feedback .=  strlen($fb) ? $fb : '';
+			if( !$this->isTestPresentationContext() )
+			{
+				$fb = $this->getGenericFeedbackOutput($active_id, $pass);
+				$feedback .= strlen($fb) ? $fb : '';
+			}
 			
 			$fb = $this->getSpecificFeedbackOutput($active_id, $pass);
 			$feedback .=  strlen($fb) ? $fb : '';
@@ -1234,7 +1264,7 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 			{
 				if (is_null($pass)) $pass = ilObjTest::_getPass($active_id);
 			}
-			$user_solution =& $this->object->getSolutionValues($active_id, $pass);
+			$user_solution = $this->object->getUserSolutionPreferingIntermediate($active_id, $pass);
 			if (!is_array($user_solution)) 
 			{
 				$user_solution = array();
@@ -1272,7 +1302,7 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 					break;
 				case CLOZE_SELECT:
 					$gaptemplate = new ilTemplate("tpl.il_as_qpl_cloze_question_gap_select.html", TRUE, TRUE, "Modules/TestQuestionPool");
-					foreach ($gap->getItems() as $item)
+					foreach ($gap->getItems($this->object->getShuffler()) as $item)
 					{
 						$gaptemplate->setCurrentBlock("select_gap_option");
 						$gaptemplate->setVariable("SELECT_GAP_VALUE", $item->getOrder());
@@ -1497,10 +1527,10 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 		{
 			if ($gap->type == CLOZE_SELECT)
 			{
-				$html .= '<p>Gap '.$i . ' - SELECT</p>';
+				$html .= '<p>Gap '. ($i+1) . ' - SELECT</p>';
 				$html .= '<ul>';
 				$j = 0;
-				foreach($gap->getItems() as $gap_item)
+				foreach($gap->getItems($this->object->getShuffler()) as $gap_item)
 				{
 					$aggregate = $aggregation[$i];
 					$html .= '<li>' . $gap_item->getAnswerText() . ' - ' . ($aggregate[$j] ? $aggregate[$j] : 0) . '</li>';
@@ -1512,13 +1542,13 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 			if($gap->type == CLOZE_TEXT)
 			{
 				$present_elements = array();
-				foreach($gap->getItems() as $item)
+				foreach($gap->getItems(new ilArrayElementShuffler()) as $item)
 				{
 					/** @var assAnswerCloze $item */
 					$present_elements[] = $item->getAnswertext();
 				}
 
-				$html .= '<p>Gap ' . $i+1 . ' - TEXT</p>';
+				$html .= '<p>Gap ' . ($i+1) . ' - TEXT</p>';
 				$html .= '<ul>';
 				$aggregate = (array)$aggregation[$i];
 				foreach($aggregate as $answer => $count)
@@ -1539,10 +1569,10 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 
 			if($gap->type == CLOZE_NUMERIC)
 			{
-				$html .= '<p>Gap '.$i . ' - NUMERIC</p>';
+				$html .= '<p>Gap ' . ($i+1) . ' - NUMERIC</p>';
 				$html .= '<ul>';
 				$j = 0;
-				foreach($gap->getItems() as $gap_item)
+				foreach($gap->getItems($this->object->getShuffler()) as $gap_item)
 				{
 					$aggregate = (array)$aggregation[$i];
 					foreach($aggregate as $answer => $count)
@@ -1586,5 +1616,40 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
 		$parts         = preg_split( '/\[gap \d*\]/', $question_text );
 		$question_text = implode( '[gap]', $parts );
 		return $question_text;
+	}
+
+	/**
+	 * @param $gaptemplate
+	 * @param $solutiontext
+	 */
+	private function populateSolutiontextToGapTpl($gaptemplate, $gap, $solutiontext)
+	{
+		if ($_GET['pdf'])
+		{
+			$gaptemplate->setCurrentBlock('gap_span');
+			$gaptemplate->setVariable('SPAN_SOLUTION', $solutiontext);
+		}
+		elseif($gap->getType() == CLOZE_SELECT)
+		{
+			$gaptemplate->setCurrentBlock('gap_select');
+			$gaptemplate->setVariable('SELECT_SOLUTION', $solutiontext);
+		}
+		else
+		{
+			$gap_size = $gap->getGapSize() > 0 ? $gap->getGapSize() : $this->object->getFixedTextLength();
+			
+			if($gap_size > 0)
+			{
+				$gaptemplate->setCurrentBlock('gap_size');
+				$gaptemplate->setVariable("GAP_SIZE", $gap_size);
+				$gaptemplate->parseCurrentBlock();
+			}
+			
+			$gaptemplate->setCurrentBlock('gap_input');
+			$gaptemplate->setVariable('INPUT_SOLUTION', $solutiontext);
+		}
+		
+		
+		$gaptemplate->parseCurrentBlock();
 	}
 }

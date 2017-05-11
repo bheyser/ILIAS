@@ -15,22 +15,16 @@ include_once './Services/Tracking/classes/class.ilLearningProgressBaseGUI.php';
 *
 */
 class ilLearningProgressGUI extends ilLearningProgressBaseGUI
-{
-	function ilLearningProgressGUI($a_mode,$a_ref_id = 0,$a_user_id = 0)
-	{
-		parent::ilLearningProgressBaseGUI($a_mode,$a_ref_id,$a_user_id);
-	}
-
+{	
 	/**
 	* execute command
 	*/
-	function &executeCommand()
+	function executeCommand()
 	{
 		global $ilBench, $ilHelp, $ilAccess;
 		
 		$ilBench->start('LearningProgress','0000_Start');
-
-
+		
 		$this->ctrl->setReturn($this, "");
 
 		// E.g personal desktop mode needs locator header icon ...
@@ -73,7 +67,7 @@ class ilLearningProgressGUI extends ilLearningProgressBaseGUI
 				$this->ctrl->forwardCommand($loo_gui);
 				break;
 
-			case 'illplistofsettingsgui':
+			case 'illplistofsettingsgui':				
 				if($this->getRefId() &&
 					!$ilAccess->checkAccess('edit_learning_progress', '', $this->getRefId()))
 				{
@@ -113,7 +107,10 @@ class ilLearningProgressGUI extends ilLearningProgressBaseGUI
 			
 			default:
 				$cmd = $this->ctrl->getCmd();
-				$this->$cmd();
+				if(!$cmd)
+				{
+					return;
+				}
 				$this->tpl->show(true);
 				break;
 		}
@@ -445,8 +442,8 @@ class ilLearningProgressGUI extends ilLearningProgressBaseGUI
 			if($needed)
 			{								
 				$field->setInfo(sprintf($lng->txt("trac_collection_tlt_learner_subitem"), 
-					ilFormat::_secondsToString($spent),
-					ilFormat::_secondsToString($needed), 
+					ilDatePresentation::secondsToString($spent),
+					ilDatePresentation::secondsToString($needed), 
 					min(100, round(abs($spent)/$needed*100))));
 			}
 			

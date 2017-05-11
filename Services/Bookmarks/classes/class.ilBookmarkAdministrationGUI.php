@@ -44,7 +44,7 @@ class ilBookmarkAdministrationGUI
 	 * @access    public
 	 * @param    integer        user_id (optional)
 	 */
-	function ilBookmarkAdministrationGUI()
+	function __construct()
 	{
 		global $ilias, $tpl, $lng, $ilCtrl, $ilUser;
 
@@ -59,16 +59,18 @@ class ilBookmarkAdministrationGUI
 			: $_GET["bmf_id"];
 	
 		// initiate variables
-		$this->ilias =& $ilias;
-		$this->tpl   =& $tpl;
-		$this->lng   =& $lng;
-		$this->ctrl  =& $ilCtrl;
+		$this->ilias = $ilias;
+		$this->tpl   = $tpl;
+		$this->lng   = $lng;
+		$this->ctrl  = $ilCtrl;
 		$this->ctrl->setParameter($this, "bmf_id", $this->id);
 		$this->user_id = $ilUser->getId();
 
 		$this->tree = new ilTree($this->user_id);
 		$this->tree->setTableNames('bookmark_tree', 'bookmark_data');
 		$this->root_id = $this->tree->readRootId();
+
+		$this->lng->loadLanguageModule("bkm");
 		
 		$this->mode = "tree";
 	}
@@ -76,7 +78,7 @@ class ilBookmarkAdministrationGUI
 	/**
 	 * execute command
 	 */
-	function &executeCommand()
+	function executeCommand()
 	{
 		$next_class = $this->ctrl->getNextClass();
 
@@ -559,6 +561,8 @@ class ilBookmarkAdministrationGUI
 			$bmf->setTitle(ilUtil::stripSlashes($_POST["title"]));
 			$bmf->setParent($this->id);
 			$bmf->create();
+
+			ilUtil::sendSuccess($this->lng->txt("bkm_fold_created"), true);
 
 			global $ilCtrl;
 			$ilCtrl->saveParameter($this, 'bmf_id');

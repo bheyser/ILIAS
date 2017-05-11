@@ -16,11 +16,13 @@ class ilStr
 	{
 		if (function_exists("mb_substr"))
 		{
-			// see https://bugs.php.net/bug.php?id=62703
-			if ($a_length === NULL)
+			// bug in PHP < 5.4.12: null is not supported as length (if encoding given)
+			// https://github.com/php/php-src/pull/133			
+			if ($a_length === null)
 			{
-				$a_length = self::strLen($a_str);
+				$a_length = mb_strlen($a_str, "UTF-8");
 			}
+			
 			return mb_substr($a_str, $a_start, $a_length, "UTF-8");
 		}
 		else
@@ -219,5 +221,51 @@ class ilStr
 		}
 		return $a_str;
 	}
+
+	/**
+	 * Convert a value given in camel case conversion to underscore case conversion (e.g. MyClass to my_class)
+	 * @param string $value Value in lower camel case conversion
+	 * @return string The value in underscore case conversion
+	 */
+	public static function convertUpperCamelCaseToUnderscoreCase($value)
+	{
+		return strtolower(preg_replace(
+			array('#(?<=(?:[A-Z]))([A-Z]+)([A-Z][A-z])#', '#(?<=(?:[a-z0-9]))([A-Z])#'),
+			array('\1_\2', '_\1'),
+			$value
+		));
+	}
+
+	/**
+	 * Return string as byte array
+	 * Note: Use this for debugging purposes only. If strlen is overwritten by mb_ functions
+	 * (PHP config) this will return not all characters
+	 *
+	 * @param string $a_str string
+	 * @return array array of bytes
+	 */
+	static function getBytesForString($a_str)
+	{
+		$bytes = array();
+		for($i = 0; $i < strlen($a_str); $i++)
+		{
+			$bytes[] = ord($a_str[$i]);
+		}
+		return $bytes;
+	}
+	
+	/**
+	 * Normalize UTF8 string
+	 *
+	 * @param string $a_str string
+	 * @return string
+	 */
+	static function normalizeUtf8String($a_str)
+	{
+		include_once("./include/Unicode/UtfNormal.php");
+		return UtfNormal::toNFC($a_str);
+	}
+	
+
 }
 ?>

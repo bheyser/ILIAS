@@ -1,4 +1,4 @@
-<?php xml version = "1.0" encoding = "UTF-8"?>
+<?xml version = "1.0" encoding = "UTF-8"?>
 <module xmlns="http://www.w3.org" version="$Id: modules.xml 15671 2008-01-04 13:08:30Z akill $"
 	id="poll">
 	<baseclasses>
@@ -15,4 +15,9 @@
 			<parent id="root">root</parent>		
 		</object>	
 	</objects>
+
+	<web_access_checker>
+		<secure_path path="ilPoll" checking-class="ilObjPollAccess" in-sec-folder='1'/>
+	</web_access_checker>
+
 </module>

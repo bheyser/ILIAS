@@ -274,7 +274,7 @@ class assOrderingHorizontal extends assQuestion implements ilObjQuestionScoringA
 	 * @param boolean $returndetails (deprecated !!)
 	 * @return integer/array $points/$details (array $details is deprecated !!)
 	 */
-	public function calculateReachedPoints($active_id, $pass = NULL, $returndetails = FALSE)
+	public function calculateReachedPoints($active_id, $pass = NULL, $authorizedSolution = true, $returndetails = FALSE)
 	{
 		if( $returndetails )
 		{
@@ -288,7 +288,7 @@ class assOrderingHorizontal extends assQuestion implements ilObjQuestionScoringA
 		{
 			$pass = $this->getSolutionMaxPass($active_id);
 		}
-		$result = $this->getCurrentSolutionResultSet($active_id, $pass);
+		$result = $this->getCurrentSolutionResultSet($active_id, $pass, $authorizedSolution);
 		$points = 0;
 		$data = $ilDB->fetchAssoc($result);
 
@@ -317,7 +317,7 @@ class assOrderingHorizontal extends assQuestion implements ilObjQuestionScoringA
 		}
 		else
 		{
-			$result = split($separator, $in_string);
+			$result = explode($separator, $in_string);
 		}
 		
 		foreach ($result as $key => $value)
@@ -341,7 +341,7 @@ class assOrderingHorizontal extends assQuestion implements ilObjQuestionScoringA
 	 * @param integer $pass Test pass
 	 * @return boolean $status
 	 */
-	public function saveWorkingData($active_id, $pass = NULL)
+	public function saveWorkingData($active_id, $pass = NULL, $authorized = true)
 	{
 		global $ilDB;
 		global $ilUser;
@@ -352,27 +352,29 @@ class assOrderingHorizontal extends assQuestion implements ilObjQuestionScoringA
 			$pass = ilObjTest::_getPass($active_id);
 		}
 
-		$this->getProcessLocker()->requestUserSolutionUpdateLock();
-
-		$affectedRows = $this->removeCurrentSolution($active_id, $pass);
-		
-		$solutionSubmit = $this->getSolutionSubmit();
-		
 		$entered_values = false;
-		if (strlen($solutionSubmit))
-		{
-			$affectedRows = $this->saveCurrentSolution($active_id, $pass, $_POST['orderresult'], null);
-			$entered_values = true;
-		}
 
-		$this->getProcessLocker()->releaseUserSolutionUpdateLock();
-		
+		$this->getProcessLocker()->executeUserSolutionUpdateLockOperation(function() use (&$entered_values, $active_id, $pass, $authorized) {
+
+			$this->removeCurrentSolution($active_id, $pass, $authorized);
+
+			$solutionSubmit = $this->getSolutionSubmit();
+
+			$entered_values = false;
+			if (strlen($solutionSubmit))
+			{
+				$this->saveCurrentSolution($active_id, $pass, $_POST['orderresult'], null, $authorized);
+				$entered_values = true;
+			}
+
+		});
+
 		if ($entered_values)
 		{
 			include_once ("./Modules/Test/classes/class.ilObjAssessmentFolder.php");
 			if (ilObjAssessmentFolder::_enabledAssessmentLogging())
 			{
-				$this->logAction($this->lng->txtlng("assessment", "log_user_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
+				assQuestion::logAction($this->lng->txtlng("assessment", "log_user_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
 			}
 		}
 		else
@@ -380,7 +382,7 @@ class assOrderingHorizontal extends assQuestion implements ilObjQuestionScoringA
 			include_once ("./Modules/Test/classes/class.ilObjAssessmentFolder.php");
 			if (ilObjAssessmentFolder::_enabledAssessmentLogging())
 			{
-				$this->logAction($this->lng->txtlng("assessment", "log_user_not_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
+				assQuestion::logAction($this->lng->txtlng("assessment", "log_user_not_entered_values", ilObjAssessmentFolder::_getLogLanguage()), $active_id, $this->getId());
 			}
 		}
 
@@ -410,14 +412,9 @@ class assOrderingHorizontal extends assQuestion implements ilObjQuestionScoringA
 	}
 
 	/**
-	 * Reworks the allready saved working data if neccessary
-	 *
-	 * @access protected
-	 * @param integer $active_id
-	 * @param integer $pass
-	 * @param boolean $obligationsAnswered
+	 * {@inheritdoc}
 	 */
-	protected function reworkWorkingData($active_id, $pass, $obligationsAnswered)
+	protected function reworkWorkingData($active_id, $pass, $obligationsAnswered, $authorized)
 	{
 		// nothing to rework!
 	}
@@ -472,28 +469,19 @@ class assOrderingHorizontal extends assQuestion implements ilObjQuestionScoringA
 	}
 
 	/**
-	* Creates an Excel worksheet for the detailed cumulated results of this question
-	*
-	* @param object $worksheet Reference to the parent excel worksheet
-	* @param object $startrow Startrow of the output in the excel worksheet
-	* @param object $active_id Active id of the participant
-	* @param object $pass Test pass
-	* @param object $format_title Excel title format
-	* @param object $format_bold Excel bold format
-	* @param array $eval_data Cumulated evaluation data
-	*/
-	public function setExportDetailsXLS(&$worksheet, $startrow, $active_id, $pass, &$format_title, &$format_bold)
+	 * {@inheritdoc}
+	 */
+	public function setExportDetailsXLS($worksheet, $startrow, $active_id, $pass)
 	{
-		include_once ("./Services/Excel/classes/class.ilExcelUtils.php");
-		$worksheet->writeString($startrow, 0, ilExcelUtils::_convert_text($this->lng->txt($this->getQuestionType())), $format_title);
-		$worksheet->writeString($startrow, 1, ilExcelUtils::_convert_text($this->getTitle()), $format_title);
+		parent::setExportDetailsXLS($worksheet, $startrow, $active_id, $pass);
 
 		$solutionvalue = "";
 		$solutions =& $this->getSolutionValues($active_id, $pass);
 		$solutionvalue = str_replace("{::}", " ", $solutions[0]["value1"]);
 		$i = 1;
-		$worksheet->writeString($startrow+$i, 0, ilExcelUtils::_convert_text($solutionvalue));
+		$worksheet->setCell($startrow+$i, 0, $solutionvalue);
 		$i++;
+
 		return $startrow + $i + 1;
 	}
 	
@@ -558,7 +546,7 @@ class assOrderingHorizontal extends assQuestion implements ilObjQuestionScoringA
 	public function getRandomOrderingElements()
 	{
 		$elements = $this->getOrderingElements();
-		shuffle($elements);
+		$elements = $this->getShuffler()->shuffle($elements);
 		return $elements;
 	}
 	
@@ -755,17 +743,28 @@ class assOrderingHorizontal extends assQuestion implements ilObjQuestionScoringA
 	*/
 	public function getUserQuestionResult($active_id, $pass)
 	{
-		/** @var ilDB $ilDB */
+		/** @var ilDBInterface $ilDB */
 		global $ilDB;
 		$result = new ilUserQuestionResult($this, $active_id, $pass);
 
-		$data = $ilDB->queryF(
-			"SELECT value1 FROM tst_solutions WHERE active_fi = %s AND pass = %s AND question_fi = %s AND step = (
-				SELECT MAX(step) FROM tst_solutions WHERE active_fi = %s AND pass = %s AND question_fi = %s
-			)",
-			array("integer", "integer", "integer","integer", "integer", "integer"),
-			array($active_id, $pass, $this->getId(), $active_id, $pass, $this->getId())
-		);
+		$maxStep = $this->lookupMaxStep($active_id, $pass);
+
+		if( $maxStep !== null )
+		{
+			$data = $ilDB->queryF(
+				"SELECT value1 FROM tst_solutions WHERE active_fi = %s AND pass = %s AND question_fi = %s AND step = %s",
+				array("integer", "integer", "integer","integer"),
+				array($active_id, $pass, $this->getId(), $maxStep)
+			);
+		}
+		else
+		{
+			$data = $ilDB->queryF(
+				"SELECT value1 FROM tst_solutions WHERE active_fi = %s AND pass = %s AND question_fi = %s",
+				array("integer", "integer", "integer"),
+				array($active_id, $pass, $this->getId())
+			);
+		}
 		$row = $ilDB->fetchAssoc($data);
 
 		$answer_elements = $this->splitAndTrimOrderElementText($row["value1"], $this->answer_separator);
@@ -838,4 +837,17 @@ class assOrderingHorizontal extends assQuestion implements ilObjQuestionScoringA
 		}
 		return 0;
 	}
+
+// fau: testNav - new function getTestQuestionConfig()
+	/**
+	 * Get the test question configuration
+	 * @return ilTestQuestionConfig
+	 */
+	public function getTestQuestionConfig()
+	{
+		return parent::getTestQuestionConfig()
+			->setIsUnchangedAnswerPossible(true)
+			->setUseUnchangedAnswerLabel($this->lng->txt('tst_unchanged_order_is_correct'));
+	}
+// fau.
 }

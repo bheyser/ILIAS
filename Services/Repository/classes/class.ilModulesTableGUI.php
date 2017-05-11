@@ -3,6 +3,7 @@
 
 include_once("Services/Table/classes/class.ilTable2GUI.php");
 include_once("Services/Component/classes/class.ilComponent.php");
+require_once('./Services/Repository/classes/class.ilObjectPlugin.php');
 
 /**
  * TableGUI class for module listing
@@ -17,7 +18,7 @@ class ilModulesTableGUI extends ilTable2GUI
 	protected $pos_group_options; // [array]
 	protected $old_grp_id; // [int]
 	
-	function __construct($a_parent_obj, $a_parent_cmd = "")
+	function __construct($a_parent_obj, $a_parent_cmd = "", $a_has_write = false)
 	{
 		global $ilCtrl, $lng;
 				
@@ -32,9 +33,12 @@ class ilModulesTableGUI extends ilTable2GUI
 		$this->addColumn($lng->txt("cmps_module"), "");	
 		$this->addColumn($lng->txt("cmps_group"), "");											
 		$this->addColumn($lng->txt("cmps_enable_creation"), "");
-
-		// save options command
-		$this->addCommandButton("saveModules", $lng->txt("cmps_save_options"));		
+	
+		if((bool)$a_has_write)
+		{
+			// save options command
+			$this->addCommandButton("saveModules", $lng->txt("cmps_save_options"));		
+		}
 	
 		$this->setEnableHeader(true);
 		$this->setFormAction($ilCtrl->getFormAction($a_parent_obj));
@@ -109,23 +113,9 @@ class ilModulesTableGUI extends ilTable2GUI
 		}
 		
 		// parse plugins
-		include_once("./Services/Component/classes/class.ilPlugin.php");
-		$pl_names = $ilPluginAdmin->getActivePluginsForSlot(IL_COMP_SERVICE, "Repository", "robj");
-		foreach ($pl_names as $pl_name)
-		{								
-			$pl_id = ilPlugin::lookupIdForName(IL_COMP_SERVICE, "Repository", "robj", $pl_name);
-			if($pl_id)
-			{				
-				$obj_types[$pl_id] = array(
-					"object" => $pl_name,
-					"caption" => ilPlugin::lookupTxt("rep_robj", $pl_id, "obj_".$pl_id),
-					"subdir" => $lng->txt("cmps_plugin"),
-					"grp" => "",
-					"default_pos" => 2000 
-				);		
-			}
-		}				
-		
+		$obj_types = $this->getPluginComponents($obj_types, IL_COMP_SERVICE, "Repository", "robj");
+		$obj_types = $this->getPluginComponents($obj_types, IL_COMP_MODULE, "OrgUnit", "orguext");
+
 		// parse positions
 		$data = array();
 		foreach($obj_types as $obj_type => $item)
@@ -229,6 +219,30 @@ class ilModulesTableGUI extends ilTable2GUI
 		
 		$this->tpl->setVariable("TXT_MODULE_NAME", $a_set["subdir"]);
 	}
-}
 
-?>
+	/**
+	 * @param $obj_types
+	 * @param $component
+	 * @param $slotName
+	 * @param $slotId
+	 * @return mixed
+	 */
+	protected function getPluginComponents($obj_types, $component, $slotName, $slotId) {
+		global $ilPluginAdmin, $lng;
+		include_once("./Services/Component/classes/class.ilPlugin.php");
+		$pl_names = $ilPluginAdmin->getActivePluginsForSlot($component, $slotName, $slotId);
+		foreach ($pl_names as $pl_name) {
+			$pl_id = ilPlugin::lookupIdForName($component, $slotName, $slotId, $pl_name);
+			if ($pl_id) {
+				$obj_types[$pl_id] = array(
+					"object" => $pl_name,
+					"caption" => ilObjectPlugin::lookupTxtById($pl_id, "obj_" . $pl_id),
+					"subdir" => $lng->txt("cmps_plugin"),
+					"grp" => "",
+					"default_pos" => 2000
+				);
+			}
+		}
+		return $obj_types;
+	}
+}

@@ -50,21 +50,21 @@ class ilCourseXMLParser extends ilMDSaxParser implements ilSaxSubsetParser
 	/**
 	* Constructor
 	*
-	* @param	object		$a_content_object	must be of type ilObjContentObject
+	* @param	ilObject		$a_content_object	must be of type ilObjContentObject
 	*											ilObjTest or ilObjQuestionPool
 	* @param	string		$a_xml_file			xml file
 	* @param	string		$a_subdir			subdirectory in import directory
 	* @access	public
 	*/
-	function ilCourseXMLParser($a_course_obj, $a_xml_file = '')
+	public function __construct($a_course_obj, $a_xml_file = '')
 	{
 		global $lng,$ilLog;
 
-		parent::ilMDSaxParser($a_xml_file);
+		parent::__construct($a_xml_file);
 
 		$this->sax_controller = new ilSaxController();
 
-		$this->log =& $ilLog;
+		$this->log = $ilLog;
 
 		$this->course_obj = $a_course_obj;
 		$this->course_members = ilCourseParticipants::_getInstanceByObjId($this->course_obj->getId());
@@ -75,7 +75,7 @@ class ilCourseXMLParser extends ilMDSaxParser implements ilSaxSubsetParser
 		$this->md_obj = new ilMD($this->course_obj->getId(),0,'crs');
 		$this->setMDObject($this->md_obj);
 
-		$this->lng =& $lng;
+		$this->lng = $lng;
 	}
 
 	/**
@@ -290,27 +290,6 @@ class ilCourseXMLParser extends ilMDSaxParser implements ilSaxSubsetParser
 				);
 				break;
 
-
-			case 'Archive':
-				$this->in_archive = true;
-				switch($a_attribs['Access'])
-				{
-					case 'Disabled':
-						$this->course_obj->setArchiveType(IL_CRS_ARCHIVE_NONE);
-						break;
-
-					case 'Read':
-						$this->course_obj->setArchiveType(IL_CRS_ARCHIVE_NONE);
-						#$this->course_obj->setViewMode(IL_CRS_VIEW_ARCHIVE);
-						break;
-
-					case 'Download':
-						#$this->course_obj->setViewMode(IL_CRS_VIEW_ARCHIVE);
-						$this->course_obj->setArchiveType(IL_CRS_ARCHIVE_DOWNLOAD);
-						break;
-				}
-				break;
-
 			case 'Disabled':
 				$this->course_obj->getSubscriptionLimitationType(IL_CRS_SUBSCRIPTION_DEACTIVATED);
 				break;
@@ -323,6 +302,15 @@ class ilCourseXMLParser extends ilMDSaxParser implements ilSaxSubsetParser
 			case 'ContainerSetting':
 				$this->current_container_setting = $a_attribs['id'];				
 				break;
+			
+			case 'Period':
+				$this->in_period = true;
+				break;
+			
+			case 'WaitingListAutoFill':
+			case 'CancellationEnd':
+			case 'MinMembers':
+				break;			
 		}
 	}
 
@@ -564,9 +552,6 @@ class ilCourseXMLParser extends ilMDSaxParser implements ilSaxSubsetParser
 				$this->in_registration = false;
 				break;
 
-			case 'Archive':
-				$this->in_archive = false;
-				break;
 
 			case 'Start':
 				if($this->in_availability)
@@ -577,9 +562,12 @@ class ilCourseXMLParser extends ilMDSaxParser implements ilSaxSubsetParser
 				{
 					$this->course_obj->setSubscriptionStart(trim($this->cdata));
 				}
-				if($this->in_archive)
+				if($this->in_period)
 				{
-					$this->course_obj->setArchiveStart(trim($this->cdata));
+					if((int)$this->cdata)
+					{
+						$this->course_obj->setCourseStart(new ilDate((int)$this->cdata, IL_CAL_UNIX));
+					}
 				}
 				break;
 
@@ -592,9 +580,12 @@ class ilCourseXMLParser extends ilMDSaxParser implements ilSaxSubsetParser
 				{
 					$this->course_obj->setSubscriptionEnd(trim($this->cdata));
 				}
-				if($this->in_archive)
+				if($this->in_period)
 				{
-					$this->course_obj->setArchiveEnd(trim($this->cdata));
+					if((int)$this->cdata)
+					{
+						$this->course_obj->setCourseEnd(new ilDate((int)$this->cdata, IL_CAL_UNIX));
+					}
 				}
 				break;
 
@@ -605,6 +596,10 @@ class ilCourseXMLParser extends ilMDSaxParser implements ilSaxSubsetParser
 
 			case 'ImportantInformation':
 				$this->course_obj->setImportantInformation(trim($this->cdata));
+				break;
+			
+			case 'ViewMode':
+				$this->course_obj->setViewMode(trim($this->cdata));
 				break;
 
 			case 'Name':
@@ -645,6 +640,28 @@ class ilCourseXMLParser extends ilMDSaxParser implements ilSaxSubsetParser
 						$this->cdata);
 				}
 				break;
+				
+			case 'Period':
+				$this->in_period = false;
+				break;
+			
+			case 'WaitingListAutoFill':
+				$this->course_obj->setWaitingListAutoFill($this->cdata);
+				break;
+			
+			case 'CancellationEnd':
+				if((int)$this->cdata)
+				{
+					$this->course_obj->setCancellationEnd(new ilDate((int)$this->cdata, IL_CAL_UNIX));
+				}
+				break;
+				
+			case 'MinMembers':
+				if((int)$this->cdata)
+				{
+					$this->course_obj->setSubscriptionMinMembers((int)$this->cdata);
+				}
+				break;						
 		}
 		$this->cdata = '';
 

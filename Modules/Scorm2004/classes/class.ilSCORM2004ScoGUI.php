@@ -14,7 +14,7 @@ require_once("./Modules/Scorm2004/classes/seq_editor/class.ilSCORM2004Objective.
  * @author Alex Killing <alex.killing@gmx.de>
  * @version $Id$
  *
- * @ilCtrl_Calls ilSCORM2004ScoGUI: ilMDEditorGUI, ilNoteGUI, ilPCQuestionGUI, ilSCORM2004PageGUI
+ * @ilCtrl_Calls ilSCORM2004ScoGUI: ilObjectMetaDataGUI, ilNoteGUI, ilPCQuestionGUI, ilSCORM2004PageGUI
  *
  * @ingroup ModulesScorm2004
  */
@@ -28,14 +28,14 @@ class ilSCORM2004ScoGUI extends ilSCORM2004NodeGUI
 
 	var $ctrl = null;
 
-	function ilSCORM2004ScoGUI($a_slm_obj, $a_node_id = 0)
+	function __construct($a_slm_obj, $a_node_id = 0)
 	{
 		global $ilCtrl;
 
 		$ilCtrl->saveParameter($this, "obj_id");
 		$this->ctrl = &$ilCtrl;
 
-		parent::ilSCORM2004NodeGUI($a_slm_obj, $a_node_id);
+		parent::__construct($a_slm_obj, $a_node_id);
 	}
 
 	/**
@@ -49,7 +49,7 @@ class ilSCORM2004ScoGUI extends ilSCORM2004NodeGUI
 	/**
 	 * execute command
 	 */
-	function &executeCommand()
+	function executeCommand()
 	{
 		global $tpl, $ilCtrl, $ilTabs;
 
@@ -70,14 +70,13 @@ class ilSCORM2004ScoGUI extends ilSCORM2004NodeGUI
 				}
 				break;
 
-			case 'ilmdeditorgui':
+			case 'ilobjectmetadatagui':
 				$this->setTabs();
 				$this->setLocator();
-				include_once 'Services/MetaData/classes/class.ilMDEditorGUI.php';
-
-				$md_gui =& new ilMDEditorGUI($this->slm_object->getID(),
-					$this->node_object->getId(), $this->node_object->getType());
-				$md_gui->addObserver($this->node_object,'MDUpdateListener','General');
+								include_once 'Services/Object/classes/class.ilObjectMetaDataGUI.php';
+				$md_gui = new ilObjectMetaDataGUI($this->slm_object,
+					$this->node_object->getType(), $this->node_object->getId());					
+				$md_gui->addMDObserver($this->node_object,'MDUpdateListener','General');
 				$ilCtrl->forwardCommand($md_gui);
 				break;
 				
@@ -91,7 +90,7 @@ class ilSCORM2004ScoGUI extends ilSCORM2004NodeGUI
 
 			default:
 				$cmd = $ilCtrl->getCmd("showOrganization");
-				$ret =& $this->$cmd();
+				$ret = $this->$cmd();
 				break;
 		}
 	}
@@ -310,9 +309,16 @@ die("deprecated");
 			 "sco_resources", get_class($this));
 		
 		// metadata
-		$ilTabs->addTarget("meta_data",
-		$ilCtrl->getLinkTargetByClass("ilmdeditorgui",''),
-			 "", "ilmdeditorgui");
+		include_once "Services/Object/classes/class.ilObjectMetaDataGUI.php";
+		$mdgui = new ilObjectMetaDataGUI($this->slm_object,
+			$this->node_object->getType(), $this->node_object->getId());				
+		$mdtab = $mdgui->getTab();
+		if($mdtab)
+		{
+			$ilTabs->addTarget("meta_data",
+				$mdtab,
+				 "", "ilmdeditorgui");
+		}
 		
 		// export
 		$ilTabs->addTarget("export",
@@ -356,7 +362,7 @@ die("deprecated");
 		
 		// init main template
 		$tpl = new ilTemplate("tpl.main.html", true, true);
-		include_once("./Services/Style/classes/class.ilObjStyleSheet.php");
+		include_once("./Services/Style/Content/classes/class.ilObjStyleSheet.php");
 		$tpl->setVariable("LOCATION_STYLESHEET", ilUtil::getStyleSheetLocation());
 		$tpl->setBodyClass("");
 		$tpl->setCurrentBlock("ContentStyle");
@@ -446,7 +452,7 @@ die("deprecated");
 	}
 	
 	//callback function for question export
-	private function insertQuestion($matches)
+	static private function insertQuestion($matches)
 	{
 		$q_exporter = new ilQuestionExporter(false);
 		return $q_exporter->exportQuestion($matches[2]);
@@ -838,7 +844,7 @@ die("deprecated");
 	{
 		$file = explode("_", $_GET["file_id"]);
 		require_once("./Modules/File/classes/class.ilObjFile.php");
-		$fileObj =& new ilObjFile($file[count($file) - 1], false);
+		$fileObj = new ilObjFile($file[count($file) - 1], false);
 		$fileObj->sendFile();
 		exit;
 	}
@@ -905,13 +911,8 @@ die("deprecated");
 		{
 			$ilias->raiseError("No file selected!",$ilias->error_obj->MESSAGE);
 		}
-		// check create permission
-		if (!$rbacsystem->checkAccess("create", $_GET["ref_id"], "sahs"))
-		{
-			$ilias->raiseError($lng->txt("no_create_permission"), $ilias->error_obj->WARNING);
-		}
 		// get_cfg_var("upload_max_filesize"); // get the may filesize form t he php.ini
-		switch ($__FILES["scormfile"]["error"])
+		switch ($_FILES["scormfile"]["error"])
 		{
 			case UPLOAD_ERR_INI_SIZE:
 				$ilias->raiseError($lng->txt("err_max_file_size_exceeds"),$ilias->error_obj->MESSAGE);

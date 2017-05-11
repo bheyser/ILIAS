@@ -36,7 +36,11 @@ class ilECSSettingsGUI
 {
 	const MAPPING_EXPORT = 1;
 	const MAPPING_IMPORT = 2;
-
+	
+	/**
+	 * @var ilLogger
+	 */
+	protected $log = null;
 
 	protected $tpl;
 	protected $lng;
@@ -58,6 +62,8 @@ class ilECSSettingsGUI
 		$this->lng->loadLanguageModule('ecs');
 		$this->ctrl = $ilCtrl;
 		$this->tabs_gui = $ilTabs;
+		
+		$this->log = $GLOBALS['DIC']->logger()->wsrv();
 
 		$this->initSettings();
 	}
@@ -71,6 +77,7 @@ class ilECSSettingsGUI
 	 */
 	public function executeCommand()
 	{
+		global $ilAccess;
 		$next_class = $this->ctrl->getNextClass($this);
 		$cmd = $this->ctrl->getCmd();
 		
@@ -95,6 +102,12 @@ class ilECSSettingsGUI
 				break;
 			
 			default:
+
+				if(!$ilAccess->checkAccess('write','',$_REQUEST["ref_id"]) && $cmd != "overview" && $cmd != "communities")
+				{
+					$this->ctrl->redirect($this, "overview");
+				}
+
 				if(!$cmd || $cmd == 'view')
 				{
 					$cmd = "overview";
@@ -113,15 +126,18 @@ class ilECSSettingsGUI
 	 */
 	public function overview()
 	{
-		global $ilToolbar,$ilTabs;
+		global $ilToolbar,$ilTabs, $ilAccess;
 
 		include_once './Services/WebServices/ECS/classes/class.ilECSServerSettings.php';
 
 		$ilTabs->setSubTabActive('overview');
-		$ilToolbar->addButton(
-			$this->lng->txt('ecs_add_new_ecs'),
-			$this->ctrl->getLinkTarget($this,'create')
-		);
+		if($ilAccess->checkAccess('write','',$_REQUEST["ref_id"]))
+		{
+			$ilToolbar->addButton(
+				$this->lng->txt('ecs_add_new_ecs'),
+				$this->ctrl->getLinkTarget($this,'create')
+			);
+		}
 
 		$servers = ilECSServerSettings::getInstance();
 		$servers->readInactiveServers();
@@ -582,7 +598,7 @@ class ilECSSettingsGUI
 		 	{
 				foreach($community->getParticipants() as $part)
 				{
-					$GLOBALS['ilLog']->write(__METHOD__.': '.print_r($community,true));
+					$this->log->dump($community);
 					if($part->isSelf())
 					{
 						$this->settings->setTitle($part->getParticipantName());
@@ -653,8 +669,7 @@ class ilECSSettingsGUI
 				{
 					if(!$creader->getParticipantByMID($mid))
 					{
-						$GLOBALS['ilLog']->write(__METHOD__.': Deleting deprecated participant '. $server->getServerId().' '. $mid);
-
+						$this->log->notice('Deleting deprecated participant: ' . $server->getServerId().' '. $mid);
 						$part = new ilECSParticipantSetting($server->getServerId(),$mid);
 						$part->delete();
 					}
@@ -677,19 +692,30 @@ class ilECSSettingsGUI
 	 */
 	public function communities()
 	{
+		global $ilAccess;
 		// add toolbar to refresh communities
-		$GLOBALS['ilToolbar']->addButton(
+		if($ilAccess->checkAccess('write','',$_REQUEST["ref_id"]))
+		{
+			$GLOBALS['ilToolbar']->addButton(
 				$this->lng->txt('ecs_refresh_participants'),
 				$this->ctrl->getLinkTarget($this,'refreshParticipants')
-		);
+			);
+		}
+
 		
 	 	$this->tabs_gui->setSubTabActive('ecs_communities');
 
 	 	$this->tpl->addBlockFile('ADM_CONTENT','adm_content','tpl.ecs_communities.html','Services/WebServices/ECS');
 	 	
 	 	$this->tpl->setVariable('FORMACTION',$this->ctrl->getFormAction($this,'updateCommunities'));
-	 	$this->tpl->setVariable('TXT_SAVE',$this->lng->txt('save'));
-	 	$this->tpl->setVariable('TXT_CANCEL', $this->lng->txt('cancel'));
+
+		if($ilAccess->checkAccess('write','',$_REQUEST["ref_id"]))
+		{
+			$this->tpl->setCurrentBlock("submit_buttons");
+	 		$this->tpl->setVariable('TXT_SAVE',$this->lng->txt('save'));
+	 		$this->tpl->setVariable('TXT_CANCEL', $this->lng->txt('cancel'));
+			$this->tpl->parseCurrentBlock();
+		}
 	 	
 	 	include_once('Services/WebServices/ECS/classes/class.ilECSCommunityReader.php');
 	 	include_once('Services/WebServices/ECS/classes/class.ilECSCommunityTableGUI.php');
@@ -812,7 +838,7 @@ class ilECSSettingsGUI
 			}
 			catch(Exception $e)
 			{
-				$GLOBALS['ilLog']->write(__METHOD__.': Cannot read ecs communities: '.$e->getMessage());
+				$this->log->error('Cannot read ecs communities: ' . $e->getMessage());
 			}
 		}
 
@@ -841,7 +867,7 @@ class ilECSSettingsGUI
 				}
 				catch(Exception $e)
 				{
-					$GLOBALS['ilLog']->write(__METHOD__.': Cannot read ecs communities: '.$e->getMessage());
+					$this->log->error('Cannot read ecs communities: ' . $e->getMessage());
 				}
 
 				$set->update();
@@ -870,7 +896,7 @@ class ilECSSettingsGUI
 	 */
 	protected function setMappingTabs($a_active)
 	{
-		global $ilTabs;
+		global $ilTabs, $ilAccess;
 
 		$ilTabs->clearTargets();
 		$ilTabs->clearSubTabs();
@@ -879,11 +905,14 @@ class ilECSSettingsGUI
 			$this->lng->txt('ecs_settings'),
 			$this->ctrl->getLinkTarget($this,'overview')
 		);
-		$ilTabs->addTab(
-			'import',
-			$this->lng->txt('ecs_tab_import'),
-			$this->ctrl->getLinkTarget($this,'importMappings')
-		);
+		if($ilAccess->checkAccess('write','',$_REQUEST["ref_id"]))
+		{
+			$ilTabs->addTab(
+				'import',
+				$this->lng->txt('ecs_tab_import'),
+				$this->ctrl->getLinkTarget($this,'importMappings')
+			);
+		}
 		$ilTabs->addTab(
 			'export',
 			$this->lng->txt('ecs_tab_export'),
@@ -1318,6 +1347,7 @@ class ilECSSettingsGUI
 			$this->rule->setContainerId($this->form->getInput('import_id'));			
 			$this->rule->setFieldName($this->form->getInput('field'));
 			$this->rule->setMappingType($this->form->getInput('type'));
+
 			
 			switch($this->form->getInput('type'))
 			{
@@ -1490,10 +1520,12 @@ class ilECSSettingsGUI
 		$duration->setInfo($this->lng->txt('ecs_cat_mapping_duration_info'));
 		
 			$dur_start = new ilDateTimeInputGUI($this->lng->txt('from'),'dur_begin');
+			$dur_start->setRequired(true);
 			$dur_start->setDate($this->rule->getDateRangeStart());
 			$duration->addSubItem($dur_start);
 			
 			$dur_end = new ilDateTimeInputGUI($this->lng->txt('to'),'dur_end');
+			$dur_end->setRequired(true);
 			$dur_end->setDate($this->rule->getDateRangeEnd());
 			$duration->addSubItem($dur_end);
 		
@@ -1673,10 +1705,22 @@ class ilECSSettingsGUI
 			$writer->addColumn(isset($values[$field]) ? $values[$field] : '');
 			
 			$field = $settings->getMappingByECSName(ilECSDataMappingSetting::MAPPING_IMPORT_RCRS,'begin');
-			$writer->addColumn(isset($values[$field]) ?  ilFormat::formatUnixTime($values[$field],true) : '');
+			$dt = '';
+			if(isset($values[$field]))
+			{
+				$dt = new ilDateTime($values[$field], IL_CAL_UNIX);
+				$dt = $dt->get(IL_CAL_DATETIME);
+			}
+			$writer->addColumn($dt);
 			
 			$field = $settings->getMappingByECSName(ilECSDataMappingSetting::MAPPING_IMPORT_RCRS,'end');
-			$writer->addColumn(isset($values[$field]) ?  ilFormat::formatUnixTime($values[$field],true) : '');
+			$dt = '';
+			if(isset($values[$field]))
+			{
+				$dt = new ilDateTime($values[$field], IL_CAL_UNIX);
+				$dt = $dt->get(IL_CAL_DATETIME);
+			}
+			$writer->addColumn($dt);
 			
 			$writer->addColumn($ilObjDataCache->lookupLastUpdate($obj_id));
 		}
@@ -1812,10 +1856,22 @@ class ilECSSettingsGUI
 			$writer->addColumn(isset($values[$field]) ? $values[$field] : '');
 			
 			$field = $settings->getMappingByECSName(0,'begin');
-			$writer->addColumn(isset($values[$field]) ?  ilFormat::formatUnixTime($values[$field],true) : '');
+			$dt = '';
+			if(isset($values[$field]))
+			{
+				$dt = new ilDateTime($values[$field], IL_CAL_UNIX);
+				$dt = $dt->get(IL_CAL_DATETIME);
+			}
+			$writer->addColumn($dt);
 			
 			$field = $settings->getMappingByECSName(0,'end');
-			$writer->addColumn(isset($values[$field]) ?  ilFormat::formatUnixTime($values[$field],true) : '');
+			$dt = '';
+			if(isset($values[$field]))
+			{
+				$dt = new ilDateTime($values[$field], IL_CAL_UNIX);
+				$dt = $dt->get(IL_CAL_DATETIME);
+			}
+			$writer->addColumn($dt);
 			
 			$writer->addColumn($ilObjDataCache->lookupLastUpdate($obj_id));
 		}
@@ -1862,6 +1918,7 @@ class ilECSSettingsGUI
 	 */
 	protected function setSubTabs()
 	{
+		global $ilAccess;
 		$this->tabs_gui->clearSubTabs();
 		
 		$this->tabs_gui->addSubTabTarget("overview",
@@ -1878,7 +1935,12 @@ class ilECSSettingsGUI
 		$this->tabs_gui->addSubTabTarget("ecs_communities",
 			$this->ctrl->getLinkTarget($this,'communities'),
 			"communities",get_class($this));
-			
+
+		if(!$ilAccess->checkAccess('write','',$_REQUEST["ref_id"]))
+		{
+			return true;
+		}
+
 		$this->tabs_gui->addSubTabTarget('ecs_mappings',
 			$this->ctrl->getLinkTarget($this,'importMappings'),
 			'importMappings',get_class($this));
@@ -1934,7 +1996,6 @@ class ilECSSettingsGUI
 	{
 		global $ilDB,$ilSetting;
 
-		#$ilDB->lockTables(array('name' => 'settings', 'type' => ilDB::LOCK_WRITE));
 		$setting = new ilSetting('ecs');
 		$setting->set(
 			'next_execution_'.$this->settings->getServerId(),

@@ -40,7 +40,7 @@ class ilFormPropertyGUI
 	/**
 	* Execute command.
 	*/
-	function &executeCommand()
+	function executeCommand()
 	{
 		global $ilCtrl;
 		
@@ -386,9 +386,13 @@ class ilFormPropertyGUI
 	 */
 	public function setMulti($a_multi, $a_sortable = false, $a_addremove = true)
 	{
-		if (!$this instanceof ilMultiValuesItem)
+		if(!$this instanceof ilMultiValuesItem)
 		{
-			trigger_error("not supported for form property type", E_USER_WARNING);
+			require_once 'Services/Form/exceptions/class.ilFormException.php';
+			throw new ilFormException(sprintf(
+				"%s not supported for form property type %s",
+				__FUNCTION__, get_class($this)
+			));
 		}
 		
 		$this->multi = (bool)$a_multi;
@@ -486,7 +490,7 @@ class ilFormPropertyGUI
 	 * @param string $a_text
 	 * @return string
 	 */
-	function removeProhibitedCharacters($a_text)
+	static function removeProhibitedCharacters($a_text)
 	{
 		return str_replace("\x0B", "", $a_text);
 	}

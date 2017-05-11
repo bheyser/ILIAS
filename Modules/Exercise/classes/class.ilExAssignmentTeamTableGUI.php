@@ -12,10 +12,9 @@ include_once './Services/Table/classes/class.ilTable2GUI.php';
 class ilExAssignmentTeamTableGUI extends ilTable2GUI
 {
 	protected $mode; // [int]
-	protected $team_id; // [int]
-	protected $assignment; // [ilExAssignment]
-	protected $member_ids; // [array]	
+	protected $team; // [ilExAssignmentTeam]	
 	protected $read_only; // [bool]	
+	protected $parent_ref_id; // [int]	
 	
 	const MODE_ADD = 1;
 	const MODE_EDIT = 2;
@@ -26,20 +25,20 @@ class ilExAssignmentTeamTableGUI extends ilTable2GUI
 	 * @param ilObject $a_parent_obj
 	 * @param string $a_parent_cmd
 	 * @param int $a_mode
-	 * @param int $a_team_id
+	 * @param int $a_parent_ref_id
+	 * @param ilExAssignmentTeam $a_team
 	 * @param ilExAssignment $a_assignment
 	 * @param array $a_member_ids
 	 * @param bool $a_read_only
 	 */
-	public function  __construct($a_parent_obj, $a_parent_cmd, $a_mode, $a_team_id, ilExAssignment $a_assignment, array $a_member_ids = null, $a_read_only = false)
+	public function  __construct($a_parent_obj, $a_parent_cmd, $a_mode, $a_parent_ref_id, ilExAssignmentTeam $a_team, $a_read_only = false)
 	{
 		global $ilCtrl;
 				
 		$this->mode = $a_mode;
-		$this->team_id = $a_team_id;
-		$this->assignment = $a_assignment;
-		$this->member_ids = $a_member_ids;
+		$this->team = $a_team;
 		$this->read_only = (bool)$a_read_only;
+		$this->parent_ref_id = $a_parent_ref_id;
 		
 		parent::__construct($a_parent_obj, $a_parent_cmd);
 
@@ -78,12 +77,12 @@ class ilExAssignmentTeamTableGUI extends ilTable2GUI
 	{			
 		if($this->mode == self::MODE_ADD)
 		{
-			$assigned = $this->assignment->getMembersOfAllTeams();		
+			$assigned = $this->team->getMembersOfAllTeams();		
 		}
 		else
 		{
 			$assigned = array();						
-			$this->member_ids = $this->assignment->getTeamMembers($this->team_id);			
+			$this->member_ids = $this->team->getMembers();			
 		}
 	
 		include_once "Services/User/classes/class.ilUserUtil.php";
@@ -108,11 +107,22 @@ class ilExAssignmentTeamTableGUI extends ilTable2GUI
 	 */
 	protected function fillRow($a_set)
 	{		
+		global $ilAccess;
+		
 		if(!$this->read_only)
 		{
 			$this->tpl->setVariable("VAL_ID", $a_set["id"]);
 		}
 		$this->tpl->setVariable("TXT_NAME", $a_set["name"]);		
+		
+		// #18327
+		if(!$ilAccess->checkAccessOfUser($a_set["id"], "read","", $this->parent_ref_id) &&
+			is_array($info = $ilAccess->getInfo()))
+		{
+			$this->tpl->setCurrentBlock('access_warning');
+			$this->tpl->setVariable('PARENT_ACCESS', $info[0]["text"]);
+			$this->tpl->parseCurrentBlock();
+		}		
 	}
 }
 

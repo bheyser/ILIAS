@@ -2,6 +2,7 @@
 /* Copyright (c) 1998-2009 ILIAS open source, Extended GPL, see docs/LICENSE */
 
 include_once("./Services/Table/classes/class.ilTable2GUI.php");
+require_once('./Services/Repository/classes/class.ilObjectPlugin.php');
 
 /**
 * TableGUI class for search results
@@ -24,6 +25,7 @@ class ilSearchResultTableGUI extends ilTable2GUI
 		$this->setId("ilSearchResultsTable");
 
 		$this->presenter = $a_presenter;
+		$this->setId('search_'.$GLOBALS['ilUser']->getId());
 		parent::__construct($a_parent_obj, $a_parent_cmd);
 		$this->setTitle($lng->txt("search_results"));
 		$this->setLimit(999);
@@ -34,6 +36,13 @@ class ilSearchResultTableGUI extends ilTable2GUI
 		#$this->addColumn($this->lng->txt("search_title_description"), "title_sort");
 		$this->addColumn($this->lng->txt("type"), "type", "1");
 		$this->addColumn($this->lng->txt("search_title_description"), "title");
+
+		$all_cols = $this->getSelectableColumns();
+		foreach($this->getSelectedColumns() as $col)
+		{
+			$this->addColumn($all_cols[$col]['txt'], $col,'50px');
+		}
+
 		if($this->enabledRelevance())
 		{
 			#$this->addColumn($this->lng->txt('lucene_relevance_short'),'s_relevance','50px');
@@ -41,6 +50,8 @@ class ilSearchResultTableGUI extends ilTable2GUI
 			$this->setDefaultOrderField("s_relevance");
 			$this->setDefaultOrderDirection("desc");
 		}
+		
+		
 		$this->addColumn($this->lng->txt("actions"), "", "10px");
 		
 		$this->setEnableHeader(true);
@@ -49,6 +60,7 @@ class ilSearchResultTableGUI extends ilTable2GUI
 		//$this->disable("footer");
 		$this->setEnableTitle(true);
 		$this->setEnableNumInfo(false);
+		$this->setShowRowsSelector(false);
 		
 		include_once "Services/Object/classes/class.ilObjectActivation.php";
 	}
@@ -64,6 +76,24 @@ class ilSearchResultTableGUI extends ilTable2GUI
 		
 		return parent::numericOrdering($a_field);
 	}
+	
+	/**
+	 * Get selectable columns
+	 * @return 
+	 */
+	public function getSelectableColumns()
+	{		
+		global $ilSetting;
+
+		
+		return array('create_date' =>
+						array(
+							'txt' => $this->lng->txt('create_date'),
+							'default' => false
+			)
+		);
+	}
+	
 	
 	/**
 	* Fill table row
@@ -117,8 +147,22 @@ class ilSearchResultTableGUI extends ilTable2GUI
 			$this->tpl->setVariable('REL_PBAR', $pbar->render());				
 			$this->tpl->parseCurrentBlock();
 		}
+		
 
 		$this->tpl->setVariable("ITEM_HTML", $html);
+		
+		foreach($this->getSelectedColumns() as $field)
+		{
+			switch($field)
+			{
+				case 'create_date':
+					$this->tpl->setCurrentBlock('creation');
+					$this->tpl->setVariable('CREATION_DATE',  ilDatePresentation::formatDate(new ilDateTime(ilObject::_lookupCreationDate($obj_id),IL_CAL_DATETIME)));
+					$this->tpl->parseCurrentBlock();
+			}
+		}
+		
+		
 
 		if(!$objDefinition->isPlugin($type))
 		{
@@ -128,7 +172,7 @@ class ilSearchResultTableGUI extends ilTable2GUI
 		else
 		{
 			include_once("./Services/Component/classes/class.ilPlugin.php");
-			$type_txt = ilPlugin::lookupTxt("rep_robj", $type, "obj_".$type);
+			$type_txt = ilObjectPlugin::lookupTxtById($type, "obj_".$type);
 			$icon = ilObject::_getIcon($obj_id,'small',$type);
 		}
 

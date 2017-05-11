@@ -21,7 +21,7 @@ class ilObjQuestionPoolTaxonomyEditingCommandForwarder
 	/**
 	 * global $db
 	 *
-	 * @var ilDB
+	 * @var ilDBInterface
 	 */
 	protected $db = null;
 	
@@ -57,13 +57,13 @@ class ilObjQuestionPoolTaxonomyEditingCommandForwarder
 	 * Constructor
 	 * 
 	 * @param ilObjQuestionPool $poolOBJ
-	 * @param ilDB $db
+	 * @param ilDBInterface $db
 	 * @param ilPluginAdmin $pluginAdmin
 	 * @param ilCtrl $ctrl
 	 * @param ilTabsGUI $tabs
 	 * @param ilLanguage $lng
 	 */
-	public function __construct(ilObjQuestionPool $poolOBJ, ilDB $db, ilPluginAdmin $pluginAdmin, ilCtrl $ctrl, ilTabsGUI $tabs, ilLanguage $lng)
+	public function __construct(ilObjQuestionPool $poolOBJ, ilDBInterface $db, ilPluginAdmin $pluginAdmin, ilCtrl $ctrl, ilTabsGUI $tabs, ilLanguage $lng)
 	{
 		$this->poolOBJ = $poolOBJ;
 		$this->db = $db;
@@ -82,9 +82,9 @@ class ilObjQuestionPoolTaxonomyEditingCommandForwarder
 		$this->lng->loadLanguageModule('tax');
 
 		require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionList.php';
-		$questionList = new ilAssQuestionList(
-				$this->db, $this->lng, $this->pluginAdmin, $this->poolOBJ->getId()
-		);
+		$questionList = new ilAssQuestionList($this->db, $this->lng, $this->pluginAdmin);
+
+		$questionList->setParentObjId($this->poolOBJ->getId());
 
 		$questionList->load();
 

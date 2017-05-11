@@ -20,7 +20,7 @@ class ilExerciseMembers
 //	var $status_returned;
 //	var $notice;
 
-	function ilExerciseMembers($a_exc)
+	function __construct($a_exc)
 	{
 		$this->exc = $a_exc;
 		$this->obj_id = $a_exc->getId();
@@ -166,7 +166,8 @@ class ilExerciseMembers
 		ilLPStatusWrapper::_updateStatus($this->getObjId(), $a_usr_id);
 		
 		// delete all delivered files of the member
-		$this->exc->deleteAllDeliveredFilesOfUser($a_usr_id);
+		include_once("./Modules/Exercise/classes/class.ilExSubmission.php");
+		ilExSubmission::deleteUser($this->exc->getId(), $a_usr_id);
 
 // @todo: delete all assignment associations (and their files)
 		
@@ -265,7 +266,7 @@ class ilExerciseMembers
 		return true;
 	}
 
-	function _getMembers($a_obj_id)
+	static function _getMembers($a_obj_id)
 	{
 		global $ilDB;
 
@@ -285,87 +286,6 @@ class ilExerciseMembers
 		return $usr_ids ? $usr_ids : array();
 	}
 
-
-	/**
-	 * Get returned status for all members (if they have anything returned for
-	 * any assignment)
-	 */
-	function _getReturned($a_obj_id)
-	{
-		global $ilDB;
-
-		$query = "SELECT DISTINCT(usr_id) as ud FROM exc_members ".
-			"WHERE obj_id = ".$ilDB->quote($a_obj_id, "integer")." ".
-			"AND returned = 1";
-
-		$res = $ilDB->query($query);
-		while($row = $ilDB->fetchObject($res))
-		{
-			$usr_ids[] = $row->ud;
-		}
-
-		return $usr_ids ? $usr_ids : array();
-	}
-
-	/**
-	 * Has user returned anything in any assignment?
-	 *
-	 * @param		integer		object id
-	 * @param		integer		user id
-	 * @return		boolean		true/false
-	 */
-	function _hasReturned($a_obj_id, $a_user_id)
-	{
-		global $ilDB;
-	
-		$set = $ilDB->query("SELECT DISTINCT(usr_id) FROM exc_members WHERE ".
-			" obj_id = ".$ilDB->quote($a_obj_id, "integer")." AND ".
-			" returned = ".$ilDB->quote(1, "integer")." AND ".
-			" usr_id = ".$ilDB->quote($a_user_id, "integer")
-			);
-		if ($rec = $ilDB->fetchAssoc($set))
-		{
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * Get all users that passed the exercise
-	 */
-	function _getPassedUsers($a_obj_id)
-	{
-		global $ilDB;
-
-		$query = "SELECT DISTINCT(usr_id) FROM exc_members ".
-			"WHERE obj_id = ".$ilDB->quote($a_obj_id, "integer")." ".
-			"AND status = ".$ilDB->quote("passed", "text");
-		$res = $ilDB->query($query);
-		while($row = $ilDB->fetchObject($res))
-		{
-			$usr_ids[] = $row->usr_id;
-		}
-		return $usr_ids ? $usr_ids : array();
-	}
-
-	/**
-	 * Get all users that failed the exercise
-	 */
-	function _getFailedUsers($a_obj_id)
-	{
-		global $ilDB;
-
-		$query = "SELECT DISTINCT(usr_id) FROM exc_members ".
-			"WHERE obj_id = ".$ilDB->quote($a_obj_id, "integer")." ".
-			"AND status = ".$ilDB->quote("failed", "text");
-		$res = $ilDB->query($query);
-		while($row = $ilDB->fetchObject($res))
-		{
-			$usr_ids[] = $row->usr_id;
-		}
-		return $usr_ids ? $usr_ids : array();
-	}
-
 	/**
 	 * Lookup current status (notgraded|passed|failed)
 	 *
@@ -376,7 +296,7 @@ class ilExerciseMembers
 	 * @param	int		$a_user_id	member id
 	 * @return	mixed	false (if user is no member) or notgraded|passed|failed
 	 */
-	function _lookupStatus($a_obj_id, $a_user_id)
+	static function _lookupStatus($a_obj_id, $a_user_id)
 	{
 		global $ilDB;
 
@@ -404,7 +324,7 @@ class ilExerciseMembers
 	 * @param	int		user id
 	 * @param	text	status
 	 */
-	function _writeStatus($a_obj_id, $a_user_id, $a_status)
+	static function _writeStatus($a_obj_id, $a_user_id, $a_status)
 	{
 		global $ilDB;
 		
@@ -430,7 +350,7 @@ class ilExerciseMembers
 	 * @param	int		user id
 	 * @param	text	status
 	 */
-	function _writeReturned($a_obj_id, $a_user_id, $a_status)
+	static function _writeReturned($a_obj_id, $a_user_id, $a_status)
 	{
 		global $ilDB;
 		
@@ -442,6 +362,91 @@ class ilExerciseMembers
 		
 		include_once("./Services/Tracking/classes/class.ilLPStatusWrapper.php");
 		ilLPStatusWrapper::_updateStatus($a_obj_id, $a_user_id);
+	}
+	
+	
+	// 
+	// LP
+	//
+	
+	/**
+	 * Get returned status for all members (if they have anything returned for
+	 * any assignment)
+	 */
+	static function _getReturned($a_obj_id)
+	{
+		global $ilDB;
+
+		$query = "SELECT DISTINCT(usr_id) as ud FROM exc_members ".
+			"WHERE obj_id = ".$ilDB->quote($a_obj_id, "integer")." ".
+			"AND returned = 1";
+
+		$res = $ilDB->query($query);
+		while($row = $ilDB->fetchObject($res))
+		{
+			$usr_ids[] = $row->ud;
+		}
+
+		return $usr_ids ? $usr_ids : array();
+	}
+
+	/**
+	 * Has user returned anything in any assignment?
+	 *
+	 * @param		integer		object id
+	 * @param		integer		user id
+	 * @return		boolean		true/false
+	 */
+	static function _hasReturned($a_obj_id, $a_user_id)
+	{
+		global $ilDB;
+	
+		$set = $ilDB->query("SELECT DISTINCT(usr_id) FROM exc_members WHERE ".
+			" obj_id = ".$ilDB->quote($a_obj_id, "integer")." AND ".
+			" returned = ".$ilDB->quote(1, "integer")." AND ".
+			" usr_id = ".$ilDB->quote($a_user_id, "integer")
+			);
+		if ($rec = $ilDB->fetchAssoc($set))
+		{
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Get all users that passed the exercise
+	 */
+	static function _getPassedUsers($a_obj_id)
+	{
+		global $ilDB;
+
+		$query = "SELECT DISTINCT(usr_id) FROM exc_members ".
+			"WHERE obj_id = ".$ilDB->quote($a_obj_id, "integer")." ".
+			"AND status = ".$ilDB->quote("passed", "text");
+		$res = $ilDB->query($query);
+		while($row = $ilDB->fetchObject($res))
+		{
+			$usr_ids[] = $row->usr_id;
+		}
+		return $usr_ids ? $usr_ids : array();
+	}
+
+	/**
+	 * Get all users that failed the exercise
+	 */
+	static function _getFailedUsers($a_obj_id)
+	{
+		global $ilDB;
+
+		$query = "SELECT DISTINCT(usr_id) FROM exc_members ".
+			"WHERE obj_id = ".$ilDB->quote($a_obj_id, "integer")." ".
+			"AND status = ".$ilDB->quote("failed", "text");
+		$res = $ilDB->query($query);
+		while($row = $ilDB->fetchObject($res))
+		{
+			$usr_ids[] = $row->usr_id;
+		}
+		return $usr_ids ? $usr_ids : array();
 	}
 
 } //END class.ilObjExercise

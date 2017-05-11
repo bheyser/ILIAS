@@ -79,13 +79,13 @@ il.Util = {
 	 	}
 		if(do_check)
 		{
-			$("#" + parent_el).find("input:checkbox" + name_sel).attr('checked', 'checked');
-			$('[name="' + parent_el + '"]').find("input:checkbox" + name_sel).attr('checked', 'checked');
+			$("#" + parent_el).find("input:checkbox" + name_sel).prop('checked', true);
+			$('[name="' + parent_el + '"]').find("input:checkbox" + name_sel).prop('checked', true);
 		}
 		else
 		{
-			$("#" + parent_el).find("input:checkbox" + name_sel).removeAttr('checked');
-			$('[name="' + parent_el + '"]').find("input:checkbox" + name_sel).removeAttr('checked');
+			$("#" + parent_el).find("input:checkbox" + name_sel).prop('checked', false);
+			$('[name="' + parent_el + '"]').find("input:checkbox" + name_sel).prop('checked', false);
 		}
 	  return true;
 	},
@@ -150,7 +150,8 @@ il.Util = {
 	// FailureHandler
 	handleAjaxFailure: function(o)
 	{
-		console.log("ilNotes.js: Ajax Failure.");
+		console.log("il.Util.handleAjaxFailure: Ajax Error:");
+		console.log(o);
 	},
 	
 	// Screen reader related functions
@@ -272,6 +273,16 @@ il.Util = {
 				window.print();
 			}
 		}
+	},
+
+	// see http://stackoverflow.com/questions/1144783/replacing-all-occurrences-of-a-string-in-javascript
+	escapeRegExp: function (string) {
+		return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+	},
+
+	// see http://stackoverflow.com/questions/1144783/replacing-all-occurrences-of-a-string-in-javascript
+	replaceAll: function (string, find, replace) {
+		return string.replace(new RegExp(il.Util.escapeRegExp(find), 'g'), replace);
 	}
 }
 
@@ -492,8 +503,14 @@ il.UICore = {
 		if (el && bc) {
 			el_reg = il.Util.getRegion(el);
 			bc_reg = il.Util.getRegion(bc);
-			il.Util.setX(bc, el_reg.right);
+			if ($(el).is(':visible')) {
+				il.Util.setX(bc, el_reg.right);
+			} else if (sm) {
+				sm_reg = il.Util.getRegion(sm);
+				il.Util.setX(bc, sm_reg.left);		// #0019851
+			}
 		}
+
 		if (bc && sm) {
 			sm_reg = il.Util.getRegion(sm);
 			bc_reg = il.Util.getRegion(bc);
@@ -530,11 +547,13 @@ il.UICore = {
 		if (tabs) {
 			tabsHeight = tabs.innerHeight();
 			if (tabsHeight >= 50) {
-				$('#ilLastTab a').removeClass("ilNoDisplay");
+				if (tabsHeight > 50) {
+					$('#ilLastTab a').removeClass("ilNoDisplay");
+				}
 				// as long as we have two lines...
 				while (tabsHeight > 50) {
 					children = tabs.children('li:not(:last-child)');
-					count = children.size();
+					count = children.length;
 
 					// ...put last child into collapsed drop down
 					$(children[count-1]).prependTo('#ilTabDropDown');
@@ -542,13 +561,13 @@ il.UICore = {
 				}
 			} else {
 				// as long as we have one line...
-				while (tabsHeight < 50 && ($('#ilTabDropDown').children('li').size()>0)) {
+				while (tabsHeight < 50 && ($('#ilTabDropDown').children('li').length>0)) {
 					collapsed = $('#ilTabDropDown').children('li');
-					count = collapsed.size();
+					count = collapsed.length;
 					$(collapsed[0]).insertBefore(tabs.children('li:last-child'));
 					tabsHeight = tabs.innerHeight();
 				}
-				if ($('#ilTabDropDown').children('li').size() == 0) {
+				if ($('#ilTabDropDown').children('li').length == 0) {
 					$('#ilLastTab a').addClass("ilNoDisplay");
 				}
 				if (tabsHeight>50 && !recheck) { // double chk height again
@@ -590,9 +609,9 @@ il.UICore = {
 			});
 		});
 		$(document).mouseup(function(e){
-			$('#bot_center_area_drag').unbind('mousemove');
+			$('#bot_center_area_drag').off('mousemove');
 			$('#drag_zmove').css("display","none");
-			$(document).unbind('mousemove');
+			$(document).off('mousemove');
 		});
 
 	},
@@ -649,13 +668,13 @@ il.UICore = {
 // fixing anchor links presentation, unfortunately there
 // is no event after browsers have scrolled to an anchor hash
 // and at least firefox seems to do this multiple times when rendering a page
-$(window).bind("load", function() {
+$(window).on("load", function() {
 	window.setTimeout(function() {
 		il.UICore.scrollToHash();
 	}, 500);
 });
 
-$(window).bind("hashchange", function () {
+$(window).on("hashchange", function () {
 	il.UICore.scrollToHash();
 });
 
@@ -742,6 +761,35 @@ il.Util.addOnLoad(function () {
 				? e.pageY-offset.top-menu_height
 				: e.pageY-offset.top
 		});												
+	});
+
+	// Handled IE/Edge issues with HTML5 buttons and form attribute, see: http://caniuse.com/#search=form
+	$('button[form][type="submit"]').filter(function() {
+		return (function () {
+			return (
+				typeof navigator != "undefined" &&
+				typeof navigator.appName != "undefined" &&
+				typeof navigator.appVersion != "undefined" &&
+				(
+					navigator.appName == 'Microsoft Internet Explorer' ||
+					(navigator.appName == "Netscape" && (navigator.appVersion.indexOf('Trident') > -1 || navigator.appVersion.indexOf('Edge') > -1))
+				)
+			);
+		})();
+	}).on('click', function(e) {
+		var $elm = $(this), $form = $('#' + $elm.attr("form"));
+
+		e.preventDefault();
+		e.stopPropagation();
+
+		$('<input/>')
+			.attr("type", "hidden")
+			.attr("name", $elm.attr("name"))
+			.val(1)
+			.appendTo($form);
+
+		$form.find('input[type="submit"]').prop("disabled", true);
+		$form.submit();
 	});
 
 	il.UICore.initFixedDropDowns();
@@ -853,7 +901,28 @@ il.Rating = {
 			}
 		});		
 	}
-}
+};
+
+il.Language = {
+	lng: {},
+
+	setLangVar: function(key, value) {
+		il.Language.lng[key] = value;
+	},
+
+	txt: function(key) {
+		if (il.Language.lng[key]) {
+			var translation = il.Language.lng[key];
+			if (typeof arguments[1] != 'undefined') {
+				for(var i = 1; i < arguments.length; i++) {
+					translation = translation.replace(new RegExp('%s'), arguments[i]);
+				}
+			}
+			return translation;
+		}
+		return '-' + key + '-';
+	}
+};
 
 /* keep ios wepapp mode (do not open safari mobile if links are clicked) */
 /*if (("standalone" in window.navigator) && !window.navigator.standalone ){

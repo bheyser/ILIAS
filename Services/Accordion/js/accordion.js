@@ -30,6 +30,10 @@ il.Accordion = {
 		options.animating = false;
 		options.clicked_acc = null;
 		options.last_opened_acc = null;
+		
+		if (typeof options.reset_width == "undefined") {
+			options.reset_width = false;
+		}
 
 		if (typeof options.show_all_element == "undefined") {
 			options.show_all_element = null;
@@ -50,7 +54,20 @@ il.Accordion = {
 	},
 
 	init: function (id) {
-		var t, el, next_el, acc_el, a = il.Accordion.data[id];
+		var t, el, next_el, acc_el, a = il.Accordion.data[id], apt, sp;
+
+		if (a.behaviour == "Carousel") {
+			apt = (a.auto_anim_wait > 100)
+				? a.auto_anim_wait
+				: 5000;
+			sp = (a.random_start)
+				? Math.floor(Math.random() * $("#" + id).children().length)
+				: 0;
+
+			$("#" + id).owlCarousel({items: 1, autoplay: true, loop: true, dots: false, autoplayTimeout: apt, startPosition: sp});
+			return;
+		}
+
 		// open the inital opened tabs
 		if (a.initial_opened.length > 0) {
 			for (var i = 0; i < a.initial_opened.length; i++) {
@@ -70,6 +87,11 @@ il.Accordion = {
 		if (a.behaviour != "ForceAllOpen") {
 			$("#" + id).children().children("." + a.toggle_class).each(function () {
 				t = $(this);
+				
+				t.find("a").click(function(e) {					
+					e.stopPropagation(); // enable links inside of accordion header
+				});
+				
 				t.on("click", { id: id, el: t}, il.Accordion.clickHandler);
 			});
 		}
@@ -197,6 +219,39 @@ il.Accordion = {
 		}
 
 		return false;
+	},
+	
+	preparePrint: function() {	
+		for(var id in il.Accordion.data) {
+			
+			var a = il.Accordion.data[id];		
+			
+			$("#" + id).children().children("." + a.content_class).each(function () {
+				t = $(this);
+				if (t.hasClass("ilAccHideContent")) {
+
+					if (a.active_head_class) {
+						$(this.parentNode).children("div:first").children("div:first").
+							addClass(a.active_head_class);
+					}
+
+					// fade in the accordion (currentAccordion)
+					options = il.Accordion.prepareShow(a, t);
+					$(t).animate(options, 0, function () {
+
+						$(t).css("height", "auto");
+
+						// set the currently shown accordion
+						a.last_opened_acc = t;
+						il.Accordion.rerenderMathJax(t);
+
+						a.animating = false;
+					});
+				}
+			});
+
+			il.Accordion.saveAllAsOpenedTabs(a, id);			
+		};
 	},
 
 	hideAll: function (e) {
@@ -355,6 +410,9 @@ il.Accordion = {
 		$(a.clicked_acc).animate(options, il.Accordion.duration, function () {
 
 			$(a.clicked_acc).css("height", "auto");
+			if (a.reset_width) {
+				$(a.clicked_acc).css("width", a.width);
+			}
 
 			// set the currently shown accordion
 			a.last_opened_acc = a.clicked_acc;

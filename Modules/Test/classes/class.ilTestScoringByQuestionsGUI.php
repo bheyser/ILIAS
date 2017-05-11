@@ -45,12 +45,8 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 			$this->ctrl->redirectByClass('ilobjtestgui', 'infoScreen');
 		}
 
-		$cmd        = $this->ctrl->getCmd();
+		$cmd        = $this->ctrl->getCmd('showManScoringByQuestionParticipantsTable');
 		$next_class = $this->ctrl->getNextClass($this);
-		if(strlen($cmd) == 0)
-		{
-			$this->ctrl->redirect($this, 'manscoring');
-		}
 
 		$cmd = $this->getCommand($cmd);
 		$this->buildSubTabs('man_scoring_by_qst');
@@ -94,10 +90,12 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 			$tpl->addJavaScript($mathJaxSetting->get("path_to_mathjax"));
 		}
 
-		$tpl->addJavascript('./Services/UIComponent/Overlay/js/ilOverlay.js');
 		$tpl->addJavaScript("./Services/JavaScript/js/Basic.js");
 		$tpl->addJavaScript("./Services/Form/js/Form.js");
+		$tpl->addJavascript('./Services/UIComponent/Modal/js/Modal.js');
 		$tpl->addCss($this->object->getTestStyleLocation("output"), "screen");
+
+		$this->lng->toJSMap(array('answer' => $this->lng->txt('answer')));
 
 		require_once 'Modules/Test/classes/tables/class.ilTestManScoringParticipantsBySelectedQuestionAndPassTableGUI.php';
 		$table = new ilTestManScoringParticipantsBySelectedQuestionAndPassTableGUI($this);
@@ -156,6 +154,7 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 		if($selected_questionData)
 		{
 			$maxpoints = assQuestion::_getMaximumPoints($selected_questionData['question_id']);
+			$table->setCurQuestionMaxPoints($maxpoints);
 			if($maxpoints == 1)
 			{
 				$maxpoints = ' (' . $maxpoints . ' ' . $this->lng->txt('point') . ')';
@@ -252,6 +251,7 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 		}
 		
 		$changed_one = false;
+		$lastAndHopefullyCurrentQuestionId = null;
 		foreach($_POST['scoring'] as $pass => $active_ids)
 		{
 			foreach((array)$active_ids as $active_id => $questions)
@@ -273,7 +273,9 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 				if($update_participant)
 				{
 					$changed_one = true;
-					
+
+					$lastAndHopefullyCurrentQuestionId = $qst_id;
+
 					ilLPStatusWrapper::_updateStatus(
 						$this->object->getId(), ilObjTestAccess::_getParticipantId($active_id)
 					);
@@ -283,16 +285,16 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 
 		if($changed_one)
 		{
-			if($this->object->getAnonymity() == 0)
+			$qTitle = '';
+			if($lastAndHopefullyCurrentQuestionId)
 			{
-				$user_name 				= $user_name = ilObjUser::_lookupName( ilObjTestAccess::_getParticipantId($active_id));
-				$name_real_or_anon 		= $user_name['firstname'].' '. $user_name['lastname'];
+				$question = assQuestion::_instantiateQuestion($lastAndHopefullyCurrentQuestionId);
+				$qTitle = $question->getTitle();
 			}
-			else
-			{
-				$name_real_or_anon 		= $lng->txt('anonymous');
-			}
-			ilUtil::sendSuccess(sprintf($this->lng->txt('tst_saved_manscoring_successfully'), $pass + 1,$name_real_or_anon), true);
+			$msg = sprintf(
+				$this->lng->txt('tst_saved_manscoring_by_question_successfully'), $qTitle, $pass + 1
+			);
+			ilUtil::sendSuccess($msg, true);
 
 			require_once './Modules/Test/classes/class.ilTestScoring.php';
 			$scorer = new ilTestScoring($this->object);

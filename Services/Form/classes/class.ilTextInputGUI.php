@@ -284,7 +284,12 @@ class ilTextInputGUI extends ilSubEnabledFormPropertyGUI implements ilTableFilte
 			}			
 		}
 		else 
-		{			
+		{	
+			// #17296
+			if(!is_array($_POST[$this->getPostVar()]))
+			{
+				$_POST[$this->getPostVar()] = array();
+			}			
 			foreach($_POST[$this->getPostVar()] as $idx => $value)
 			{
 				$_POST[$this->getPostVar()][$idx] = ilUtil::stripSlashes($value);
@@ -452,10 +457,10 @@ class ilTextInputGUI extends ilSubEnabledFormPropertyGUI implements ilTableFilte
 				$hidden = $this->getHiddenTag($postvar, $this->getValue());
 			}			
 			if($hidden)
-			{
-				$tpl->setVariable("DISABLED", " disabled=\"disabled\"");
+			{				
 				$tpl->setVariable("HIDDEN_INPUT", $hidden);
-			}			
+			}
+			$tpl->setVariable("DISABLED", " disabled=\"disabled\"");
 		}
 		else
 		{
@@ -525,6 +530,11 @@ class ilTextInputGUI extends ilSubEnabledFormPropertyGUI implements ilTableFilte
 			$tpl->setVariable("AUTOCOMPLETE", "autocomplete=\"off\"");
 		}
 		
+		if($this->getRequired())
+		{
+			$tpl->setVariable("REQUIRED", "required=\"required\"");
+		}
+		
 		// multi icons
 		if($this->getMulti() && !$a_mode && !$this->getDisabled())
 		{
@@ -540,7 +550,7 @@ class ilTextInputGUI extends ilSubEnabledFormPropertyGUI implements ilTableFilte
 	*
 	* @return	int	Size
 	*/
-	function insert(&$a_tpl)
+	function insert($a_tpl)
 	{
 		$html = $this->render();
 

@@ -3,6 +3,7 @@
 
 include_once("./Services/Table/classes/class.ilTable2GUI.php");
 include_once  './Services/Search/classes/class.ilSearchSettings.php';
+require_once('./Services/Repository/classes/class.ilObjectPlugin.php');
 
 /**
 * TableGUI class for learning progress
@@ -37,7 +38,7 @@ class ilLPTableBaseGUI extends ilTable2GUI
 
 	public function executeCommand()
 	{
-		global $ilCtrl;
+		global $ilCtrl, $lng;
 
 		$this->determineSelectedFilters();
 
@@ -63,6 +64,28 @@ class ilLPTableBaseGUI extends ilTable2GUI
 
 				case "hide":
 					$to_hide = array((int)$_GET["hide"]);
+					break;
+				
+				case "mailselectedusers":
+					if(!sizeof($_POST["uid"]))
+					{
+						ilUtil::sendFailure($lng->txt("no_checkbox"), true);
+					}
+					else
+					{
+						$this->sendMail($_POST["uid"], $this->parent_obj, $this->parent_cmd);												
+					}
+					break;
+					
+				case 'addToClipboard':
+					if(!sizeof($_POST['uid']))
+					{
+						ilUtil::sendFailure($lng->txt('no_checkbox'), true);
+					}
+					else
+					{
+						$this->addToClipboard();
+					}
 					break;
 				
 				// page selector
@@ -97,6 +120,59 @@ class ilLPTableBaseGUI extends ilTable2GUI
 			return parent::executeCommand();
 		}
 	}
+	
+	protected function sendMail(array $a_user_ids, $a_parent_obj, $a_parent_cmd)
+	{	
+		// see ilObjCourseGUI::sendMailToSelectedUsersObject()
+		
+		require_once 'Services/Mail/classes/class.ilMailFormCall.php';
+		
+		$rcps = array();
+		foreach($a_user_ids as $usr_id)
+		{
+			$rcps[] = ilObjUser::_lookupLogin($usr_id);
+		}
+		
+		$template = array();
+		$sig = null;
+		
+		// repository-object-specific
+		$ref_id = (int)$_REQUEST["ref_id"];
+		if($ref_id)
+		{							
+			$obj_lp = ilObjectLP::getInstance(ilObject::_lookupObjectId($ref_id));
+			$tmpl_id = $obj_lp->getMailTemplateId();
+	
+			if($tmpl_id)
+			{
+				$template = array(
+					ilMailFormCall::CONTEXT_KEY => $tmpl_id,
+					'ref_id' => $ref_id,
+					'ts'     => time()
+				);
+			}
+			else
+			{
+				include_once './Services/Link/classes/class.ilLink.php';
+				$sig = ilLink::_getLink($ref_id);
+				$sig = rawurlencode(base64_encode($sig));			
+			}
+		}
+		
+		ilUtil::redirect(
+			ilMailFormCall::getRedirectTarget(
+				$a_parent_obj, 
+				$a_parent_cmd,
+				array(),
+				array(
+					'type' => 'new',
+					'rcp_to' => implode(',', $rcps),
+					'sig' => $sig
+				),
+				$template
+			)
+		);	
+	}
 
 	/**
 	 * Search objects that match current filters
@@ -117,7 +193,7 @@ class ilLPTableBaseGUI extends ilTable2GUI
 
 		include_once './Services/Search/classes/class.ilQueryParser.php';
 
-		$query_parser =& new ilQueryParser($filter["query"]);
+		$query_parser = new ilQueryParser($filter["query"]);
 		$query_parser->setMinWordLength(0);
 		$query_parser->setCombination(QP_COMBINATION_AND);
 		$query_parser->parse();
@@ -129,7 +205,7 @@ class ilLPTableBaseGUI extends ilTable2GUI
 
 		if($filter["type"] == "lres")
 		{
-			$filter["type"] = array('lm','sahs','htlm','dbk');
+			$filter["type"] = array('lm','sahs','htlm');
 		}
 		else
 		{
@@ -137,7 +213,7 @@ class ilLPTableBaseGUI extends ilTable2GUI
 		}
 
 		include_once 'Services/Search/classes/Like/class.ilLikeObjectSearch.php';
-		$object_search =& new ilLikeObjectSearch($query_parser);
+		$object_search = new ilLikeObjectSearch($query_parser);
 		$object_search->setFilter($filter["type"]);
 		if($preset_obj_ids)
 		{
@@ -203,7 +279,7 @@ class ilLPTableBaseGUI extends ilTable2GUI
 	 *
 	 * @param bool $a_split_learning_resources
 	 */
-	public function initFilter($a_split_learning_resources = false, $a_include_no_status_filter = true)
+	public function initBaseFilter($a_split_learning_resources = false, $a_include_no_status_filter = true)
 	{
 		global $lng, $ilObjDataCache;
 		
@@ -235,7 +311,7 @@ class ilLPTableBaseGUI extends ilTable2GUI
 			$options = array();
 			if($type == 'lres')
 			{
-				$type = array('lm','sahs','htlm','dbk');
+				$type = array('lm','sahs','htlm');
 			}
 			else
 			{
@@ -342,11 +418,6 @@ class ilLPTableBaseGUI extends ilTable2GUI
 			$options['lm'] = $lng->txt('objs_lm');
 			$options['sahs'] = $lng->txt('objs_sahs');
 			$options['htlm'] = $lng->txt('objs_htlm');
-			
-			if($a_include_digilib)
-			{
-				$options['dbk'] = $lng->txt('objs_dbk');
-			}
 		}
 		else
 		{
@@ -356,13 +427,20 @@ class ilLPTableBaseGUI extends ilTable2GUI
 		$options['crs'] = $lng->txt('objs_crs');
 		$options['grp'] = $lng->txt('objs_grp');
 		$options['exc'] = $lng->txt('objs_exc');
+		$options['file'] = $lng->txt('objs_file');
+		$options['mcst'] = $lng->txt('objs_mcst');
+		$options['svy'] = $lng->txt('objs_svy');		
 		$options['tst'] = $lng->txt('objs_tst');		
+		$options['prg'] = $lng->txt('objs_prg');
+		$options['iass'] = $lng->txt('objs_iass');
 		
 		if($a_allow_undefined_lp)
-		{
-			$options["file"] = $lng->txt("objs_file");
+		{			
 			$options["webr"] = $lng->txt("objs_webr");
 			$options["wiki"] = $lng->txt("objs_wiki");
+			$options["blog"] = $lng->txt("objs_blog");
+			$options["prtf"] = $lng->txt("objs_prtf");
+			$options["prtt"] = $lng->txt("objs_prtt");
 		}
 		
 		// repository plugins (currently only active)
@@ -373,7 +451,7 @@ class ilLPTableBaseGUI extends ilTable2GUI
 			$pl_id = $ilPluginAdmin->getId(IL_COMP_SERVICE, "Repository", "robj", $pl);
 			if(ilRepositoryObjectPluginSlot::isTypePluginWithLP($pl_id))
 			{
-				$options[$pl_id] = ilPlugin::lookupTxt("rep_robj", $pl_id, "objs_".$pl_id);
+				$options[$pl_id] = ilObjectPlugin::lookupTxtById($pl_id, "objs_".$pl_id);
 			}
 		}
 		
@@ -424,24 +502,18 @@ class ilLPTableBaseGUI extends ilTable2GUI
 				break;
 
 			case "spent_seconds":
-				if(in_array($type, array("exc")))
+				if(!ilObjectLP::supportsSpentSeconds($type))				
 				{
 					$value = "-";
 				}
 				else
-				{
-					include_once("./Services/Utilities/classes/class.ilFormat.php");					
-					$value = ilFormat::_secondsToString($value, ($value < 3600 ? true : false)); // #14858					
+				{					
+					$value = ilDatePresentation::secondsToString($value, ($value < 3600 ? true : false)); // #14858					
 				}
 				break;
 
-			case "percentage":
-				/* :TODO:
-				if(in_array(strtolower($this->status_class),
-						  array("illpstatusmanual", "illpstatusscormpackage", "illpstatustestfinished")) ||
-				$type == "exc"))
-				*/
-			    if(false)
+			case "percentage":				
+			    if(false /* $this->isPercentageAvailable() */)
 				{
 					$value = "-";
 				}
@@ -452,7 +524,7 @@ class ilLPTableBaseGUI extends ilTable2GUI
 				break;
 
 			case "mark":
-				if(in_array($type, array("lm", "dbk")))
+				if(!ilObjectLP::supportsMark($type))			
 				{
 					$value = "-";
 				}
@@ -485,7 +557,7 @@ class ilLPTableBaseGUI extends ilTable2GUI
 	public function getCurrentFilter($as_query = false)
 	{
 		$result = array();
-		foreach($this->filter as $id => $value)
+		foreach((array)$this->filter as $id => $value)
 		{
 			$item = $this->getFilterItemByPostVar($id);
 			switch($id)
@@ -583,6 +655,7 @@ class ilLPTableBaseGUI extends ilTable2GUI
 			ilLPObjSettings::LP_MODE_VISITS, 
 			// ilLPObjSettings::LP_MODE_OBJECTIVES, 
 			ilLPObjSettings::LP_MODE_SCORM,
+			ilLPObjSettings::LP_MODE_VISITED_PAGES,
 			ilLPObjSettings::LP_MODE_TEST_PASSED)))
 		{
 			return true;
@@ -663,12 +736,12 @@ class ilLPTableBaseGUI extends ilTable2GUI
 		return $data;
 	}
 
-	protected function fillMetaExcel($worksheet, &$a_row)
+	protected function fillMetaExcel(ilExcel $a_excel, &$a_row)
 	{
 		foreach($this->getExportMeta() as $caption => $value)
 		{
-			$worksheet->write($a_row, 0, $caption);
-			$worksheet->write($a_row, 1, $value);
+			$a_excel->setCell($a_row, 0, $caption);
+			$a_excel->setCell($a_row, 1, $value);
 			$a_row++;
 		}
 		$a_row++;
@@ -892,7 +965,8 @@ class ilLPTableBaseGUI extends ilTable2GUI
 				"txt" => $lng->txt("trac_read_count"),
 				"default" => true);
 		}
-		if($tracking->hasExtendedData(ilObjUserTracking::EXTENDED_DATA_SPENT_SECONDS))
+		if($tracking->hasExtendedData(ilObjUserTracking::EXTENDED_DATA_SPENT_SECONDS) &&
+			ilObjectLP::supportsSpentSeconds($this->type))
 		{
 			$cols["spent_seconds"] = array(
 				"txt" => $lng->txt("trac_spent_seconds"),
@@ -919,7 +993,7 @@ class ilLPTableBaseGUI extends ilTable2GUI
 				'default' => false);
 		}
 
-		if($this->type != "lm")
+		if(ilObjectLP::supportsMark($this->type))
 		{
 			$cols["mark"] = array(
 				"txt" => $lng->txt("trac_mark"),
@@ -996,6 +1070,22 @@ class ilLPTableBaseGUI extends ilTable2GUI
 		}
 
 		return array($cols, $privacy_fields);		
+	}
+	
+	/**
+	 * Add selected users to clipboard
+	 */
+	protected function addToClipboard()
+	{
+		$users = (array) $_POST['uid'];
+		include_once './Services/User/classes/class.ilUserClipboard.php';
+		$clip = ilUserClipboard::getInstance($GLOBALS['ilUser']->getId());
+		$clip->add($users);
+		$clip->save();
+		
+		$GLOBALS['lng']->loadLanguageModule('user');
+		ilUtil::sendSuccess($this->lng->txt('clipboard_user_added'),true);
+		
 	}
 }
 

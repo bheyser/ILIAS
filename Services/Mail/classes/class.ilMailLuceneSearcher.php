@@ -36,10 +36,9 @@ class ilMailLuceneSearcher
 	{
 		/**
 		 * @var $ilSetting ilSetting
-		 * @var $ilLog     ilLog
 		 * @var $ilBench   ilBenchmark
 		 */
-		global $ilBench, $ilSetting, $ilLog;
+		global $ilBench, $ilSetting;
 
 		if(!$this->query_parser->getQuery())
 		{
@@ -57,17 +56,12 @@ class ilMailLuceneSearcher
 				(int)$mail_folder_id
 			);
 		}
-		catch(XML_RPC2_FaultException $e)
-		{
-			$ilBench->stop('Mail', 'LuceneSearch');
-			$ilLog->write(__METHOD__ . ': ' . $e->getMessage());
-			throw $e;
-		}
 		catch(Exception $e)
 		{
 
 			$ilBench->stop('Mail', 'LuceneSearch');
-			$ilLog->write(__METHOD__ . ': ' . $e->getMessage());
+			require_once './Services/Logging/classes/public/class.ilLoggerFactory.php';
+			ilLoggerFactory::getLogger('mail')->critical($e->getMessage());
 			throw $e;
 		}
 		$ilBench->stop('Mail', 'LuceneSearch');

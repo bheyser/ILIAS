@@ -342,7 +342,7 @@ class ilDidacticTemplateLocalPolicyAction extends ilDidacticTemplateAction
 		$query = 'SELECT * FROM didactic_tpl_alp '.
 			'WHERE action_id = '.$ilDB->quote($this->getActionId());
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$this->setFilterType($row->filter_type);
 			$this->setRoleTemplateType($row->template_type);
@@ -368,53 +368,72 @@ class ilDidacticTemplateLocalPolicyAction extends ilDidacticTemplateAction
 	{
 		global $rbacreview, $rbacadmin;
 		
-		$GLOBALS['ilLog']->write(__METHOD__.': Using role: '.print_r($role,true));
-
-
+		// fetch role information
+		$role_data = array();
+		foreach($rbacreview->getParentRoleIds($source->getRefId()) as $role_id => $tmp_role)
+		{
+			if($role_id == $role['obj_id'])
+			{
+				$role_data = $tmp_role;
+			}
+		}
+		
 		// Add local policy
-
 		if(!$rbacreview->isRoleAssignedToObject($role['obj_id'],$source->getRefId()))
 		{
-			$rbacadmin->assignRoleToFolder($role['obj_id'],$source->getRefId(),'n');
+			$GLOBALS['DIC']->rbac()->admin()->assignRoleToFolder(
+				$role['obj_id'],
+				$source->getRefId(),
+				'n'
+			);
+		}
+		
+		// do nothing if role is protected in higher context
+		if(
+			$GLOBALS['DIC']->rbac()->review()->isProtected($source->getRefId(),$role['obj_id'])
+		)
+		{
+			$GLOBALS['DIC']->logger()->otpl()->info('Ignoring protected role: ' . $role['title']);
+			return true;
 		}
 
 		switch($this->getRoleTemplateType())
 		{
 			case self::TPL_ACTION_UNION:
 
-				$GLOBALS['ilLog']->write(__METHOD__.': Using ilRbacAdmin::copyRolePermissionUnion()');
+				ilLoggerFactory::getLogger('otpl')->info('Using ilRbacAdmin::copyRolePermissionUnion()');
 				$rbacadmin->copyRolePermissionUnion(
-					$role['obj_id'],
-					$role['parent'],
+					$role_data['obj_id'],
+					$role_data['parent'],
 					$this->getRoleTemplateId(),
 					ROLE_FOLDER_ID,
-					$role['obj_id'],
+					$role_data['obj_id'],
 					$source->getRefId()
 				);
 				break;
 
 			case self::TPL_ACTION_OVERWRITE:
 
-				$GLOBALS['ilLog']->write(__METHOD__.': Using ilRbacAdmin::copyRoleTemplatePermissions()');
+				ilLoggerFactory::getLogger('otpl')->info('Using ilRbacAdmin::copyRoleTemplatePermission()');
 				$rbacadmin->copyRoleTemplatePermissions(
 					$this->getRoleTemplateId(),
 					ROLE_FOLDER_ID,
 					$source->getRefId(),
-					$role['obj_id'],
+					$role_data['obj_id'],
 					true
 				);
 				break;
 
 			case self::TPL_ACTION_INTERSECT:
 
-				$GLOBALS['ilLog']->write(__METHOD__.': Using ilRbacAdmin::copyRolePermissionIntersection()');
+				ilLoggerFactory::getLogger('otpl')->info('Using ilRbacAdmin::copyRolePermissionIntersection()'. $this->getRoleTemplateId());
 				$rbacadmin->copyRolePermissionIntersection(
-					$role['obj_id'],
-					$role['parent'],
+					$role_data['obj_id'],
+					$role_data['parent'],
 					$this->getRoleTemplateId(),
 					ROLE_FOLDER_ID,
 					$source->getRefId(),
-					$role['obj_id']
+					$role_data['obj_id']
 				);
 				break;
 
@@ -422,10 +441,10 @@ class ilDidacticTemplateLocalPolicyAction extends ilDidacticTemplateAction
 
 		// Change existing object
 		include_once './Services/AccessControl/classes/class.ilObjRole.php';
-		$role_obj = new ilObjRole($role['obj_id']);
+		$role_obj = new ilObjRole($role_data['obj_id']);
 		$role_obj->changeExistingObjects(
 			$source->getRefId(),
-			$role['protected'] ? ilObjRole::MODE_PROTECTED_DELETE_LOCAL_POLICIES : ilObjRole::MODE_UNPROTECTED_DELETE_LOCAL_POLICIES,
+			$role_data['protected'] ? ilObjRole::MODE_PROTECTED_DELETE_LOCAL_POLICIES : ilObjRole::MODE_UNPROTECTED_DELETE_LOCAL_POLICIES,
 			array('all')
 		);
 
@@ -436,13 +455,12 @@ class ilDidacticTemplateLocalPolicyAction extends ilDidacticTemplateAction
 	{
 		global $rbacadmin, $rbacreview, $ilDB;
 
-		$GLOBALS['ilLog']->write(__METHOD__.': Reverting policy for role: '.print_r($role,true));
-
+		ilLoggerFactory::getLogger('otpl')->info('Reverting policy for role '. $role['title']);
 		// Local policies can only be reverted for auto generated roles. Otherwise the
 		// original role settings are unknown
 		if(substr($role['title'],0,3) != 'il_')
 		{
-			$GLOBALS['ilLog']->write(__METHOD__.': Cannot revert local policy for role '. $role['title']);
+			ilLoggerFactory::getLogger('otpl')->warning('Cannot revert local policy for role '. $role['title']);
 			return false;
 		}
 
@@ -461,7 +479,7 @@ class ilDidacticTemplateLocalPolicyAction extends ilDidacticTemplateAction
 			'WHERE title = '.$ilDB->quote($rolt_title,'text').' '.
 			'AND type = '.$ilDB->quote('rolt','text');
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$rolt_id = $row->obj_id;
 		}

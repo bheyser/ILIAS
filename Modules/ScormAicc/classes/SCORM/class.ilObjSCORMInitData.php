@@ -15,14 +15,14 @@
 class ilObjSCORMInitData
 {
 
-	function encodeURIComponent($str) {
+	static function encodeURIComponent($str) {
 		$revert = array('%21'=>'!', '%2A'=>'*', '%27'=>"'", '%28'=>'(', '%29'=>')', '%7E'=>'~');
 		return strtr(rawurlencode($str), $revert);
 	}
 
-	function getIliasScormVars($slm_obj) {
-		global $ilias, $ilLog, $ilUser, $lng, $ilDB;
-//		$slm_obj =& new ilObjSCORMLearningModule($_GET["ref_id"]);
+	static function getIliasScormVars($slm_obj) {
+		global $ilias, $ilLog, $ilUser, $lng, $ilDB, $ilSetting;
+//		$slm_obj = new ilObjSCORMLearningModule($_GET["ref_id"]);
 
 		//variables to set in administration interface
 		$b_storeObjectives='false';
@@ -33,7 +33,7 @@ class ilObjSCORMInitData
 		$c_storeSessionTime='s';//n=no, s=sco, i=ilias
 		if ($slm_obj->getTime_from_lms()) $c_storeSessionTime='i';
 		$i_lessonScoreMax='-1';
-		$i_lessonMasteryScore='-1';
+		$i_lessonMasteryScore=$slm_obj->getMasteryScore();
 		
 		//other variables
 		$b_messageLog='false';
@@ -42,7 +42,13 @@ class ilObjSCORMInitData
 		if ($_GET["autolaunch"] != "") $launchId=$_GET["autolaunch"];
 		$session_timeout = 0; //unlimited sessions
 		if ($slm_obj->getSession()) {
-			$session_timeout = (int)($ilias->ini->readVariable("session","expire"))/2;
+			require_once('./Services/WebAccessChecker/classes/class.ilWACSignedPath.php');
+			$session_timeout = (int)ilWACSignedPath::getCookieMaxLifetimeInSeconds();
+			$max_idle = (int)ilSession::getIdleValue();
+			if ($session_timeout > $max_idle) $session_timeout = $max_idle;
+			$min_idle = (int)$ilSetting->get('session_min_idle', ilSessionControl::DEFAULT_MIN_IDLE) * 60;
+			if ($session_timeout > $min_idle) $session_timeout = $min_idle;
+			$session_timeout -= 10; //buffer
 		}
 		$b_autoReview='false';
 		if ($slm_obj->getAutoReview()) $b_autoReview='true';
@@ -57,6 +63,9 @@ class ilObjSCORMInitData
 			$b_autoLastVisited='true';
 			if ($launchId == '0') $launchId=$slm_obj->getLastVisited($ilUser->getID());
 		}
+
+		$b_sessionDeactivated='false';
+		if ($slm_obj->getSessionDeactivated()) $b_sessionDeactivated='true';
 
 		//manifestData //extra to IliasScormManifestData
 		// $s_man = "";
@@ -86,6 +95,7 @@ class ilObjSCORMInitData
 		$s_out='{'
 			.'"refId":'.$_GET["ref_id"].','
 			.'"objId":'.$slm_obj->getId().','
+			.'"clientId":"'.CLIENT_ID.'",'
 			.'"launchId":'.$launchId.','
 			.'"launchNr":0,'
 			.'"pingSession":'. $session_timeout.','
@@ -104,8 +114,9 @@ class ilObjSCORMInitData
 			.'"c_storeSessionTime":"'.$c_storeSessionTime.'",'
 			.'"b_autoContinue":'.$b_autoContinue.','
 			.'"b_autoLastVisited":'.$b_autoLastVisited.','
+			.'"b_sessionDeactivated":'.$b_sessionDeactivated.','
 			.'"i_lessonScoreMax":'.$i_lessonScoreMax.','
-			.'"i_lessonMasteryScore":'.$i_lessonMasteryScore.','
+			.'"i_lessonMasteryScore":"'.$i_lessonMasteryScore.'",'
 			.'"b_debug":'.$b_debug.','
 			.'"a_itemParameter":'.json_encode($a_man).','
 			.'"status":'.json_encode(self::getStatus($slm_obj->getId(), $ilUser->getID(), $slm_obj->getAuto_last_visited())).','
@@ -135,7 +146,7 @@ class ilObjSCORMInitData
 		return $s_out;
 	}
 	
-	function getIliasScormData($a_packageId) {
+	static function getIliasScormData($a_packageId) {
 		global $ilias, $ilUser, $ilDB;
 		$b_readInteractions='false';
 		$a_out=array();
@@ -154,7 +165,7 @@ class ilObjSCORMInitData
 		return json_encode($a_out);
 	}
 	
-	function getIliasScormResources($a_packageId) {
+	static function getIliasScormResources($a_packageId) {
 		global $ilias, $ilDB;
 //		$s_out="";
 		$a_out=array();
@@ -194,7 +205,7 @@ class ilObjSCORMInitData
 		return json_encode($a_out);
 	}
 	
-	function getIliasScormTree($a_packageId) {
+	static function getIliasScormTree($a_packageId) {
 		global $ilias, $ilDB;
 		$a_out=array();
 		$tquery="SELECT scorm_tree.child, scorm_tree.depth-3 depth, scorm_object.title, scorm_object.c_type
@@ -213,7 +224,7 @@ class ilObjSCORMInitData
 		return json_encode($a_out);
 	}
 
-	function getStatus($a_packageId,$a_user_id,$auto_last_visited,$scormType="1.2") {
+	static function getStatus($a_packageId,$a_user_id,$auto_last_visited,$scormType="1.2") {
 		global $ilDB;
 		include_once './Services/Tracking/classes/class.ilLPStatus.php';
 		$oldStatus = ilLPStatus::_lookupStatus($a_packageId, $a_user_id);
@@ -251,10 +262,13 @@ class ilObjSCORMInitData
 		} else {
 			$status['total_time_sec'] = (int) $val_rec["total_time_sec"];
 		}
+		
+		
+		
 		return $status;
 	}
 	// hash for storing data without session
-	private function setHash($a_packageId,$a_user_id) {
+	private static function setHash($a_packageId,$a_user_id) {
 		global $ilDB;
 		$hash = mt_rand(1000000000,9999999999);
 		$endDate = date('Y-m-d H:i:s', mktime(date('H'), date('i'), date('s'), date('m'), date('d')+1, date('Y')));
@@ -292,18 +306,10 @@ class ilObjSCORMInitData
 	/**
 	* Get max. number of attempts allowed for this package
 	*/
-	function get_max_attempts($a_packageId)
-	{		
-		global $ilDB;
-
-		$res = $ilDB->queryF(
-			'SELECT max_attempt FROM sahs_lm WHERE id = %s', 
-			array('integer'),
-			array($a_packageId)
-		);
-		$row = $ilDB->fetchAssoc($res);
-		
-		return $row['max_attempt']; 
+	static function get_max_attempts($a_packageId)
+	{
+		//erased in 5.1
+		return 0;
 	}
 
 }

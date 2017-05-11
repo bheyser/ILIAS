@@ -16,10 +16,6 @@ include_once 'Services/Mail/classes/class.ilMailFolderTableGUI.php';
 * @ilCtrl_Calls ilMailFolderGUI: ilMailOptionsGUI, ilMailAttachmentGUI, ilMailSearchGUI
 * @ilCtrl_Calls ilMailFolderGUI: ilPublicUserProfileGUI
 */
-
-// removed ilCtrl_Calls
-// ilMailAddressbookGUI
-
 class ilMailFolderGUI
 {
 	private $current_select_cmd;
@@ -102,10 +98,9 @@ class ilMailFolderGUI
 		$forward_class = $this->ctrl->getNextClass($this);		
 		switch($forward_class)
 		{
-			case 'ilmailaddressbookgui':
-				include_once 'Services/Contact/classes/class.ilMailAddressbookGUI.php';
-
-				$this->ctrl->forwardCommand(new ilMailAddressbookGUI());
+			case 'ilcontactgui':
+				require_once 'Services/Contact/classes/class.ilContactGUI.php';
+				$this->ctrl->forwardCommand(new ilContactGUI());
 				break;
 
 			case 'ilmailoptionsgui':
@@ -139,35 +134,6 @@ class ilMailFolderGUI
 		return true;
 	}
 
-	public function add()
-	{
-		global $lng, $ilUser;
-
-		if($_GET["mail_id"] != "")
-		{
-			if (is_array($mail_data = $this->umail->getMail($_GET["mail_id"])))
-			{
-				require_once "Services/Contact/classes/class.ilAddressbook.php";
-				$abook = new ilAddressbook($ilUser->getId());
-
-				$tmp_user = new ilObjUser($mail_data["sender_id"]);
-				if ($abook->checkEntryByLogin($tmp_user->getLogin()) > 0)
-				{
-					ilUtil::sendInfo($lng->txt("mail_entry_exists"));
-				}
-				else
-				{
-					$abook->addEntry($tmp_user->getLogin(),
-								$tmp_user->getFirstname(),
-								$tmp_user->getLastname(),
-								$tmp_user->getEmail());
-					ilUtil::sendInfo($lng->txt("mail_entry_added"));
-				}
-			}
-		}
-		$this->showMail();
-	}
-	
 	/**
 	* cancel Empty Trash Action and return to folder
 	*/
@@ -346,7 +312,7 @@ class ilMailFolderGUI
 					$pre = '';
 					for ($i = 2; $i < $folder_d['depth'] - 1; $i++)
 					{
-						$pre .= '&nbsp';
+						$pre .= '&nbsp;';
 					}
 					
 					if ($folder_d['depth'] > 1)
@@ -422,19 +388,18 @@ class ilMailFolderGUI
 
 	public function performDeleteSubFolder()
 	{
-		$new_parent = $this->mbox->getParentFolderId($_GET["mobj_id"]);
-
-		if ($this->mbox->deleteFolder($_GET["mobj_id"]))
-		{			
-			ilUtil::sendInfo($this->lng->txt("mail_folder_deleted"),true);
-			
-			$this->ctrl->setParameterByClass("ilMailGUI", "mobj_id", $new_parent);
-			$this->ctrl->redirectByClass("ilMailGUI");		
+		$new_parent = $this->mbox->getParentFolderId((int)$_GET['mobj_id']);
+		if($this->mbox->deleteFolder((int)$_GET['mobj_id']))
+		{
+			ilUtil::sendInfo($this->lng->txt('mail_folder_deleted'), true);
+			$this->ctrl->setParameterByClass('ilMailGUI', 'mobj_id', (int)$new_parent);
+			$this->ctrl->redirectByClass('ilMailGUI');
 		}
 		else
 		{
-			ilUtil::sendFailure($this->lng->txt("mail_error_delete"));
-			return $this->showFolder();
+			ilUtil::sendFailure($this->lng->txt('mail_error_delete'));
+			$this->showFolder();
+			return;
 		}
 	}
 	
@@ -458,8 +423,9 @@ class ilMailFolderGUI
 		else
 		{
 			ilUtil::sendFailure($this->lng->txt("mail_folder_exists"));
-			return $this->addSubFolder();
-		}		
+			$this->addSubFolder();
+			return;
+		}
 	}
 
 	public function addSubFolder()
@@ -780,25 +746,6 @@ class ilMailFolderGUI
 				$this->ctrl->clearParameters($this);
 			}
 
-			if($sender->getId() != $ilUser->getId())
-			{
-				require_once 'Services/Contact/classes/class.ilAddressbook.php';
-				$abook = new ilAddressbook($ilUser->getId());
-				if($abook->checkEntryByLogin($sender->getLogin()) == 0)
-				{
-					$tplbtn = new ilTemplate('tpl.buttons.html', true, true);
-
-					$tplbtn->setCurrentBlock('btn_cell');
-					$this->ctrl->setParameter($this, 'mail_id', (int)$_GET['mail_id']);
-					$tplbtn->setVariable('BTN_LINK', $this->ctrl->getLinkTarget($this, 'add'));
-					$this->ctrl->clearParameters($this);
-					$tplbtn->setVariable('BTN_TXT', $this->lng->txt('mail_add_to_addressbook'));
-					$tplbtn->parseCurrentBlock();
-
-					$add_to_addb_button = '<br />' . $tplbtn->get();
-				}
-			}
-
 			$from = new ilCustomInputGUI($this->lng->txt('from'));
 			$from->setHtml($picture . ' ' . $linked_fullname . $add_to_addb_button);
 			$form->addItem($from);
@@ -1035,7 +982,7 @@ class ilMailFolderGUI
 			// secure filename
 			$filename = str_replace("..", "", $filename);
 			
-			$mfile = new ilFileDataMail($_SESSION["AccountId"]);
+			$mfile = new ilFileDataMail($GLOBALS['DIC']['ilUser']->getId());
 			if(!is_array($file = $mfile->getAttachmentPathByMD5Filename($filename, $_GET['mail_id'])))
 			{
 				ilUtil::sendInfo($this->lng->txt('mail_error_reading_attachment'));

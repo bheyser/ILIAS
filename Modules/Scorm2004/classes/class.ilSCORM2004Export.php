@@ -29,7 +29,7 @@ class ilScorm2004Export
 	* Constructor
 	* @access	public
 	*/
-	function ilScorm2004Export(&$a_cont_obj, $a_mode = "SCORM 2004 3rd")
+	function __construct(&$a_cont_obj, $a_mode = "SCORM 2004 3rd")
 	{
 		global $ilErr, $ilDB, $ilias;
 
@@ -39,11 +39,11 @@ class ilScorm2004Export
 		if(!in_array($a_mode,$this->export_types))
 			die("Unsupported format");
 		
-		$this->cont_obj =& $a_cont_obj;
+		$this->cont_obj = $a_cont_obj;
 
-		$this->err =& $ilErr;
-		$this->ilias =& $ilias;
-		$this->db =& $ilDB;
+		$this->err = $ilErr;
+		$this->ilias = $ilias;
+		$this->db = $ilDB;
 		$this->mode = $a_mode;
 
 		$settings = $this->ilias->getAllSettings();
@@ -161,6 +161,10 @@ class ilScorm2004Export
 
 		$ilBench->start("ContentObjectExport", "buildExportFile");
 
+        // init the mathjax rendering for HTML export
+		include_once './Services/MathJax/classes/class.ilMathJax.php';
+		ilMathJax::getInstance()->init(ilMathJax::PURPOSE_EXPORT);
+
 		require_once("./Services/Xml/classes/class.ilXmlWriter.php");
 
 		// create directories
@@ -169,6 +173,7 @@ class ilScorm2004Export
 
 		// get Log File
 		$expDir = $this->export_dir;
+		include_once './Services/Logging/classes/class.ilLog.php';
 		$expLog = new ilLog($expDir, "export.log");
 		$expLog->delete();
 		$expLog->setLogFormat("");
@@ -200,12 +205,17 @@ class ilScorm2004Export
 	{
 		require_once("./Services/Xml/classes/class.ilXmlWriter.php");
 
+        // init the mathjax rendering for HTML export
+		include_once './Services/MathJax/classes/class.ilMathJax.php';
+		ilMathJax::getInstance()->init(ilMathJax::PURPOSE_EXPORT);
+
 		// create directories
 		$this->createExportDirectory();
 		ilUtil::makeDir($this->export_dir."/".$this->subdir);
 
 		// get Log File
 		$expDir = $this->export_dir;
+		include_once './Services/Logging/classes/class.ilLog.php';
 		$expLog = new ilLog($expDir, "export.log");
 		$expLog->delete();
 		$expLog->setLogFormat("");
@@ -231,12 +241,17 @@ class ilScorm2004Export
 	{
 		require_once("./Services/Xml/classes/class.ilXmlWriter.php");
 
+        // init the mathjax rendering for HTML export
+		include_once './Services/MathJax/classes/class.ilMathJax.php';
+		ilMathJax::getInstance()->init(ilMathJax::PURPOSE_EXPORT);
+
 		// create directories
 		$this->createExportDirectory();
 		ilUtil::makeDir($this->export_dir."/".$this->subdir);
 
 		// get Log File
 		$expDir = $this->export_dir;
+		include_once './Services/Logging/classes/class.ilLog.php';
 		$expLog = new ilLog($expDir, "export.log");
 		$expLog->delete();
 		$expLog->setLogFormat("");
@@ -261,6 +276,10 @@ class ilScorm2004Export
 		$result = "";
 		$ilBench->start("ContentObjectExport", "buildExportFile");
 
+        // init the mathjax rendering for HTML export
+		include_once './Services/MathJax/classes/class.ilMathJax.php';
+		ilMathJax::getInstance()->init(ilMathJax::PURPOSE_EXPORT);
+
 		require_once("./Services/Xml/classes/class.ilXmlWriter.php");
 
 		// create directories
@@ -269,6 +288,7 @@ class ilScorm2004Export
 
 		// get Log File
 		$expDir = $this->export_dir;
+		include_once './Services/Logging/classes/class.ilLog.php';
 		$expLog = new ilLog($expDir, "export.log");
 		$expLog->delete();
 		$expLog->setLogFormat("");
@@ -309,6 +329,10 @@ class ilScorm2004Export
 
 		$ilBench->start("ContentObjectExport", "buildExportFile");
 
+        // don't render mathjax before fo code is generated
+		include_once './Services/MathJax/classes/class.ilMathJax.php';
+		ilMathJax::getInstance()->init(ilMathJax::PURPOSE_DEFERRED_PDF);
+
 		require_once("./Services/Xml/classes/class.ilXmlWriter.php");
 
 		// create directories
@@ -317,6 +341,7 @@ class ilScorm2004Export
 
 		// get Log File
 		$expDir = $this->export_dir;
+		include_once './Services/Logging/classes/class.ilLog.php';
 		$expLog = new ilLog($expDir, "export.log");
 		$expLog->delete();
 		$expLog->setLogFormat("");
@@ -325,6 +350,12 @@ class ilScorm2004Export
 		$ilBench->start("ContentObjectExport", "buildExportFile_getXML");
 		$fo_string = $this->cont_obj->exportPDF($this->inst_id, $this->export_dir."/".$this->subdir, $expLog);
 		
+        // now render mathjax for pdf generation
+		$fo_string = ilMathJax::getInstance()
+			->init(ilMathJax::PURPOSE_PDF)
+			->setRendering(ilMathJax::RENDER_PNG_AS_FO_FILE)
+			->insertLatexImages($fo_string);
+
 		$ilBench->stop("ContentObjectExport", "buildExportFile_getXML");
 
 		$ilBench->start("ContentObjectExport", "buildExportFile_pdfFile");
@@ -337,11 +368,6 @@ class ilScorm2004Export
 			$pdf_base64 = ilRpcClientFactory::factory('RPCTransformationHandler')->ilFO2PDF($fo_string);
 			//ilUtil::deliverData($pdf_base64->scalar,'learning_progress.pdf','application/pdf');
 			fputs(fopen($this->export_dir.'/'.$this->subdir.'.pdf','w+'),$pdf_base64->scalar);
-		}
-		catch(XML_RPC2_FaultException $e)
-		{
-			ilUtil::sendFailure($e->getMessage(),true);
-			return false;
 		}
 		catch(Exception $e)
 		{

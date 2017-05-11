@@ -18,7 +18,7 @@ class ilObjWebResourceAdministrationGUI extends ilObjectGUI
 	public function __construct($a_data, $a_id, $a_call_by_reference = true, $a_prepare_output = true)
 	{
 		$this->type = "wbrs";
-		parent::ilObjectGUI($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
+		parent::__construct($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
 
 		$this->lng->loadLanguageModule("webr");
 	}
@@ -109,7 +109,7 @@ class ilObjWebResourceAdministrationGUI extends ilObjectGUI
 
 	protected function initFormSettings()
 	{	    
-		global $ilSetting;
+		global $ilSetting, $ilAccess;
 		
 		include_once "Services/Form/classes/class.ilPropertyFormGUI.php";
 		$form = new ilPropertyFormGUI();
@@ -122,8 +122,11 @@ class ilObjWebResourceAdministrationGUI extends ilObjectGUI
 		$cb->setChecked($ilSetting->get("links_dynamic"));		
 		$form->addItem($cb);		
 	
-		$form->addCommandButton("saveSettings", $this->lng->txt("save"));
-		$form->addCommandButton("view", $this->lng->txt("cancel"));
+		if ($ilAccess->checkAccess("write",'',$this->object->getRefId()))
+		{
+			$form->addCommandButton("saveSettings", $this->lng->txt("save"));
+			$form->addCommandButton("view", $this->lng->txt("cancel"));
+		}
 
 		return $form;
 	}

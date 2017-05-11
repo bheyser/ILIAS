@@ -15,7 +15,7 @@ require_once("./Modules/ScormAicc/classes/class.ilObjSCORMLearningModule.php");
 * @author Alex Killing <alex.killing@gmx.de>, Hendrik Holtmann <holtmann@mac.com>
 * $Id$
 *
-* @ilCtrl_Calls ilObjSCORMLearningModuleGUI: ilFileSystemGUI, ilMDEditorGUI, ilPermissionGUI, ilLearningProgressGUI
+* @ilCtrl_Calls ilObjSCORMLearningModuleGUI: ilFileSystemGUI, ilObjectMetaDataGUI, ilPermissionGUI, ilLearningProgressGUI
 * @ilCtrl_Calls ilObjSCORMLearningModuleGUI: ilInfoScreenGUI
 * @ilCtrl_Calls ilObjSCORMLearningModuleGUI: ilCertificateGUI
 * @ilCtrl_Calls ilObjSCORMLearningModuleGUI: ilLicenseGUI
@@ -38,7 +38,7 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 	*
 	* @access	public
 	*/
-	function ilObjSCORMLearningModuleGUI($a_data,$a_id,$a_call_by_reference, $a_prepare_output = true)
+	function __construct($a_data,$a_id,$a_call_by_reference, $a_prepare_output = true)
 	{
 		global $lng;
 
@@ -46,7 +46,7 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 		$lng->loadLanguageModule("search");
 		
 		$this->type = "sahs";
-		$this->ilObjectGUI($a_data,$a_id,$a_call_by_reference,false);
+		parent::__construct($a_data,$a_id,$a_call_by_reference,false);
 	}
 
 	/**
@@ -58,11 +58,11 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 		{
 			if ($this->call_by_reference)
 			{
-				$this->object =& new ilObjSCORMLearningModule($this->id, true);
+				$this->object = new ilObjSCORMLearningModule($this->id, true);
 			}
 			else
 			{
-				$this->object =& new ilObjSCORMLearningModule($this->id, false);
+				$this->object = new ilObjSCORMLearningModule($this->id, false);
 			}
 		}
 	}
@@ -88,6 +88,20 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 		$this->form = new ilPropertyFormGUI();
 		$this->form->setFormAction($ilCtrl->getFormAction($this));
 		$this->form->setTitle($this->lng->txt("cont_lm_properties"));
+		
+		//check/select only once
+		$this->object->checkMasteryScoreValues();
+
+		//title
+		$ti = new ilTextInputGUI($this->lng->txt("title"), "Fobject_title");
+		$ti->setMaxLength(200);
+		$ti->setValue($this->object->getTitle());
+		$this->form->addItem($ti);
+		
+		//description
+		$ti = new ilTextAreaInputGUI($this->lng->txt("description"), "Fobject_description");
+		$ti->setValue($this->object->getDescription());
+		$this->form->addItem($ti);
 
 		// SCORM-type
 		$ne = new ilNonEditableValueGUI($this->lng->txt("type"), "");
@@ -97,7 +111,15 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 		// version
 		$ne = new ilNonEditableValueGUI($this->lng->txt("cont_sc_version"), "");
 		$ne->setValue($this->object->getModuleVersion());
+		$ne->setInfo($this->lng->txt("cont_sc_version_info"));
 		$this->form->addItem($ne);
+
+		//
+		// activation
+		//
+		$sh = new ilFormSectionHeaderGUI();
+		$sh->setTitle($this->lng->txt("activation"));
+		$this->form->addItem($sh);
 
 		// online
 		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_online"), "cobj_online");
@@ -106,6 +128,7 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 		{
 			$cb->setChecked(true);
 		}
+		$cb->setInfo($this->lng->txt("cont_online_info"));
 		$this->form->addItem($cb);
 
 		// offline Mode
@@ -128,32 +151,41 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 		$sh->setTitle($this->lng->txt("cont_presentation"));
 		$this->form->addItem($sh);
 		
-		// display mode (open)
-		$options = array(
-			"0" => $this->lng->txt("cont_open_normal"),
-			"1" => $this->lng->txt("cont_open_iframe_max"),
-			"2" => $this->lng->txt("cont_open_iframe_defined"),
-			"5" => $this->lng->txt("cont_open_window_undefined"),
-			"6" => $this->lng->txt("cont_open_window_defined")
-			);
-		$si = new ilSelectInputGUI($this->lng->txt("cont_open"), "open_mode");
-		$si->setOptions($options);
-		$si->setValue($this->object->getOpenMode());
-		$this->form->addItem($si);
-		
+		$radg = new ilRadioGroupInputGUI($lng->txt("cont_open"), "open_mode");
+		$op0 = new ilRadioOption($this->lng->txt("cont_open_normal"), "0");
+		$radg->addOption($op0);
+		$op1 = new ilRadioOption($this->lng->txt("cont_open_iframe"), "1");
+		$radg->addOption($op1);
+		$op2 = new ilRadioOption($this->lng->txt("cont_open_window"), "5");
+		$radg->addOption($op2);
+		$radg->setValue($this->object->getOpenMode()); 
+
 		// width
-		$ni = new ilNumberInputGUI($this->lng->txt("cont_width"), "width");
+		$ni = new ilNumberInputGUI($this->lng->txt("cont_width"), "width_0");
 		$ni->setMaxLength(4);
 		$ni->setSize(4);
 		$ni->setValue($this->object->getWidth());
-		$this->form->addItem($ni);
-		
+		$op1->addSubItem($ni);
+		$ni = new ilNumberInputGUI($this->lng->txt("cont_width"), "width_1");
+		$ni->setMaxLength(4);
+		$ni->setSize(4);
+		$ni->setValue($this->object->getWidth());
+		$op2->addSubItem($ni);
 		// height
-		$ni = new ilNumberInputGUI($this->lng->txt("cont_height"), "height");
+		$ni = new ilNumberInputGUI($this->lng->txt("cont_height"), "height_0");
 		$ni->setMaxLength(4);
 		$ni->setSize(4);
 		$ni->setValue($this->object->getHeight());
-		$this->form->addItem($ni);
+		$ni->setInfo($this->lng->txt("cont_width_height_info"));
+		$op1->addSubItem($ni);
+		$ni = new ilNumberInputGUI($this->lng->txt("cont_height"), "height_1");
+		$ni->setMaxLength(4);
+		$ni->setSize(4);
+		$ni->setValue($this->object->getHeight());
+		$ni->setInfo($this->lng->txt("cont_width_height_info"));
+		$op2->addSubItem($ni);
+
+		$this->form->addItem($radg);
 		
 		// auto navigation to last visited item
 		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_auto_last_visited"), "cobj_auto_last_visited");
@@ -176,11 +208,11 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 		$this->form->addItem($sh);
 
 		// max attempts
-		$ni = new ilNumberInputGUI($this->lng->txt("cont_sc_max_attempt"), "max_attempt");
-		$ni->setMaxLength(3);
-		$ni->setSize(3);
-		$ni->setValue($this->object->getMaxAttempt());
-		$this->form->addItem($ni);
+		// $ni = new ilNumberInputGUI($this->lng->txt("cont_sc_max_attempt"), "max_attempt");
+		// $ni->setMaxLength(3);
+		// $ni->setSize(3);
+		// $ni->setValue($this->object->getMaxAttempt());
+		// $this->form->addItem($ni);
 		
 		// lesson mode
 		$options = array("normal" => $this->lng->txt("cont_sc_less_mode_normal"),
@@ -212,8 +244,18 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 		$si = new ilSelectInputGUI($this->lng->txt("cont_sc_auto_review_2004"), "auto_review");
 		$si->setOptions($options);
 		$si->setValue($this->object->getAutoReviewChar());
-		$si->setInfo($this->lng->txt("cont_sc_auto_review_info_12"));
+		// $si->setInfo($this->lng->txt("cont_sc_auto_review_info_12"));
 		$this->form->addItem($si);
+
+		// mastery_score
+		if ($this->object->getMasteryScoreValues() != "") {
+			$ni = new ilNumberInputGUI($this->lng->txt("cont_mastery_score_12"), "mastery_score");
+			$ni->setMaxLength(3);
+			$ni->setSize(3);
+			$ni->setValue($this->object->getMasteryScore());
+			$ni->setInfo($this->lng->txt("cont_mastery_score_12_info").$this->object->getMasteryScoreValues());
+			$this->form->addItem($ni);
+		}
 
 		//
 		// rte settings
@@ -233,12 +275,14 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_interactions"), "cobj_interactions");
 		$cb->setValue("y");
 		$cb->setChecked($this->object->getInteractions());
+		$cb->setInfo($this->lng->txt("cont_interactions_info_12"));
 		$this->form->addItem($cb);
 		
 		// objectives
 		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_objectives"), "cobj_objectives");
 		$cb->setValue("y");
 		$cb->setChecked($this->object->getObjectives());
+		$cb->setInfo($this->lng->txt("cont_objectives_info"));
 		$this->form->addItem($cb);
 
 		// time from lms
@@ -252,13 +296,8 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 		$cb = new ilCheckboxInputGUI($this->lng->txt("cont_check_values"), "cobj_check_values");
 		$cb->setValue("y");
 		$cb->setChecked($this->object->getCheck_values());
+		$cb->setInfo($this->lng->txt("cont_check_values_info"));
 		$this->form->addItem($cb);
-		// api adapter name
-		// $this->tpl->setVariable("TXT_API_ADAPTER", $this->lng->txt("cont_api_adapter"));
-		// $this->tpl->setVariable("VAL_API_ADAPTER", $this->object->getAPIAdapterName());
-		// api functions prefix
-		// $this->tpl->setVariable("TXT_API_PREFIX", $this->lng->txt("cont_api_func_prefix"));
-		// $this->tpl->setVariable("VAL_API_PREFIX", $this->object->getAPIFunctionsPrefix());
 
 		//
 		// debugging
@@ -500,6 +539,9 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 	*/
 	function saveProperties()
 	{
+		$this->object->setTitle($_POST["Fobject_title"]);
+		$this->object->setDescription($_POST["Fobject_description"]);
+
 		//check if OfflineMode-Zip has to be created
 		$tmpOfflineMode= ilUtil::yn2tf($_POST["cobj_offline_mode"]);
 		if ($tmpOfflineMode == true) {
@@ -507,19 +549,30 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 				$this->object->zipLmForOfflineMode();
 			}
 		}
+		if (isset($_POST["mastery_score"])){
+			$this->object->setMasteryScore($_POST["mastery_score"]);
+			// $this->object->updateMasteryScoreValues();
+		}
+
+		$t_height = $this->object->getHeight();
+		if ($_POST["height_0"] != $this->object->getHeight()) $t_height = $_POST["height_0"];
+		if ($_POST["height_1"] != $this->object->getHeight()) $t_height = $_POST["height_1"];
+
+		$t_width = $this->object->getWidth();
+		if ($_POST["width_0"] != $this->object->getWidth()) $t_width = $_POST["width_0"];
+		if ($_POST["width_1"] != $this->object->getWidth()) $t_width = $_POST["width_1"];
+
 		$this->object->setOnline(ilUtil::yn2tf($_POST["cobj_online"]));
 		$this->object->setOfflineMode($tmpOfflineMode);
 		$this->object->setOpenMode($_POST["open_mode"]);
-		$this->object->setWidth($_POST["width"]);
-		$this->object->setHeight($_POST["height"]);
+		$this->object->setWidth($t_width);
+		$this->object->setHeight($t_height);
 		$this->object->setAuto_last_visited(ilUtil::yn2tf($_POST["cobj_auto_last_visited"]));
 		$this->object->setAutoContinue(ilUtil::yn2tf($_POST["auto_continue"]));
 		$this->object->setMaxAttempt($_POST["max_attempt"]);
 		$this->object->setDefaultLessonMode($_POST["lesson_mode"]);
 		$this->object->setCreditMode($_POST["credit_mode"]);
 		$this->object->setAutoReview(ilUtil::yn2tf($_POST["auto_review"]));
-//		$this->object->setAPIAdapterName($_POST["api_adapter"]);
-//		$this->object->setAPIFunctionsPrefix($_POST["api_func_prefix"]);
 		$this->object->setSession(ilUtil::yn2tf($_POST["cobj_session"]));
 		$this->object->setInteractions(ilUtil::yn2tf($_POST["cobj_interactions"]));
 		$this->object->setObjectives(ilUtil::yn2tf($_POST["cobj_objectives"]));
@@ -770,7 +823,7 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 	 */
 	protected function import()
 	{
-		$form = $this->initImportForm();
+		$form = $this->initImportForm("");
 		if($form->checkInput())
 		{
 			$source = $form->getInput('csv');
@@ -802,14 +855,14 @@ class ilObjSCORMLearningModuleGUI extends ilObjSAHSLearningModuleGUI
 		$ilTabs->clearTargets();
 		$ilTabs->setBackTarget($this->lng->txt('back'),$this->ctrl->getLinkTarget($this,'showTrackingItems'));
 
-		$form = $this->initImportForm();
+		$form = $this->initImportForm("");
 		$this->tpl->setContent($form->getHTML());
 	}
 
 	/**
 	 * Init import form
 	 */
-	protected function initImportForm()
+	protected function initImportForm($a_new_type)
 	{
 		include_once './Services/Form/classes/class.ilPropertyFormGUI.php';
 		$form = new ilPropertyFormGUI();

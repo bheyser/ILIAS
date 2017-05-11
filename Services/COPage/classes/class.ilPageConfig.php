@@ -34,6 +34,12 @@ abstract class ilPageConfig
 	protected $disable_default_qfeedback = false;
 	protected $question_html = array();
 	protected $use_stored_tries = false;
+	protected $enable_user_links = false;
+
+	/**
+	 * @var bool
+	 */
+	protected $enable_permission_checks = false;
 	
 	/**
 	 * Constructor
@@ -145,6 +151,26 @@ abstract class ilPageConfig
 		return $this->enabledinternallinks;
 	}
 
+	/**
+	 * Set enable user links
+	 *
+	 * @param boolean $a_val enable user links	
+	 */
+	function setEnableUserLinks($a_val)
+	{
+		$this->enable_user_links = $a_val;
+	}
+	
+	/**
+	 * Get enable user links
+	 *
+	 * @return boolean enable user links
+	 */
+	function getEnableUserLinks()
+	{
+		return $this->enable_user_links;
+	}
+	
 	/**
 	 * Set Enable Wiki Links.
 	 *
@@ -536,5 +562,24 @@ abstract class ilPageConfig
 		return $this->use_stored_tries;
 	}
 
+	/**
+	 * Set enable permission checks
+	 *
+	 * @param bool $a_val enable permission checks
+	 */
+	function setEnablePermissionChecks($a_val)
+	{
+		$this->enable_permission_checks = $a_val;
+	}
+
+	/**
+	 * Get enable permission checks
+	 *
+	 * @return bool enable permission checks
+	 */
+	function getEnablePermissionChecks()
+	{
+		return $this->enable_permission_checks;
+	}
 }
 ?>

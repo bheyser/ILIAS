@@ -14,6 +14,7 @@ class ilAnswerWizardInputGUI extends ilTextInputGUI
 {
 	protected $values = array();
 	protected $allowMove = false;
+	protected $allowAddRemove = true;
 	protected $singleline = true;
 	protected $qstObject = null;
 	protected $minvalue = false;
@@ -135,6 +136,22 @@ class ilAnswerWizardInputGUI extends ilTextInputGUI
 	}
 
 	/**
+	 * @return bool
+	 */
+	public function isAddRemoveAllowed()
+	{
+		return $this->allowAddRemove;
+	}
+
+	/**
+	 * @param bool $allowAddRemove
+	 */
+	public function setAllowAddRemove($allowAddRemove)
+	{
+		$this->allowAddRemove = $allowAddRemove;
+	}
+
+	/**
 	 * Set minvalueShouldBeGreater
 	 *
 	 * @param	boolean	$a_bool	true if the minimum value should be greater than minvalue
@@ -253,11 +270,11 @@ class ilAnswerWizardInputGUI extends ilTextInputGUI
 	*
 	* @return	int	Size
 	*/
-	function insert(&$a_tpl)
+	function insert($a_tpl)
 	{
 		global $lng;
 		
-		$tpl = new ilTemplate("tpl.prop_answerwizardinput.html", true, true, "Modules/TestQuestionPool");
+		$tpl = new ilTemplate($this->getTemplate(), true, true, "Modules/TestQuestionPool");
 		$i = 0;
 		foreach ($this->values as $value)
 		{
@@ -318,21 +335,25 @@ class ilAnswerWizardInputGUI extends ilTextInputGUI
 			$tpl->setVariable("ROW_NUMBER", $i);
 			$tpl->setVariable("ID", $this->getPostVar() . "[answer][$i]");
 			$tpl->setVariable("POINTS_ID", $this->getPostVar() . "[points][$i]");
-			$tpl->setVariable("CMD_ADD", "cmd[add" . $this->getFieldId() . "][$i]");
-			$tpl->setVariable("CMD_REMOVE", "cmd[remove" . $this->getFieldId() . "][$i]");
+			if($this->isAddRemoveAllowed())
+			{
+				$tpl->setVariable("ADD_REMOVE_ID", $this->getPostVar() . "[$i]");
+				$tpl->setVariable("CMD_ADD", "cmd[add" . $this->getFieldId() . "][$i]");
+				$tpl->setVariable("CMD_REMOVE", "cmd[remove" . $this->getFieldId() . "][$i]");
+				$tpl->setVariable("ADD_BUTTON", ilGlyphGUI::get(ilGlyphGUI::ADD));
+				$tpl->setVariable("REMOVE_BUTTON", ilGlyphGUI::get(ilGlyphGUI::REMOVE));
+			}
 			if ($this->getDisabled())
 			{
 				$tpl->setVariable("DISABLED_POINTS", " disabled=\"disabled\"");
 			}
-			$tpl->setVariable("ADD_BUTTON", ilGlyphGUI::get(ilGlyphGUI::ADD));
-			$tpl->setVariable("REMOVE_BUTTON", ilGlyphGUI::get(ilGlyphGUI::REMOVE));
 			$tpl->parseCurrentBlock();
 			$i++;
 		}
 
 		$tpl->setVariable("ELEMENT_ID", $this->getPostVar());
-		$tpl->setVariable("ANSWER_TEXT", $lng->txt('answer_text'));
-		$tpl->setVariable("POINTS_TEXT", $lng->txt('points'));
+		$tpl->setVariable("ANSWER_TEXT", $this->getTextInputLabel($lng));
+		$tpl->setVariable("POINTS_TEXT", $this->getPointsInputLabel($lng));
 		$tpl->setVariable("COMMANDS_TEXT", $lng->txt('actions'));
 
 		$a_tpl->setCurrentBlock("prop_generic");
@@ -342,5 +363,31 @@ class ilAnswerWizardInputGUI extends ilTextInputGUI
 		global $tpl;
 		$tpl->addJavascript("./Services/Form/js/ServiceFormWizardInput.js");
 		$tpl->addJavascript("./Modules/TestQuestionPool/templates/default/answerwizard.js");
+	}
+
+	/**
+	 * @param $lng
+	 * @return mixed
+	 */
+	protected function getTextInputLabel($lng)
+	{
+		return $lng->txt('answer_text');
+	}
+
+	/**
+	 * @param $lng
+	 * @return mixed
+	 */
+	protected function getPointsInputLabel($lng)
+	{
+		return $lng->txt('points');
+	}
+
+	/**
+	 * @return string
+	 */
+	protected function getTemplate()
+	{
+		return "tpl.prop_answerwizardinput.html";
 	}
 }

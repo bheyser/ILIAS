@@ -1004,34 +1004,36 @@ UIEvent.prototype.stop = function () {
 /* User Interface Methods (DOM, Events, CSS, crossbrowser) */
 
 
-function attachUIEvent (obj, name, func) 
-{
-	if (window.Event) 
-	{
-		obj.addEventListener(name, func, false);
-	} 
-	else if (obj.attachEvent) 
-	{
-		obj.attachEvent('on'+name, func);
-	} 
-	else 
-	{
+function attachUIEvent (obj, name, func) {
+	if (window.Event) {
+		if (obj.addEventListener) {
+			obj.addEventListener(name, func, false);
+		}
+		else if (obj.attachEvent) {
+			obj.attachEvent('on'+name, func);
+		}
+		else {
+			obj.addEventListener(name, func, false);
+		}
+	}
+	else {
 		obj[name] = func;
 	}
 }
 	
-function detachUIEvent(obj, name, func) 
-{
-	if (window.Event) 
-	{
-		obj.removeEventListener(name, func, false);
-	} 
-	else if (obj.attachEvent) 
-	{
-		obj.detachEvent('on'+name, func);
-	} 
-	else 
-	{
+function detachUIEvent(obj, name, func) {
+	if (window.Event) {
+		if (obj.removeEventListener) {
+			obj.removeEventListener(name, func, false);
+		}
+		else if (obj.attachEvent) {
+			obj.detachEvent('on'+name, func);
+		}
+		else {
+			obj.removeEventListener(name, func, false);
+		}
+	}
+	else {
 		obj[name] = '';
 	}
 }
@@ -3181,6 +3183,7 @@ function onItemDeliverDo(item, wasSuspendAll) // onDeliver called from sequencin
 					if (v.satisfiedByMeasure && v.minNormalizedMeasure!==undefined) 
 					{
 						v = v.minNormalizedMeasure;
+						if (typeof this.config.lesson_mastery_score != "undefined" && this.config.lesson_mastery_score!=null) v = this.config.lesson_mastery_score/100;
 					}
 					else if (v.satisfiedByMeasure) 
 					{
@@ -3197,6 +3200,22 @@ function onItemDeliverDo(item, wasSuspendAll) // onDeliver called from sequencin
 		}
 		window.document.getElementById("noCredit").style.display='none';
 		//support for auto-review
+		saved_score_scaled=0;
+		if (globalAct.auto_review == 's') {
+			if (data.cmi.score.scaled != "" && typeof parseFloat(data.cmi.score.scaled) == "number") {
+				var b_in_ar=false;
+				for (var i=0;i<ar_saved_score_scaled.length;i++) {
+					if (ar_saved_score_scaled[i][0]==item.id) {
+						saved_score_scaled=ar_saved_score_scaled[i][1];
+						b_in_ar=true;
+					}
+				}
+				if (b_in_ar==false) {
+					saved_score_scaled=parseFloat(data.cmi.score.scaled);
+					ar_saved_score_scaled[ar_saved_score_scaled.length]=new Array(item.id,parseFloat(data.cmi.score.scaled));
+				}
+			}
+		}
 		if (globalAct.auto_review != 'n') {
 			if (
 				(globalAct.auto_review == 'r' && ((item.completion_status == 'completed' && item.success_status != 'failed') || item.success_status == 'passed') ) ||
@@ -3752,17 +3771,19 @@ var apiIndents = // for mapping internal to api representaiton
 function updateNav(ignore) {
 
 	function signActNode() {
-		if(elm && activities[tree[i].mActivityID].href && guiItemId == elm.id) {
-			removeClass(elm.parentNode,"ilc_rte_status_RTENotAttempted",1);
-			removeClass(elm.parentNode,"ilc_rte_status_RTEIncomplete",1);
-			removeClass(elm.parentNode,"ilc_rte_status_RTECompleted",1);
-			removeClass(elm.parentNode,"ilc_rte_status_RTEFailed",1);
-			removeClass(elm.parentNode,"ilc_rte_status_RTEPassed",1);
-			toggleClass(elm, "ilc_rte_tlink_RTETreeCurrent",1);
-			toggleClass(elm.parentNode,"ilc_rte_status_RTERunning",1);
-		} else {
-			removeClass(elm, "ilc_rte_tlink_RTETreeCurrent");
-			removeClass(elm.parentNode, "ilc_rte_status_RTERunning");
+		if (elm) {
+			if(activities[tree[i].mActivityID].href && guiItemId == elm.id) {
+				removeClass(elm.parentNode,"ilc_rte_status_RTENotAttempted",1);
+				removeClass(elm.parentNode,"ilc_rte_status_RTEIncomplete",1);
+				removeClass(elm.parentNode,"ilc_rte_status_RTECompleted",1);
+				removeClass(elm.parentNode,"ilc_rte_status_RTEFailed",1);
+				removeClass(elm.parentNode,"ilc_rte_status_RTEPassed",1);
+				toggleClass(elm, "ilc_rte_tlink_RTETreeCurrent",1);
+				toggleClass(elm.parentNode,"ilc_rte_status_RTERunning",1);
+			} else {
+				removeClass(elm, "ilc_rte_tlink_RTETreeCurrent");
+				removeClass(elm.parentNode, "ilc_rte_status_RTERunning");
+			}
 		}
 	}
 
@@ -4093,6 +4114,8 @@ var saved={
 	"interaction":{"data":[],"checkplus":2},
 	"objective":{"data":[],"checkplus":1}
 	};
+var saved_score_scaled=0;
+var ar_saved_score_scaled=[];
 // SCO related Variables
 var currentAPI; // reference to API during runtime of a SCO
 var scoStartTime = null;

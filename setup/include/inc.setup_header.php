@@ -30,42 +30,21 @@
 */
 
 // remove notices from error reporting
-if (version_compare(PHP_VERSION, '5.3.0', '>='))
-{
-	error_reporting((ini_get("error_reporting") & ~E_NOTICE) & ~E_DEPRECATED);
-}
-else
-{
-	error_reporting(ini_get('error_reporting') & ~E_NOTICE);
-}
+error_reporting((ini_get("error_reporting") & ~E_NOTICE) & ~E_DEPRECATED);
+
+require_once __DIR__."/../../libs/composer/vendor/autoload.php";
+
+$DIC = new \ILIAS\DI\Container();
 
 define("DEBUG",false);
-set_include_path("./Services/PEAR/lib".PATH_SEPARATOR.ini_get('include_path'));
-require_once "./include/inc.check_pear.php";
 
-//include files from PEAR
-require_once "PEAR.php";
-
-// wrapper for php 4.3.2 & higher
-
-@include_once "HTML/Template/ITX.php";		// new implementation
-if (class_exists("HTML_Template_ITX"))
-{
-	include_once "./Services/UICore/classes/class.ilTemplateHTMLITX.php";
-}
-else
-{
-	include_once "HTML/ITX.php";		// old implementation
-	include_once "./Services/UICore/classes/class.ilTemplateITX.php";
-}
-require_once "./setup/classes/class.ilTemplate.php";	// modified class. needs to be merged with base template class 
-
+//require_once "./Services/UICore/classes/class.ilTemplateHTMLITX.php";
+require_once "./setup/classes/class.ilTemplate.php";	// modified class. needs to be merged with base template class
 require_once "./setup/classes/class.ilLanguage.php";	// modified class. needs to be merged with base language class 
 require_once "./Services/Logging/classes/class.ilLog.php";
 require_once "./Services/Authentication/classes/class.ilSession.php";
 require_once "./Services/Utilities/classes/class.ilUtil.php";
 require_once "./Services/Init/classes/class.ilIniFile.php";
-require_once "./Services/Database/classes/class.ilDB.php";
 require_once "./setup/classes/class.ilSetupGUI.php";
 require_once "./setup/classes/class.Session.php";
 require_once "./setup/classes/class.ilClientList.php";
@@ -74,12 +53,14 @@ require_once "./Services/FileSystem/classes/class.ilFile.php";
 require_once "./setup/classes/class.ilCtrlStructureReader.php";
 require_once "./Services/Xml/classes/class.ilSaxParser.php";
 require_once "./include/inc.ilias_version.php";
+include_once './Services/Logging/classes/public/class.ilLogLevel.php';
 
 // include error_handling
-require_once "./Services/Init/classes/class.ilErrorHandling.php";
+require_once "./setup/classes/class.ilSetupErrorHandling.php";
 
-$ilErr = new ilErrorHandling();
+$ilErr = new ilSetupErrorHandling();
 $ilErr->setErrorHandling(PEAR_ERROR_CALLBACK,array($ilErr,'errorHandler'));
+$DIC["ilErr"] = function($c) { return $GLOBALS["ilErr"]; };
 
 // set ilias pathes
 if($_SERVER['HTTPS'] == 'on')
@@ -114,11 +95,22 @@ else
 	define ('ILIAS_ABSOLUTE_PATH',str_replace("/setup/include", "", dirname(__FILE__)));
 }
 
+// set default timezone 
+include_once './Services/Calendar/classes/class.ilTimeZone.php';
+include_once './Services/Init/classes/class.ilIniFile.php';
+$ini = new ilIniFile(ILIAS_ABSOLUTE_PATH.'/ilias.ini.php');
+$ini->read();
+$DIC["ini"] = function($c) { return $GLOBALS["ini"]; };
+
+$tz = ilTimeZone::initDefaultTimeZone($ini);
+define('IL_TIMEZONE',$tz);
+$DIC["tz"] = function($c) { return $GLOBALS["tz"]; };
 
 define ("TPLPATH","./templates/blueshadow");
 
 // init session
 $sess = new Session();
+$DIC["sess"] = function($c) { return $GLOBALS["sess"]; };
 
 $lang = (isset($_GET["lang"])) ? $_GET["lang"] : $_SESSION["lang"];
 
@@ -126,24 +118,34 @@ $_SESSION["lang"] = $lang;
 
 // init languages
 $lng = new ilLanguage($lang);
+$DIC["lng"] = function($c) { return $GLOBALS["lng"]; };
 
-// init log
-$log = new ilLog(ILIAS_ABSOLUTE_PATH,"ilias.log","SETUP",false);
-$ilLog =& $log;
+include_once './Services/Logging/classes/class.ilLoggingSetupSettings.php';
+$logging_settings = new ilLoggingSetupSettings();
+$logging_settings->init();
+
+include_once './Services/Logging/classes/public/class.ilLoggerFactory.php';
+
+$log = ilLoggerFactory::newInstance($logging_settings)->getComponentLogger('setup');
+$ilLog = $log;
+$DIC["ilLog"] = function($c) { return $GLOBALS["ilLog"]; };
 
 // init template - in the main program please use ILIAS Template class
 // instantiate main template
 //$tpl = new ilTemplate("./setup/templates");
 //$tpl->loadTemplatefile("tpl.main.html", true, true);
 $tpl = new ilTemplate("tpl.main.html", true, true, "setup");
+$DIC["tpl"] = function($c) { return $GLOBALS["tpl"]; };
 
 // make instance of structure reader
 $ilCtrlStructureReader = new ilCtrlStructureReader();
 $ilCtrlStructureReader->setErrorObject($ilErr);
+$DIC["ilCtrlStructureReader"] = function($c) { return $GLOBALS["ilCtrlStructureReader"]; };
 
 require_once "./Services/Utilities/classes/class.ilBenchmark.php";
 $ilBench = new ilBenchmark();
 $GLOBALS['ilBench'] = $ilBench;
+$DIC["ilBench"] = function($c) { return $GLOBALS["ilBench"]; };
 
 include_once("./Services/Database/classes/class.ilDBAnalyzer.php");
 include_once("./Services/Database/classes/class.ilMySQLAbstraction.php");

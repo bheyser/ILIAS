@@ -18,6 +18,13 @@ class ilTestManScoringParticipantsBySelectedQuestionAndPassTableGUI extends ilTa
 	const PARENT_SAVE_SCORING_CMD = 'saveManScoringByQuestion';
 	
 	private $manPointsPostData = array();
+	
+	private $curQuestionMaxPoints = null;
+	
+	/**
+	 * @var bool
+	 */
+	protected $first_row_rendered = false;
 
 	public function __construct($parentObj)
 	{
@@ -124,6 +131,12 @@ class ilTestManScoringParticipantsBySelectedQuestionAndPassTableGUI extends ilTa
 		 */
 		global $ilCtrl;
 
+		if(!$this->first_row_rendered)
+		{
+			$this->first_row_rendered = true;
+			$this->tpl->touchBlock('row_js');
+		}
+
 		$this->tpl->setVariable('VAL_NAME', $row['participant']->getName());
 		$reached_points = new ilNumberInputGUI('', 'scoring[' . $row['pass_id'] . '][' . $row['active_id'] . '][' . $row['qst_id'] . ']');
 		$reached_points->allowDecimals(true);
@@ -150,7 +163,6 @@ class ilTestManScoringParticipantsBySelectedQuestionAndPassTableGUI extends ilTa
 			$reached_points->setValue($row['reached_points']);
 		}
 		$this->tpl->setVariable('VAL_REACHED_POINTS', $reached_points->render());
-		$this->tpl->setVariable('VAL_ID', md5($row['pass_id'] . $row['active_id'] . $row['qst_id']));
 
 		$ilCtrl->setParameter($this->getParentObject(), 'qst_id', $row['qst_id']);
 		$ilCtrl->setParameter($this->getParentObject(), 'active_id', $row['active_id']);
@@ -179,11 +191,23 @@ class ilTestManScoringParticipantsBySelectedQuestionAndPassTableGUI extends ilTa
 			return false;
 		}
 		
-		return $this->manPointsPostData[$pass_id][$active_id][$qst_id];
+		$submittedPoints = $this->manPointsPostData[$pass_id][$active_id][$qst_id];
+		
+		return $submittedPoints > $this->getCurQuestionMaxPoints();
 	}
 	
 	public function setManualScoringPointsPostData($manPointsPostData)
 	{
 		$this->manPointsPostData = $manPointsPostData;
+	}
+
+	public function getCurQuestionMaxPoints()
+	{
+		return $this->curQuestionMaxPoints;
+	}
+
+	public function setCurQuestionMaxPoints($curQuestionMaxPoints)
+	{
+		$this->curQuestionMaxPoints = $curQuestionMaxPoints;
 	}
 }

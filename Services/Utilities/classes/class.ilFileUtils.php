@@ -52,10 +52,9 @@ class ilFileUtils
 	 * @throws ilFileUtilsException
 	 */
 	 
-	function processZipFile ($a_directory, $a_file, $structure, $ref_id = null, $containerType = null, $tree = null, $access_handler = null) {
+	public static function processZipFile ($a_directory, $a_file, $structure, $ref_id = null, $containerType = null, $tree = null, $access_handler = null) {
 
 		global $lng;
-		include_once("Services/Utilities/classes/class.ilUtil.php");
 		
 		self::$new_files = array();
 				
@@ -76,7 +75,6 @@ class ilFileUtils
 		// if there are no files unziped (->broken file!)
 		if (empty($filearray)) {
 			throw new ilFileUtilsException($lng->txt("archive_broken"), ilFileUtilsException::$BROKEN_FILE);
-			break;
 		}
 
 		// virus handling
@@ -125,7 +123,6 @@ class ilFileUtils
 			{
 				throw new ilFileUtilsException($lng->txt("exc_upload_error") . "<br />" . $lng->txt("zip_structure_error") . $doublettes , 
 								ilFileUtilsException::$DOUBLETTES_FOUND);
-				break;
 			}
 		}
 		else
@@ -153,7 +150,7 @@ class ilFileUtils
 	 * @param string $dir Directory to start from
 	 * @param array &$arr Referenced array which is filled with Filename and path
 	 */	
-	function recursive_dirscan($dir, &$arr)
+	public static function recursive_dirscan($dir, &$arr)
 	{
 		global $lng;
 
@@ -197,7 +194,7 @@ class ilFileUtils
 	 * @param string containerType object type of created containerobjects (folder or category)
 	 * @return integer errorcode
 	 */	
-	function createObjects($dir, $structure, $ref_id, $containerType, $tree = null, $access_handler = null)
+	public static function createObjects($dir, $structure, $ref_id, $containerType, $tree = null, $access_handler = null)
 	{
 		$dirlist = opendir($dir);
 		
@@ -368,7 +365,7 @@ class ilFileUtils
 	 * @param string $string String to encode
 	 * @return string utf-8-encoded string
 	 */
-	function utf8_encode($string) {
+	public static function utf8_encode($string) {
 	   
 		// From http://w3.org/International/questions/qa-forms-utf-8.html
 		return (preg_match('%^(?:

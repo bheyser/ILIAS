@@ -118,12 +118,13 @@ abstract class ilAdvancedMDClaimingPlugin extends ilPlugin
 	 */
 	protected static function isValidObjType($a_obj_type, $a_is_substitution = false)
 	{
-		// ecs, glossary not supported yet
-		$valid = array("crs", "cat");
+		// ecs not supported yet
+		$valid = array("crs", "cat", "book", "wiki", "glo", "orgu", "prg");
 
 		if(!$a_is_substitution)
 		{
 			$valid[] = "orgu";
+			$valid[] = "prg";
 		}		 
 		
 		return in_array($a_obj_type, $valid);
@@ -148,8 +149,8 @@ abstract class ilAdvancedMDClaimingPlugin extends ilPlugin
 			}
 			else 
 			{
-				$type = strtolower(trim($type[0]));
 				$subtype = strtolower(trim($type[1]));
+				$type = strtolower(trim($type[0]));				
 			}
 					
 			if(self::isValidObjType($type))
@@ -283,7 +284,7 @@ abstract class ilAdvancedMDClaimingPlugin extends ilPlugin
 		
 		// validating type
 		$a_type = (int)$a_type;
-		if($a_type < 1 || $a_type > 7)
+		if($a_type < 1 || $a_type > 8)
 		{
 			return;
 		}

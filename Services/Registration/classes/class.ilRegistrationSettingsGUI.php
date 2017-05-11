@@ -42,14 +42,14 @@ class ilRegistrationSettingsGUI
 	var $tpl;
 	var $ref_id;
 
-	function ilRegistrationSettingsGUI()
+	function __construct()
 	{
 		global $ilCtrl,$tpl,$lng;
 
-		$this->tpl =& $tpl;
-		$this->ctrl =& $ilCtrl;
+		$this->tpl = $tpl;
+		$this->ctrl = $ilCtrl;
 		
-		$this->lng =& $lng;
+		$this->lng = $lng;
 		$this->lng->loadLanguageModule('administration');
 		$this->lng->loadLanguageModule('registration');
 		$this->lng->loadLanguageModule('user');
@@ -569,14 +569,13 @@ class ilRegistrationSettingsGUI
 		
 		include_once './Services/AccessControl/classes/class.ilObjRole.php';
 
+		$this->access_limitations_obj->resetAccessLimitations();
 		foreach(ilObjRole::_lookupRegisterAllowed() as $role)
 		{
 			$this->access_limitations_obj->setMode($_POST['access_limitation_mode_'.$role['id']],$role['id']);
 			$this->access_limitations_obj->setAbsolute($_POST['access_limitation_absolute_'.$role['id']],$role['id']);
 			$this->access_limitations_obj->setRelative($_POST['access_limitation_relative_'.$role['id']],$role['id']);
 		}
-		
-		//var_dump("<pre>",$_POST,$this->access_limitations_obj->getAbsolute(4),time(),"</pre>");exit;
 		
 		if($err = $this->access_limitations_obj->validate())
 		{
@@ -933,33 +932,12 @@ class ilRegistrationSettingsGUI
 		$opt = new ilRadioOption($this->lng->txt("reg_access_limitation_mode_relative"), "relative");
 		$limit->addOption($opt);
 		
-		$days = new ilTextInputGUI("", "rel_date[d]");
-		$days->setSize(5);
-		$days->setSuffix($this->lng->txt("days"));
-		
-		$mon = new ilTextInputGUI("", "rel_date[m]");
-		$mon->setSize(5);
-		$mon->setSuffix($this->lng->txt("months"));
-		
-		$yr = new ilTextInputGUI("", "rel_date[y]");
-		$yr->setSize(5);
-		$yr->setSuffix($this->lng->txt("years"));
-		
-		// custom input won't reload
-		if(is_array($_POST["rel_date"]))
-		{
-			$days->setValue($_POST["rel_date"]["d"]);
-			$mon->setValue($_POST["rel_date"]["m"]);
-			$yr->setValue($_POST["rel_date"]["y"]);
-		}
-		
-		$dur = new ilCustomInputGUI($this->lng->txt("reg_access_limitation_mode_relative_target"));
+		$dur = new ilDurationInputGUI($this->lng->txt("reg_access_limitation_mode_relative_target"), "rel_date");
 		$dur->setRequired(true);
-		$dur->setHTML(
-			$days->getToolbarHTML()." ".
-			$mon->getToolbarHTML()." ".
-			$yr->getToolbarHTML()
-		);
+		$dur->setShowMonths(true);
+		$dur->setShowDays(true);
+		$dur->setShowHours(false);
+		$dur->setShowMinutes(false);
 		$opt->addSubItem($dur);
 		
 		$this->form_gui->addCommandButton('createCodes', $this->lng->txt('create'));
@@ -1040,26 +1018,35 @@ class ilRegistrationSettingsGUI
 			switch($limit)
 			{
 				case "absolute":
-					$date = $this->form_gui->getInput("abs_date");			
-					$date = $date["date"];
+					$date_input = $this->form_gui->getItemByPostVar("abs_date");
+					$date = $date_input->getDate()->get(IL_CAL_DATE);
 					if($date < date("Y-m-d"))
-					{
+					{						
+						$date_input->setAlert($this->lng->txt("form_msg_wrong_date"));
 						$valid = false;
-					}				
+					}
 					break;
 				
 				case "relative":
 					$date = $this->form_gui->getInput("rel_date");						
 					if(!array_sum($date))
-					{
+					{						
 						$valid = false;
+					}
+					else
+					{						
+						$date = array(
+							"d" => $date["dd"],
+							"m" => $date["MM"]%12,
+							"y" => floor($date["MM"]/12)
+						);						
 					}
 					break;
 					
 				case "none":
 					$limit = null;
 					break;
-			}
+			}			
 		}
 		
 		if($valid)

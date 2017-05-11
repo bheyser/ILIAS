@@ -27,7 +27,7 @@ class ilSkillTemplateCategoryGUI extends ilSkillTreeNodeGUI
 		$ilCtrl->saveParameter($this, "obj_id");
 		$this->tref_id = $a_tref_id;
 		
-		parent::ilSkillTreeNodeGUI($a_node_id);
+		parent::__construct($a_node_id);
 	}
 
 	/**
@@ -41,11 +41,11 @@ class ilSkillTemplateCategoryGUI extends ilSkillTreeNodeGUI
 	/**
 	 * Execute command
 	 */
-	function &executeCommand()
+	function executeCommand()
 	{
 		global $ilCtrl, $tpl, $ilTabs;
 		
-		$tpl->getStandardTemplate();
+		//$tpl->getStandardTemplate();
 		
 		$next_class = $ilCtrl->getNextClass($this);
 		$cmd = $ilCtrl->getCmd();
@@ -72,11 +72,6 @@ class ilSkillTemplateCategoryGUI extends ilSkillTreeNodeGUI
 		$ilTabs->addTab("content", $lng->txt("content"),
 			$ilCtrl->getLinkTarget($this, 'listItems'));
 
-		if ($this->tref_id > 0)
-		{
-			// usage
-			$this->addUsageTab($ilTabs);
-		}
 
 		// properties
 		if ($this->tref_id == 0)
@@ -84,7 +79,10 @@ class ilSkillTemplateCategoryGUI extends ilSkillTreeNodeGUI
 			$ilTabs->addTab("properties", $lng->txt("settings"),
 				$ilCtrl->getLinkTarget($this, 'editProperties'));
 		}
-		
+
+		// usage
+		$this->addUsageTab($ilTabs);
+
 		// back link
 		if ($this->tref_id == 0)
 		{
@@ -113,11 +111,19 @@ class ilSkillTemplateCategoryGUI extends ilSkillTreeNodeGUI
 	 */
 	function listItems()
 	{
-		global $tpl;
-		
-		if ($this->tref_id == 0)
+		global $tpl, $lng;
+
+		if ($this->isInUse())
 		{
-			self::addCreationButtons();
+			ilUtil::sendInfo($lng->txt("skmg_skill_in_use"));
+		}
+
+		if ($this->checkPermissionBool("write"))
+		{
+			if ($this->tref_id == 0)
+			{
+				self::addCreationButtons();
+			}
 		}
 
 		$this->setTabs("content");
@@ -189,6 +195,11 @@ class ilSkillTemplateCategoryGUI extends ilSkillTreeNodeGUI
 	 */
 	function saveItem()
 	{
+		if (!$this->checkPermissionBool("write"))
+		{
+			return;
+		}
+
 		$it = new ilSkillTemplateCategory();
 		$it->setTitle($this->form->getInput("title"));
 		$it->setOrderNr($this->form->getInput("order_nr"));
@@ -201,6 +212,11 @@ class ilSkillTemplateCategoryGUI extends ilSkillTreeNodeGUI
 	 */
 	function updateItem()
 	{
+		if (!$this->checkPermissionBool("write"))
+		{
+			return;
+		}
+
 		$this->node_object->setTitle($this->form->getInput("title"));
 		$this->node_object->setOrderNr($this->form->getInput("order_nr"));
 		$this->node_object->setSelfEvaluation($_POST["self_eval"]);
@@ -214,6 +230,39 @@ class ilSkillTemplateCategoryGUI extends ilSkillTreeNodeGUI
 	{
 		$this->redirectToParent(true);
 	}
+
+	/**
+	 * Show skill usage
+	 */
+	function showUsage()
+	{
+		global $tpl;
+
+		// (a) referenced skill template category in main tree
+		if ($this->tref_id > 0)
+		{
+			return parent::showUsage();
+		}
+
+		// (b) skill template category in templates view
+
+		$this->setTabs("usage");
+
+		include_once("./Services/Skill/classes/class.ilSkillUsage.php");
+		$usage_info = new ilSkillUsage();
+		$usages = $usage_info->getAllUsagesOfTemplate((int) $_GET["obj_id"]);
+
+		$html = "";
+		include_once("./Services/Skill/classes/class.ilSkillUsageTableGUI.php");
+		foreach ($usages as $k => $usage)
+		{
+			$tab = new ilSkillUsageTableGUI($this, "showUsage", $k, $usage);
+			$html.= $tab->getHTML()."<br/><br/>";
+		}
+
+		$tpl->setContent($html);
+	}
+
 
 }
 

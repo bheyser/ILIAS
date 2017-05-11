@@ -22,6 +22,7 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 	protected $online = false;
 	protected $public_notes = true;
 	protected $empty_page_templ = true;
+	protected $link_md_values = false;
 
 	/**
 	* Constructor
@@ -29,10 +30,10 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 	* @param	integer	reference_id or object_id
 	* @param	boolean	treat the id as reference_id (true) or object_id (false)
 	*/
-	function ilObjWiki($a_id = 0,$a_call_by_reference = true)
+	function __construct($a_id = 0,$a_call_by_reference = true)
 	{
 		$this->type = "wiki";
-		$this->ilObject($a_id,$a_call_by_reference);
+		parent::__construct($a_id,$a_call_by_reference);
 	}
 
 	/**
@@ -308,6 +309,26 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 	}
 	
 	/**
+	 * Set link md values
+	 *
+	 * @param bool $a_val link metadata values	
+	 */
+	function setLinkMetadataValues($a_val)
+	{
+		$this->link_md_values = $a_val;
+	}
+	
+	/**
+	 * Get link md values
+	 *
+	 * @return bool link metadata values
+	 */
+	function getLinkMetadataValues()
+	{
+		return $this->link_md_values;
+	}
+	
+	/**
 	 * Is wiki an online help wiki?
 	 *
 	 * @return boolean true, if current wiki is an online help wiki
@@ -353,7 +374,7 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 
 		if (((int) $this->getStyleSheetId()) > 0)
 		{
-			include_once("./Services/Style/classes/class.ilObjStyleSheet.php");
+			include_once("./Services/Style/Content/classes/class.ilObjStyleSheet.php");
 			ilObjStyleSheet::writeStyleUsage($this->getId(), $this->getStyleSheetId());
 		}
 	}
@@ -386,6 +407,7 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 			"introduction" => array("clob", $this->getIntroduction()),
 			"imp_pages" => array("integer", $this->getImportantPages()),
 			"page_toc" => array("integer", $this->getPageToc()),
+			"link_md_values" => array("integer", $this->getLinkMetadataValues()),
 			"empty_page_templ" => array("integer", $this->getEmptyPageTemplate())
 			), array(
 			"id" => array("integer", $this->getId())
@@ -402,7 +424,7 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 			$start_page->create();
 		}
 
-		include_once("./Services/Style/classes/class.ilObjStyleSheet.php");
+		include_once("./Services/Style/Content/classes/class.ilObjStyleSheet.php");
 		ilObjStyleSheet::writeStyleUsage($this->getId(), $this->getStyleSheetId());
 
 		return true;
@@ -435,8 +457,9 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 		$this->setImportantPages($rec["imp_pages"]);
 		$this->setPageToc($rec["page_toc"]);
 		$this->setEmptyPageTemplate($rec["empty_page_templ"]);
+		$this->setLinkMetadataValues($rec["link_md_values"]);
 
-		include_once("./Services/Style/classes/class.ilObjStyleSheet.php");
+		include_once("./Services/Style/Content/classes/class.ilObjStyleSheet.php");
 		$this->setStyleSheetId((int) ilObjStyleSheet::lookupObjectStyle($this->getId()));
 
 	}
@@ -488,73 +511,6 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 		}
 		
 		return true;
-	}
-	
-
-	/**
-	* notifys an object about an event occured
-	* Based on the event happend, each object may decide how it reacts.
-	*
-	* If you are not required to handle any events related to your module, just delete this method.
-	* (For an example how this method is used, look at ilObjGroup)
-	*
-	* @access	public
-	* @param	string	event
-	* @param	integer	reference id of object where the event occured
-	* @param	array	passes optional parameters if required
-	* @return	boolean
-	*/
-	function notify($a_event,$a_ref_id,$a_parent_non_rbac_id,$a_node_id,$a_params = 0)
-	{
-		global $tree;
-		
-		switch ($a_event)
-		{
-			case "link":
-				
-				//var_dump("<pre>",$a_params,"</pre>");
-				//echo "Module name ".$this->getRefId()." triggered by link event. Objects linked into target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-			
-			case "cut":
-				
-				//echo "Module name ".$this->getRefId()." triggered by cut event. Objects are removed from target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-				
-			case "copy":
-			
-				//var_dump("<pre>",$a_params,"</pre>");
-				//echo "Module name ".$this->getRefId()." triggered by copy event. Objects are copied into target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-
-			case "paste":
-				
-				//echo "Module name ".$this->getRefId()." triggered by paste (cut) event. Objects are pasted into target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-			
-			case "new":
-				
-				//echo "Module name ".$this->getRefId()." triggered by paste (new) event. Objects are applied to target object ref_id: ".$a_ref_id;
-				//exit;
-				break;
-		}
-
-		// At the beginning of the recursive process it avoids second call of the notify function with the same parameter
-		if ($a_node_id==$_GET["ref_id"])
-		{
-			$parent_obj =& $this->ilias->obj_factory->getInstanceByRefId($a_node_id);
-			$parent_type = $parent_obj->getType();
-			if($parent_type == $this->getType())
-			{
-				$a_node_id = (int) $tree->getParentId($a_node_id);
-			}
-		}
-		
-		parent::notify($a_event,$a_ref_id,$a_parent_non_rbac_id,$a_node_id,$a_params);
 	}
 	
 	/**
@@ -615,6 +571,18 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 	static function _lookupPublicNotes($a_wiki_id)
 	{
 		return ilObjWiki::_lookup($a_wiki_id, "public_notes");
+	}
+
+	/**
+	 * Lookup whether metadata should be auto linked
+	 *
+	 * @param	int			$a_wiki_id		Wiki ID
+	 *
+	 * @return	boolean		auto linking activated?
+	 */
+	static function _lookupLinkMetadataValues($a_wiki_id)
+	{
+		return ilObjWiki::_lookup($a_wiki_id, "link_md_values");
 	}
 
 	/**
@@ -680,7 +648,7 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 		{
 
 			include_once 'Services/Search/classes/class.ilObjectSearchFactory.php';
-			$wiki_search =& ilObjectSearchFactory::_getWikiContentSearchInstance($query_parser);
+			$wiki_search = ilObjectSearchFactory::_getWikiContentSearchInstance($query_parser);
 			$wiki_search->setFilter(array('wpg'));
 			$search_result->mergeEntries($wiki_search->performSearch());
 		}
@@ -936,11 +904,11 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 	 * @param int target ref_id
 	 * @param int copy id
 	 */
-	public function cloneObject($a_target_id,$a_copy_id = 0)
+	public function cloneObject($a_target_id,$a_copy_id = 0, $a_omit_tree = false)
 	{
 		global $ilDB, $ilUser, $ilias;
 
-		$new_obj = parent::cloneObject($a_target_id,$a_copy_id);
+		$new_obj = parent::cloneObject($a_target_id,$a_copy_id, $a_omit_tree);
 
 		//copy online status if object is not the root copy object
 		$cp_options = ilCopyWizardOptions::_getInstance($a_copy_id);
@@ -950,7 +918,7 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 			$new_obj->setOnline($this->getOnline());
 		}
 	 	
-		$new_obj->setTitle($this->getTitle());
+		//$new_obj->setTitle($this->getTitle());		// see #20074
 		$new_obj->setStartPage($this->getStartPage());
 		$new_obj->setShortTitle($this->getShortTitle());
 		$new_obj->setRatingOverall($this->getRatingOverall());
@@ -965,7 +933,7 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 		$new_obj->update();
 
 		// set/copy stylesheet
-		include_once("./Services/Style/classes/class.ilObjStyleSheet.php");
+		include_once("./Services/Style/Content/classes/class.ilObjStyleSheet.php");
 		$style_id = $this->getStyleSheetId();
 		if ($style_id > 0 && !ilObjStyleSheet::_lookupStandard($style_id))
 		{
@@ -977,7 +945,7 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 
 		// copy content
 		include_once("./Modules/Wiki/classes/class.ilWikiPage.php");
-		$pages = ilWikiPage::getAllPages($this->getId());
+		$pages = ilWikiPage::getAllWikiPages($this->getId());
 		if (count($pages) > 0)
 		{
 			// if we have any pages, delete the start page first
@@ -1114,5 +1082,87 @@ class ilObjWiki extends ilObject implements ilAdvancedMetaDataSubItems
 			return $lng->txt("wiki_wpg").' "'.ilWikiPage::lookupTitle($a_sub_id).'"';
 		}
 	}
+
+	/**
+	 * Init user html export
+	 *
+	 * @param
+	 * @return
+	 */
+	function initUserHTMLExport()
+	{
+		global $ilDB, $ilUser;
+
+		include_once("./Modules/Wiki/classes/class.ilWikiUserHTMLExport.php");
+
+		$user_export = new ilWikiUserHTMLExport($this, $ilDB, $ilUser);
+		$user_export->initUserHTMLExport();
+	}
+
+	/**
+	 * Start user html export
+	 *
+	 * @param
+	 * @return
+	 */
+	function startUserHTMLExport()
+	{
+		global $ilDB, $ilUser;
+
+		include_once("./Modules/Wiki/classes/class.ilWikiUserHTMLExport.php");
+
+		$user_export = new ilWikiUserHTMLExport($this, $ilDB, $ilUser);
+		$user_export->startUserHTMLExport();
+	}
+
+	/**
+	 * Get user html export progress
+	 *
+	 * @return array progress info
+	 */
+	function getUserHTMLExportProgress()
+	{
+		global $ilDB, $ilUser;
+
+		include_once("./Modules/Wiki/classes/class.ilWikiUserHTMLExport.php");
+
+		$user_export = new ilWikiUserHTMLExport($this, $ilDB, $ilUser);
+		return $user_export->getProgress();
+	}
+
+	/**
+	 * Send user html export file
+	 */
+	function deliverUserHTMLExport()
+	{
+		global $ilDB, $ilUser;
+
+		include_once("./Modules/Wiki/classes/class.ilWikiUserHTMLExport.php");
+
+		$user_export = new ilWikiUserHTMLExport($this, $ilDB, $ilUser);
+		return $user_export->deliverFile();
+	}
+	
+	
+	/**
+	 * Decorate adv md value
+	 *
+	 * @param string $a_value value
+	 * @return string decorated value (includes HTML)
+	 */
+	public function decorateAdvMDValue($a_value)
+	{		
+		include_once("./Modules/Wiki/classes/class.ilWikiPage.php");
+		if (ilWikiPage::_wikiPageExists($this->getId(), $a_value))
+		{
+			$url = ilObjWikiGUI::getGotoLink($this->getRefId(), $a_value);
+			return "<a href='".$url."'>".$a_value."</a>";
+		}		
+
+		return $a_value;
+	}
+
+
+
 }
 ?>

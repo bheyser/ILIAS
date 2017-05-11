@@ -54,9 +54,8 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 
 		if ($ilSetting->get("repository_tree_pres") == "" ||
 			($ilSetting->get("rep_tree_limit_grp_crs") && $this->top_node_id == 0))
-		{
-			$this->setTypeWhiteList(array("root", "cat", "catr", "grp", "icrs",
-				"crs", "crsr", "rcrs", "itgr"));
+		{			
+			$this->setTypeWhiteList($objDefinition->getExplorerContainerTypes());
 		}
 		else if ($ilSetting->get("repository_tree_pres") == "all_types")
 		{
@@ -75,7 +74,7 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 			$this->setPathOpen((int) $_GET["ref_id"]);
 		}
 	}
-
+		
 	/**
 	 * Get root node
 	 *
@@ -213,6 +212,12 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 				$ilCtrl->setParameterByClass("ilobjgroupgui", "ref_id", $_GET["ref_id"]);
 				return $link;
 
+			case "grpr":
+				$ilCtrl->setParameterByClass("ilrepositorygui", "ref_id", $a_node["child"]);
+				$link = $ilCtrl->getLinkTargetByClass("ilrepositorygui", "redirect");
+				$ilCtrl->setParameterByClass("ilrepositorygui", "ref_id", $_GET["ref_id"]);
+				return $link;
+
 			case "crs":
 				$ilCtrl->setParameterByClass("ilobjcoursegui", "ref_id", $a_node["child"]);
 				$link = $ilCtrl->getLinkTargetByClass(array("ilrepositorygui", "ilobjcoursegui"), "view");
@@ -225,16 +230,16 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 				$ilCtrl->setParameterByClass("ilrepositorygui", "ref_id", $_GET["ref_id"]);
 				return $link;
 
-			case "icrs":
-				$ilCtrl->setParameterByClass("ilobjilinccoursegui", "ref_id", $a_node["child"]);
-				$link = $ilCtrl->getLinkTargetByClass(array("ilrepositorygui", "ilobjilinccoursegui"), "");
-				$ilCtrl->setParameterByClass("ilobjilinccoursegui", "ref_id", $_GET["ref_id"]);
-				return $link;
-
 			case 'rcrs':
 				$ilCtrl->setParameterByClass("ilrepositorygui", "ref_id", $a_node["child"]);
 				$link = $ilCtrl->getLinkTargetByClass("ilrepositorygui", "infoScreen");
 				$ilCtrl->setParameterByClass("ilrepositorygui", "ref_id", $_GET["ref_id"]);
+				return $link;
+
+			case 'prg':
+				$ilCtrl->setParameterByClass("ilobjstudyprogrammegui", "ref_id", $a_node["child"]);
+				$link = $ilCtrl->getLinkTargetByClass("ilobjstudyprogrammegui", "view");
+				$ilCtrl->setParameterByClass("ilobjstudyprogrammegui", "ref_id", $_GET["ref_id"]);
 				return $link;
 
 			default:
@@ -337,7 +342,7 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 				{
 					// add item group ref id to item group block
 					$this->type_grps[$parent_type]["itgr"]["ref_ids"][] = $g;
-					
+
 					// #16697 - check item group permissions
 					$may_read = $ilAccess->checkAccess('read', '', $g);
 					
@@ -347,14 +352,14 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 						include_once("./Services/Container/classes/class.ilContainerSorting.php");
 						$items = ilContainerSorting::_getInstance($parent_obj_id)->sortSubItems('itgr', $child["obj_id"], $items);
 					}
-					
+
 					foreach($items as $item)
 					{
 						$in_any_group[] = $item["child"];
 						
-						if($may_read)
-						{							
-							$igroup[$g][] = $item;						
+						if ($may_read)
+						{
+							$igroup[$g][] = $item;
 							$group[$g][] = $item;
 						}
 					}
@@ -373,7 +378,7 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 		}
 		
 		$in_any_group = array_unique($in_any_group);
-	
+
 		// custom block sorting?
 		include_once("./Services/Container/classes/class.ilContainerSorting.php");	
 		$sort = ilContainerSorting::_getInstance($parent_obj_id);									
@@ -540,7 +545,7 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 
 				$query = sprintf("SELECT * FROM tst_tests WHERE obj_fi=%s", $obj_id);
 				$res = $ilDB->query($query);
-				while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+				while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 				{
 					return (bool) $row->complete;
 				}
@@ -554,7 +559,7 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 
 				$query = sprintf("SELECT * FROM svy_svy WHERE obj_fi=%s", $obj_id);
 				$res = $ilDB->query($query);
-				while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+				while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 				{
 					return (bool) $row->complete;
 				}
@@ -571,12 +576,14 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 					return false;
 				}
 				break;
-				
+			case 'grpr':
 			case 'crsr':
 			case 'catr':
 				include_once('./Services/ContainerReference/classes/class.ilContainerReferenceAccess.php');
 				return ilContainerReferenceAccess::_isAccessible($a_node["child"]);
-				
+			
+			case 'prg': 
+					return $rbacsystem->checkAccess("visible", $a_node["child"]);
 
 			// all other types are only clickable, if read permission is given
 			default:
@@ -586,7 +593,7 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 					if ($a_node["type"] == "lm")
 					{
 						include_once("./Modules/LearningModule/classes/class.ilObjLearningModule.php");
-						$lm_obj =& new ilObjLearningModule($a_node["child"]);
+						$lm_obj = new ilObjLearningModule($a_node["child"]);
 						if((!$lm_obj->getOnline()) && (!$rbacsystem->checkAccess('write', $a_node["child"])))
 						{
 							return false;
@@ -596,7 +603,7 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 					if ($a_node["type"] == "htlm")
 					{
 						include_once("./Modules/HTMLLearningModule/classes/class.ilObjFileBasedLM.php");
-						$lm_obj =& new ilObjFileBasedLM($a_node["child"]);
+						$lm_obj = new ilObjFileBasedLM($a_node["child"]);
 						if((!$lm_obj->getOnline()) && (!$rbacsystem->checkAccess('write', $a_node["child"])))
 						{
 							return false;
@@ -606,7 +613,7 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 					if ($a_node["type"] == "sahs")
 					{
 						include_once("./Modules/ScormAicc/classes/class.ilObjSAHSLearningModule.php");
-						$lm_obj =& new ilObjSAHSLearningModule($a_node["child"]);
+						$lm_obj = new ilObjSAHSLearningModule($a_node["child"]);
 						if((!$lm_obj->getOnline()) && (!$rbacsystem->checkAccess('write', $a_node["child"])))
 						{
 							return false;

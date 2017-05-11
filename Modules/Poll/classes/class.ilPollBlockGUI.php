@@ -85,7 +85,7 @@ class ilPollBlockGUI extends ilBlockGUI
 	/**
 	* execute command
 	*/
-	function &executeCommand()
+	function executeCommand()
 	{
 		global $ilCtrl;
 
@@ -324,7 +324,8 @@ class ilPollBlockGUI extends ilBlockGUI
 		$img = $a_poll->getImageFullPath();
 		if($img)
 		{
-			$this->tpl->setVariable("URL_IMAGE", $img);
+			require_once('./Services/WebAccessChecker/classes/class.ilWACSignedPath.php');
+			$this->tpl->setVariable("URL_IMAGE", ilWACSignedPath::signFile($img));
 		}
 
 		if ($this->poll_block->showComments()) {

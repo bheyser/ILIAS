@@ -93,6 +93,7 @@ class ilSearchGUI extends ilSearchBaseGUI
 				
 			case 'ilobjectcopygui':
 				$this->prepareOutput();
+				$this->ctrl->setReturn($this,'');
 				include_once './Services/Object/classes/class.ilObjectCopyGUI.php';
 				$cp = new ilObjectCopyGUI($this);
 				$this->ctrl->forwardCommand($cp);
@@ -200,14 +201,48 @@ class ilSearchGUI extends ilSearchBaseGUI
 	/**
 	* Data resource for autoComplete
 	*/
-	function autoComplete()
+	public function autoComplete()
 	{
-		$q = $_REQUEST["term"];
-		include_once("./Services/Search/classes/class.ilSearchAutoComplete.php");
-		$list = ilSearchAutoComplete::getList($q);
-		echo $list;
-		exit;
+		if((int) $_REQUEST['search_type'] == -1)
+		{
+			$a_fields = array('login','firstname','lastname','email');
+			$result_field = 'login';
 
+			// Starting user autocomplete search
+			include_once './Services/User/classes/class.ilUserAutoComplete.php';
+			$auto = new ilUserAutoComplete();
+
+
+			$auto->setMoreLinkAvailable(true);
+			$auto->setSearchFields($a_fields);
+			$auto->setResultField($result_field);
+			$auto->enableFieldSearchableCheck(true);
+			$auto->setUserLimitations(true);
+
+			$res = $auto->getList($_REQUEST['term']);
+			
+			$res_obj = json_decode($res);
+			
+			ilLoggerFactory::getLogger('sea')->debug($res);
+			
+			
+			ilLoggerFactory::getLogger('sea')->dump($res_obj->items, ilLogLevel::DEBUG);
+			if(is_array($res_obj->items))
+			{
+				echo json_encode($res_obj->items);
+				exit;
+			}
+			
+		}
+		else
+		{
+			$q = $_REQUEST["term"];
+			include_once("./Services/Search/classes/class.ilSearchAutoComplete.php");
+			$list = ilSearchAutoComplete::getList($q);
+			ilLoggerFactory::getLogger('sea')->dump(json_decode($list));
+			echo $list;
+			exit;
+		}
 	}
 	
 	function showSearch()
@@ -244,9 +279,19 @@ class ilSearchGUI extends ilSearchBaseGUI
 			$this->tpl->setVariable("FORM", $this->form->getHTML());
 			$this->tpl->parseCurrentBlock();
 		}
+		
+		if(ilSearchSettings::getInstance()->isDateFilterEnabled())
+		{
+			// begin-patch creation_date
+			$this->tpl->setVariable('TXT_FILTER_BY_CDATE',$this->lng->txt('search_filter_cd'));
+			$this->tpl->setVariable('TXT_CD_OFF',$this->lng->txt('search_off'));
+			$this->tpl->setVariable('FORM_CD',$this->getCreationDateForm()->getHTML());
+			$this->tpl->setVariable("ARR_IMG_CD", ilGlyphGUI::get(ilGlyphGUI::CARET));
+			// end-patch creation_date
+		}
+		
 
 		$this->tpl->setVariable("TXT_AREA", $lng->txt("search_area"));
-		
 
 		// search area form
 		$this->tpl->setVariable('SEARCH_AREA_FORM', $this->getSearchAreaForm()->getHTML());
@@ -531,7 +576,38 @@ class ilSearchGUI extends ilSearchBaseGUI
 		{
 			$obj_search->setFilter($this->__getFilter());
 		}
+		
+		$this->parseCreationFilter($obj_search);
 		return $obj_search->performSearch();
+	}
+	
+	public function parseCreationFilter(ilObjectSearch $search)
+	{
+		$options = $this->getSearchCache()->getCreationFilter();
+		
+		if(!$options['enabled'])
+		{
+			return TRUE;
+		}
+		$limit = new ilDate($options['date'],IL_CAL_UNIX);
+		$search->setCreationDateFilterDate($limit);
+		
+		switch($options['ontype'])
+		{
+			case 1:
+				$search->setCreationDateFilterOperator(ilObjectSearch::CDATE_OPERATOR_AFTER);
+				break;
+				
+			case 2:
+				$search->setCreationDateFilterOperator(ilObjectSearch::CDATE_OPERATOR_BEFORE);
+				break;
+				
+			case 3:
+				$search->setCreationDateFilterOperator(ilObjectSearch::CDATE_OPERATOR_ON);
+				break;
+		}
+		
+		return TRUE;
 	}
 
 
@@ -655,6 +731,7 @@ class ilSearchGUI extends ilSearchBaseGUI
 		include_once('Services/Search/classes/class.ilUserSearchCache.php');
 		$this->search_cache = ilUserSearchCache::_getInstance($ilUser->getId());
 		$this->search_cache->switchSearchType(ilUserSearchCache::DEFAULT_SEARCH);
+		
 		if($_GET['page_number'])
 		{
 			$this->search_cache->setResultPageNumber((int) $_GET['page_number']);
@@ -662,8 +739,10 @@ class ilSearchGUI extends ilSearchBaseGUI
 		if(isset($_POST['cmd']['performSearch']))
 		{
 			$this->search_cache->setQuery(ilUtil::stripSlashes($_POST['term']));
+			$this->search_cache->setCreationFilter($this->loadCreationFilter());
 			$this->search_cache->save();
 		}
 	}
+		
 }
 ?>

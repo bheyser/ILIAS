@@ -15,10 +15,10 @@ require_once './Modules/Test/classes/inc.AssessmentConstants.php';
  * @author		Helmut Schottmüller <helmut.schottmueller@mac.com>
  * @author		Björn Heyser <bheyser@databay.de>
  * @author		Maximilian Becker <mbecker@databay.de>
- * 
  * @version	$Id$
  * 
  * @ingroup ModulesTestQuestionPool
+ * @ilCtrl_Calls assMatchingQuestionGUI: ilFormPropertyDispatchGUI
  */
 class assMatchingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringAdjustable, ilGuiAnswerScoringAdjustable
 {
@@ -27,6 +27,7 @@ class assMatchingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 	 *
 	 * The constructor takes possible arguments an creates an instance of the assMatchingQuestionGUI object.
 	 *
+	 * @param integer $id The database id of a image map question object
 	 * @param integer $id The database id of a image map question object
 	 * 
 	 * @return \assMatchingQuestionGUI
@@ -44,13 +45,9 @@ class assMatchingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 	}
 
 	/**
-	 * Evaluates a posted edit form and writes the form data in the question object
-	 *
-	 * @param bool $always
-	 *
-	 * @return integer A positive value, if one of the required fields wasn't set, else 0
+	 * {@inheritdoc}
 	 */
-	public function writePostData($always = false)
+	protected function writePostData($always = false)
 	{
 		$hasErrors = (!$always) ? $this->editQuestion(true) : false;
 		if (!$hasErrors)
@@ -235,6 +232,8 @@ class assMatchingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 
 		include_once("./Services/Form/classes/class.ilPropertyFormGUI.php");
 		$form = new ilPropertyFormGUI();
+		$this->editForm = $form;
+
 		$form->setFormAction($this->ctrl->getFormAction($this));
 		$form->setTitle($this->outQuestionType());
 		$form->setMultipart(true);
@@ -267,6 +266,16 @@ class assMatchingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 
 		if (!$checkonly) $this->tpl->setVariable("QUESTION_DATA", $form->getHTML());
 		return $errors;
+	}
+
+	private function isDefImgUploadCommand()
+	{
+		return $this->ctrl->getCmd() == 'uploaddefinitions';
+	}
+
+	private function isTermImgUploadCommand()
+	{
+		return $this->ctrl->getCmd() == 'uploadterms';
 	}
 
 	/**
@@ -317,7 +326,10 @@ class assMatchingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 		}
 		$definitionvalues = $this->object->getDefinitions();
 		$definitions->setValues( $definitionvalues );
-		$definitions->checkInput();
+		if( $this->isDefImgUploadCommand() )
+		{
+			$definitions->checkInput();
+		}
 		$form->addItem( $definitions );
 
 		// Terms
@@ -334,7 +346,10 @@ class assMatchingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 			$this->object->addTerm( new assAnswerMatchingTerm() );
 		$termvalues = $this->object->getTerms();
 		$terms->setValues( $termvalues );
-		$terms->checkInput();
+		if( $this->isTermImgUploadCommand() )
+		{
+			$terms->checkInput();
+		}
 		$form->addItem( $terms );
 
 		// Matching Pairs
@@ -572,8 +587,11 @@ class assMatchingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 		$feedback = '';
 		if($show_feedback)
 		{
-			$fb = $this->getGenericFeedbackOutput($active_id, $pass);
-			$feedback .=  strlen($fb) ? $fb : '';
+			if( !$this->isTestPresentationContext() )
+			{
+				$fb = $this->getGenericFeedbackOutput($active_id, $pass);
+				$feedback .= strlen($fb) ? $fb : '';
+			}
 			
 			$fb = $this->getSpecificFeedbackOutput($active_id, $pass);
 			$feedback .=  strlen($fb) ? $fb : '';
@@ -618,14 +636,18 @@ class assMatchingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 		switch ($this->object->getShuffle())
 		{
 			case 1:
-				$terms = $this->object->pcArrayShuffle($terms);
-				$definitions = $this->object->pcArrayShuffle($definitions);
+				$seed = $this->object->getShuffler()->getSeed();
+				$this->object->getShuffler()->setSeed($seed.'1');
+				$terms = $this->object->getShuffler()->shuffle($terms);
+				$this->object->getShuffler()->setSeed($seed.'2');
+				$definitions = $this->object->getShuffler()->shuffle($definitions);
+				$this->object->getShuffler()->setSeed($seed);
 				break;
 			case 2:
-				$terms = $this->object->pcArrayShuffle($terms);
+				$terms = $this->object->getShuffler()->shuffle($terms);
 				break;
 			case 3:
-				$definitions = $this->object->pcArrayShuffle($definitions);
+				$definitions = $this->object->getShuffler()->shuffle($definitions);
 				break;
 		}
 
@@ -751,7 +773,7 @@ class assMatchingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 		return $neworder;
 	}
 
-	function getTestOutput($active_id, $pass = NULL, $is_postponed = FALSE, $user_post_solution = FALSE)
+	function getTestOutput($active_id, $pass = NULL, $is_postponed = FALSE, $user_post_solution = FALSE, $inlineFeedback = false)
 	{
 		$this->tpl->addJavaScript('Modules/TestQuestionPool/js/jquery-ui-1-10-3-fixed.js');
 		$this->tpl->addJavaScript('Modules/TestQuestionPool/js/ilMatchingQuestion.js');
@@ -777,7 +799,7 @@ class assMatchingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 			}
 			else
 			{
-				$solutions =& $this->object->getSolutionValues($active_id, $pass);
+				$solutions = $this->object->getUserSolutionPreferingIntermediate($active_id, $pass);
 			}
 
 			$counter = 0;
@@ -800,18 +822,22 @@ class assMatchingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 		switch ($this->object->getShuffle())
 		{
 			case 1:
-				$terms = $this->object->pcArrayShuffle($terms);
+				$seed = $this->object->getShuffler()->getSeed();
+				$this->object->getShuffler()->setSeed($seed.'1');
+				$terms = $this->object->getShuffler()->shuffle($terms);
 				if (count($solutions))
 				{
 					$definitions = $this->sortDefinitionsBySolution($solutions, $definitions);
 				}
 				else
 				{
-					$definitions = $this->object->pcArrayShuffle($definitions);
+					$this->object->getShuffler()->setSeed($seed.'2');
+					$definitions = $this->object->getShuffler()->shuffle($definitions);
 				}
+				$this->object->getShuffler()->setSeed($seed);
 				break;
 			case 2:
-				$terms = $this->object->pcArrayShuffle($terms);
+				$terms = $this->object->getShuffler()->shuffle($terms);
 				break;
 			case 3:
 				if (count($solutions))
@@ -820,7 +846,7 @@ class assMatchingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 				}
 				else
 				{
-					$definitions = $this->object->pcArrayShuffle($definitions);
+					$definitions = $this->object->getShuffler()->shuffle($definitions);
 				}
 				break;
 		}

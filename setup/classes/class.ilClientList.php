@@ -35,7 +35,7 @@ class ilClientList
 	var $path;			// clients base dir
 	var $error = "";	// error text
 	
-	function ilClientList($a_db_connections)
+	function __construct($a_db_connections)
 	{		
 		$this->db_connections = $a_db_connections;
 		$this->path = ILIAS_ABSOLUTE_PATH."/".ILIAS_WEB_DIR;
@@ -55,6 +55,10 @@ class ilClientList
 		// get available lang-files
 		while ($entry = $d->read())
 		{
+			if (!is_dir($this->path . "/" . $entry)) { // If a file is in the directory and open_basedir is activated, is_file($this->path."/".$entry."/client.ini.php") throws a warning. e.g. .DS_STORE
+				continue;
+			}
+
 			if (is_file($this->path."/".$entry."/client.ini.php"))
 			{
 				$client = new ilClient($entry, $this->db_connections);

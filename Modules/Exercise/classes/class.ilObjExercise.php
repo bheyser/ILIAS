@@ -31,6 +31,12 @@ class ilObjExercise extends ilObject
 	var $instruction;
 	var $certificate_visibility;
 	
+	var $tutor_feedback = 7; // [int]
+	
+	const TUTOR_FEEDBACK_MAIL = 1;
+	const TUTOR_FEEDBACK_TEXT = 2;
+	const TUTOR_FEEDBACK_FILE = 4;
+	
 	/**
 	 * 
 	 * Indicates whether completion by submission is enabled or not
@@ -47,11 +53,11 @@ class ilObjExercise extends ilObject
 	* @param	integer	reference_id or object_id
 	* @param	boolean	treat the id as reference_id (true) or object_id (false)
 	*/
-	function ilObjExercise($a_id = 0,$a_call_by_reference = true)
+	function __construct($a_id = 0,$a_call_by_reference = true)
 	{
 		$this->setPassMode("all");
 		$this->type = "exc";
-		$this->ilObject($a_id,$a_call_by_reference);
+		parent::__construct($a_id,$a_call_by_reference);
 	}
 
 	// SET, GET METHODS
@@ -158,95 +164,35 @@ class ilObjExercise extends ilObject
 
 	}
 
-	/**
-	 * Save submitted file of user
-	 */
-	function deliverFile($a_http_post_files, $a_ass_id, $user_id, $unzip = false)
+	function hasTutorFeedbackText()
 	{
-		global $ilDB;
-		
-		include_once("./Modules/Exercise/classes/class.ilFSStorageExercise.php");
-		$storage = new ilFSStorageExercise($this->getId(), $a_ass_id);
-		$deliver_result = $storage->deliverFile($a_http_post_files, $user_id, $unzip);
-//var_dump($deliver_result);
-		if ($deliver_result)
-		{
-			$next_id = $ilDB->nextId("exc_returned");
-			$query = sprintf("INSERT INTO exc_returned ".
-							 "(returned_id, obj_id, user_id, filename, filetitle, mimetype, ts, ass_id) ".
-							 "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-				$ilDB->quote($next_id, "integer"),
-				$ilDB->quote($this->getId(), "integer"),
-				$ilDB->quote($user_id, "integer"),
-				$ilDB->quote($deliver_result["fullname"], "text"),
-				$ilDB->quote($a_http_post_files["name"], "text"),
-				$ilDB->quote($deliver_result["mimetype"], "text"),
-				$ilDB->quote(ilUtil::now(), "timestamp"),
-				$ilDB->quote($a_ass_id, "integer")
-			);
-			$ilDB->manipulate($query);
-			
-			// team upload?
-			$user_ids = ilExAssignment::getTeamMembersByAssignmentId($a_ass_id, $user_id);
-			if(!$user_ids)
-			{
-				$user_ids = array($user_id);
-			}
-			else
-			{				
-				$team_id = ilExAssignment::getTeamIdByAssignment($a_ass_id, $user_id);
-				ilExAssignment::writeTeamLog($team_id, ilExAssignment::TEAM_LOG_ADD_FILE, $a_http_post_files["name"]);			
-			}
-			
-			foreach($user_ids as $user_id)
-			{
-				if (!$this->members_obj->isAssigned($user_id))
-				{
-					$this->members_obj->assignMember($user_id);
-				}
-				ilExAssignment::updateStatusReturnedForUser($a_ass_id, $user_id, 1);
-				ilExerciseMembers::_writeReturned($this->getId(), $user_id, 1);
-			}
-		}
-		return true;
+		return $this->tutor_feedback & self::TUTOR_FEEDBACK_TEXT;
 	}
-
-	/**
-	 * Upload assigment files
-	 */
-	function addUploadedFile($a_http_post_files, $unzipUploadedFile = false)
+	
+	function hasTutorFeedbackMail()
 	{
-		global $lng;
-		if ($unzipUploadedFile && preg_match("/zip/",	$a_http_post_files["type"]) == 1)
-		{
-
-			$this->processUploadedFile($a_http_post_files["tmp_name"], "storeUploadedFile", true);
-			return true;
-			
-			
-		}
-		else 
-		{
-			$this->file_obj->storeUploadedFile($a_http_post_files, true);
-			return true;
-		}
+		return $this->tutor_feedback & self::TUTOR_FEEDBACK_MAIL;
 	}
-	function deleteFiles($a_files)
+	
+	function hasTutorFeedbackFile()
 	{
-		$this->file_obj->unlinkFiles($a_files);
+		return $this->tutor_feedback & self::TUTOR_FEEDBACK_FILE;
 	}
-
+	
+	protected function getTutorFeedback()
+	{
+		return $this->tutor_feedback;
+	}
+	
+	public function setTutorFeedback($a_value)
+	{
+		$this->tutor_feedback = $a_value;
+	}
+	
 	function saveData()
 	{
 		global $ilDB;
 		
-		// SAVE ONLY EXERCISE SPECIFIC DATA
-		/*$query = "INSERT INTO exc_data SET ".
-			"obj_id = ".$ilDB->quote($this->getId()).", ".
-			"instruction = ".$ilDB->quote($this->getInstruction()).", ".
-			"time_stamp = ".$ilDB->quote($this->getTimestamp());
-		$this->ilias->db->query($query);*/
-
 		$ilDB->insert("exc_data", array(
 			"obj_id" => array("integer", $this->getId()),
 			"instruction" => array("clob", $this->getInstruction()),
@@ -255,7 +201,8 @@ class ilObjExercise extends ilObject
 			"pass_nr" => array("text", $this->getPassNr()),
 			"show_submissions" => array("integer", (int) $this->getShowSubmissions()),
 			'compl_by_submission' => array('integer', (int)$this->isCompletionBySubmissionEnabled()),
-			"certificate_visibility" => array("integer", (int)$this->getCertificateVisibility())
+			"certificate_visibility" => array("integer", (int)$this->getCertificateVisibility()),
+			"tfeedback" => array("integer", (int)$this->getTutorFeedback())
 			));
 		return true;
 	}
@@ -267,73 +214,51 @@ class ilObjExercise extends ilObject
 	 * @param int target ref_id
 	 * @param int copy id
 	 */
-	public function cloneObject($a_target_id,$a_copy_id = 0)
+	public function cloneObject($a_target_id,$a_copy_id = 0, $a_omit_tree = false)
 	{
 		global $ilDB;
 		
 		// Copy settings
-	 	$new_obj = parent::cloneObject($a_target_id,$a_copy_id);
+	 	$new_obj = parent::cloneObject($a_target_id,$a_copy_id, $a_omit_tree);
 	 	$new_obj->setInstruction($this->getInstruction());
 	 	$new_obj->setTimestamp($this->getTimestamp());
 	 	$new_obj->setPassMode($this->getPassMode());
 	 	$new_obj->saveData();
 	 	$new_obj->setPassNr($this->getPassNr());
 	 	$new_obj->setShowSubmissions($this->getShowSubmissions());
-	 	$new_obj->setCompletionBySubmission($this->isCompletionBySubmissionEnabled());
-
-	 	
+	 	$new_obj->setCompletionBySubmission($this->isCompletionBySubmissionEnabled());	 
+		$new_obj->setTutorFeedback($this->getTutorFeedback());
 	 	$new_obj->update();
 	 	
+		// Copy criteria catalogues
+		$crit_cat_map = array();
+		include_once("./Modules/Exercise/classes/class.ilExcCriteriaCatalogue.php");
+		foreach(ilExcCriteriaCatalogue::getInstancesByParentId($this->getId()) as $crit_cat)
+		{
+			$new_id = $crit_cat->cloneObject($new_obj->getId());
+			$crit_cat_map[$crit_cat->getId()] = $new_id;			
+		}
+			
 		// Copy assignments
 		include_once("./Modules/Exercise/classes/class.ilExAssignment.php");
-		ilExAssignment::cloneAssignmentsOfExercise($this->getId(), $new_obj->getId());	
+		ilExAssignment::cloneAssignmentsOfExercise($this->getId(), $new_obj->getId(), $crit_cat_map);	
 		
 		// Copy learning progress settings
 		include_once('Services/Tracking/classes/class.ilLPObjSettings.php');
 		$obj_settings = new ilLPObjSettings($this->getId());
 		$obj_settings->cloneSettings($new_obj->getId());
 		unset($obj_settings);
-				
+		
+		// #18945
+		include_once "./Services/Certificate/classes/class.ilCertificate.php";
+		include_once "./Modules/Exercise/classes/class.ilExerciseCertificateAdapter.php";
+		$cert = new ilCertificate(new ilExerciseCertificateAdapter($this));
+		$newcert = new ilCertificate(new ilExerciseCertificateAdapter($new_obj));
+		$cert->cloneCertificate($newcert);
+			
 		return $new_obj;
 	}
 	
-	/**
-	* Deletes already delivered files
-	* @param array $file_id_array An array containing database ids of the delivered files
-	* @param numeric $user_id The database id of the user
-	* @access	public
-	*/
-	function deleteDeliveredFiles($a_exc_id, $a_ass_id, $file_id_array, $user_id)
-	{
-		ilExAssignment::deleteDeliveredFiles($a_exc_id, $a_ass_id, $file_id_array, $user_id);
-
-		// Finally update status 'returned' of member if no file exists
-		if(!count(ilExAssignment::getDeliveredFiles($a_exc_id, $a_ass_id, $user_id)))
-		{			
-			// team upload?
-			$user_ids = ilExAssignment::getTeamMembersByAssignmentId($a_ass_id, $user_id);
-			if(!$user_ids)
-			{
-				$user_ids = array($user_id);
-			}
-			
-			foreach($user_ids as $user_id)
-			{			
-				ilExAssignment::updateStatusReturnedForUser($a_ass_id, $user_id, 0);
-			}
-		}
-	}
-
-	/**
-	* Delivers the returned files of an user
-	* @param numeric $user_id The database id of the user
-	* @access	public
-	*/
-	function deliverReturnedFiles($user_id)
-	{
-		require_once "./Services/Utilities/classes/class.ilUtil.php";
-	}
-
 	/**
 	* delete course and all related data
 	*
@@ -353,10 +278,8 @@ class ilObjExercise extends ilObject
 		$ilDB->manipulate("DELETE FROM exc_data ".
 			"WHERE obj_id = ".$ilDB->quote($this->getId(), "integer"));
 
-		//$this->ilias->db->query($query);
-
-		//$this->file_obj->delete();
-		//$this->members_obj->delete();
+		include_once "Modules/Exercise/classes/class.ilExcCriteriaCatalogue.php";
+		ilExcCriteriaCatalogue::deleteByParent($this->getId());
 
 		// remove all notifications
 		include_once "./Services/Notification/classes/class.ilNotification.php";
@@ -367,23 +290,6 @@ class ilObjExercise extends ilObject
 			array('obj_id'=>$this->getId()));		
 
 		return true;
-	}
-
-	/**
-	* notifys an object about an event occured
-	* Based on the event happend, each object may decide how it reacts.
-	*
-	* @access	public
-	* @param	string	event
-	* @param	integer	reference id of object where the event occured
-	* @param	array	passes optional paramters if required
-	* @return	boolean
-	*/
-	function notify($a_event,$a_ref_id,$a_node_id,$a_params = 0)
-	{
-		// object specific event handling
-
-		parent::notify($a_event,$a_ref_id,$a_node_id,$a_params);
 	}
 
 	function read()
@@ -411,6 +317,7 @@ class ilObjExercise extends ilObject
 			}
 			$this->setCompletionBySubmission($row->compl_by_submission == 1 ? true : false);
 			$this->setCertificateVisibility($row->certificate_visibility);
+			$this->setTutorFeedback($row->tfeedback);
 		}
 		
 		$this->members_obj = new ilExerciseMembers($this);
@@ -424,12 +331,6 @@ class ilObjExercise extends ilObject
 
 		parent::update();
 
-		/*$query = "UPDATE exc_data SET ".
-			"instruction = ".$ilDB->quote($this->getInstruction()).", ".
-			"time_stamp = ".$ilDB->quote($this->getTimestamp())." ".
-			"WHERE obj_id = ".$ilDB->quote($this->getId());
-		*/
-		
 		if ($this->getPassMode() == "all")
 		{
 			$pass_nr = null;
@@ -445,36 +346,56 @@ class ilObjExercise extends ilObject
 			"pass_mode" => array("text", $this->getPassMode()),
 			"pass_nr" => array("integer", $this->getPassNr()),
 			"show_submissions" => array("integer", (int) $this->getShowSubmissions()),
-			'compl_by_submission' => array('integer', (int)$this->isCompletionBySubmissionEnabled())
+			'compl_by_submission' => array('integer', (int)$this->isCompletionBySubmissionEnabled()),
+			'tfeedback' => array('integer', (int)$this->getTutorFeedback()),
 			), array(
 			"obj_id" => array("integer", $this->getId())
 			));
 
 		$this->updateAllUsersStatus();
 		
-		//$res = $this->ilias->db->query($query);
-
-		#$this->members_obj->update();
 		return true;
 	}
 
 	/**
 	 * send exercise per mail to members
 	 */
-	function sendAssignment($a_exc_id, $a_ass_id, $a_members)
+	function sendAssignment(ilExAssignment $a_ass, $a_members)
 	{
-		include_once("./Modules/Exercise/classes/class.ilExAssignment.php");
-		$ass_title = ilExAssignment::lookupTitle($a_ass_id);
+		global $lng, $ilUser;
+		
+		$lng->loadLanguageModule("exc");
+		
+		// subject
+		$subject = $a_ass->getTitle()
+			? $this->getTitle().": ".$a_ass->getTitle()
+			: $this->getTitle();
+		
+		
+		// body
+		
+		$body = $a_ass->getInstruction();
+		$body .= "\n\n";
+		
+		$body .= $lng->txt("exc_edit_until").": ";
+		$body .= (!$a_ass->getDeadline())
+		  ? $lng->txt("exc_no_deadline_specified")
+		  : ilDatePresentation::formatDate(new ilDateTime($a_ass->getDeadline(), IL_CAL_UNIX));
+		$body .= "\n\n";
+		
+		include_once "Services/Link/classes/class.ilLink.php";
+		$body .= ilLink::_getLink($this->getRefId(), "exc");
+		
 
+		// files
+		$file_names = array();
 		include_once("./Modules/Exercise/classes/class.ilFSStorageExercise.php");
-		$storage = new ilFSStorageExercise($a_exc_id, $a_ass_id);
+		$storage = new ilFSStorageExercise($a_ass->getExerciseId(), $a_ass->getId());
 		$files = $storage->getFiles();
-
 		if(count($files))
 		{
 			include_once "./Services/Mail/classes/class.ilFileDataMail.php";
-
-			$mfile_obj = new ilFileDataMail($_SESSION["AccountId"]);
+			$mfile_obj = new ilFileDataMail($GLOBALS['DIC']['ilUser']->getId());
 			foreach($files as $file)
 			{
 				$mfile_obj->copyAttachmentFile($file["fullpath"], $file["name"]);
@@ -482,201 +403,48 @@ class ilObjExercise extends ilObject
 			}
 		}
 		
+		// recipients
+		$recipients = array();
+		foreach($a_members as $member_id)
+		{
+			$tmp_obj = ilObjectFactory::getInstanceByObjId($member_id);
+			$recipients[] = $tmp_obj->getLogin();
+			unset($tmp_obj);
+		}
+		$recipients = implode("," ,$recipients);
+	
+		// send mail
 		include_once "Services/Mail/classes/class.ilMail.php";
-
-		$tmp_mail_obj = new ilMail($_SESSION["AccountId"]);
+		$tmp_mail_obj = new ilMail($ilUser->getId());
 		$message = $tmp_mail_obj->sendMail(
-			$this->__formatRecipients($a_members),"","",
-			$this->__formatSubject($ass_title), $this->__formatBody($a_ass_id),
-			count($file_names) ? $file_names : array(),array("normal"));
-
+			$recipients,
+			"",
+			"",
+			$subject, 
+			$body,
+			$file_names,
+			array("normal")
+		);
 		unset($tmp_mail_obj);
 
-		if(count($file_names))
+		// remove tmp files
+		if(sizeof($file_names))
 		{
 			$mfile_obj->unlinkFiles($file_names);
 			unset($mfile_obj);
 		}
 
-
-		// SET STATUS SENT FOR ALL RECIPIENTS
-		foreach($a_members as $member_id => $value)
+		// set recipients mail status
+		foreach($a_members as $member_id)
 		{
-			ilExAssignment::updateStatusSentForUser($a_ass_id, $member_id, 1);
+			$member_status = $a_ass->getMemberStatus($member_id);
+			$member_status->setSent(true);
+			$member_status->update();			
 		}
 
 		return true;
 	}
 
-	/**
-	* Get time when exercise has been set to solved.
-	*/
-	function _lookupStatusTime($exc_id, $member_id)
-	{
-
-  		global $ilDB, $lng;
-
-  		$q = "SELECT * ".
-		"FROM exc_members ".
-		"WHERE obj_id= ".$ilDB->quote($exc_id, "integer").
-		" AND usr_id= ".$ilDB->quote($member_id, "integer");
-
-  		$set = $ilDB->query($q);
-		if ($rec = $ilDB->fetchAssoc($set))
-		{
-			return ilUtil::getMySQLTimestamp($rec["status_time"]);
-		}
-	}
-
-	// PRIVATE METHODS
-	function __formatBody($a_ass_id)
-	{
-		global $lng;
-
-		$lng->loadLanguageModule("exc");
-		
-		include_once("./Modules/Exercise/classes/class.ilExAssignment.php");
-		$ass = new ilExAssignment($a_ass_id);
-
-		$body = $ass->getInstruction();
-		$body .= "\n\n";
-		if ($ass->getDeadline() == 0)
-		{
-			$body .= $lng->txt("exc_edit_until") . ": ".
-				$lng->txt("exc_no_deadline_specified");
-		}
-		else
-		{
-			$body .= $lng->txt("exc_edit_until") . ": ".
-				ilFormat::formatDate(date("Y-m-d H:i:s",$ass->getDeadline()), "datetime", true);
-		}
-		$body .= "\n\n";
-		$body .= ILIAS_HTTP_PATH.
-			"/goto.php?target=".
-			$this->getType().
-			"_".$this->getRefId()."&client_id=".CLIENT_ID;
-
-		return $body;
-	}
-
-	function __formatSubject($a_ass_title = "")
-	{
-		$subject = $this->getTitle();
-		
-		if ($a_ass_title != "")
-		{
-			$subject.= ": ".$a_ass_title;
-		}
-
-		return $subject;
-	}
-
-	function __formatRecipients($a_members)
-	{
-		foreach($a_members as $member_id => $value)
-		{
-			$tmp_obj = ilObjectFactory::getInstanceByObjId($member_id);
-			$tmp_members[] = $tmp_obj->getLogin();
-
-			unset($tmp_obj);
-		}
-
-		return implode(',',$tmp_members ? $tmp_members : array());
-	}
-
-	/**
-	* processes errorhandling etc for uploaded archive
-	* @param string $tmpFile path and filename to uploaded file
-	* @param string $storageMethod deliverFile or storeUploadedFile 
-	* @param boolean $persistentErrorMessage Defines whether sendInfo will be persistent or not
-	*/
-	function processUploadedFile ($fileTmp, $storageMethod, $persistentErrorMessage,
-		$a_ass_id)
-	{
-		global $lng, $ilUser;
-
-		// Create unzip-directory
-		$newDir = ilUtil::ilTempnam();
-		ilUtil::makeDir($newDir);
-
-		include_once ("Services/Utilities/classes/class.ilFileUtils.php");
-		
-		try 
-		{
-			$processDone = ilFileUtils::processZipFile($newDir,$fileTmp, false);
-			ilFileUtils::recursive_dirscan($newDir, $filearray);			
-
-			foreach ($filearray["file"] as $key => $filename)
-			{
-				$a_http_post_files["name"] = ilFileUtils::utf8_encode($filename);
-				$a_http_post_files["type"] = "other";
-				$a_http_post_files["tmp_name"] = $filearray["path"][$key]."/".$filename;
-				$a_http_post_files["error"] = 0;
-				$a_http_post_files["size"] = filesize($filearray["path"][$key]."/".$filename);
-
-				if ($storageMethod == "deliverFile")
-				{
-					$this->$storageMethod($a_http_post_files, $a_ass_id, $ilUser->id, true);
-				}
-				else if ($storageMethod == "storeUploadedFile")
-				{
-					$this->file_obj->$storageMethod($a_http_post_files, true, true);				
-				}
-			}
-			ilExerciseMembers::_writeReturned($this->getId(), $ilUser->id, 1);
-			ilUtil::sendSuccess($this->lng->txt("file_added"),$persistentErrorMessage);					
-		} 
-		catch (ilFileUtilsException $e) 
-		{
-			ilUtil::sendFailure($e->getMessage(), $persistentErrorMessage);
-		}
-		
-
-		ilUtil::delDir($newDir);
-		return $processDone;
-
-	}
-	
-	/**
-	* This function fixes filenames. Prior to ILIAS 3.10.0 filenames have been
-	* stored with full path in exc_returned.filename, e.g.
-	* /opt/ilias/my_client/exercise/547/157/20070813113926_README.doc
-	*
-	* Problems occur, if the server is moved from one location to another.
-	* We do the following: The filename will be parsed and if it contains the string
-	* "/exercise/" we truncate everything
-	* before "/exercise/" and replace it with the current CLIENT_DATA_DIR.
-	*/
-	static function _fixFilename($a_filename)
-	{
-		$ex_pos = strrpos($a_filename, "/exercise/");
-		if ($ex_pos > 0)
-		{
-			$a_filename = CLIENT_DATA_DIR.substr($a_filename, $ex_pos);
-		}
-		return $a_filename;
-	}
-	
-	/**
-	* Iterates an associative array and fixes all fields with the key "filename"
-	* using the _fixFilename() method
-	*/
-	static function _fixFilenameArray($a_array)
-	{
-		if (is_array($a_array))
-		{
-			foreach ($a_array as $k => $v)
-			{
-				if ($v["filename"] != "")
-				{
-					$a_array[$k]["filename"] = ilObjExercise::_fixFilename($a_array[$k]["filename"]);
-				}
-			}
-		}
-		
-		return $a_array;
-	}
-	
 	/**
 	 * Determine status of user
 	 */
@@ -690,7 +458,7 @@ class ilObjExercise extends ilObject
 		}
 		
 		include_once("./Modules/Exercise/classes/class.ilExAssignment.php");
-		$ass = ilExAssignment::getAssignmentDataOfExercise($this->getId());
+		$ass = ilExAssignment::getInstancesByExercise($this->getId());
 		
 		$passed_all_mandatory = true;
 		$failed_a_mandatory = false;
@@ -700,12 +468,12 @@ class ilObjExercise extends ilObject
 		
 		foreach ($ass as $a)
 		{
-			$stat = ilExAssignment::lookupStatusOfUser($a["id"], $a_user_id);
-			if ($a["mandatory"] && ($stat == "failed" || $stat == "notgraded"))
+			$stat = $a->getMemberStatus($a_user_id)->getStatus();
+			if ($a->getMandatory() && ($stat == "failed" || $stat == "notgraded"))
 			{
 				$passed_all_mandatory = false;
 			}
-			if ($a["mandatory"] && ($stat == "failed"))
+			if ($a->getMandatory() && ($stat == "failed"))
 			{
 				$failed_a_mandatory = true;
 			}
@@ -789,7 +557,7 @@ class ilObjExercise extends ilObject
 	 */
 	function updateAllUsersStatus()
 	{
-		if (!is_object($this->members_obj));
+		if (!is_object($this->members_obj))
 		{
 			$this->members_obj = new ilExerciseMembers($this);
 		}
@@ -807,115 +575,102 @@ class ilObjExercise extends ilObject
 	function exportGradesExcel()
 	{
 		include_once("./Modules/Exercise/classes/class.ilExAssignment.php");
-		$ass_data = ilExAssignment::getAssignmentDataOfExercise($this->getId());
+		$ass_data = ilExAssignment::getInstancesByExercise($this->getId());
 		
-		include_once "./Services/Excel/classes/class.ilExcelWriterAdapter.php";
-		$excelfile = ilUtil::ilTempnam();
-		$adapter = new ilExcelWriterAdapter($excelfile, FALSE);
-		$workbook = $adapter->getWorkbook();
-		$workbook->setVersion(8); // Use Excel97/2000 Format
-		include_once ("./Services/Excel/classes/class.ilExcelUtils.php");
+		include_once "./Services/Excel/classes/class.ilExcel.php";
+		$excel = new ilExcel();
+		$excel->addSheet($this->lng->txt("exc_status"));
+		
 		
 		//
 		// status
 		//
-		$mainworksheet = $workbook->addWorksheet();
 		
 		// header row
-		$mainworksheet->writeString(0, 0, ilExcelUtils::_convert_text($this->lng->txt("name")));
-		$cnt = 1;
+		$row = $cnt = 1;
+		$excel->setCell($row, 0, $this->lng->txt("name"));		
 		foreach ($ass_data as $ass)
 		{
-			$mainworksheet->writeString(0, $cnt, $cnt);
-			$cnt++;
+			$excel->setCell($row, $cnt++, $cnt-1);		
 		}
-		$mainworksheet->writeString(0, $cnt, ilExcelUtils::_convert_text($this->lng->txt("exc_total_exc")));
+		$excel->setCell($row, $cnt++, $this->lng->txt("exc_total_exc"));
+		$excel->setCell($row, $cnt++, $this->lng->txt("exc_mark"));
+		$excel->setCell($row++, $cnt, $this->lng->txt("exc_comment_for_learner"));
+		$excel->setBold("A1:".$excel->getColumnCoord($cnt)."1");
 		
 		// data rows
-		$this->mem_obj = new ilExerciseMembers($this);
-		$getmems = $this->mem_obj->getMembers();
+		$mem_obj = new ilExerciseMembers($this);
 		$mems = array();
-		foreach ($getmems as $user_id)
+		foreach($mem_obj->getMembers() as $user_id)
 		{
 			$mems[$user_id] = ilObjUser::_lookupName($user_id);
 		}
 		$mems = ilUtil::sortArray($mems, "lastname", "asc", false, true);
-
-		$data = array();
-		$row_cnt = 1;
+		
+		include_once 'Services/Tracking/classes/class.ilLPMarks.php';
 		foreach ($mems as $user_id => $d)
 		{
-			$col_cnt = 1;
+			$col = 0;
 
 			// name
-			$mainworksheet->writeString($row_cnt, 0,
-				ilExcelUtils::_convert_text($d["lastname"].", ".$d["firstname"]." [".$d["login"]."]"));
+			$excel->setCell($row, $col++, $d["lastname"].", ".$d["firstname"]." [".$d["login"]."]");
 
 			reset($ass_data);
-
 			foreach ($ass_data as $ass)
 			{
-				$status = ilExAssignment::lookupStatusOfUser($ass["id"], $user_id);
-				$mainworksheet->writeString($row_cnt, $col_cnt, ilExcelUtils::_convert_text($this->lng->txt("exc_".$status)));
-				$col_cnt++;
+				$status = $ass->getMemberStatus($user_id)->getStatus();
+				$excel->setCell($row, $col++, $this->lng->txt("exc_".$status));		
 			}
 			
 			// total status
 			$status = ilExerciseMembers::_lookupStatus($this->getId(), $user_id);
-			$mainworksheet->writeString($row_cnt, $col_cnt, ilExcelUtils::_convert_text($this->lng->txt("exc_".$status)));
-
-			$row_cnt++;
+			$excel->setCell($row, $col++, $this->lng->txt("exc_".$status));
+			
+			// #18096
+			$marks_obj = new ilLPMarks($this->getId(), $user_id);
+			$excel->setCell($row, $col++, $marks_obj->getMark());
+			$excel->setCell($row++, $col, $marks_obj->getComment());						
 		}
+		
 		
 		//
 		// mark
 		//
-		$worksheet2 = $workbook->addWorksheet();
+		
+		$excel->addSheet($this->lng->txt("exc_mark"));
 		
 		// header row
-		$worksheet2->writeString(0, 0, ilExcelUtils::_convert_text($this->lng->txt("name")));
-		$cnt = 1;
+		$row = $cnt = 1;
+		$excel->setCell($row, 0, $this->lng->txt("name"));		
 		foreach ($ass_data as $ass)
 		{
-			$worksheet2->writeString(0, $cnt, $cnt);
-			$cnt++;
+			$excel->setCell($row, $cnt++, $cnt-1);		
 		}
-		$worksheet2->writeString(0, $cnt, ilExcelUtils::_convert_text($this->lng->txt("exc_total_exc")));
+		$excel->setCell($row++, $cnt++, $this->lng->txt("exc_total_exc"));
+		$excel->setBold("A1:".$excel->getColumnCoord($cnt)."1");
 		
-		// data rows
-		$data = array();
-		$row_cnt = 1;
+		// data rows		
 		reset($mems);
 		foreach ($mems as $user_id => $d)
 		{
-			$col_cnt = 1;
+			$col = 0;
+			
+			// name			
 			$d = ilObjUser::_lookupName($user_id);
-
-			// name
-			$worksheet2->writeString($row_cnt, 0,
-				ilExcelUtils::_convert_text($d["lastname"].", ".$d["firstname"]." [".$d["login"]."]"));
+			$excel->setCell($row, $col++, $d["lastname"].", ".$d["firstname"]." [".$d["login"]."]");
 
 			reset($ass_data);
-
 			foreach ($ass_data as $ass)
 			{
-				$worksheet2->writeString($row_cnt, $col_cnt,
-					ilExcelUtils::_convert_text(ilExAssignment::lookupMarkOfUser($ass["id"], $user_id)));
-				$col_cnt++;
+				$excel->setCell($row, $col++, $ass->getMemberStatus($user_id)->getMark());
 			}
 			
-			// total mark
-			include_once 'Services/Tracking/classes/class.ilLPMarks.php';
-			$worksheet2->writeString($row_cnt, $col_cnt,
-				ilExcelUtils::_convert_text(ilLPMarks::_lookupMark($user_id, $this->getId())));
-
-			$row_cnt++;
+			// total mark			
+			$excel->setCell($row++, $col, ilLPMarks::_lookupMark($user_id, $this->getId()));
 		}
-
 		
-		$workbook->close();
 		$exc_name = ilUtil::getASCIIFilename(preg_replace("/\s/", "_", $this->getTitle()));
-		ilUtil::deliverFile($excelfile, $exc_name.".xls", "application/vnd.ms-excel");
+		$excel->sendToClient($exc_name);
 	}
 	
 	/**
@@ -976,54 +731,42 @@ class ilObjExercise extends ilObject
 		return $this;
 	}
 	
-	/**
-	 * 
-	 * This method is called after an user submitted one or more files.
-	 * It should handle the setting "Completion by Submission" and, if enabled, set the status of
-	 * the current user to either 'passed' or 'notgraded'.
-	 * 
-	 * @param	integer
-	 * @access	public
-	 * 
-	 */
-	public function handleSubmission($ass_id)
+	public function processExerciseStatus(ilExAssignment $a_ass, array $a_user_ids, $a_has_submitted, array $a_valid_submissions = null)
 	{
-		global $ilUser, $ilDB;
-
+		$a_has_submitted = (bool)$a_has_submitted;			
+		
+		include_once("./Modules/Exercise/classes/class.ilExerciseMembers.php");
+		foreach($a_user_ids as $user_id)
+		{		
+			$member_status = $a_ass->getMemberStatus($user_id);
+			$member_status->setReturned($a_has_submitted);	
+			$member_status->update();	
+			
+			ilExerciseMembers::_writeReturned($this->getId(), $user_id, $a_has_submitted);
+		}		 
+				
+		// re-evaluate exercise status
 		if($this->isCompletionBySubmissionEnabled())
-		{
-			include_once 'Modules/Exercise/classes/class.ilExAssignment.php';	
-			
-			// #17673 - team upload?
-			$user_ids = ilExAssignment::getTeamMembersByAssignmentId($ass_id, $ilUser->getId());
-			if(!$user_ids)
-			{
-				$user_ids = array($ilUser->getId());
-			}
-			
-			$res = $ilDB->query(
-				'SELECT returned_id'.
-				' FROM exc_returned'.
-				' WHERE obj_id = '.$ilDB->quote($this->getId(), 'integer').
-				' AND ass_id = '.$ilDB->quote($ass_id, 'integer').
-				' AND '.$ilDB->in('user_id', $user_ids, '', 'integer')
-			);
-	
-			if($ilDB->numRows($res))
-			{
-				$status = 'passed';				
-			}
-			else
+		{							
+			foreach($a_user_ids as $user_id)
 			{
 				$status = 'notgraded';
-			}				
-			foreach($user_ids as $user_id)
-			{
-				ilExAssignment::updateStatusOfUser($ass_id, $user_id, $status);
+				if($a_has_submitted)
+				{
+					if(!is_array($a_valid_submissions) ||
+						$a_valid_submissions[$user_id])
+					{
+						$status = 'passed';				
+					}					
+				}
+									
+				$member_status = $a_ass->getMemberStatus($user_id);
+				$member_status->setStatus($status);		
+				$member_status->update();				
 			}
-		}	
-	}
-
+		}			
+	}	
+	
 	/**
 	 * Get all exercises for user
 	 *
@@ -1047,153 +790,7 @@ class ilObjExercise extends ilObject
 		return $all;
 	}
 	
-	/**
-	 * Add personal resource to assigment
-	 * 
-	 * @param int $a_wsp_id
-	 * @param int $a_ass_id
-	 * @param int $user_id 
-	 * @param string $a_text 
-	 */
-	function addResourceObject($a_wsp_id, $a_ass_id, $user_id, $a_text = null)
-	{
-		global $ilDB;
-	
-		$next_id = $ilDB->nextId("exc_returned");
-		$query = sprintf("INSERT INTO exc_returned ".
-						 "(returned_id, obj_id, user_id, filetitle, ass_id, ts, atext) ".
-						 "VALUES (%s, %s, %s, %s, %s, %s, %s)",
-			$ilDB->quote($next_id, "integer"),
-			$ilDB->quote($this->getId(), "integer"),
-			$ilDB->quote($user_id, "integer"),
-			$ilDB->quote($a_wsp_id, "text"),
-			$ilDB->quote($a_ass_id, "integer"),
-			$ilDB->quote(ilUtil::now(), "timestamp"),
-			$ilDB->quote($a_text, "text")
-		);
-		$ilDB->manipulate($query);
-		if (!$this->members_obj->isAssigned($user_id))
-		{
-			$this->members_obj->assignMember($user_id);
-		}
-		// no submission (of blog/portfolio) yet (unless text assignment)
-		ilExAssignment::updateStatusReturnedForUser($a_ass_id, $user_id, (bool)$a_text);
-		ilExerciseMembers::_writeReturned($this->getId(), $user_id, (bool)$a_text);
-		
-		return $next_id;
-	}
-	
-	/**
-	 * Remove personal resource to assigment
-	 * 
-	 * @param int $a_ass_id
-	 * @param int $user_id 
-	 * @param int $a_returned_id 
-	 */
-	public function deleteResourceObject($a_ass_id, $user_id, $a_returned_id)
-	{
-		global $ilDB;
-		
-		$ilDB->manipulate("DELETE FROM exc_returned".
-			" WHERE obj_id = ".$ilDB->quote($this->getId(), "integer").
-			" AND user_id = ".$ilDB->quote($user_id, "integer").
-			" AND ass_id = ".$ilDB->quote($a_ass_id, "integer").
-			" AND returned_id = ".$ilDB->quote($a_returned_id, "integer"));		
-	}
-	
-	/**
-	 * Handle text assignment submissions
-	 *
-	 * @param int $a_exc_id
-	 * @param int $a_ass_id
-	 * @param int $a_user_id
-	 * @param string $a_text
-	 * @return int
-	 */
-	function updateTextSubmission($a_exc_id, $a_ass_id, $a_user_id, $a_text)
-	{
-		global $ilDB;
-		
-		$files = ilExAssignment::getDeliveredFiles($a_exc_id, $a_ass_id, $a_user_id);
-		
-		// no text = remove submission
-		if(!trim($a_text))
-		{
-			if($files)
-			{
-				$files = array_shift($files);
-				$id = $files["returned_id"];
-				if($id)
-				{
-					$this->deleteDeliveredFiles($a_exc_id, $a_ass_id, array($id), $a_user_id);
-					return;
-				}
-			}
-		}
-				
-		if(!$files)
-		{			
-			return $this->addResourceObject("TEXT", $a_ass_id, $a_user_id, $a_text);
-		}
-		else
-		{
-			$files = array_shift($files);
-			$id = $files["returned_id"];
-			if($id)
-			{
-				$ilDB->manipulate("UPDATE exc_returned".
-					" SET atext = ".$ilDB->quote($a_text, "text").
-					", ts = ".$ilDB->quote(ilUtil::now(), "timestamp").
-					" WHERE returned_id = ".$ilDB->quote($id, "integer"));
-				return $id;
-			}
-		}
-	}
-	
-	public static function lookupExerciseIdForReturnedId($a_returned_id)
-	{
-		global $ilDB;
-		
-		$set = $ilDB->query("SELECT obj_id".
-			" FROM exc_returned".
-			" WHERE returned_id = ".$ilDB->quote($a_returned_id, "integer"));
-		$row = $ilDB->fetchAssoc($set);
-		return (int)$row["obj_id"];		
-	}
-	
-	/**
-	 * Delete all delivered files of user
-	 *
-	 * @param int $a_user_id user id
-	 */
-	function deleteAllDeliveredFilesOfUser($a_user_id)
-	{
-		include_once("./Modules/Exercise/classes/class.ilExAssignment.php");
-		ilExAssignment::deleteAllDeliveredFilesOfUser($this->getId(), $a_user_id);
-	}
-	
-	/**
-	 * Check if given file was assigned
-	 * 
-	 * @param int $a_user_id
-	 * @param string $a_filetitle 
-	 */
-	public static function findUserFiles($a_user_id, $a_filetitle)
-	{
-		global $ilDB;
-		
-		$set = $ilDB->query("SELECT obj_id, ass_id".
-			" FROM exc_returned".
-			" WHERE user_id = ".$ilDB->quote($a_user_id, "integer").
-			" AND filetitle = ".$ilDB->quote($a_filetitle, "text"));
-		$res = array();
-		while($row = $ilDB->fetchAssoc($set))
-		{
-			$res[$row["ass_id"]] = $row;
-		}
-		return $res;
-	}
-	
+
 	/**
 	* Returns the visibility settings of the certificate
 	*

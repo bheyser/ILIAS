@@ -17,7 +17,7 @@ require_once './Modules/TestQuestionPool/interfaces/interface.ilGuiQuestionScori
  * @ingroup ModulesTestQuestionPool
  *
  * @ilctrl_iscalledby assFileUploadGUI: ilObjQuestionPoolGUI
- * 
+ * @ilCtrl_Calls assFileUploadGUI: ilFormPropertyDispatchGUI
  */
 class assFileUploadGUI extends assQuestionGUI implements ilGuiQuestionScoringAdjustable
 {
@@ -42,13 +42,9 @@ class assFileUploadGUI extends assQuestionGUI implements ilGuiQuestionScoringAdj
 	}
 
 	/**
-	 * Evaluates a posted edit form and writes the form data in the question object
-	 *
-	 * @param bool $always
-	 *
-	 * @return integer A positive value, if one of the required fields wasn't set, else 0
+	 * {@inheritdoc}
 	 */
-	public function writePostData($always = false)
+	protected function writePostData($always = false)
 	{
 		$hasErrors = (!$always) ? $this->editQuestion(true) : false;
 		if (!$hasErrors)
@@ -82,6 +78,8 @@ class assFileUploadGUI extends assQuestionGUI implements ilGuiQuestionScoringAdj
 
 		include_once("./Services/Form/classes/class.ilPropertyFormGUI.php");
 		$form = new ilPropertyFormGUI();
+		$this->editForm = $form;
+
 		$form->setFormAction($this->ctrl->getFormAction($this));
 		$form->setTitle($this->outQuestionType());
 		$form->setMultipart(false);
@@ -233,22 +231,31 @@ class assFileUploadGUI extends assQuestionGUI implements ilGuiQuestionScoringAdj
 			$solutions =& $this->object->getSolutionValues($active_id, $pass);
 
 			$files = ($show_manual_scoring) ? $this->object->getUploadedFilesForWeb($active_id, $pass) : $this->object->getUploadedFiles($active_id, $pass);
-			if (count($files))
-			{
-				include_once "./Modules/TestQuestionPool/classes/tables/class.assFileUploadFileTableGUI.php";
-				$table_gui = new assFileUploadFileTableGUI($this->getTargetGuiClass(), 'gotoquestion');
-				$table_gui->setTitle($this->lng->txt('already_delivered_files'), 'icon_file.svg', $this->lng->txt('already_delivered_files'));
-				$table_gui->setData($files);
-				$table_gui->setRowTemplate("tpl.il_as_qpl_fileupload_file_view_row.html", "Modules/TestQuestionPool");
-				$table_gui->setSelectAllCheckbox("");
-				$table_gui->clearCommandButtons();
-				$table_gui->disable('select_all');
-				$table_gui->disable('numinfo');
-				$template->setCurrentBlock("files");
-				$template->setVariable('FILES', $table_gui->getHTML());	
-				$template->parseCurrentBlock();
-			}
+			include_once "./Modules/TestQuestionPool/classes/tables/class.assFileUploadFileTableGUI.php";
+			$table_gui = new assFileUploadFileTableGUI($this->getTargetGuiClass(), 'gotoquestion');
+			$table_gui->setTitle($this->lng->txt('already_delivered_files'), 'icon_file.svg', $this->lng->txt('already_delivered_files'));
+			$table_gui->setData($files);
+			$table_gui->init();
+			$table_gui->setRowTemplate("tpl.il_as_qpl_fileupload_file_view_row.html", "Modules/TestQuestionPool");
+			$table_gui->setSelectAllCheckbox("");
+			$table_gui->clearCommandButtons();
+			$table_gui->disable('select_all');
+			$table_gui->disable('numinfo');
+			$template->setCurrentBlock("files");
+			$template->setVariable('FILES', $table_gui->getHTML());
+			$template->parseCurrentBlock();
 		}
+
+		if (strlen($this->object->getAllowedExtensions()))
+		{
+			$template->setCurrentBlock("allowed_extensions");
+			$template->setVariable("TXT_ALLOWED_EXTENSIONS", $this->object->prepareTextareaOutput($this->lng->txt("allowedextensions") . ": " . $this->object->getAllowedExtensions()));
+			$template->parseCurrentBlock();
+		}
+		$template->setVariable("CMD_UPLOAD", $this->getQuestionActionCmd());
+		$template->setVariable("TEXT_UPLOAD", $this->object->prepareTextareaOutput($this->lng->txt('upload')));
+		$template->setVariable("TXT_UPLOAD_FILE", $this->object->prepareTextareaOutput($this->lng->txt('file_add')));
+		$template->setVariable("TXT_MAX_SIZE", $this->object->prepareTextareaOutput($this->lng->txt('file_notice') . " " . $this->object->getMaxFilesizeAsString()));
 
 		if (($active_id > 0) && (!$show_correct_solution))
 		{
@@ -296,7 +303,7 @@ class assFileUploadGUI extends assQuestionGUI implements ilGuiQuestionScoringAdj
 		}
 		$questionoutput = $template->get();
 		$solutiontemplate = new ilTemplate("tpl.il_as_tst_solution_output.html",TRUE, TRUE, "Modules/TestQuestionPool");
-		$feedback = ($show_feedback) ? $this->getAnswerFeedbackOutput($active_id, $pass) : "";
+		$feedback = ($show_feedback && !$this->isTestPresentationContext()) ? $this->getAnswerFeedbackOutput($active_id, $pass) : "";
 		if (strlen($feedback)) $solutiontemplate->setVariable("FEEDBACK", $feedback);
 		$solutiontemplate->setVariable("SOLUTION_OUTPUT", $questionoutput);
 		$solutionoutput = $solutiontemplate->get(); 
@@ -315,16 +322,14 @@ class assFileUploadGUI extends assQuestionGUI implements ilGuiQuestionScoringAdj
 		if( is_object($this->getPreviewSession()) )
 		{
 			$files = $this->object->getPreviewFileUploads($this->getPreviewSession());
-			if (count($files))
-			{
-				include_once "./Modules/TestQuestionPool/classes/tables/class.assFileUploadFileTableGUI.php";
-				$table_gui = new assFileUploadFileTableGUI(null , $this->getQuestionActionCmd(), 'ilAssQuestionPreview');
-				$table_gui->setTitle($this->lng->txt('already_delivered_files'), 'icon_file.svg', $this->lng->txt('already_delivered_files'));
-				$table_gui->setData($files);
-				$template->setCurrentBlock("files");
-				$template->setVariable('FILES', $table_gui->getHTML());
-				$template->parseCurrentBlock();
-			}
+			include_once "./Modules/TestQuestionPool/classes/tables/class.assFileUploadFileTableGUI.php";
+			$table_gui = new assFileUploadFileTableGUI(null , $this->getQuestionActionCmd(), 'ilAssQuestionPreview');
+			$table_gui->setTitle($this->lng->txt('already_delivered_files'), 'icon_file.svg', $this->lng->txt('already_delivered_files'));
+			$table_gui->setData($files);
+			$table_gui->init();
+			$template->setCurrentBlock("files");
+			$template->setVariable('FILES', $table_gui->getHTML());
+			$template->parseCurrentBlock();
 		}
 		
 		if (strlen($this->object->getAllowedExtensions()))
@@ -361,19 +366,17 @@ class assFileUploadGUI extends assQuestionGUI implements ilGuiQuestionScoringAdj
 			{
 				if (is_null($pass)) $pass = ilObjTest::_getPass($active_id);
 			}
-			$solutions =& $this->object->getSolutionValues($active_id, $pass);
 
-			$files = $this->object->getUploadedFiles($active_id, $pass);
-			if (count($files))
-			{
-				include_once "./Modules/TestQuestionPool/classes/tables/class.assFileUploadFileTableGUI.php";
-				$table_gui = new assFileUploadFileTableGUI(null , $this->getQuestionActionCmd());
-				$table_gui->setTitle($this->lng->txt('already_delivered_files'), 'icon_file.svg', $this->lng->txt('already_delivered_files'));
-				$table_gui->setData($files);
-				$template->setCurrentBlock("files");
-				$template->setVariable('FILES', $table_gui->getHTML());	
-				$template->parseCurrentBlock();
-			}
+			// $files = $this->object->getUploadedFiles($active_id, $pass); // does not prefer intermediate but orders tstamp
+			$files = $this->object->getUserSolutionPreferingIntermediate($active_id, $pass);
+			include_once "./Modules/TestQuestionPool/classes/tables/class.assFileUploadFileTableGUI.php";
+			$table_gui = new assFileUploadFileTableGUI(null , $this->getQuestionActionCmd());
+			$table_gui->setTitle($this->lng->txt('already_delivered_files'), 'icon_file.svg', $this->lng->txt('already_delivered_files'));
+			$table_gui->setData($files);
+			$table_gui->init();
+			$template->setCurrentBlock("files");
+			$template->setVariable('FILES', $table_gui->getHTML());
+			$template->parseCurrentBlock();
 		}
 		
 		if (strlen($this->object->getAllowedExtensions()))
@@ -522,7 +525,7 @@ class assFileUploadGUI extends assQuestionGUI implements ilGuiQuestionScoringAdj
 		return ''; //print_r($relevant_answers,true);
 	}
 
-	protected function getFormEncodingType()
+	public function getFormEncodingType()
 	{
 		return self::FORM_ENCODING_MULTIPART;
 	}

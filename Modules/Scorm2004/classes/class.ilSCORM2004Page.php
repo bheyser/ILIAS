@@ -99,7 +99,7 @@ class ilSCORM2004Page extends ilPageObject
 	function createWithLayoutId($a_layout_id)
 	{
 
-		include_once("./Services/Style/classes/class.ilPageLayout.php");
+		include_once("./Services/COPage/Layout/classes/class.ilPageLayout.php");
 
 		//get XML Data for Layout		
 		$layout_obj = new ilPageLayout($a_layout_id);
@@ -256,7 +256,7 @@ class ilSCORM2004Page extends ilPageObject
 	{
 		$this->buildDom();
 		$this->insertInstIntoIDs($a_inst);
-		$cont_obj =& $this->getContentObject("pg");
+		$cont_obj = $this->getContentObject("pg");
 		$this->mobs_contained = $this->collectMediaObjects(false);
 		include_once("./Services/COPage/classes/class.ilPCFileList.php");
 		$this->files_contained = ilPCFileList::collectFileItems($this, $this->getDomDoc());
@@ -299,7 +299,7 @@ class ilSCORM2004Page extends ilPageObject
 			$this->buildDom();
 			$xpc = xpath_new_context($this->dom);
 			$path = "//IntLink[@Type='GlossaryItem']";
-			$res =& xpath_eval($xpc, $path);
+			$res = xpath_eval($xpc, $path);
 			for ($i=0; $i < count($res->nodeset); $i++)
 			{
 				$target = $res->nodeset[$i]->get_attribute("Target");
@@ -321,6 +321,47 @@ class ilSCORM2004Page extends ilPageObject
 		}
 //exit;
 	}
-	
+
+	/**
+	 * Remove invalid links
+	 *
+	 * @param
+	 * @return
+	 */
+	function removeInvalidLinks()
+	{
+		$this->buildDom();
+
+		// find all Keyw tags
+		$xpath = new DOMXPath($this->getDomDoc());
+		$nodes = $xpath->query('//Paragraph//IntLink');
+		$to_del = array();
+		foreach($nodes as $node)
+		{
+			if (in_array($node->getAttribute("Type"), array("File", "GlossaryItem")))
+			{
+				continue;
+			}
+			$to_del[] = $node;
+			$parent = $node->parentNode;
+			$childs = array();
+			foreach ($node->childNodes as $c)
+			{
+				$childs[] = $c;
+			}
+			foreach ($childs as $c)
+			{
+				$node->removeChild($c);
+				$parent->insertBefore($c, $node);
+			}
+		}
+		foreach ($to_del as $n)
+		{
+			$p = $n->parentNode;
+			$p->removeChild($n);
+		}
+		$this->update();
+	}
+
 }
 ?>

@@ -17,14 +17,14 @@ il.Overlay = {
 			new YAHOO.widget.Overlay(id, cfg.yuicfg);
 		il.Overlay.cfg[id] = cfg;
 		il.Overlay.closeCnt[id] = -1;
-		$("#" + id).bind("mouseover",
+		$("#" + id).on("mouseover",
 			function (e) {il.Overlay.mouseOver(e, id); });
-		$("#" + id).bind("mouseout",
+		$("#" + id).on("mouseout",
 			function (e) {il.Overlay.mouseOut(e, id); });
 
 		// close element
 		if (this.getCfg(id, 'close_el') != '') {
-			$("#" + this.getCfg(id, 'close_el')).bind("click",
+			$("#" + this.getCfg(id, 'close_el')).on("click",
 				function (e) {il.Overlay.hide(e, id); });
 		}
 
@@ -33,7 +33,7 @@ il.Overlay = {
 							cfg.fixed_center, 'tl', 'bl');
 		}
 		il.Overlay.overlays[id].render();
-		this.fixPosition(id);
+		// this.fixPosition(id); - see show()
 	},
 
 	addTrigger: function (tr_id, tr_ev, ov_id, anchor_id, center, ov_corner, anch_corner) {
@@ -43,8 +43,8 @@ il.Overlay = {
 		var trigger = document.getElementById(tr_id);
 
 		// added this line instead due to bug 6724
-		$("#" + tr_id).unbind(tr_ev);
-		$("#" + tr_id).bind(tr_ev,
+		$("#" + tr_id).off(tr_ev);
+		$("#" + tr_id).on(tr_ev,
 			function (event) {il.Overlay.togglePerTrigger(event, tr_id); return false; });
 
 	},
@@ -249,7 +249,7 @@ il.Overlay = {
 		var k, isIn, tgt, el, el_reg;
 		
 		// hide all dropdowns, too!
-		$('[data-toggle="dropdown"]').parent().removeClass('open');		
+		$('[data-toggle="dropdown"]').parent().removeClass('open');
 
 		for (k in il.Overlay.overlays) {
 			isIn = false;
@@ -258,6 +258,18 @@ il.Overlay = {
 				continue;
 			}
 
+			if(!force)
+			{
+				// http://stackoverflow.com/questions/1403615/use-jquery-to-hide-a-div-when-the-user-clicks-outside-of-it			
+				var ov_el = $("#" + k);						
+				if (ov_el.is(e.target) || // if the target of the click isn't the container...
+					ov_el.has(e.target).length > 0) // ... nor a descendant of the container
+				{				
+					isIn = true;
+				}
+			}
+
+			/* obsolete (see above)
 			// problems with form select: pageXY can be outside layer
 			if (!force) {
 				try {
@@ -282,7 +294,8 @@ il.Overlay = {
 					}
 				}
 			}
-
+			*/
+		   
 			if (!isIn) {
 				if (k != 'ilHelpPanel') {
 					il.Overlay.hide(null, k);
@@ -330,5 +343,5 @@ il.Overlay = {
 	}
 };
 
-$(document).bind("click",
+$(document).on("click",
 	function (e) {il.Overlay.hideAllOverlays(e, false, ""); });

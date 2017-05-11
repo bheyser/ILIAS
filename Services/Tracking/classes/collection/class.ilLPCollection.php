@@ -28,6 +28,48 @@ abstract class ilLPCollection
 		}
 	}
 	
+	public static function getInstanceByMode($a_obj_id, $a_mode)
+	{
+		$path = "Services/Tracking/classes/collection/";
+		
+		switch($a_mode)
+		{
+			case ilLPObjSettings::LP_MODE_COLLECTION:
+			case ilLPObjSettings::LP_MODE_MANUAL_BY_TUTOR:		
+				include_once $path."class.ilLPCollectionOfRepositoryObjects.php";
+				return new ilLPCollectionOfRepositoryObjects($a_obj_id, $a_mode);		
+
+			case ilLPObjSettings::LP_MODE_OBJECTIVES:
+				include_once $path."class.ilLPCollectionOfObjectives.php";
+				return new ilLPCollectionOfObjectives($a_obj_id, $a_mode);		
+
+			case ilLPObjSettings::LP_MODE_SCORM:	
+				include_once $path."class.ilLPCollectionOfSCOs.php";
+				return new ilLPCollectionOfSCOs($a_obj_id, $a_mode);		
+
+			case ilLPObjSettings::LP_MODE_COLLECTION_MANUAL:	
+			case ilLPObjSettings::LP_MODE_COLLECTION_TLT:	
+				include_once $path."class.ilLPCollectionOfLMChapters.php";
+				return new ilLPCollectionOfLMChapters($a_obj_id, $a_mode);		
+				
+			case ilLPObjSettings::LP_MODE_COLLECTION_MOBS:
+				include_once $path."class.ilLPCollectionOfMediaObjects.php";
+				return new ilLPCollectionOfMediaObjects($a_obj_id, $a_mode);	
+		}
+	}
+	
+	public static function getCollectionModes()
+	{
+		return array(
+			ilLPObjSettings::LP_MODE_COLLECTION
+			,ilLPObjSettings::LP_MODE_COLLECTION_TLT
+			,ilLPObjSettings::LP_MODE_COLLECTION_MANUAL
+			,ilLPObjSettings::LP_MODE_SCORM
+			,ilLPObjSettings::LP_MODE_OBJECTIVES
+			,ilLPObjSettings::LP_MODE_COLLECTION_MOBS
+		);
+	}
+	
 	public function hasSelectableItems()
 	{
 		return true;
@@ -68,15 +110,15 @@ abstract class ilLPCollection
 		return $this->items;
 	}
 	
-	protected function read()
+	protected function read($a_obj_id)
 	{
 		global $ilDB;
 		
 		$items = array();
 		
 		$res = $ilDB->query("SELECT * FROM ut_lp_collections".
-			" WHERE obj_id = ".$ilDB->quote($this->obj_id, "integer"));
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+			" WHERE obj_id = ".$ilDB->quote($a_obj_id, "integer"));
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			if($this->validateEntry($row->item_id))
 			{

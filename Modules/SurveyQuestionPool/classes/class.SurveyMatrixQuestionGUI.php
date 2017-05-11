@@ -296,7 +296,7 @@ class SurveyMatrixQuestionGUI extends SurveyQuestionGUI
 		{
 			$tplheaders->setCurrentBlock("bipolar_start");
 			$style = array();
-			array_push($style, sprintf("width: %.2f%s!important", $layout["percent_bipolar_adjective1"], "%"));
+			array_push($style, sprintf("width: %.2F%s!important", $layout["percent_bipolar_adjective1"], "%"));
 			if (count($style) > 0)
 			{
 				$tplheaders->setVariable("STYLE", " style=\"" . implode(";", $style) . "\"");
@@ -313,7 +313,7 @@ class SurveyMatrixQuestionGUI extends SurveyQuestionGUI
 				$tplheaders->setVariable("TEXT", ilUtil::prepareFormOutput($cat->title));
 				$tplheaders->setVariable("CLASS", "rsep");
 				$style = array();
-				array_push($style, sprintf("width: %.2f%s!important", $layout["percent_neutral"], "%"));
+				array_push($style, sprintf("width: %.2F%s!important", $layout["percent_neutral"], "%"));
 				if ($this->object->getNeutralColumnSeparator())
 				{
 					array_push($style, "border-left: $neutralstyle!important;");
@@ -334,7 +334,7 @@ class SurveyMatrixQuestionGUI extends SurveyQuestionGUI
 						array_push($style, "border-right: 1px solid $bordercolor!important");
 					}
 				}
-				array_push($style, sprintf("width: %.2f%s!important", $layout["percent_columns"] / $this->object->getColumnCount(), "%"));
+				array_push($style, sprintf("width: %.2F%s!important", $layout["percent_columns"] / $this->object->getColumnCount(), "%"));
 				$tplheaders->setCurrentBlock("column_header");
 				$tplheaders->setVariable("TEXT", ilUtil::prepareFormOutput($cat->title));
 				$tplheaders->setVariable("CLASS", "center");
@@ -350,7 +350,7 @@ class SurveyMatrixQuestionGUI extends SurveyQuestionGUI
 		{
 			$tplheaders->setCurrentBlock("bipolar_end");
 			$style = array();
-			array_push($style, sprintf("width: %.2f%s!important", $layout["percent_bipolar_adjective2"], "%"));
+			array_push($style, sprintf("width: %.2F%s!important", $layout["percent_bipolar_adjective2"], "%"));
 			if (count($style) > 0)
 			{
 				$tplheaders->setVariable("STYLE", " style=\"" . implode(";", $style) . "\"");
@@ -359,7 +359,7 @@ class SurveyMatrixQuestionGUI extends SurveyQuestionGUI
 		}
 
 		$style = array();
-		array_push($style, sprintf("width: %.2f%s!important", $layout["percent_row"], "%"));
+		array_push($style, sprintf("width: %.2F%s!important", $layout["percent_row"], "%"));
 		if (count($style) > 0)
 		{
 			$tplheaders->setVariable("STYLE", " style=\"" . implode(";", $style) . "\"");
@@ -507,8 +507,26 @@ class SurveyMatrixQuestionGUI extends SurveyQuestionGUI
 					: "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
 				$tplrow->parseCurrentBlock();
 			}
+			
+			switch ($question_title)
+			{
+				case 1:
+					$row_title = ilUtil::prepareFormOutput($rowobj->title);
+					break;
 
-			$tplrow->setVariable("TEXT_ROW", ilUtil::prepareFormOutput($rowobj->title));
+				case 2:
+					$row_title = ilUtil::prepareFormOutput($rowobj->label);
+					break;
+
+				case 3:
+					$row_title = ilUtil::prepareFormOutput($rowobj->title);
+					if(trim($rowobj->label))
+					{
+						$row_title .= ' <span class="questionLabel">('.ilUtil::prepareFormOutput($rowobj->label).')</span>';
+					}
+					break;
+			}
+			$tplrow->setVariable("TEXT_ROW", $row_title);
 			$tplrow->setVariable("ROWCLASS", $rowclass[$i % 2]);
 			if ($this->object->getRowSeparators() == 1)
 			{
@@ -524,7 +542,7 @@ class SurveyMatrixQuestionGUI extends SurveyQuestionGUI
 		
 		if ($question_title)
 		{
-			$template->setVariable("QUESTION_TITLE", ilUtil::prepareFormOutput($this->object->getTitle()));
+			$template->setVariable("QUESTION_TITLE", $this->getPrintViewQuestionTitle($question_title));
 		}
 		$template->setCurrentBlock();
 		if ($show_questiontext)
@@ -931,181 +949,6 @@ class SurveyMatrixQuestionGUI extends SurveyQuestionGUI
 		$template->parseCurrentBlock();
 		return $template->get();
 	}
-
-	
-	//
-	// EVALUATION
-	//
-
-	/**
-	* Creates the detailed output of the cumulated results for the question
-	*
-	* @param integer $survey_id The database ID of the survey
-	* @param integer $counter The counter of the question position in the survey
-	* @return string HTML text with the cumulated results
-	* @access private
-	*/
-	function getCumulatedResultsDetails($survey_id, $counter, $finished_ids)
-	{
-		if (count($this->cumulated) == 0)
-		{
-			if(!$finished_ids)
-			{
-				include_once "./Modules/Survey/classes/class.ilObjSurvey.php";			
-				$nr_of_users = ilObjSurvey::_getNrOfParticipants($survey_id);
-			}
-			else
-			{
-				$nr_of_users = sizeof($finished_ids);
-			}
-			$this->cumulated =& $this->object->getCumulatedResults($survey_id, $nr_of_users, $finished_ids);
-		}
-		
-		$cumulated_count = 0;
-		foreach ($this->cumulated as $key => $value)
-		{
-			if (is_numeric($key))	
-			{
-				$cumulated_count++;							
-			}
-		}
-		
-		$output = "";
-		
-		include_once "./Services/UICore/classes/class.ilTemplate.php";
-		$template = new ilTemplate("tpl.il_svy_svy_cumulated_results_detail.html", TRUE, TRUE, "Modules/Survey");
-		
-		$template->setCurrentBlock("detail_row");
-		$template->setVariable("TEXT_OPTION", $this->lng->txt("question"));
-		$questiontext = $this->object->getQuestiontext();
-		$template->setVariable("TEXT_OPTION_VALUE", $this->object->prepareTextareaOutput($questiontext, TRUE));
-		$template->parseCurrentBlock();
-		$template->setCurrentBlock("detail_row");
-		$template->setVariable("TEXT_OPTION", $this->lng->txt("question_type"));
-		$template->setVariable("TEXT_OPTION_VALUE", $this->lng->txt($this->getQuestionType()).
-			" (".$cumulated_count." ".$this->lng->txt("rows").")");
-		$template->parseCurrentBlock();
-		$template->setCurrentBlock("detail_row");
-		$template->setVariable("TEXT_OPTION", $this->lng->txt("users_answered"));
-		$template->setVariable("TEXT_OPTION_VALUE", $this->cumulated["TOTAL"]["USERS_ANSWERED"]);
-		$template->parseCurrentBlock();
-		$template->setCurrentBlock("detail_row");
-		$template->setVariable("TEXT_OPTION", $this->lng->txt("users_skipped"));
-		$template->setVariable("TEXT_OPTION_VALUE", $this->cumulated["TOTAL"]["USERS_SKIPPED"]);
-		$template->parseCurrentBlock();
-		/*
-		$template->setCurrentBlock("detail_row");
-		$template->setVariable("TEXT_OPTION", $this->lng->txt("mode"));
-		$template->setVariable("TEXT_OPTION_VALUE", $this->cumulated["TOTAL"]["MODE"]);
-		$template->parseCurrentBlock();
-		$template->setCurrentBlock("detail_row");
-		$template->setVariable("TEXT_OPTION", $this->lng->txt("mode_nr_of_selections"));
-		$template->setVariable("TEXT_OPTION_VALUE", $this->cumulated["TOTAL"]["MODE_NR_OF_SELECTIONS"]);		
-	    $template->parseCurrentBlock();
-		 */
-		$template->setCurrentBlock("detail_row");
-		$template->setVariable("TEXT_OPTION", $this->lng->txt("median"));
-		$template->setVariable("TEXT_OPTION_VALUE", $this->cumulated["TOTAL"]["MEDIAN"]);
-		$template->parseCurrentBlock();
-		
-		$template->setCurrentBlock("detail_row");
-		$template->setVariable("TEXT_OPTION", $this->lng->txt("categories"));
-		$columns = "";
-		foreach ($this->cumulated["TOTAL"]["variables"] as $key => $value)
-		{
-			$columns .= "<li>" . $value["title"] . ": n=" . $value["selected"] . 
-				" (" . sprintf("%.2f", 100*$value["percentage"]) . "%)</li>";
-		}
-		$columns = "<ol>$columns</ol>";
-		$template->setVariable("TEXT_OPTION_VALUE", $columns);
-		$template->parseCurrentBlock();
-				
-		// total chart 
-		$template->setCurrentBlock("detail_row");				
-		$template->setVariable("TEXT_OPTION", $this->lng->txt("chart"));
-		$template->setVariable("TEXT_OPTION_VALUE", $this->renderChart("svy_ch_".$this->object->getId()."_total", $this->cumulated["TOTAL"]["variables"]));
-		$template->parseCurrentBlock();
-		
-		$template->setVariable("QUESTION_TITLE", "$counter. ".$this->object->getTitle());		
-		
-		$output .= $template->get();
-		
-		foreach ($this->cumulated as $key => $value)
-		{
-			if (is_numeric($key))	
-			{
-				$template = new ilTemplate("tpl.il_svy_svy_cumulated_results_detail.html", TRUE, TRUE, "Modules/Survey");	
-				
-				$template->setCurrentBlock("detail_row");
-				$template->setVariable("TEXT_OPTION", $this->lng->txt("users_answered"));
-				$template->setVariable("TEXT_OPTION_VALUE", $value["USERS_ANSWERED"]);
-				$template->parseCurrentBlock();
-				$template->setCurrentBlock("detail_row");
-				$template->setVariable("TEXT_OPTION", $this->lng->txt("users_skipped"));
-				$template->setVariable("TEXT_OPTION_VALUE", $value["USERS_SKIPPED"]);
-				$template->parseCurrentBlock();				
-				/*
-				$template->setCurrentBlock("detail_row");
-				$template->setVariable("TEXT_OPTION", $this->lng->txt("mode"));
-				$template->setVariable("TEXT_OPTION_VALUE", $value["MODE"]);
-				$template->parseCurrentBlock();				
-				$template->setCurrentBlock("detail_row");
-				$template->setVariable("TEXT_OPTION", $this->lng->txt("mode_nr_of_selections"));
-				$template->setVariable("TEXT_OPTION_VALUE", $value["MODE_NR_OF_SELECTIONS"]);
-				$template->parseCurrentBlock();
-				*/
-				$template->setCurrentBlock("detail_row");				
-				$template->setVariable("TEXT_OPTION", $this->lng->txt("median"));
-				$template->setVariable("TEXT_OPTION_VALUE", $value["MEDIAN"]);
-				$template->parseCurrentBlock();
-				
-				$template->setCurrentBlock("detail_row");
-				$template->setVariable("TEXT_OPTION", $this->lng->txt("categories"));
-				$columns = "";
-				foreach ($value["variables"] as $cvalue)
-				{
-					$columns .= "<li>" . $cvalue["title"] . ": n=". $cvalue["selected"] . 
-						" (".sprintf("%.2f", 100*$cvalue["percentage"]) . "%)</li>";
-				}
-				$columns = "<ol>".$columns."</ol>";
-				$template->setVariable("TEXT_OPTION_VALUE", $columns);
-				$template->parseCurrentBlock();
-				
-				// add text answers to detailed results
-				if (is_array($value["textanswers"]))
-				{
-					$template->setCurrentBlock("detail_row");
-					$template->setVariable("TEXT_OPTION", $this->lng->txt("freetext_answers"));	
-					$html = "";		
-					foreach ($value["textanswers"] as $tkey => $answers)
-					{
-						$html .= $value["variables"][$tkey]["title"] ."\n";
-						$html .= "<ul>\n";
-						foreach ($answers as $answer)
-						{
-							$html .= "<li>" . preg_replace("/\n/", "<br>\n", $answer) . "</li>\n";
-						}
-						$html .= "</ul>\n";
-					}
-					$template->setVariable("TEXT_OPTION_VALUE", $html);
-					$template->parseCurrentBlock();
-				}			
-			
-				// chart 
-				$template->setCurrentBlock("detail_row");				
-				$template->setVariable("TEXT_OPTION", $this->lng->txt("chart"));
-				$template->setVariable("TEXT_OPTION_VALUE", $this->renderChart("svy_ch_".$this->object->getId()."_".$key, $value["variables"]));
-				$template->parseCurrentBlock();
-				
-				$template->setVariable("QUESTION_SUBTITLE", $counter.".".($key+1)." ".
-					$this->object->prepareTextareaOutput($value["ROW"], TRUE));
-				
-				$output .= $template->get();
-			}
-		}
-
-		return $output;
-	}		
 }
 
 ?>

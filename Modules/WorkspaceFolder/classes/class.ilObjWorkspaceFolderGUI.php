@@ -8,6 +8,7 @@ require_once "./Services/Object/classes/class.ilObject2GUI.php";
 * Class ilObjWorkspaceFolderGUI
 *
 * @author Alex Killing <alex.killing@gmx.de>
+* @author Stefan Hecken <stefan.hecken@concepts-and-training.de>
 * $Id: class.ilObjFolderGUI.php 25134 2010-08-13 14:22:11Z smeyer $
 *
 * @ilCtrl_Calls ilObjWorkspaceFolderGUI: ilCommonActionDispatcherGUI, ilObjectOwnershipManagementGUI
@@ -71,7 +72,7 @@ class ilObjWorkspaceFolderGUI extends ilObject2GUI
 		}
 	}
 
-	function &executeCommand()
+	function executeCommand()
 	{
 		$next_class = $this->ctrl->getNextClass($this);
 		$cmd = $this->ctrl->getCmd();
@@ -431,7 +432,7 @@ class ilObjWorkspaceFolderGUI extends ilObject2GUI
 	 */
 	function performPasteIntoMultipleObjects()
 	{
-		global $objDefinition, $ilAccess, $ilUser;
+		global $ilUser;
 		
 		$mode = $_SESSION['clipboard']['cmd'];
 		$source_node_id = $_SESSION['clipboard']['source_id'];
@@ -473,7 +474,7 @@ class ilObjWorkspaceFolderGUI extends ilObject2GUI
 				$source_object->getTitle(), $target_object->getTitle());
 		}
 
-		if(!in_array($source_object->getType(), array_keys($objDefinition->getSubObjects($target_object->getType()))))
+		if(!in_array($source_object->getType(), array_keys($target_object->getPossibleSubObjects())))
 		{
 			$fail[] = sprintf($this->lng->txt('msg_obj_may_not_contain_objects_of_type'),
 					$target_object->getTitle(), $source_object->getType());
@@ -492,23 +493,14 @@ class ilObjWorkspaceFolderGUI extends ilObject2GUI
 			{
 				$fail[] = sprintf($this->lng->txt('msg_paste_object_not_in_itself'),
 					$source_object->getTitle());
-			}
-			
-			if(!$this->checkPermissionBool('create', '', $source_object->getType(), $target_node_id))
-			{
-				$fail[] = sprintf($this->lng->txt('msg_no_perm_paste_object_in_folder'),
-					$source_object->getTitle(), $target_object->getTitle());
-			}
-			
+			}			
 		}
-		else
-		{									
-			if(!$ilAccess->checkAccess('create', '', $target_node_id, $source_object->getType()))
-			{
-				$fail[] = sprintf($this->lng->txt('msg_no_perm_paste_object_in_folder'),
-					$source_object->getTitle(), $target_object->getTitle());
-			}
-		}
+									
+		if(!$this->checkPermissionBool('create', '', $source_object->getType(), $target_node_id))
+		{
+			$fail[] = sprintf($this->lng->txt('msg_no_perm_paste_object_in_folder'),
+				$source_object->getTitle(), $target_object->getTitle());
+		}		
 
 		if(sizeof($fail))
 		{
@@ -548,11 +540,16 @@ class ilObjWorkspaceFolderGUI extends ilObject2GUI
 			include_once('Services/CopyWizard/classes/class.ilCopyWizardOptions.php');						
 			$copy_id = ilCopyWizardOptions::_allocateCopyId();
 			$wizard_options = ilCopyWizardOptions::_getInstance($copy_id);
+			
+			if(!$_SESSION['clipboard']['wsp2repo'])
+			{
+				$wizard_options->disableTreeCopy();
+			}
 			$wizard_options->saveOwner($ilUser->getId());
 			$wizard_options->saveRoot($source_node_id);						
 			$wizard_options->read();
 			
-			$new_obj = $source_object->cloneObject($target_node_id, $copy_id, !$_SESSION['clipboard']['wsp2repo']);	
+			$new_obj = $source_object->cloneObject($target_node_id, $copy_id);	
 			
 			// insert into workspace tree
 			if($new_obj && !$_SESSION['clipboard']['wsp2repo'])
@@ -580,7 +577,16 @@ class ilObjWorkspaceFolderGUI extends ilObject2GUI
 		unset($_SESSION['clipboard']['wsp2repo']);
 		unset($_SESSION['clipboard']['shared']);
 		
-		ilUtil::sendSuccess($this->lng->txt('msg_cut_copied'), true);
+		// #17746
+		if($mode == 'cut')
+		{
+			ilUtil::sendSuccess($this->lng->txt('msg_cut_copied'), true);
+		}
+		else
+		{
+			ilUtil::sendSuccess($this->lng->txt('msg_cloned'), true);
+		}
+		
 		$this->ctrl->setParameter($this, "wsp_id", $redirect_node);
 		$this->ctrl->redirect($this);		 
 	}
@@ -616,7 +622,7 @@ class ilObjWorkspaceFolderGUI extends ilObject2GUI
 		$tbl->resetOffset();
 		$tbl->resetFilter();
 		
-		$this->share();
+		$this->shareFilter();
 	}
 	
 	protected function passwordForm($a_node_id, $form = null)
@@ -713,6 +719,23 @@ class ilObjWorkspaceFolderGUI extends ilObject2GUI
 		include("ilias.php");
 		exit;
 	}
+
+	/**
+	 * Entry point for awareness tool
+	 */
+	function listSharedResourcesOfOtherUser()
+	{
+		global $ilCtrl;
+
+		include_once "Services/PersonalWorkspace/classes/class.ilWorkspaceShareTableGUI.php";
+		$tbl = new ilWorkspaceShareTableGUI($this, "share", $this->getAccessHandler(), $this->node_id);
+		$tbl->resetOffset();
+		$tbl->resetFilter();
+		$_POST["user"] = $_GET["user"];
+		$tbl->writeFilterToSession();
+		$this->share();
+	}
+
 }
 
 ?>

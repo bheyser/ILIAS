@@ -26,7 +26,7 @@ class ilObjPersonalDesktopSettingsGUI extends ilObjectGUI
 		global $lng;
 		
 		$this->type = 'pdts';
-		parent::ilObjectGUI($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
+		parent::__construct($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
 
 		$lng->loadLanguageModule("pd");
 	}
@@ -56,8 +56,8 @@ class ilObjPersonalDesktopSettingsGUI extends ilObjectGUI
 			case 'ilpermissiongui':
 				$this->tabs_gui->setTabActive('perm_settings');
 				include_once("Services/AccessControl/classes/class.ilPermissionGUI.php");
-				$perm_gui =& new ilPermissionGUI($this);
-				$ret =& $this->ctrl->forwardCommand($perm_gui);
+				$perm_gui = new ilPermissionGUI($this);
+				$ret = $this->ctrl->forwardCommand($perm_gui);
 				break;
 
 			default:
@@ -106,7 +106,7 @@ class ilObjPersonalDesktopSettingsGUI extends ilObjectGUI
 	*/
 	public function editSettings()
 	{
-		global $ilCtrl, $lng, $ilSetting;
+		global $ilCtrl, $lng, $ilSetting, $ilAccess;
 		
 		$pd_set = new ilSetting("pd");
 		
@@ -132,19 +132,7 @@ class ilObjPersonalDesktopSettingsGUI extends ilObjectGUI
 		$cb_prop->setValue("1");
 		$cb_prop->setChecked(($ilSetting->get("disable_bookmarks") ? "0" : "1"));
 		$form->addItem($cb_prop);
-		
-		// Enable contacts
-		$cb_prop = new ilCheckboxInputGUI($lng->txt("pd_enable_contacts"), "enable_contacts");
-		$cb_prop->setValue("1");
-		$cb_prop->setChecked(($ilSetting->get("disable_contacts") ? "0" : "1"));
 
-			$cb_prop_requires_mail = new ilCheckboxInputGUI($lng->txt('pd_enable_contacts_requires_mail'), 'enable_contacts_require_mail');
-			$cb_prop_requires_mail->setValue("1");
-			$cb_prop_requires_mail->setChecked(($ilSetting->get("disable_contacts_require_mail") ? "0" : "1"));
-			$cb_prop->addSubItem($cb_prop_requires_mail);
-
-		$form->addItem($cb_prop);
-		
 		// Enable notes
 		$cb_prop = new ilCheckboxInputGUI($lng->txt("pd_enable_notes"), "enable_notes");
 		$cb_prop->setValue("1");
@@ -157,20 +145,50 @@ class ilObjPersonalDesktopSettingsGUI extends ilObjectGUI
 		$cb_prop->setChecked(($ilSetting->get("disable_comments") ? "0" : "1"));
 		$form->addItem($cb_prop);
 		
-		$comm_del_user =  new ilCheckboxInputGUI($lng->txt("pd_enable_comments_del_user"), "comm_del_user");
+		$comm_del_user =  new ilCheckboxInputGUI($lng->txt("pd_enable_comments_del_user"), "comm_del_user");		
 		$comm_del_user->setChecked($ilSetting->get("comments_del_user", 0));
 		$cb_prop->addSubItem($comm_del_user);		
 		
 		$comm_del_tutor =  new ilCheckboxInputGUI($lng->txt("pd_enable_comments_del_tutor"), "comm_del_tutor");
+		$comm_del_tutor->setInfo($lng->txt("pd_enable_comments_del_tutor_info"));
 		$comm_del_tutor->setChecked($ilSetting->get("comments_del_tutor", 1));
-		$cb_prop->addSubItem($comm_del_tutor);		
-		
+		$cb_prop->addSubItem($comm_del_tutor);
+
+		$ti = new ilTextInputGUI($this->lng->txt("pd_comments_notification"), "comments_noti_recip");
+		$ti->setValue($ilSetting->get("comments_noti_recip"));
+		$ti->setMaxLength(200);
+		$ti->setInfo($this->lng->txt("pd_comments_notification_info"));
+		$cb_prop->addSubItem($ti);
+
 		// Enable Chatviewer
 		$cb_prop = new ilCheckboxInputGUI($lng->txt("pd_enable_chatviewer"), "block_activated_chatviewer");
 		$cb_prop->setValue("1");
 		$cb_prop->setChecked(($ilSetting->get("block_activated_chatviewer")));
 		$form->addItem($cb_prop);
+
+		require_once 'Services/Mail/classes/class.ilObjMail.php';
+		$pd_sys_msg = new ilRadioGroupInputGUI($lng->txt('show_system_messages'), 'pd_sys_msg_mode');
+
+		$sys_msg_own_block = new ilRadioOption($lng->txt('pd_sys_msg_own_block'), ilObjMail::PD_SYS_MSG_OWN_BLOCK);
+		$pd_sys_msg->addOption($sys_msg_own_block);
+
+		$sys_msg_mail_block = new ilRadioOption($lng->txt('pd_sys_msg_mail_block'), ilObjMail::PD_SYS_MSG_MAIL_BLOCK);
+		$pd_sys_msg->addOption($sys_msg_mail_block);
+
+		$sys_msg_own_block = new ilRadioOption($lng->txt('pd_sys_msg_no_block'), ilObjMail::PD_SYS_MSG_NO_BLOCK);
+		$pd_sys_msg->addOption($sys_msg_own_block);
+
+		$pd_sys_msg->setValue((int)($ilSetting->get('pd_sys_msg_mode')));
+		$form->addItem($pd_sys_msg);
 		
+		if($ilSetting->get('save_post_drafts', 0))
+		{
+			$cb_prop = new ilCheckboxInputGUI($lng->txt('pd_enable_pdfrmpostdraft'), 'block_activated_pdfrmpostdraft');
+			$cb_prop->setInfo($lng->txt('pd_enable_pdfrmpostdraft_info'));
+			$cb_prop->setValue(1);
+			$cb_prop->setChecked($ilSetting->get('block_activated_pdfrmpostdraft', 0));
+			$form->addItem($cb_prop);
+		}
 		// Enable block moving
 		$cb_prop = new ilCheckboxInputGUI($lng->txt("pd_enable_block_moving"),
 			"enable_block_moving");
@@ -180,6 +198,7 @@ class ilObjPersonalDesktopSettingsGUI extends ilObjectGUI
 		$form->addItem($cb_prop);		
 		
 		// Enable active users block
+/*
 		$cb_prop = new ilCheckboxInputGUI($lng->txt("pd_enable_active_users"),
 			"block_activated_pdusers");
 		$cb_prop->setValue("1");
@@ -194,17 +213,8 @@ class ilObjPersonalDesktopSettingsGUI extends ilObjectGUI
 			$ti_prop->setSize(3);
 			$cb_prop->addSubItem($ti_prop);
 			
-			// osi host
-			// see http://www.onlinestatus.org
-			$ti_prop = new ilTextInputGUI($lng->txt("pd_osi_host"),
-				"osi_host");
-			$ti_prop->setValue($pd_set->get("osi_host"));
-			$ti_prop->setInfo($lng->txt("pd_osi_host_info").
-				' <a href="http://www.onlinestatus.org" target="_blank">http://www.onlinestatus.org</a>');
-			$cb_prop->addSubItem($ti_prop);
-			
 		$form->addItem($cb_prop);
-		
+*/
 		// Enable 'My Offers' (default personal items)
 		$cb_prop = new ilCheckboxInputGUI($lng->txt('pd_enable_my_offers'), 'enable_my_offers');
 		$cb_prop->setValue('1');
@@ -233,9 +243,12 @@ class ilObjPersonalDesktopSettingsGUI extends ilObjectGUI
 			$form->addItem($sb_prop);
 		}
 		
-		// command buttons
-		$form->addCommandButton("saveSettings", $lng->txt("save"));
-		$form->addCommandButton("view", $lng->txt("cancel"));
+		if($ilAccess->checkAccess('write','',$this->object->getRefId()))
+		{
+			// command buttons
+			$form->addCommandButton("saveSettings", $lng->txt("save"));
+			$form->addCommandButton("view", $lng->txt("cancel"));
+		}
 
 		$this->tpl->setContent($form->getHTML());
 	}
@@ -245,7 +258,12 @@ class ilObjPersonalDesktopSettingsGUI extends ilObjectGUI
 	*/
 	public function saveSettings()
 	{
-		global $ilCtrl, $ilSetting;
+		global $ilCtrl, $ilSetting, $ilAccess;
+		
+		if(!$ilAccess->checkAccess('write','',$this->object->getRefId()))
+		{
+			$ilCtrl->redirect($this, "view");
+		}
 		
 		$pd_set = new ilSetting("pd");
 		
@@ -255,22 +273,23 @@ class ilObjPersonalDesktopSettingsGUI extends ilObjectGUI
 		#$ilSetting->set("enable_calendar", $_POST["enable_calendar"]);
 		$ilSetting->set("disable_bookmarks", (int) ($_POST["enable_bookmarks"] ? 0 : 1));
 
-		$ilSetting->set("disable_contacts", (int) ($_POST["enable_contacts"] ? 0 : 1));
-		$ilSetting->set("disable_contacts_require_mail", (int) ($_POST["enable_contacts_require_mail"] ? 0 : 1));
-
 		$ilSetting->set("disable_notes", (int) ($_POST["enable_notes"] ? 0 : 1));
 		$ilSetting->set("disable_comments", (int) ($_POST["enable_comments"] ? 0 : 1));
 	
 		$ilSetting->set("comments_del_user", (int) ($_POST["comm_del_user"] ? 1 : 0));
-		$ilSetting->set("comments_del_tutor", (int) ($_POST["comm_del_tutor"] ? 1 : 0));			
-		
-		$ilSetting->set("block_activated_chatviewer", (int) ($_POST["block_activated_chatviewer"]));		
-		
-		$ilSetting->set("block_activated_pdusers", $_POST["block_activated_pdusers"]);
+		$ilSetting->set("comments_del_tutor", (int) ($_POST["comm_del_tutor"] ? 1 : 0));
+		$ilSetting->set("comments_noti_recip", ilUtil::stripSlashes($_POST["comments_noti_recip"]));
+
+		$ilSetting->set("block_activated_chatviewer", (int) ($_POST["block_activated_chatviewer"]));
+		$ilSetting->set("pd_sys_msg_mode", (int) ($_POST["pd_sys_msg_mode"]));
+		if($ilSetting->get('save_post_drafts', 0))
+		{
+			$ilSetting->set("block_activated_pdfrmpostdraft", (int)$_POST["block_activated_pdfrmpostdraft"]);
+		}
+//		$ilSetting->set("block_activated_pdusers", $_POST["block_activated_pdusers"]);
 		$pd_set->set("enable_block_moving", $_POST["enable_block_moving"]);
-		$pd_set->set("user_activity_time", (int) $_POST["time_removal"]);
-		$pd_set->set("osi_host", $_POST["osi_host"]);
-		
+//		$pd_set->set("user_activity_time", (int) $_POST["time_removal"]);
+
 		// Validate personal desktop view
 		if(!(int)$_POST['enable_my_offers'] && !(int)$_POST['enable_my_memberships'])
 		{
@@ -303,7 +322,7 @@ class ilObjPersonalDesktopSettingsGUI extends ilObjectGUI
 	*/
 	public function editWsp()
 	{
-		global $ilCtrl, $lng, $ilSetting;
+		global $ilCtrl, $lng, $ilSetting, $ilAccess;
 		
 		include_once("./Services/Form/classes/class.ilPropertyFormGUI.php");
 		$form = new ilPropertyFormGUI();
@@ -369,9 +388,12 @@ class ilObjPersonalDesktopSettingsGUI extends ilObjectGUI
 			$this
 		);
 		
-		// command buttons
-		$form->addCommandButton("saveWsp", $lng->txt("save"));
-		$form->addCommandButton("editWsp", $lng->txt("cancel"));
+		if($ilAccess->checkAccess('write','',$this->object->getRefId()))
+		{
+			// command buttons
+			$form->addCommandButton("saveWsp", $lng->txt("save"));
+			$form->addCommandButton("editWsp", $lng->txt("cancel"));
+		}
 
 		$this->tpl->setContent($form->getHTML());
 	}
@@ -381,7 +403,12 @@ class ilObjPersonalDesktopSettingsGUI extends ilObjectGUI
 	 */
 	public function saveWsp()
 	{
-		global $ilCtrl, $ilSetting;
+		global $ilCtrl, $ilSetting, $ilAccess;
+		
+		if(!$ilAccess->checkAccess('write','',$this->object->getRefId()))
+		{
+			$ilCtrl->redirect($this, "view");
+		}
 		
 		// without personal workspace we have to disable to sub-items
 		if(!$_POST["wsp"])

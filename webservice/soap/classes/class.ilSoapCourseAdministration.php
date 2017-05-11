@@ -39,11 +39,6 @@ class ilSoapCourseAdministration extends ilSoapAdministration
 	const ADMIN = 4;
 	const OWNER = 8; 
 
-	function ilSoapCourseAdministration()
-	{
-		parent::ilSoapAdministration();
-	}
-		
 
 	// Service methods
 	function addCourse($sid,$target_id,$crs_xml)
@@ -226,8 +221,10 @@ class ilSoapCourseAdministration extends ilSoapAdministration
 		switch($type)
 		{
 			case 'Admin':
+				require_once("Services/Administration/classes/class.ilSetting.php");
+				$settings = new ilSetting();
 				$course_members->add($tmp_user->getId(),IL_CRS_ADMIN);
-				$course_members->updateNotification($tmp_user->getId(),1);
+				$course_members->updateNotification($tmp_user->getId(),$settings->get('mail_crs_admin_notification', true));
 				break;
 
 			case 'Tutor':

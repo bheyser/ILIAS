@@ -3,12 +3,13 @@
 
 require_once 'Services/TermsOfService/classes/class.ilTermsOfServiceAcceptanceDatabaseGateway.php';
 require_once 'Services/TermsOfService/classes/class.ilTermsOfServiceAcceptanceEntity.php';
+require_once 'Services/TermsOfService/test/ilTermsOfServiceBaseTest.php';
 
 /**
  * @author  Michael Jansen <mjansen@databay.de>
  * @version $Id$
  */
-class ilTermsOfServiceAcceptanceDatabaseGatewayTest extends PHPUnit_Framework_TestCase
+class ilTermsOfServiceAcceptanceDatabaseGatewayTest extends ilTermsOfServiceBaseTest
 {
 	/**
 	 * @var bool
@@ -20,6 +21,7 @@ class ilTermsOfServiceAcceptanceDatabaseGatewayTest extends PHPUnit_Framework_Te
 	 */
 	public function setUp()
 	{
+		parent::setUp();
 	}
 
 	/**
@@ -27,7 +29,7 @@ class ilTermsOfServiceAcceptanceDatabaseGatewayTest extends PHPUnit_Framework_Te
 	 */
 	public function testInstanceCanBeCreated()
 	{
-		$database = $this->getMockBuilder('ilDB')->disableOriginalConstructor()->getMock();
+		$database = $this->getMockBuilder('ilDBInterface')->getMock();
 		$gateway  = new ilTermsOfServiceAcceptanceDatabaseGateway($database);
 		$this->assertInstanceOf('ilTermsOfServiceAcceptanceDatabaseGateway', $gateway);
 	}
@@ -48,8 +50,8 @@ class ilTermsOfServiceAcceptanceDatabaseGatewayTest extends PHPUnit_Framework_Te
 
 		$expected_id = 4711;
 
-		$database = $this->getMockBuilder('ilDB')->disableOriginalConstructor()->getMock();
-		$result   = $this->getMockBuilder('MDB2_BufferedResult_mysqli')->disableOriginalConstructor()->getMock();
+		$database = $this->getMockBuilder('ilDBInterface')->getMock();
+		$result   = $this->getMockBuilder('ilDBStatement')->getMock();
 
 		$database->expects($this->once())->method('queryF')->with('SELECT id FROM tos_versions WHERE hash = %s AND lng = %s', array('text', 'text'), array($entity->getHash(), $entity->getIso2LanguageCode()))->will($this->returnValue($result));
 		$database->expects($this->once())->method('numRows')->with($result)->will($this->returnValue(0));
@@ -94,8 +96,8 @@ class ilTermsOfServiceAcceptanceDatabaseGatewayTest extends PHPUnit_Framework_Te
 
 		$expected_id = 4711;
 
-		$database = $this->getMockBuilder('ilDB')->disableOriginalConstructor()->getMock();
-		$result   = $this->getMockBuilder('MDB2_BufferedResult_mysqli')->disableOriginalConstructor()->getMock();
+		$database = $this->getMockBuilder('ilDBInterface')->getMock();
+		$result   = $this->getMockBuilder('ilDBStatement')->getMock();
 
 		$database->expects($this->once())->method('queryF')->with('SELECT id FROM tos_versions WHERE hash = %s AND lng = %s', array('text', 'text'), array($entity->getHash(), $entity->getIso2LanguageCode()))->will($this->returnValue($result));
 		$database->expects($this->once())->method('numRows')->with($result)->will($this->returnValue(1));
@@ -126,10 +128,11 @@ class ilTermsOfServiceAcceptanceDatabaseGatewayTest extends PHPUnit_Framework_Te
 			'src'         => '/path/to/file',
 			'src_type'    => 0,
 			'text'        => 'PHP Unit',
+			'hash'        => md5('PHP Unit'),
 			'accepted_ts' => time()
 		);
 
-		$database = $this->getMockBuilder('ilDB')->disableOriginalConstructor()->getMock();
+		$database = $this->getMockBuilder('ilDBInterface')->getMock();
 		$database->expects($this->once())->method('fetchAssoc')->will($this->onConsecutiveCalls($expected));
 		$gateway = new ilTermsOfServiceAcceptanceDatabaseGateway($database);
 		$gateway->loadCurrentAcceptanceOfUser($entity);
@@ -141,6 +144,7 @@ class ilTermsOfServiceAcceptanceDatabaseGatewayTest extends PHPUnit_Framework_Te
 		$this->assertEquals($expected['src_type'], $entity->getSourceType());
 		$this->assertEquals($expected['text'], $entity->getText());
 		$this->assertEquals($expected['accepted_ts'], $entity->getTimestamp());
+		$this->assertEquals($expected['hash'], $entity->getHash());
 	}
 
 	/**
@@ -151,7 +155,7 @@ class ilTermsOfServiceAcceptanceDatabaseGatewayTest extends PHPUnit_Framework_Te
 		$entity = new ilTermsOfServiceAcceptanceEntity();
 		$entity->setUserId(4711);
 
-		$database = $this->getMockBuilder('ilDB')->disableOriginalConstructor()->getMock();
+		$database = $this->getMockBuilder('ilDBInterface')->getMock();
 		$database->expects($this->once())->method('quote')->with($entity->getUserId(), 'integer')->will($this->returnValue($entity->getUserId()));
 		$database->expects($this->once())->method('manipulate')->with('DELETE FROM tos_acceptance_track WHERE usr_id = ' . $entity->getUserId());
 		$gateway = new ilTermsOfServiceAcceptanceDatabaseGateway($database);

@@ -86,11 +86,11 @@ class ilUserPasswordManager
 			array(
 				'encoder_factory' => new ilUserPasswordEncoderFactory(
 					array(
-						'default_password_encoder' => 'bcrypt',
+						'default_password_encoder' => 'bcryptphp',
 						'ignore_security_flaw'     => true
 					)
 				),
-				'password_encoder' => 'bcrypt'
+				'password_encoder' => 'bcryptphp'
 			)
 		);
 
@@ -181,12 +181,17 @@ class ilUserPasswordManager
 
 				return true;
 			}
-
-			return false;
 		}
-		else
+		else if($encoder->isPasswordValid($user->getPasswd(), $raw, $user->getPasswordSalt()))
 		{
-			return $encoder->isPasswordValid($user->getPasswd(), $raw, $user->getPasswordSalt());
+			if($encoder->requiresReencoding($user->getPasswd()))
+			{
+				$user->resetPassword($raw, $raw);
+			}
+
+			return true;
 		}
+
+		return false;
 	}
 } 

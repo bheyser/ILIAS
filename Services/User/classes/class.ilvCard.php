@@ -95,7 +95,7 @@ class ilvCard
 *
 * @access	public
 */
-	function ilvCard($version = "3.0")
+	function __construct($version = "3.0")
 	{
 		$this->types = array(
 			"FN" => "",
@@ -225,6 +225,9 @@ class ilvCard
 		$vcard .= "VERSION:" . $this->types["VERSION"] . "\n";
 		foreach ($this->types as $type => $var)
 		{
+			
+			ilLoggerFactory::getLogger('user')->debug(print_r($this->types,TRUE));
+			
 			switch ($type)
 			{
 				case "FN":

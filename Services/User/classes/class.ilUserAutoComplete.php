@@ -28,6 +28,11 @@ class ilUserAutoComplete
 	 * @var int
 	 */
 	const PRIVACY_MODE_IGNORE_USER_SETTING = 2;
+	
+	/**
+	 * @var ilLogger
+	 */
+	private $logger = null;
 
 	/**
 	 * @var bool
@@ -67,6 +72,13 @@ class ilUserAutoComplete
 	
 	private $limit = 0;
 
+	private $user_limitations = true;
+
+	/**
+	 * @var bool
+	 */
+	private $more_link_available = false;
+
 	/**
 	 * @var bool
 	 */
@@ -77,10 +89,14 @@ class ilUserAutoComplete
 	 */
 	public function __construct()
 	{
+		global $DIC;
+		
 		$this->result_field = 'login';
 
 		$this->setSearchType(self::SEARCH_TYPE_LIKE);
 		$this->setPrivacyMode(self::PRIVACY_MODE_IGNORE_USER_SETTING);
+		
+		$this->logger = $DIC->logger()->user();
 	}
 	
 	public function setLimit($a_limit)
@@ -236,12 +252,13 @@ class ilUserAutoComplete
 	{
 		/**
 		 * @var $ilDB  ilDB
-		 * @var $ilLog ilLog
 		 */
-		global $ilDB, $ilLog;
+		global $ilDB;
+		
+		$parsed_query = $this->parseQueryString($a_str);
 
 		$select_part   = $this->getSelectPart();
-		$where_part    = $this->getWherePart($a_str);
+		$where_part    = $this->getWherePart($parsed_query);
 		$order_by_part = $this->getOrderByPart();
 		$query         = implode(" ", array(
 			'SELECT ' . $select_part,
@@ -250,7 +267,7 @@ class ilUserAutoComplete
 			$order_by_part ? 'ORDER BY ' . $order_by_part : ''
 		));
 
-		$ilLog->write(__METHOD__ . ': Query: ' . $query);
+		$this->logger->debug('Query: ' . $query);
 
 		$res = $ilDB->query($query);
 
@@ -294,7 +311,7 @@ class ilUserAutoComplete
 		$result_json['items'] = $result;
 		$result_json['hasMoreResults'] = $more_results;
 		
-		$GLOBALS['ilLog']->write(__METHOD__.': '.print_r($result_json,TRUE));
+		$this->logger->dump($result_json);
 		
 		return ilJsonUtil::encode($result_json);
 	}
@@ -358,7 +375,7 @@ class ilUserAutoComplete
 	 * @param string
 	 * @return string
 	 */
-	protected function getWherePart($search_query)
+	protected function getWherePart(array $search_query)
 	{
 		/**
 		 * @var $ilDB      ilDB
@@ -392,7 +409,7 @@ class ilUserAutoComplete
 		foreach($this->getFields() as $field)
 		{
 			$field_condition = $this->getQueryConditionByFieldAndValue($field, $search_query);
-
+			
 			if('email' == $field && self::PRIVACY_MODE_RESPECT_USER_SETTING == $this->getPrivacyMode())
 			{
 				// If privacy should be respected, the profile setting of every user concerning the email address has to be
@@ -441,6 +458,23 @@ class ilUserAutoComplete
 			$outer_conditions[] = '(' . implode(' OR ', $field_conditions) . ')';
 		}
 
+		include_once './Services/Search/classes/class.ilSearchSettings.php';
+		$settings = ilSearchSettings::getInstance();
+
+		if(!$settings->isInactiveUserVisible() && $this->getUserLimitations())
+		{
+			$outer_conditions[] = "ud.active = ". $ilDB->quote(1, 'integer');
+		}
+
+		if(!$settings->isLimitedUserVisible() && $this->getUserLimitations())
+		{
+			$unlimited = "ud.time_limit_unlimited = ". $ilDB->quote(1, 'integer');
+			$from = "ud.time_limit_from < ". $ilDB->quote(time(), 'integer');
+			$until = "ud.time_limit_until > ". $ilDB->quote(time(), 'integer');
+
+			$outer_conditions[] = '(' .$unlimited.' OR ('.$from.' AND ' .$until.'))';
+		}
+
 		return implode(' AND ', $outer_conditions);
 	}
 
@@ -454,31 +488,65 @@ class ilUserAutoComplete
 
 	/**
 	 * @param string $field
-	 * @param mixed  $a_str
+	 * @param array  $parsed_query
 	 * @return string
 	 */
-	protected function getQueryConditionByFieldAndValue($field, $a_str)
+	protected function getQueryConditionByFieldAndValue($field, $query)
 	{
 		/**
 		 * @var $ilDB ilDB
 		 */
 		global $ilDB;
+
+		$query_strings = array($query['query']);
 		
-		// #14768
-		if(!stristr($a_str, '\\'))
+		if(array_key_exists($field, $query))
 		{
-			$a_str = str_replace('%', '\%', $a_str);
-			$a_str = str_replace('_', '\_', $a_str);
+			$query_strings = array($query[$field]);
+		}
+		elseif(array_key_exists('parts', $query))
+		{
+			$query_strings = $query['parts'];
 		}
 		
-		if(self::SEARCH_TYPE_LIKE == $this->getSearchType())
+		$query_condition = '( ';
+		$num = 0;
+		foreach($query_strings as $query_string)
 		{
-			return $ilDB->like($field, 'text', $a_str . '%');
+			if($num++ > 0)
+			{
+				$query_condition .= ' OR ';
+			}
+			if(self::SEARCH_TYPE_LIKE == $this->getSearchType())
+			{
+				$query_condition .= $ilDB->like($field, 'text', $query_string . '%');
+			}
+			else
+			{
+				$query_condition .= $ilDB->like($field, 'text', $query_string);
+			}
 		}
-		else
-		{
-			return $ilDB->like($field, 'text', $a_str);
-		}
+		$query_condition .= ')';
+		return $query_condition;
+	}
+
+	/**
+	 * allow user limitations like inactive and access limitations
+	 *
+	 * @param bool $a_limitations
+	 */
+	public function setUserLimitations($a_limitations)
+	{
+		$this->user_limitations = (bool) $a_limitations;
+	}
+
+	/**
+	 * allow user limitations like inactive and access limitations
+	 * @return bool
+	 */
+	public function getUserLimitations()
+	{
+		return $this->user_limitations;
 	}
 
 	/**
@@ -497,6 +565,57 @@ class ilUserAutoComplete
 	public function setMoreLinkAvailable($more_link_available)
 	{
 		$this->more_link_available = $more_link_available;
+	}
+	
+	/**
+	 * Parse query string
+	 * @param string $a_query
+	 * @return $query
+	 */
+	public function parseQueryString($a_query)
+	{
+		$query = array();
+		
+		if(!stristr($a_query, '\\'))
+		{
+			$a_query = str_replace('%', '\%', $a_query);
+			$a_query = str_replace('_', '\_', $a_query);
+		}
+
+		$query['query'] = trim($a_query);
+		
+		// "," means fixed search for lastname, firstname
+		if(strpos($a_query, ','))
+		{
+			$comma_separated = (array) explode(',', $a_query);
+			
+			if(count($comma_separated) == 2)
+			{
+				if(trim($comma_separated[0]))
+				{
+					$query['lastname'] = trim($comma_separated[0]);
+				}
+				if(trim($comma_separated[1]))
+				{
+					$query['firstname'] = trim($comma_separated[1]);
+				}
+			}
+		}
+		else
+		{
+			$whitespace_separated = (array) explode(' ', $a_query);
+			foreach($whitespace_separated as $part)
+			{
+				if(trim($part))
+				{
+					$query['parts'][] = trim($part);
+				}
+			}
+		}
+		
+		$this->logger->dump($query, ilLogLevel::DEBUG);
+		
+		return $query;
 	}
 
 

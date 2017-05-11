@@ -26,6 +26,7 @@
    * Soap object administration methods
    *
    * @author Stefan Meyer <meyer@leifos.com>
+   * @author Stefan Hecken <stefan.hecken@concepts-and-training.de>
    * @version $Id$
    *
    * @package ilias
@@ -34,11 +35,6 @@ include_once './webservice/soap/classes/class.ilSoapAdministration.php';
 
 class ilSoapObjectAdministration extends ilSoapAdministration
 {
-	function ilSoapObjectAdministration()
-	{
-		parent::ilSoapAdministration();
-	}
-
 	function getObjIdByImportId($sid,$import_id)
 	{
 		$this->initAuth($sid);
@@ -227,7 +223,7 @@ class ilSoapObjectAdministration extends ilSoapAdministration
 
 		include_once './Services/Search/classes/class.ilQueryParser.php';
 
-		$query_parser =& new ilQueryParser($a_title);
+		$query_parser = new ilQueryParser($a_title);
 		$query_parser->setMinWordLength(0,true);
 		$query_parser->setCombination(QP_COMBINATION_AND);
 		$query_parser->parse();
@@ -356,7 +352,7 @@ class ilSoapObjectAdministration extends ilSoapAdministration
 
 			include_once './Services/Search/classes/class.ilQueryParser.php';
 
-			$query_parser =& new ilQueryParser($key);
+			$query_parser = new ilQueryParser($key);
 			#$query_parser->setMinWordLength(3);
 			$query_parser->setCombination($combination == 'and' ? QP_COMBINATION_AND : QP_COMBINATION_OR);
 			$query_parser->parse();
@@ -596,7 +592,7 @@ class ilSoapObjectAdministration extends ilSoapAdministration
 									   'Client');
 		}
 
-		$allowed_subtypes = $objDefinition->getSubObjects($target_obj->getType());
+		$allowed_subtypes = $target_obj->getPossibleSubObjects();
 
 		foreach($allowed_subtypes as $row)
 		{
@@ -608,7 +604,7 @@ class ilSoapObjectAdministration extends ilSoapAdministration
 
 		include_once './webservice/soap/classes/class.ilObjectXMLParser.php';
 		
-		$xml_parser =& new ilObjectXMLParser($a_xml, true);
+		$xml_parser = new ilObjectXMLParser($a_xml, true);
 		try {
 			$xml_parser->startParsing();
 		} 
@@ -711,7 +707,6 @@ class ilSoapObjectAdministration extends ilSoapAdministration
 					break;
 				// end-patch fm
 				case 'lm':
-				case 'dbk':
 					$newObj->createLMTree();
 					break;
 				case 'cat':
@@ -767,7 +762,7 @@ class ilSoapObjectAdministration extends ilSoapAdministration
 									   'Client');
 		}
 
-		$allowed_subtypes = $objDefinition->getSubObjects($target_obj->getType());
+		$allowed_subtypes = $target_obj->getPossibleSubObjects();
 		foreach($allowed_subtypes as $row)
 		{
 			if($row['name'] != 'rolf')
@@ -825,6 +820,10 @@ class ilSoapObjectAdministration extends ilSoapAdministration
 				case 'crs':
 					include_once('./Modules/CourseReference/classes/class.ilObjCourseReference.php');
 					$new_ref = new ilObjCourseReference();
+					break;
+				case 'grp':
+					include_once('./Modules/GroupReference/classes/class.ilObjGroupReference.php');
+					$new_ref = new ilObjGroupReference();
 					break;
 			}
 			$new_ref->create();
@@ -977,7 +976,7 @@ class ilSoapObjectAdministration extends ilSoapAdministration
 		global $rbacreview, $rbacsystem, $lng,$ilAccess;
 
 		include_once './webservice/soap/classes/class.ilObjectXMLParser.php';
-		$xml_parser =& new ilObjectXMLParser($a_xml, true);
+		$xml_parser = new ilObjectXMLParser($a_xml, true);
 		try 
 		{
 			$xml_parser->startParsing();
@@ -1231,11 +1230,13 @@ class ilSoapObjectAdministration extends ilSoapAdministration
 			$clientid = substr($sid, strpos($sid, "::") + 2);
 			$sessionid = str_replace("::".$clientid, "", $sid);
 			// call container clone
-			return $source_object->cloneAllObject($sessionid, $clientid,
+			$ret = $source_object->cloneAllObject($sessionid, $clientid,
 				$source_object_type,
 				$target_id,
 				$source_id,
 				$options, true);
+
+			return $ret['ref_id'];
 			
 		} else {
 			// create copy wizard settings

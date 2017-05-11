@@ -15,12 +15,17 @@ include_once("./Services/Component/exceptions/class.ilPluginException.php");
  */
 abstract class ilPlugin
 {
-	protected $lang_initialised = false;
 
 	/**
-	 * Constructor
+	 * @var bool
 	 */
-	final function __construct()
+	protected $lang_initialised = false;
+	/**
+	 * @var string
+	 */
+	protected $id = '';
+
+	public function __construct()
 	{
 		$this->__init();
 	}
@@ -29,7 +34,6 @@ abstract class ilPlugin
 	 * Get Component Type
 	 *
 	 * Must be overwritten in plugin class of plugin slot.
-	 * (and should be made final)
 	 *
 	 * @return	string	Component Type
 	 */
@@ -39,17 +43,14 @@ abstract class ilPlugin
 	 * Get Component Name.
 	 *
 	 * Must be overwritten in plugin class of plugin slot.
-	 * (and should be made final)
 	 *
 	 * @return	string	Component Name
 	 */
 	abstract function getComponentName();
-
 	/**
 	 * Get Slot Name.
 	 *
 	 * Must be overwritten in plugin class of plugin slot.
-	 * (and should be made final)
 	 *
 	 * @return	string	Slot Name
 	 */
@@ -59,7 +60,6 @@ abstract class ilPlugin
 	 * Get Slot ID.
 	 *
 	 * Must be overwritten in plugin class of plugin slot.
-	 * (and should be made final)
 	 *
 	 * @return	string	Slot Id
 	 */
@@ -70,7 +70,6 @@ abstract class ilPlugin
 	 * and must correspond to plugins subdirectory name.
 	 *
 	 * Must be overwritten in plugin class of plugin
-	 * (and should be made final)
 	 *
 	 * @return	string	Plugin Name
 	 */
@@ -81,7 +80,7 @@ abstract class ilPlugin
 	 *
 	 * @param	string	$a_id	Id
 	 */
-	private final function setId($a_id)
+	private function setId($a_id)
 	{
 		$this->id = $a_id;
 	}
@@ -91,7 +90,7 @@ abstract class ilPlugin
 	 *
 	 * @return	string	Id
 	 */
-	final function getId()
+	function getId()
 	{
 		return $this->id;
 	}
@@ -101,7 +100,7 @@ abstract class ilPlugin
 	 *
 	 * @param	string	$a_lastupdateversion	Version of last update
 	 */
-	private final function setLastUpdateVersion($a_lastupdateversion)
+	private function setLastUpdateVersion($a_lastupdateversion)
 	{
 		$this->lastupdateversion = $a_lastupdateversion;
 	}
@@ -111,7 +110,7 @@ abstract class ilPlugin
 	 *
 	 * @return	string	Version of last update
 	 */
-	final function getLastUpdateVersion()
+	function getLastUpdateVersion()
 	{
 		return $this->lastupdateversion;
 	}
@@ -121,7 +120,7 @@ abstract class ilPlugin
 	 *
 	 * @param	string	$a_version	Current Version (from plugin.php file)
 	 */
-	private final function setVersion($a_version)
+	private function setVersion($a_version)
 	{
 		$this->version = $a_version;
 	}
@@ -131,7 +130,7 @@ abstract class ilPlugin
 	 *
 	 * @return	string	Current Version (from plugin.php file)
 	 */
-	final function getVersion()
+	function getVersion()
 	{
 		return $this->version;
 	}
@@ -141,7 +140,7 @@ abstract class ilPlugin
 	 *
 	 * @param	string	$a_iliasminversion	Required ILIAS min. release
 	 */
-	private final function setIliasMinVersion($a_iliasminversion)
+	private function setIliasMinVersion($a_iliasminversion)
 	{
 		$this->iliasminversion = $a_iliasminversion;
 	}
@@ -151,7 +150,7 @@ abstract class ilPlugin
 	 *
 	 * @return	string	Required ILIAS min. release
 	 */
-	final function getIliasMinVersion()
+	function getIliasMinVersion()
 	{
 		return $this->iliasminversion;
 	}
@@ -161,7 +160,7 @@ abstract class ilPlugin
 	 *
 	 * @param	string	$a_iliasmaxversion	Required ILIAS max. release
 	 */
-	private final function setIliasMaxVersion($a_iliasmaxversion)
+	private function setIliasMaxVersion($a_iliasmaxversion)
 	{
 		$this->iliasmaxversion = $a_iliasmaxversion;
 	}
@@ -171,7 +170,7 @@ abstract class ilPlugin
 	 *
 	 * @return	string	Required ILIAS max. release
 	 */
-	final function getIliasMaxVersion()
+	function getIliasMaxVersion()
 	{
 		return $this->iliasmaxversion;
 	}
@@ -181,7 +180,7 @@ abstract class ilPlugin
 	 *
 	 * @param	boolean	$a_active	Active
 	 */
-	private final function setActive($a_active)
+	private function setActive($a_active)
 	{
 		$this->active = $a_active;
 	}
@@ -191,7 +190,7 @@ abstract class ilPlugin
 	 *
 	 * @return	boolean	Active
 	 */
-	final function getActive()
+	function getActive()
 	{
 		return $this->active;
 	}
@@ -201,7 +200,7 @@ abstract class ilPlugin
 	 *
 	 * @param	object	$a_slot	Plugin Slot
 	 */
-	protected final function setSlotObject($a_slot)
+	protected function setSlotObject($a_slot)
 	{
 		$this->slot = $a_slot;
 	}
@@ -211,7 +210,7 @@ abstract class ilPlugin
 	 *
 	 * @return	object	Plugin Slot
 	 */
-	protected final function getSlotObject()
+	protected function getSlotObject()
 	{
 		return $this->slot;
 	}
@@ -221,7 +220,7 @@ abstract class ilPlugin
 	 *
 	 * @param	int	$a_dbversion	DB Version
 	 */
-	final function setDBVersion($a_dbversion)
+	function setDBVersion($a_dbversion)
 	{
 		$this->dbversion = $a_dbversion;
 	}
@@ -231,7 +230,7 @@ abstract class ilPlugin
 	 *
 	 * @return	int	DB Version
 	 */
-	final function getDBVersion()
+	function getDBVersion()
 	{
 		return $this->dbversion;
 	}
@@ -241,7 +240,7 @@ abstract class ilPlugin
 	 *
 	 * @param	int	$a_dbversion	DB Version
 	 */
-	final function writeDBVersion($a_dbversion)
+	function writeDBVersion($a_dbversion)
 	{
 		global $ilDB;
 
@@ -262,7 +261,7 @@ abstract class ilPlugin
 	 *
 	 * @return	object	Plugin Slot
 	 */
-	public final function getDirectory()
+	public function getDirectory()
 	{
 		return $this->getSlotObject()->getPluginsDirectory()."/".$this->getPluginName();
 	}
@@ -270,7 +269,7 @@ abstract class ilPlugin
 	/**
 	 * Get plugin directory
 	 */
-	static public final function _getDirectory($a_ctype, $a_cname, $a_slot_id, $a_pname)
+	static public function _getDirectory($a_ctype, $a_cname, $a_slot_id, $a_pname)
 	{
 		include_once "Services/Component/classes/class.ilPluginSlot.php";
 		return ilPluginSlot::_getPluginsDirectory($a_ctype, $a_cname, $a_slot_id)."/".$a_pname;
@@ -282,7 +281,7 @@ abstract class ilPlugin
 	 *
 	 * @return	object	classes directory
 	 */
-	protected final function getClassesDirectory()
+	protected function getClassesDirectory()
 	{
 		return $this->getDirectory()."/classes";
 	}
@@ -290,7 +289,7 @@ abstract class ilPlugin
 	/**
 	 * Include (once) a class file
 	 */
-	public final function includeClass($a_class_file_name)
+	public function includeClass($a_class_file_name)
 	{
 		include_once($this->getClassesDirectory()."/".$a_class_file_name);
 	}
@@ -300,7 +299,7 @@ abstract class ilPlugin
 	 *
 	 * @return	object	classes directory
 	 */
-	protected final function getLanguageDirectory()
+	protected function getLanguageDirectory()
 	{
 		return $this->getDirectory()."/lang";
 	}
@@ -308,7 +307,7 @@ abstract class ilPlugin
 	/**
 	 * Get array of all language files in the plugin
 	 */
-	static final function getAvailableLangFiles($a_lang_directory)
+	static function getAvailableLangFiles($a_lang_directory)
 	{
 		$langs = array();
 
@@ -346,7 +345,7 @@ abstract class ilPlugin
 	 * @param	string	plugin name
 	 * @return	boolean	true/false
 	 */
-	static final function hasConfigureClass($a_slot_dir, $a_name)
+	static function hasConfigureClass($a_slot_dir, $a_name)
 	{
 		if (is_file($a_slot_dir."/".
 			$a_name."/classes/class.il".$a_name."ConfigGUI.php"))
@@ -362,7 +361,7 @@ abstract class ilPlugin
 	 * @param
 	 * @return
 	 */
-	static final function getConfigureClassName($a_name)
+	static function getConfigureClassName($a_name)
 	{
 		return "il".$a_name."ConfigGUI";
 	}
@@ -370,7 +369,7 @@ abstract class ilPlugin
 	/**
 	 * Get plugin prefix, used for lang vars
 	 */
-	final function getPrefix()
+	function getPrefix()
 	{
 		return $this->getSlotObject()->getPrefix()."_".$this->getId();
 	}
@@ -380,7 +379,7 @@ abstract class ilPlugin
 	 *
 	 * @return	string		DB Update script name
 	 */
-	static public final function getDBUpdateScriptName($a_ctype, $a_cname, $a_slot_name, $a_pname)
+	static public function getDBUpdateScriptName($a_ctype, $a_cname, $a_slot_name, $a_pname)
 	{
 		return "Customizing/global/plugins/".$a_ctype."/".$a_cname."/".
 		$a_slot_name."/".$a_pname."/sql/dbupdate.php";
@@ -389,7 +388,7 @@ abstract class ilPlugin
 	/**
 	 * Get db table plugin prefix
 	 */
-	final function getTablePrefix()
+	function getTablePrefix()
 	{
 		return $this->getPrefix();
 	}
@@ -502,7 +501,7 @@ abstract class ilPlugin
 	/**
 	 * Load language module for plugin
 	 */
-	public final function loadLanguageModule()
+	public function loadLanguageModule()
 	{
 		global $lng;
 
@@ -516,7 +515,7 @@ abstract class ilPlugin
 	/**
 	 * Get Language Variable (prefix will be prepended automatically)
 	 */
-	public final function txt($a_var)
+	public function txt($a_var)
 	{
 		global $lng;
 		$this->loadLanguageModule();
@@ -533,17 +532,13 @@ abstract class ilPlugin
 		// this enables default language fallback
 		$prefix = $a_mod_prefix."_".$a_pl_id;
 		return $lng->txt($prefix."_".$a_lang_var, $prefix);
-
-		/*
-		return ilLanguage::_lookupEntry($lng->lang_key, $a_mod_prefix."_".$a_pl_id,
-			$a_mod_prefix."_".$a_pl_id."_".$a_lang_var);		 
-		*/
 	}
+
 
 	/**
 	 * Get template from plugin
 	 */
-	public final function getTemplate($a_template, $a_par1 = true, $a_par2 = true)
+	public function getTemplate($a_template, $a_par1 = true, $a_par2 = true)
 	{
 		$tpl = new ilTemplate($this->getDirectory()."/templates/".$a_template, $a_par1, $a_par2);
 
@@ -553,7 +548,7 @@ abstract class ilPlugin
 	/**
 	 * Get image path
 	 */
-	public static final function _getImagePath($a_ctype, $a_cname, $a_slot_id,
+	public static function _getImagePath($a_ctype, $a_cname, $a_slot_id,
 		$a_pname, $a_img)
 	{
 		$d2 = ilComponent::lookupId($a_ctype, $a_cname)."_".$a_slot_id."_".
@@ -572,7 +567,7 @@ abstract class ilPlugin
 	/**
 	 * Get image path
 	 */
-	public final function getImagePath($a_img)
+	public function getImagePath($a_img)
 	{
 		return self::_getImagePath($this->getComponentType(), $this->getComponentName(), $this->getSlotId(),
 			$this->getPluginName(), $a_img);
@@ -581,7 +576,7 @@ abstract class ilPlugin
 	/**
 	 * Get css file location
 	 */
-	public final function getStyleSheetLocation($a_css_file)
+	public function getStyleSheetLocation($a_css_file)
 	{
 		$d2 = ilComponent::lookupId($this->getComponentType(), $this->getComponentName())."_".$this->getSlotId()."_".
 			ilPlugin::lookupIdForName($this->getComponentType(), $this->getComponentName(), $this->getSlotId(), $this->getPluginName());
@@ -598,16 +593,22 @@ abstract class ilPlugin
 	/**
 	 * Add template content to placeholder variable
 	 */
-	public final function addBlockFile($a_tpl, $a_var, $a_block, $a_tplname)
+	public function addBlockFile($a_tpl, $a_var, $a_block, $a_tplname)
 	{
 		$a_tpl->addBlockFile($a_var, $a_block,
 			$this->getDirectory()."/templates/".$a_tplname);
 	}
 
+
 	/**
-	 * Create plugin record, if not existing
+	 * @param $a_ctype
+	 * @param $a_cname
+	 * @param $a_slot_id
+	 * @param $a_pname
+	 *
+	 * @description Create plugin record, if not existing
 	 */
-	static final public function createPluginRecord($a_ctype, $a_cname, $a_slot_id, $a_pname)
+	static public function createPluginRecord($a_ctype, $a_cname, $a_slot_id, $a_pname)
 	{
 		global $ilDB;
 
@@ -635,7 +636,7 @@ abstract class ilPlugin
 	/**
 	 * Get record from il_plugin table
 	 */
-	static final public function getPluginRecord($a_ctype, $a_cname, $a_slot_id, $a_pname)
+	static public function getPluginRecord($a_ctype, $a_cname, $a_slot_id, $a_pname)
 	{
 		$cached_component = ilCachedComponentData::getInstance();
 		$rec = $cached_component->lookupPluginByName($a_pname);
@@ -648,48 +649,12 @@ abstract class ilPlugin
 				. "'."));
 
 		}
-		//
-		//		global $ilDB;
-		//
-		//		// read/set basic data
-		//		$q = "SELECT * FROM il_plugin".
-		//			" WHERE component_type = ".$ilDB->quote($a_ctype, "text").
-		//			" AND component_name = ".$ilDB->quote($a_cname, "text").
-		//			" AND slot_id = ".$ilDB->quote($a_slot_id, "text").
-		//			" AND name = ".$ilDB->quote($a_pname, "text");
-		//		$set = $ilDB->query($q);
-		//		if ($rec = $ilDB->fetchAssoc($set))
-		//		{
-		//			return $rec;
-		//		}
-		//		else		// no record? create one
-		//		{
-		//			// silently create these records is not a good idea, since
-		//			// the function can be called with "wrong parameters"
-		//			// raise exceptions instead
-		//			include_once("./Services/Component/exceptions/class.ilPluginException.php");
-		//			throw (new ilPluginException("No plugin record found for '".$a_ctype."', '".$a_cname."', '".$a_slot_id."', '".$a_pname."'."));
-		//
-		//			$q = "INSERT INTO il_plugin (component_type, component_name, slot_id, name)".
-		//				" VALUES (".$ilDB->quote($a_ctype, "text").",".
-		//				$ilDB->quote($a_cname, "text").",".
-		//				$ilDB->quote($a_slot_id, "text").",".
-		//				$ilDB->quote($a_pname, "text").")";
-		//			$ilDB->manipulate($q);
-		//			$q = "SELECT * FROM il_plugin".
-		//				" WHERE component_type = ".$ilDB->quote($a_ctype, "text").
-		//				" AND component_name = ".$ilDB->quote($a_cname, "text").
-		//				" AND slot_id = ".$ilDB->quote($a_slot_id, "text").
-		//				" AND name = ".$ilDB->quote($a_pname, "text");
-		//			$set = $ilDB->query($q);
-		//			return $ilDB->fetchAssoc($set);
-		//		}
 	}
 
 	/**
 	 * Default initialization
 	 */
-	final private function __init()
+	private function __init()
 	{
 		global $ilDB, $lng, $ilPluginAdmin;
 
@@ -742,13 +707,13 @@ abstract class ilPlugin
 	 * Object initialization done by slot.
 	 * Must be overwritten in plugin class of plugin slot.
 	 *
-	 * (and should be made protected final)
+	 * (and should be made protected)
 	 */
 	abstract protected function slotInit();
 
 	/**
 	 * Object initialization. Can be overwritten by plugin class
-	 * (and should be made protected final)
+	 * (and should be made protected)
 	 */
 	protected function init()
 	{
@@ -757,7 +722,7 @@ abstract class ilPlugin
 	/**
 	 * Check whether plugin is active
 	 */
-	public final function isActive()
+	public function isActive()
 	{
 		global $ilPluginAdmin;
 
@@ -768,7 +733,7 @@ abstract class ilPlugin
 	/**
 	 * Check whether update is needed.
 	 */
-	public final function needsUpdate()
+	public function needsUpdate()
 	{
 		global $ilPluginAdmin;
 
@@ -779,7 +744,7 @@ abstract class ilPlugin
 	/**
 	 * Activate
 	 */
-	final function activate()
+	function activate()
 	{
 		global $lng, $ilDB;
 
@@ -840,7 +805,7 @@ abstract class ilPlugin
 	/**
 	 * Deactivate
 	 */
-	final function deactivate()
+	function deactivate()
 	{
 		global $ilDB;
 
@@ -867,11 +832,59 @@ abstract class ilPlugin
 	protected function afterDeactivation()
 	{
 	}
+	
+	
+	protected function beforeUninstall()
+	{
+		// plugin-specific
+		// false would indicate that anything went wrong
+		return true; 
+	}
+	
+	final function uninstall()
+	{
+		global $ilDB;
+	
+		if($this->beforeUninstall())
+		{
+			// remove all language entries (see ilObjLanguage)
+			// see updateLanguages
+			$prefix = $this->getPrefix();
+			if($prefix)
+			{
+				$ilDB->manipulate("DELETE FROM lng_data".
+					" WHERE module = ".$ilDB->quote($prefix, "text"));		
+				$ilDB->manipulate("DELETE FROM lng_modules".
+					" WHERE module = ".$ilDB->quote($prefix, "text"));
+			}
+			
+			// db version is kept in il_plugin - will be deleted, too						
+			
+			$q = "DELETE FROM il_plugin".
+				" WHERE component_type = ".$ilDB->quote($this->getComponentType(), "text").
+				" AND component_name = ".$ilDB->quote($this->getComponentName(), "text").
+				" AND slot_id = ".$ilDB->quote($this->getSlotId(), "text").
+				" AND name = ".$ilDB->quote($this->getPluginName(), "text");
+			$ilDB->manipulate($q);
 
+			$this->afterUninstall();
+			
+			ilCachedComponentData::flush();
+			return true;
+		}		
+
+		return false;
+	}
+	
+	protected function afterUninstall()
+	{
+		// plugin-specific
+	}
+			
 	/**
 	 * Update plugin
 	 */
-	final function update()
+	function update()
 	{
 		global $ilDB, $ilCtrl;
 
@@ -944,10 +957,8 @@ abstract class ilPlugin
 	 * @param	string	$a_sname	plugin slot name
 	 * @param	string	$a_pname	plugin name
 	 */
-	final static function getPluginObject($a_ctype, $a_cname, $a_slot_id, $a_pname)
+	static function getPluginObject($a_ctype, $a_cname, $a_slot_id, $a_pname)
 	{
-		global $ilDB;
-
 		include_once("./Services/Component/classes/class.ilPluginSlot.php");
 		$slot_name = ilPluginSlot::lookupSlotName($a_ctype, $a_cname, $a_slot_id);
 
@@ -956,15 +967,6 @@ abstract class ilPlugin
 		if (! $rec) {
 			return NULL;
 		}
-
-		// this check is done due to security reasons
-		//		$set = $ilDB->queryF("SELECT * FROM il_component WHERE type = %s ".
-		//			" AND name = %s", array("text", "text"),
-		//			array($a_ctype, $a_cname));
-		//		if (!$ilDB->fetchAssoc($set))
-		//		{
-		//			return null;
-		//		}
 
 		$file = "./Customizing/global/plugins/".$a_ctype."/".
 			$a_cname."/".$slot_name."/".
@@ -985,7 +987,7 @@ abstract class ilPlugin
 	/**
 	 * Lookup information data in il_plugin
 	 */
-	final static function lookupStoredData($a_ctype, $a_cname, $a_slot_id, $a_pname)
+	static function lookupStoredData($a_ctype, $a_cname, $a_slot_id, $a_pname)
 	{
 		global $ilDB;
 
@@ -1003,22 +1005,16 @@ abstract class ilPlugin
 	}
 
 	/**
-	 * Get all active plugins for a slot
+	 * Get all active plugin names for a slot
 	 */
-	static final function getActivePluginsForSlot($a_ctype, $a_cname, $a_slot_id)
+	static function getActivePluginsForSlot($a_ctype, $a_cname, $a_slot_id)
 	{
-		global $ilDB, $ilPluginAdmin;
+		global $ilPluginAdmin;
 
 		$plugins = array();
 
-		//		$q = "SELECT * FROM il_plugin WHERE component_type = ".$ilDB->quote($a_ctype, "text").
-		//			" AND component_name = ".$ilDB->quote($a_cname, "text").
-		//			" AND slot_id = ".$ilDB->quote($a_slot_id, "text").
-		//			" AND active = ".$ilDB->quote(1, "integer");
-		//
-		//		$set = $ilDB->query($q);
 		$cached_component = ilCachedComponentData::getInstance();
-		//		while($rec = $ilDB->fetchAssoc($set))
+
 		$lookupActivePluginsBySlotId = $cached_component->lookupActivePluginsBySlotId($a_slot_id);
 		foreach($lookupActivePluginsBySlotId as $rec)
 		{
@@ -1032,9 +1028,33 @@ abstract class ilPlugin
 	}
 
 	/**
+	 * Get All active plugin ids for a slot.
+	 * @param $a_ctype
+	 * @param $a_cname
+	 * @param $a_slot_id
+	 * @return array
+	 */
+	public static function getActivePluginIdsForSlot($a_ctype, $a_cname, $a_slot_id) {
+		global $ilPluginAdmin;
+
+		$plugins = array();
+		$cached_component = ilCachedComponentData::getInstance();
+		$lookupActivePluginsBySlotId = $cached_component->lookupActivePluginsBySlotId($a_slot_id);
+		foreach($lookupActivePluginsBySlotId as $rec)
+		{
+			if ($ilPluginAdmin->isActive($a_ctype, $a_cname, $a_slot_id, $rec["name"]))
+			{
+				$plugins[] = $rec["plugin_id"];
+			}
+		}
+
+		return $plugins;
+	}
+
+	/**
 	 * Lookup name for id
 	 */
-	function lookupNameForId($a_ctype, $a_cname, $a_slot_id, $a_plugin_id)
+	static function lookupNameForId($a_ctype, $a_cname, $a_slot_id, $a_plugin_id)
 	{
 		global $ilDB;
 
@@ -1054,7 +1074,7 @@ abstract class ilPlugin
 	/**
 	 * Lookup id for name
 	 */
-	function lookupIdForName($a_ctype, $a_cname, $a_slot_id, $a_plugin_name)
+	static function lookupIdForName($a_ctype, $a_cname, $a_slot_id, $a_plugin_name)
 	{
 		global $ilDB;
 
@@ -1071,4 +1091,3 @@ abstract class ilPlugin
 		}
 	}
 }
-?>

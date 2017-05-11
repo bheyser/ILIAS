@@ -44,7 +44,7 @@ class ilQTIMatimage
 	var $entityref;
 	var $content;
 	
-	function ilQTIMatimage()
+	function __construct()
 	{
 	}
 

@@ -20,9 +20,9 @@ class ilPCParagraphGUI extends ilPageContentGUI
 	* Constructor
 	* @access	public
 	*/
-	function ilPCParagraphGUI($a_pg_obj, &$a_content_obj, $a_hier_id, $a_pc_id = "")
+	function __construct($a_pg_obj, &$a_content_obj, $a_hier_id, $a_pc_id = "")
 	{
-		parent::ilPageContentGUI($a_pg_obj, $a_content_obj, $a_hier_id, $a_pc_id);
+		parent::__construct($a_pg_obj, $a_content_obj, $a_hier_id, $a_pc_id);
 		
 		// characteristics (should be flexible in the future)
 		$this->setCharacteristics(ilPCParagraphGUI::_getStandardCharacteristics());
@@ -60,7 +60,7 @@ class ilPCParagraphGUI extends ilPageContentGUI
 		if ($a_style_id > 0 &&
 			ilObject::_lookupType($a_style_id) == "sty")
 		{
-			include_once("./Services/Style/classes/class.ilObjStyleSheet.php");
+			include_once("./Services/Style/Content/classes/class.ilObjStyleSheet.php");
 			$style = new ilObjStyleSheet($a_style_id);
 			$types = array("text_block", "heading1", "heading2", "heading3");
 			$chars = array();
@@ -86,11 +86,38 @@ class ilPCParagraphGUI extends ilPageContentGUI
 
 		return $chars;
 	}
-	
+
+	/**
+	 * Get text characteristics
+	 *
+	 * @param int $a_style_id
+	 * @param bool $a_include_core include core styles
+	 * @return string[]
+	 */
+	static function _getTextCharacteristics($a_style_id, $a_include_core = false)
+	{
+		$chars = array();
+
+		if ($a_style_id > 0 &&
+			ilObject::_lookupType($a_style_id) == "sty")
+		{
+			include_once("./Services/Style/Content/classes/class.ilObjStyleSheet.php");
+			$style = new ilObjStyleSheet($a_style_id);
+			$types = array("text_inline");
+			foreach ($types as $t)
+			{
+				$chars = array_merge($chars, $style->getCharacteristics($t, false, $a_include_core));
+			}
+		}
+
+		return $chars;
+	}
+
+
 	/**
 	* execute command
 	*/
-	function &executeCommand()
+	function executeCommand()
 	{
 		// get next class that processes or forwards current command
 		$next_class = $this->ctrl->getNextClass($this);
@@ -101,10 +128,12 @@ class ilPCParagraphGUI extends ilPageContentGUI
 		// get current command
 		$cmd = $this->ctrl->getCmd();
 
+		$this->log->debug("ilPCParagraphGUI: executeCommand ".$cmd);
+
 		switch($next_class)
 		{
 			default:
-				$ret =& $this->$cmd();
+				$ret = $this->$cmd();
 				break;
 		}
 
@@ -116,7 +145,7 @@ class ilPCParagraphGUI extends ilPageContentGUI
 	*/
 	function edit($a_insert = false)
 	{
-		global $ilUser, $ilias;
+		global $ilUser;
 		
 		// add paragraph edit template
 		$tpl = new ilTemplate("tpl.paragraph_edit.html", true, true, "Services/COPage");
@@ -133,12 +162,12 @@ class ilPCParagraphGUI extends ilPageContentGUI
 			$tpl->setVariable("BTN_CANCEL", "cancelCreate");
 			$tpl->setVariable("TXT_CANCEL", $this->lng->txt("cancel"));
 			$tpl->parseCurrentBlock();
-			$tpl->setCurrentBlock("commands2");
+			/*$tpl->setCurrentBlock("commands2");
 			$tpl->setVariable("BTN_NAME", "create_par");
 			$tpl->setVariable("BTN_TEXT", $this->lng->txt("save"));
 			$tpl->setVariable("BTN_CANCEL", "cancelCreate");
 			$tpl->setVariable("TXT_CANCEL", $this->lng->txt("cancel"));
-			$tpl->parseCurrentBlock();
+			$tpl->parseCurrentBlock();*/
 			$tpl->setVariable("TXT_ACTION", $this->lng->txt("cont_insert_par"));
 		}
 		else
@@ -149,12 +178,12 @@ class ilPCParagraphGUI extends ilPageContentGUI
 			$tpl->setVariable("BTN_CANCEL", "cancelUpdate");
 			$tpl->setVariable("TXT_CANCEL", $this->lng->txt("cancel"));
 			$tpl->parseCurrentBlock();
-			$tpl->setCurrentBlock("commands2");
+			/*$tpl->setCurrentBlock("commands2");
 			$tpl->setVariable("BTN_NAME", "update");
 			$tpl->setVariable("BTN_TEXT", $this->lng->txt("save"));
 			$tpl->setVariable("BTN_CANCEL", "cancelUpdate");
 			$tpl->setVariable("TXT_CANCEL", $this->lng->txt("cancel"));
-			$tpl->parseCurrentBlock();
+			$tpl->parseCurrentBlock();*/
 			$tpl->setVariable("TXT_ACTION", $this->lng->txt("cont_edit_par"));
 		}
 
@@ -298,18 +327,23 @@ class ilPCParagraphGUI extends ilPageContentGUI
 	 */
 	function editJS()
 	{
-		global $ilUser, $ilias;
-
 		$s_text = $this->content_obj->getText();
+		$this->log->debug("step 1: ".substr($s_text, 0, 1000));
+
 //echo "\n<br><br>".htmlentities($s_text);
 		$s_text = $this->content_obj->xml2output($s_text, true, false);
+		$this->log->debug("step 2: ".substr($s_text, 0, 1000));
+
 //echo "\n<br><br>".htmlentities($s_text);
 		$char = $this->determineCharacteristic(false);
 		$s_text = ilPCParagraphGUI::xml2outputJS($s_text, $char, $this->content_obj->readPCId());
+		$this->log->debug("step 3: ".substr($s_text, 0, 1000));
+
 //echo "\n<br><br>".htmlentities($s_text);
 		$ids = "###".$this->content_obj->readHierId().":".$this->content_obj->readPCId()."###".
 			$char."###";
 		echo $ids.$s_text;
+		$this->log->debug("step 4: ".substr($ids.$s_text, 0, 1000));
 		exit;
 	}
 
@@ -350,7 +384,7 @@ class ilPCParagraphGUI extends ilPageContentGUI
 		include_once("./Services/COPage/classes/class.ilPageContentGUI.php");
 		foreach (ilPageContentGUI::_getCommonBBButtons() as $bb => $cl)
 		{
-			if (!in_array($bb, array("code", "tex", "fn", "xln")))
+			if (!in_array($bb, array("code", "tex", "fn", "xln", "sub", "sup")))
 			{
 				$s_text = str_replace("[".$bb."]",
 					'<span class="ilc_text_inline_'.$cl.'">', $s_text);
@@ -359,9 +393,34 @@ class ilPCParagraphGUI extends ilPageContentGUI
 			}
 		}
 
+		// marked text spans
+		$ws= "[ \t\r\f\v\n]*";
+		while (preg_match("~\[(marked$ws(class$ws=$ws\"([^\"])*\")$ws)\]~i", $s_text, $found))
+		{
+			$attribs = ilUtil::attribsToArray($found[2]);
+			if (isset($attribs["class"]))
+			{
+				$s_text = str_replace("[".$found[1]."]", "<span class=\"ilc_text_inline_".$attribs["class"]."\">", $s_text);
+			}
+			else
+			{
+				$s_text = str_replace("[".$found[1]."]", "[error:marked".$found[1]."]",$s_text);
+			}
+		}
+		$s_text = preg_replace('~\[\/marked\]~i',"</span>",$s_text);
+
+
 		// code
 		$s_text = str_replace(array("[code]", "[/code]"),
 			array("<code>", "</code>"), $s_text);
+
+		// sup
+		$s_text = str_replace(array("[sup]", "[/sup]"),
+			array('<sup class="ilc_sup_Sup">', "</sup>"), $s_text);
+
+		// sub
+		$s_text = str_replace(array("[sub]", "[/sub]"),
+			array('<sub class="ilc_sub_Sub">', "</sub>"), $s_text);
 
 		return $s_text;
 	}
@@ -377,15 +436,21 @@ class ilPCParagraphGUI extends ilPageContentGUI
 	{
 		global $ilCtrl;
 
+		$this->log->debug("start");
+
 		$this->updated = $this->content_obj->saveJS($this->pg_obj,
 			$_POST["ajaxform_content"],
 			ilUtil::stripSlashes($_POST["ajaxform_char"]),
 			ilUtil::stripSlashes($_POST["pc_id_str"]));
+
+		$this->log->debug("ilPCParagraphGUI, saveJS: got updated value ".$this->updated);
+
 		if ($_POST["quick_save"])
 		{
 			if ($this->updated === true)
 			{
 				$a_pc_id_str = $this->content_obj->getLastSavedPcId($this->pg_obj, true);
+				$this->log->debug("ilPCParagraphGUI, saveJS: echoing pc_id_str ".$a_pc_id_str." (and exit)");
 				echo $a_pc_id_str;
 				exit;
 			}
@@ -400,6 +465,7 @@ class ilPCParagraphGUI extends ilPageContentGUI
 
 		$ilCtrl->setParameterByClass($ilCtrl->getReturnClass($this), "updated_pc_id_str",
 			urlencode($a_pc_id_str));
+		$this->log->debug("ilPCParagraphGUI, saveJS: redirecting to edit command of ".$ilCtrl->getReturnClass($this).".");
 		$ilCtrl->redirectByClass($ilCtrl->getReturnClass($this), "edit", "", true);
 	}
 
@@ -410,10 +476,13 @@ class ilPCParagraphGUI extends ilPageContentGUI
 	 */
 	function outputError($a_err)
 	{
+		$err_str = "";
 		foreach ($a_err as $err)
 		{
-			echo $err[1]."<br />";
+			$err_str.= $err[1]."<br />";
 		}
+		echo $err_str;
+		$this->log->debug("ilPCParagraphGUI, outputError() and exit: ".substr($err_str, 0, 100));
 		exit;
 	}
 
@@ -422,7 +491,8 @@ class ilPCParagraphGUI extends ilPageContentGUI
 	 * Cancel
 	 */
 	function cancel()
-	{ 
+	{
+		$this->log->debug("ilPCParagraphGUI, cancel(): return to parent: jump".$this->hier_id);
 		$this->ctrl->returnToParent($this, "jump".$this->hier_id);
 	}
 
@@ -528,10 +598,10 @@ class ilPCParagraphGUI extends ilPageContentGUI
 	/**
 	 * Get character style selector
 	 */
-	static function getCharStyleSelector($a_par_type, $a_use_callback = true)
+	static function getCharStyleSelector($a_par_type, $a_use_callback = true, $a_style_id = 0)
 	{
 		global $lng;
-		
+
 		include_once("./Services/UIComponent/AdvancedSelectionList/classes/class.ilAdvancedSelectionListGUI.php");
 		$selection = new ilAdvancedSelectionListGUI();
 		$selection->setPullRight(false);
@@ -567,6 +637,18 @@ class ilPCParagraphGUI extends ilPageContentGUI
 			"Accent" => array("code" => "acc", "txt" => $lng->txt("cont_char_style_acc")),
 			"Code" => array("code" => "code", "txt" => $lng->txt("cont_char_style_code"))
 			);
+
+		if ($a_style_id > 0 )
+		{
+			foreach (ilPCParagraphGUI::_getTextCharacteristics($a_style_id) as $c)
+			{
+				if (!isset($chars[$c]))
+				{
+					$chars[$c] = array("code" => "", "txt" => $c);
+				}
+			}
+		}
+
 		foreach ($chars as $key => $char)
 		{
 			if (ilPageEditorSettings::lookupSettingByParentType(
@@ -597,11 +679,10 @@ class ilPCParagraphGUI extends ilPageContentGUI
 	*/
 	private function setStyle()
 	{
-		include_once("./Services/Style/classes/class.ilObjStyleSheet.php");
+		include_once("./Services/Style/Content/classes/class.ilObjStyleSheet.php");
 		
 		if ($this->pg_obj->getParentType() == "gdf" ||
-			$this->pg_obj->getParentType() == "lm" ||
-			$this->pg_obj->getParentType() == "dbk")
+			$this->pg_obj->getParentType() == "lm")
 		{
 			if ($this->pg_obj->getParentType() != "gdf")
 			{
@@ -627,6 +708,7 @@ class ilPCParagraphGUI extends ilPageContentGUI
 	*/
 	function insert()
 	{
+		$this->log->debug("ilPCParagraphGUI, saveJS: got updated value ".$this->updated);
 		return $this->edit(true);
 	}
     
@@ -635,45 +717,32 @@ class ilPCParagraphGUI extends ilPageContentGUI
 	*/
 	function update()
 	{
-		global $ilBench;
+		$this->log->debug("ilPCParagraphGUI, update(): start");
 
-		$ilBench->start("Editor","Paragraph_update");
 		// set language and characteristic
 		$this->content_obj->setLanguage($_POST["par_language"]);
 		$this->content_obj->setCharacteristic($_POST["par_characteristic"]);
-		//$this->content_obj->setAnchor(ilUtil::stripSlashes($_POST["anchor"]));
 
-//echo "<br>PARupdate1:".$_POST["par_content"].":";
-//echo "<br>PARupdate2:".htmlentities($_POST["par_content"]).":";
-//echo "<br>PARupdate3:".htmlentities($this->content_obj->input2xml($_POST["par_content"])).":";
-//echo "<br>PARupdate4:".$this->content_obj->input2xml($_POST["par_content"]).":";
-
-		//$this->updated = $this->content_obj->setText(
-		//	$this->content_obj->input2xml(stripslashes($_POST["par_content"]),
-		//		$_POST["usedwsiwygeditor"]));
 		$this->updated = $this->content_obj->setText(
 			$this->content_obj->input2xml($_POST["par_content"],
 				$_POST["usedwsiwygeditor"]), true);
-//echo "<br>PARupdate2";
 		if ($this->updated !== true)
 		{
-			$ilBench->stop("Editor","Paragraph_update");
 			$this->edit();
 			return;
 		}
 
 		$this->updated = $this->content_obj->updatePage($this->pg_obj);
-//echo "<br>PARupdate_after:".htmlentities($this->pg_obj->dom->dump_mem(0, "UTF-8")).":";
-//debug_print_backtrace();
 
-		$ilBench->stop("Editor","Paragraph_update");
 
 		if ($this->updated === true)
 		{
+			$this->log->debug("ilPCParagraphGUI, update(): return to parent: jump".$this->hier_id);
 			$this->ctrl->returnToParent($this, "jump".$this->hier_id);
 		}
 		else
 		{
+			$this->log->debug("ilPCParagraphGUI, update(): call edit.");
 			$this->edit();
 		}
 	}
@@ -684,6 +753,8 @@ class ilPCParagraphGUI extends ilPageContentGUI
 	*/
 	function create()
 	{
+		$this->log->debug("ilPCParagraphGUI, create(): start.");
+
 		if ($_POST["ajaxform_hier_id"] != "")
 		{
 			return $this->createJS();
@@ -725,6 +796,8 @@ class ilPCParagraphGUI extends ilPageContentGUI
 	{
 		global $ilUser, $ilCtrl;
 
+		$this->log->debug("ilPCParagraphGUI, createJS(): start");
+
 		$this->content_obj = new ilPCParagraph($this->getPage());
 		$this->updated = $this->content_obj->saveJS($this->pg_obj,
 			$_POST["ajaxform_content"],
@@ -737,6 +810,7 @@ class ilPCParagraphGUI extends ilPageContentGUI
 			{
 				$a_pc_id_str = $this->content_obj->getLastSavedPcId($this->pg_obj, true);
 				echo $a_pc_id_str;
+				$this->log->debug("ilPCParagraphGUI, createJS(): echo pc id and exit: ".$a_pc_id_str);
 				exit;
 			}
 		}
@@ -750,6 +824,8 @@ class ilPCParagraphGUI extends ilPageContentGUI
 		$a_pc_id_str = $this->content_obj->getLastSavedPcId($this->pg_obj, true);
 		$ilCtrl->setParameterByClass($ilCtrl->getReturnClass($this), "updated_pc_id_str",
 			urlencode($a_pc_id_str));
+		$this->log->debug("ilPCParagraphGUI, createJS(): return to edit cmd of ".$ilCtrl->getReturnClass($this));
+
 		$ilCtrl->redirectByClass($ilCtrl->getReturnClass($this), "edit", "", true);
 	}
 

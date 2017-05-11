@@ -6,6 +6,7 @@ include_once "Modules/Portfolio/classes/class.ilObjPortfolio.php";
 include_once "Modules/Group/classes/class.ilGroupParticipants.php";
 include_once "Modules/Course/classes/class.ilCourseParticipants.php";
 include_once "Services/PersonalWorkspace/classes/class.ilWorkspaceAccessGUI.php";
+require_once('./Services/WebAccessChecker/interfaces/interface.ilWACCheckingClass.php');
 
 /**
  * Access handler for portfolio
@@ -15,7 +16,7 @@ include_once "Services/PersonalWorkspace/classes/class.ilWorkspaceAccessGUI.php"
  * 
  * @ingroup ModulesPortfolio
  */
-class ilPortfolioAccessHandler
+class ilPortfolioAccessHandler implements ilWACCheckingClass
 {
 	public function __construct()
 	{
@@ -52,8 +53,14 @@ class ilPortfolioAccessHandler
 	public function checkAccessOfUser($a_user_id, $a_permission, $a_cmd, $a_node_id, $a_type = "")
 	{
 		global $rbacreview, $ilUser, $ilSetting;
-		
-		// #12059
+
+		// #20310
+		if(!$ilSetting->get("enable_global_profiles") && $ilUser->getId() == ANONYMOUS_USER_ID)
+		{
+			return false;
+		}
+
+			// #12059
 		if (!$ilSetting->get('user_portfolios'))
 		{
 			return false;
@@ -83,7 +90,7 @@ class ilPortfolioAccessHandler
 		if($a_permission == "read" || $a_permission == "visible")
 		{
 			// get all objects with explicit permission
-			$objects = $this->getPermissions($a_node_id);
+			$objects = self::_getPermissions($a_node_id);
 			if($objects)
 			{
 				include_once "Services/PersonalWorkspace/classes/class.ilWorkspaceAccessGUI.php";
@@ -225,6 +232,17 @@ class ilPortfolioAccessHandler
 	 * @return array
 	 */
 	public function getPermissions($a_node_id)
+	{
+		return self::_getPermissions($a_node_id);
+	}
+
+	/**
+	 * Get all permissions to node
+	 *
+	 * @param int $a_node_id
+	 * @return array
+	 */
+	public static function _getPermissions($a_node_id)
 	{
 		global $ilDB;
 
@@ -388,7 +406,6 @@ class ilPortfolioAccessHandler
 	public function findSharedObjects(array $a_filter = null, array $a_crs_ids = null, array $a_grp_ids = null)
 	{
 		global $ilDB, $ilUser;
-		
 		if(!$a_filter["acl_type"])
 		{
 			$obj_ids = $this->getPossibleSharedTargets();
@@ -558,6 +575,42 @@ class ilPortfolioAccessHandler
 				}
 			}				
 		}				
+	}
+
+
+	/**
+	 * @param ilWACPath $ilWACPath
+	 *
+	 * @return bool
+	 */
+	public function canBeDelivered(ilWACPath $ilWACPath) {
+		global $ilUser, $ilAccess;
+				
+		if (preg_match("/\\/prtf_([\\d]*)\\//uism", $ilWACPath->getPath(), $results))
+		{		
+			// portfolio (custom)
+			$obj_id = $results[1];
+			if(ilObject::_lookupType($obj_id) == "prtf")
+			{		
+				if ($this->checkAccessOfUser($ilUser->getId(), "read", "view", $obj_id, "prtf")) {
+					return true;
+				}
+			}
+			// portfolio template (RBAC)
+			else
+			{
+				$ref_ids  = ilObject::_getAllReferences($obj_id);
+				foreach($ref_ids as $ref_id)
+				{						
+					if ($ilAccess->checkAccessOfUser($ilUser->getId(), "read", "view", $ref_id, "prtt", $obj_id))
+					{
+						return true;
+					}					
+				}
+			}
+		}
+
+		return false;
 	}
 }
 

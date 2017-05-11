@@ -99,8 +99,9 @@ class EvalMath {
         'cos','cosh','arccos','acos','arccosh','acosh',
         'tan','tanh','arctan','atan','arctanh','atanh',
         'sqrt','abs','ln','log');
-    
-    function EvalMath() {
+    // mjansen-patch: begin
+    function __construct() {
+    // mjansen-patch: end
         // make the variables a little more accurate
         $this->v['pi'] = pi();
         $this->v['exp'] = exp(1);
@@ -116,7 +117,13 @@ class EvalMath {
     
     function evaluate($expr) {
 			// convert exponential notation
-			$expr = preg_replace("/(\\d{0,1})e(-{0,1}\\d+)/eis", "'\\1'.((strlen('\\1')) ? '*' : '').'10^(\\2)'", $expr);
+			$expr = preg_replace_callback(
+                "/(\\d{0,1})e(-{0,1}\\d+)/is",
+                function($hit) {
+                    return $hit[1].((strlen($hit[1])) ? '*' : '').'10^('.$hit[2].')';
+                },
+                $expr
+            );
 			// standard functionality
         $this->last_error = null;
         $expr = trim($expr);
@@ -339,7 +346,8 @@ class EvalMath {
                     } elseif ($fnn == 'ln') {
                     	$fnn = 'log';
                     }
-                    eval('$stack->push(' . $fnn . '($op1));'); // perfectly safe eval()
+                    
+                    $stack->push($fnn($op1)); // 'eval()' can be easily avoided here
                 } elseif (array_key_exists($fnn, $this->f)) { // user function
                     // get args
                     $args = array();
@@ -404,7 +412,12 @@ class EvalMathStack {
     }
     
     function last($n=1) {
-        return $this->stack[$this->count-$n];
+        // mjansen-patch: begin
+        if(isset($this->stack[$this->count-$n])) {
+            return $this->stack[$this->count - $n];
+        }
+        return null;
+        // mjansen-patch: end
     }
 }
 

@@ -18,8 +18,15 @@ require_once './Modules/Forum/classes/class.ilForumPost.php';
 class ilForum
 {
 	const SORT_TITLE = 1;
-	const SORT_DATE = 2;	
-	
+	const SORT_DATE = 2;
+
+	const DEFAULT_PAGE_HITS = 30;
+
+	/**
+	 * @var array
+	 */
+	protected static $moderators_by_ref_id_map = array();
+
 	/**
 	* ilias object
 	* @var object ilias
@@ -61,7 +68,7 @@ class ilForum
 	private $replQuote2 = '</blockquote>';
 	
 	// max. datasets per page
-	private $pageHits = 30;
+	private $pageHits = self::DEFAULT_PAGE_HITS;
 
 	// object id
 	private $id;
@@ -280,24 +287,20 @@ class ilForum
 			return $this->mdb2DataType;
 		}
 	}
-	
+
 	/**
-	* set number of max. visible datasets
-	* @param	integer	$pageHits 
-	* @see				$pageHits
-	* @access	public
-	*/
+	 * @param int $pageHits
+	 * @return bool
+	 */
 	public function setPageHits($pageHits)
 	{
-		if ($pageHits < 1)
+		if($pageHits < 1 || !is_numeric($pageHits))
 		{
-			die($this->className . "::setPageHits(): No int pageHits given.");
+			$pageHits = 1;
 		}
-		else
-		{
-			$this->pageHits = $pageHits;
-			return true;
-		}
+
+		$this->pageHits = (int)$pageHits;
+		return true;
 	}
 	
 	/**
@@ -413,7 +416,7 @@ class ilForum
 		return $row;
 	}
 
-	public function _lookupPostMessage($a_id)
+	public static function _lookupPostMessage($a_id)
 	{
 		global $ilDB;
 
@@ -456,7 +459,16 @@ class ilForum
 		$objNewPost->setUserAlias($alias);
 		$objNewPost->setPosAuthorId($author_id);
 		
-		$this->_isModerator($this->getForumRefId(), $author_id) ? $is_moderator = true : $is_moderator = false; 
+		$frm_settings = ilForumProperties::getInstance($this->getForumId());
+		
+		if($frm_settings->getMarkModeratorPosts() == 1)
+		{
+			self::_isModerator($this->getForumRefId(), $author_id) ? $is_moderator = true : $is_moderator = false;
+		}
+		else
+		{
+			$is_moderator = false;
+		}
 		$objNewPost->setIsAuthorModerator($is_moderator);
 		
 		if ($date == "")
@@ -489,8 +501,7 @@ class ilForum
 		{
 			$this->insertPostNode($objNewPost->getId(), $parent_pos, $objNewPost->getThreadId(), $objNewPost->getCreateDate());
 		}
-//echo "<br>->".$objNewPost->getId()."-".$parent_pos."-".$objNewPost->getThreadId()."-".
-//	$objNewPost->getCreateDate()."-".$forum_id."-".$message."-".$user."-";
+		
 		// string last post
 		$lastPost = $objNewPost->getForumId()."#".$objNewPost->getThreadId()."#".$objNewPost->getId();
 			
@@ -515,20 +526,9 @@ class ilForum
 		// MARK READ
 		$forum_obj = ilObjectFactory::getInstanceByRefId($this->getForumRefId());
 		$forum_obj->markPostRead($objNewPost->getPosAuthorId(), $objNewPost->getThreadId(), $objNewPost->getId());
-		
-		$pos_data = $objNewPost->getDataAsArray();
-		$pos_data["ref_id"] = $this->getForumRefId();
 
-		// Send notification to moderators if they have to enable a post
-		
-		if (!$status && $send_activation_mail)
-		{
-			$pos_data["top_name"] = $forum_obj->getTitle();			
-			$this->sendPostActivationNotification($pos_data);
-		}
-		
 		// Add Notification to news
-		if ($status)
+		if($status)
 		{
 			require_once 'Services/RTE/classes/class.ilRTE.php';
 			include_once("./Services/News/classes/class.ilNewsItem.php");
@@ -537,11 +537,16 @@ class ilForum
 			$news_item->setPriority(NEWS_NOTICE);
 			$news_item->setTitle($objNewPost->getSubject());
 			$news_item->setContent(ilRTE::_replaceMediaObjectImageSrc($this->prepareText($objNewPost->getMessage(), 0), 1));
+			if($objNewPost->getMessage() != strip_tags($objNewPost->getMessage()))
+			{
+				$news_item->setContentHtml(true);	
+			}	
+			
 			$news_item->setUserId($display_user_id);
 			$news_item->setVisibility(NEWS_USERS);
 			$news_item->create();
 		}
-		
+
 		return $objNewPost->getId();
 	}
 	
@@ -738,15 +743,24 @@ class ilForum
 	{		
 		global $ilDB;
 
-		$statement = $ilDB->manipulateF('
+		if($cens > 0)
+		{
+			$cens_date = date("Y-m-d H:i:s");
+		}
+		else
+		{
+			$cens_date = NULL;
+		}
+
+		$ilDB->manipulateF('
 			UPDATE frm_posts
 			SET pos_cens_com = %s,
-				pos_update = %s,
+				pos_cens_date = %s,
 				pos_cens = %s,
 				update_user = %s
 			WHERE pos_pk = %s',
 			array('text', 'timestamp', 'integer', 'integer', 'integer'),
-			array($message, date("Y-m-d H:i:s"), $cens, $_SESSION['AccountId'], $pos_pk));
+			array($message, $cens_date, $cens, $GLOBALS['DIC']['ilUser']->getId(), $pos_pk));
 		
 		// Change news item accordingly
 		include_once("./Services/News/classes/class.ilNewsItem.php");
@@ -759,6 +773,15 @@ class ilForum
 				$news_item = new ilNewsItem($news_id);
 				//$news_item->setTitle($subject);
 				$news_item->setContent(nl2br($this->prepareText($message, 0)));
+				if($message != strip_tags($message))
+				{
+					$news_item->setContentHtml(true);
+				}
+				else
+				{
+					$news_item->setContentHtml(false);
+				}
+				
 				$news_item->update();
 			}
 			else				// revoke censorship
@@ -774,11 +797,30 @@ class ilForum
 				$news_item = new ilNewsItem($news_id);
 				//$news_item->setTitle($subject);
 				$news_item->setContent(nl2br($this->prepareText($rec["pos_message"], 0)));
+				if($rec["pos_message"] != strip_tags($rec["pos_message"]))
+				{
+					$news_item->setContentHtml(true);	
+				}
+				else
+				{
+					$news_item->setContentHtml(false);
+				}
+				
 				$news_item->update();
 			}
 		}
 
-		return true;		
+		require_once 'Modules/Forum/classes/class.ilForumPost.php';
+		$GLOBALS['ilAppEventHandler']->raise(
+			'Modules/Forum',
+			'censoredPost',
+			array(
+				'ref_id' => $this->getForumRefId(),
+				'post'   => new ilForumPost($pos_pk)
+			)
+		);
+
+		return true;
 	}
 	
 	/**
@@ -793,10 +835,27 @@ class ilForum
 
 		include_once "./Modules/Forum/classes/class.ilObjForum.php";
 
+		$p_node = $this->getPostNode($post);
+
+		$GLOBALS['ilAppEventHandler']->raise(
+			'Modules/Forum',
+			'deletedPost',
+			array(
+				'ref_id' => $this->getForumRefId(),
+				'post'           => new ilForumPost($post),
+				'thread_deleted' => ($p_node["parent"] == 0)? true : false
+			)
+		);
+
 		// delete tree and get id's of all posts to delete
-		$p_node = $this->getPostNode($post);	
 		$del_id = $this->deletePostTree($p_node);
 
+		// delete drafts_history
+		$obj_history = new ilForumDraftsHistory();
+		$draft_ids = $obj_history->deleteHistoryByPostIds($del_id);
+		// delete all drafts
+		$obj_draft = new ilForumPostDraft();
+		$obj_draft->deleteDraftsByDraftIds($draft_ids);
 
 		// Delete User read entries
 		foreach($del_id as $post_id)
@@ -1015,22 +1074,23 @@ class ilForum
 	public function getAllThreads($a_topic_id, array $params = array(), $limit = 0, $offset = 0)
 	{
 		/**
-		 * @var $ilDB   ilDB
-		 * @var $ilUser ilObjUser
+		 * @var $ilDB      ilDBInterface
+		 * @var $ilUser    ilObjUser
 		 * @var $ilSetting ilSetting
 		 */
 		global $ilDB, $ilUser, $ilSetting;
 		
-		$frm_overview_setting = (int)$ilSetting::_lookupValue('frma','forum_overview');
-		$frm_props = ilForumProperties::getInstance($this->getForumId());
+		$frm_overview_setting       = (int)$ilSetting::_lookupValue('frma', 'forum_overview');
+		$frm_props                  = ilForumProperties::getInstance($this->getForumId());
+		$is_post_activation_enabled = $frm_props->isPostActivationEnabled();
 		
 		$excluded_ids_condition = '';
 		if(isset($params['excluded_ids']) && is_array($params['excluded_ids']) && $params['excluded_ids'])
 		{
-			$excluded_ids_condition = ' AND ' . $ilDB->in('thr_pk', $params['excluded_ids'], true, 'integer'). ' ';
+			$excluded_ids_condition = ' AND ' . $ilDB->in('thr_pk', $params['excluded_ids'], true, 'integer') . ' ';
 		}
-
-		if(!in_array(strtolower($params['order_column']), array('lp_date', 'rating')))
+		
+		if(!in_array(strtolower($params['order_column']), array('lp_date', 'rating', 'thr_subject', 'num_posts', 'num_visit')))
 		{
 			$params['order_column'] = 'post_date';
 		}
@@ -1039,28 +1099,38 @@ class ilForum
 			$params['order_direction'] = 'desc';
 		}
 
-		// Count all threads for the passed forum
-		$query = "SELECT COUNT(thr_pk) cnt
-				  FROM frm_threads
-				  WHERE thr_top_fk = %s {$excluded_ids_condition}";
-		$res = $ilDB->queryF($query, array('integer'), array($a_topic_id));
-		$data = $ilDB->fetchAssoc($res);
-		$cnt = (int) $data['cnt'];
+		$cnt_active_pos_query = '';
+		$cnt_join_type        = 'LEFT';
+		if($is_post_activation_enabled && !$params['is_moderator'])
+		{
+			$cnt_active_pos_query = " AND (pos_status = {$ilDB->quote(1, 'integer')} OR pos_author_id = {$ilDB->quote($ilUser->getId(), 'integer')}) ";
+			$cnt_join_type        = "INNER";
+		}
+		$query =
+			"SELECT COUNT(DISTINCT(thr_pk)) cnt
+			 FROM frm_threads
+			 {$cnt_join_type} JOIN frm_posts
+			 	ON pos_thr_fk = thr_pk {$cnt_active_pos_query}
+			 WHERE thr_top_fk = %s {$excluded_ids_condition}
+		";
+		$res      = $ilDB->queryF($query, array('integer'), array($a_topic_id));
+		$cntData  = $ilDB->fetchAssoc($res);
+		$cnt      = (int)$cntData['cnt'];
 
-		$threads = array();
-
-		$data = array();
-		$data_types = array();
-
-		$active_query = '';
-		$active_inner_query = '';
-		$is_post_activation_enabled = $frm_props->isPostActivationEnabled();
+		$active_query               = '';
+		$active_inner_query         = '';
+		$having                     = '';
 		if($is_post_activation_enabled && !$params['is_moderator'])
 		{
 			$active_query       = ' AND (pos_status = %s OR pos_author_id = %s) ';
 			$active_inner_query = ' AND (ipos.pos_status = %s OR ipos.pos_author_id = %s) ';
+			$having = ' HAVING num_posts > 0';
 		}
-		
+
+		$threads    = array();
+		$data       = array();
+		$data_types = array();
+
 		$optional_fields = '';
 		if($frm_props->isIsThreadRatingEnabled())
 		{
@@ -1074,12 +1144,26 @@ class ilForum
 		$additional_sort = '';
 		if($frm_props->getThreadSorting())
 		{
-			$additional_sort .= ' ,thread_sorting ASC ';
+			$additional_sort .= ' , thread_sorting ASC ';
+		}
+
+		if($params['order_column'] == 'thr_subject')
+		{
+			$dynamic_columns = array(', thr_subject ' . $params['order_direction']);
+		}
+		else if($params['order_column'] == 'num_posts')
+		{
+			$dynamic_columns = array(', thr_num_posts ' . $params['order_direction']);
+		}
+		else if($params['order_column'] == 'num_visit')
+		{
+			$dynamic_columns = array(', visits ' . $params['order_direction']);
+		}
+		else
+		{
+			$dynamic_columns = array(', post_date ' . $params['order_direction']);
 		}
 		
-		$dynamic_columns = array(
-			' ,post_date ' . $params['order_direction']
-		);
 		if($frm_props->isIsThreadRatingEnabled())
 		{
 			$dynamic_columns[] = ' ,avg_rating ' . $params['order_direction'];
@@ -1137,6 +1221,7 @@ class ilForum
 						{$excluded_ids_condition}
 						GROUP BY thr_pk, thr_top_fk, thr_subject, thr_author_id, thr_display_user_id, thr_usr_alias, thr_num_posts, thr_last_post, thr_date, thr_update, visits, frm_threads.import_name, is_sticky, is_closed
 						{$optional_fields}
+						{$having}
 						ORDER BY is_sticky DESC {$additional_sort}, thr_date DESC";
 			
 			
@@ -1197,6 +1282,7 @@ class ilForum
 						{$excluded_ids_condition}
 						GROUP BY thr_pk, thr_top_fk, thr_subject, thr_author_id, thr_display_user_id, thr_usr_alias, thr_num_posts, thr_last_post, thr_date, thr_update, visits, frm_threads.import_name, is_sticky, is_closed
 						{$optional_fields}
+						{$having}
 						ORDER BY is_sticky DESC {$additional_sort}, thr_date DESC";
 
 			if($is_post_activation_enabled && !$params['is_moderator'])
@@ -1330,9 +1416,7 @@ class ilForum
    	*/
 	public function getModerators()
 	{
-		global $rbacreview;
-
-		return $this->_getModerators($this->getForumRefId());
+		return self::_getModerators($this->getForumRefId());
 	}
 
 	/**
@@ -1342,20 +1426,16 @@ class ilForum
 	* @return	array	user_ids
 	* @access	public
 	*/
-	function _getModerators($a_ref_id)
+	public static function _getModerators($a_ref_id)
 	{
 		global $rbacreview;
 
-		$role_arr  = $rbacreview->getRolesOfRoleFolder($a_ref_id);
-
-		foreach ($role_arr as $role_id)
+		$role_arr = $rbacreview->getRolesOfRoleFolder($a_ref_id);
+		foreach($role_arr as $role_id)
 		{
-			//$roleObj = $this->ilias->obj_factory->getInstanceByObjId($role_id);
-			$title = ilObject::_lookupTitle($role_id);
-			if ($title == "il_frm_moderator_".$a_ref_id)			
+			if(ilObject::_lookupTitle($role_id) == 'il_frm_moderator_' . $a_ref_id)
 			{
-				#return $rbacreview->assignedUsers($roleObj->getId());
-				return $title = $rbacreview->assignedUsers($role_id);
+				return $rbacreview->assignedUsers($role_id);
 			}
 		}
 
@@ -1372,8 +1452,12 @@ class ilForum
 	*/
 	public static function _isModerator($a_ref_id, $a_usr_id)
 	{
-		return in_array($a_usr_id, ilForum::_getModerators($a_ref_id));
-	}	
+		if(!self::$moderators_by_ref_id_map[$a_ref_id])
+		{
+			self::$moderators_by_ref_id_map[$a_ref_id] = self::_getModerators($a_ref_id);
+		}
+		return in_array($a_usr_id, self::$moderators_by_ref_id_map[$a_ref_id]);
+	}
 	
 	/**
    	* get number of articles from given user-ID
@@ -1832,10 +1916,11 @@ class ilForum
 
 				if($edit == 0)
 				{
-					$ws= "[ \t\r\f\v\n]*";
-
-					$text = eregi_replace("\[(quote$ws=$ws\"([^\"]*)\"$ws)\]",
-						$this->replQuote1.'<div class="ilForumQuoteHead">'.$lng->txt("quote")." (\\2)".'</div>', $text);
+					$text = preg_replace(
+						'@\[(quote\s*?=\s*?"([^"]*?)"\s*?)\]@i',
+						$this->replQuote1 . '<div class="ilForumQuoteHead">' . $lng->txt('quote'). ' ($2)</div>',
+						$text
+					);
 
 					$text = str_replace("[quote]",
 						$this->replQuote1.'<div class="ilForumQuoteHead">'.$lng->txt("quote").'</div>', $text);
@@ -1849,8 +1934,9 @@ class ilForum
 		{
 			if($edit == 0)
 			{
-				$text = ilUtil::insertLatexImages($text, "\<span class\=\"latex\">", "\<\/span>");
-				$text = ilUtil::insertLatexImages($text, "\[tex\]", "\[\/tex\]");
+				include_once './Services/MathJax/classes/class.ilMathJax.php';
+				$text = ilMathJax::getInstance()->insertLatexImages($text, "\<span class\=\"latex\">", "\<\/span>");
+				$text = ilMathJax::getInstance()->insertLatexImages($text, "\[tex\]", "\[\/tex\]");
 			}
 			
 			// workaround for preventing template engine
@@ -1894,7 +1980,7 @@ class ilForum
 		}
 		include_once "./Modules/Forum/classes/class.ilFileDataForum.php";
 		
-		$tmp_file_obj =& new ilFileDataForum($this->getForumId());
+		$tmp_file_obj = new ilFileDataForum($this->getForumId());
 		foreach($a_ids as $pos_id)
 		{
 			$tmp_file_obj->setPosId($pos_id);
@@ -1906,71 +1992,6 @@ class ilForum
 		}
 		unset($tmp_file_obj);
 		return true;
-	}
-
-
-	function __sendMessage($a_parent_pos, $post_data = array())
-	{
-		global $ilUser, $ilDB;
-		
-		$parent_data = $this->getOnePost($a_parent_pos);
-				
-		// only if the current user is not the owner of the parent post and the parent's notification flag is set...
-		if($parent_data["notify"] && $parent_data["pos_author_id"] != $ilUser->getId())
-		{
-			// SEND MESSAGE
-			include_once "Services/Mail/classes/class.ilMail.php";
-			include_once './Services/User/classes/class.ilObjUser.php';
-
-			$tmp_user =& new ilObjUser($parent_data["pos_author_id"]);
-
-			// NONSENSE
-			$this->setMDB2WhereCondition('thr_pk = %s ', array('integer'), array($parent_data["pos_thr_fk"]));
-
-			$thread_data = $this->getOneThread();
-
-			$tmp_mail_obj = new ilMail(ANONYMOUS_USER_ID);
-			$message = $tmp_mail_obj->sendMail($tmp_user->getLogin(),"","",
-											  	$this->formatNotificationSubject($post_data),
-											   $this->__formatMessage($thread_data, $post_data, $tmp_user),
-											   array(),array("system"));
-
-			unset($tmp_user);
-			unset($tmp_mail_obj);
-		}
-	}
-
-	/**
-	 * generates the notificiation message, if a post has been answered
-	 * 
-	 * @param array $thread_data
-	 * @param array $post_data
-	 * @param object $user_obj ilObjUser
-	 * @return string
-	 */
-	private function __formatMessage($thread_data, $post_data = array(), $user_obj)
-	{
-		include_once "./Services/Object/classes/class.ilObjectFactory.php";
-		$user_lang = self::_getLanguageInstanceByUsrId($user_obj->getId());
-		
-		$frm_obj =& ilObjectFactory::getInstanceByRefId($this->getForumRefId());
-		$title = $frm_obj->getTitle();
-		unset($frm_obj);
-		
-		$message = '';
-		$message .= ilMail::getSalutation($user_obj->getId(), $user_lang);
-		
-		$message .= "\n\n";
-		$message .= $this->lng->txt("forum_post_replied");	
-		$message .= $this->lng->txt("forum").": ".$title." -> ".$thread_data["thr_subject"]."\n\n";
-
-		$message .= "\n------------------------------------------------------------\n";
-		$message .= $post_data["pos_message"];
-		$message .= "\n------------------------------------------------------------\n";
-		$message .= sprintf($this->lng->txt("forums_notification_show_post"), "http://".$_SERVER["HTTP_HOST"].dirname($_SERVER["PHP_SELF"])."/goto.php?target=frm_".$post_data["ref_id"]."_".$post_data["pos_thr_fk"].'&client_id='.CLIENT_ID)."\n\n";
-		
-		$message .= ilMail::_getInstallationSignature(); 
-		return $message;
 	}
 
 	function getImportName()
@@ -2155,383 +2176,6 @@ class ilForum
 		}
 		
 		return false;
-	}
-
-	function sendThreadNotifications($post_data)
-	{
-		global $ilDB, $ilAccess, $lng;
-		
-		include_once "Services/Mail/classes/class.ilMail.php";
-		include_once './Services/User/classes/class.ilObjUser.php';
-
-		// GET THREAD DATA		
-		$result = $ilDB->queryf('
-			SELECT thr_subject FROM frm_threads 
-			WHERE thr_pk = %s',
-			array('integer'), array($post_data['pos_thr_fk']));
-			
-		while($record = $ilDB->fetchAssoc($result))
-		{
-			$post_data['thr_subject'] = $record['thr_subject'];
-			break;
-		}
-		
-		// determine obj_id of the forum
-		$obj_id = self::_lookupObjIdForForumId($post_data['pos_top_fk']);
-
-		// GET AUTHOR OF NEW POST
-		if($post_data['pos_display_user_id'])
-		{
-			$post_data['pos_usr_name'] = ilObjUser::_lookupLogin($post_data['pos_display_user_id']);
-		}
-		else if(strlen($post_data['pos_usr_alias']))
-		{
-			$post_data['pos_usr_name'] = $post_data['pos_usr_alias'].' ('.$lng->txt('frm_pseudonym').')';
-		}
-		
-		if($post_data['pos_usr_name'] == '')
-		{
-			$post_data['pos_usr_name'] = $this->lng->txt('forums_anonymous');
-		}
-
-		// GET USERS WHO WANT TO BE INFORMED ABOUT NEW POSTS
-		$res = $ilDB->queryf('
-			SELECT user_id FROM frm_notification 
-			WHERE thread_id = %s
-			AND user_id <> %s',
-			array('integer', 'integer'),
-			array($post_data['pos_thr_fk'], $_SESSION['AccountId']));
-		
-		// get all references of obj_id
-		$frm_references = ilObject::_getAllReferences($obj_id);
-		
-		// save language of the current user
-		global $lng;
-		$userLanguage = $lng;
-
-		// get attachments data
-		$fileDataForum = new ilFileDataForum($obj_id, $post_data['pos_pk']);
-		$filesOfPost   = $fileDataForum->getFilesOfPost();
-		
-		$attachments = array();
-		foreach($filesOfPost as $attachment)
-		{
-			$attachments[] = $attachment['name'];
-		}
-
-		$mail_obj = new ilMail(ANONYMOUS_USER_ID);
-		while($row = $ilDB->fetchAssoc($res))
-		{
-			// do rbac check before sending notification
-			$send_mail = false;			
-			foreach((array)$frm_references as $ref_id)
-			{
-				if($ilAccess->checkAccessOfUser($row['user_id'], 'read', '', $ref_id))
-				{
-					$send_mail = true;
-					break;
-				}
-			}
-
-			if($send_mail)
-			{
-				$this->setLanguage(self::_getLanguageInstanceByUsrId($row['user_id']));
-				$mail_obj->sendMail(
-					ilObjUser::_lookupLogin($row["user_id"]), "", "",
-					$this->formatNotificationSubject($post_data),
-					$this->formatNotification($post_data, 0, $attachments, $row['user_id']),
-					array(), array("system")
-				);
-			}
-		}
-		
-		// reset language
-		$this->setLanguage($userLanguage);
-	}
-	
-	function sendForumNotifications($post_data)
-	{
-		global $ilDB, $ilAccess, $lng, $ilUser;
-
-		include_once "Services/Mail/classes/class.ilMail.php";
-		include_once './Services/User/classes/class.ilObjUser.php';
-		
-		// GET THREAD DATA
-		$result = $ilDB->queryf('
-			SELECT thr_subject FROM frm_threads 
-			WHERE thr_pk = %s',
-			array('integer'), 
-			array($post_data['pos_thr_fk']));
-			
-		while($record = $ilDB->fetchAssoc($result))
-		{
-			$post_data['thr_subject'] = $record['thr_subject'];
-			break;
-		}
-				
-		// determine obj_id of the forum
-		$obj_id = self::_lookupObjIdForForumId($post_data['pos_top_fk']);
-
-		// GET AUTHOR OF NEW POST
-		if($post_data['pos_display_user_id'])
-		{
-			$post_data['pos_usr_name'] = ilObjUser::_lookupLogin($post_data['pos_display_user_id']);
-		}
-		else if(strlen($post_data['pos_usr_alias']))
-		{
-			$post_data['pos_usr_name'] = $post_data['pos_usr_alias'].' ('.$lng->txt('frm_pseudonym').')';
-		}
-		
-		if($post_data['pos_usr_name'] == '')
-		{
-			$post_data['pos_usr_name'] = $this->lng->txt('forums_anonymous');
-		}
-
-		// GET USERS WHO WANT TO BE INFORMED ABOUT NEW POSTS
-		$res = $ilDB->queryf('
-			SELECT frm_notification.user_id FROM frm_notification, frm_data 
-			WHERE frm_data.top_pk = %s
-			AND frm_notification.frm_id = frm_data.top_frm_fk 
-			AND frm_notification.user_id <> %s
-			GROUP BY frm_notification.user_id',
-			array('integer', 'integer'),
-			array($post_data['pos_top_fk'], $ilUser->getId()));
-		
-		// get all references of obj_id
-		$frm_references = ilObject::_getAllReferences($obj_id);
-		
-		// save language of the current user
-		global $lng;
-		$userLanguage = $lng;
-		
-		// get attachments data
-		$fileDataForum = new ilFileDataForum($obj_id, $post_data['pos_pk']);
-		$filesOfPost   = $fileDataForum->getFilesOfPost();
-		$attachments = array();
-		foreach($filesOfPost as $attachment)
-		{
-			$attachments[] = $attachment['name'];
-		}
-		
-		$mail_obj = new ilMail(ANONYMOUS_USER_ID);
-		while($row = $ilDB->fetchAssoc($res))
-		{			
-			// do rbac check before sending notification
-			$send_mail = false;			
-			foreach((array)$frm_references as $ref_id)
-			{
-				if($ilAccess->checkAccessOfUser($row['user_id'], 'read', '', $ref_id))
-				{
-					$send_mail = true;
-					break;
-				}
-			}
-			
-			if($send_mail)
-			{
-				$this->setLanguage(self::_getLanguageInstanceByUsrId($row['user_id']));
-				$mail_obj->sendMail(
-					ilObjUser::_lookupLogin($row["user_id"]), "", "",
-					$this->formatNotificationSubject($post_data),
-					$this->formatNotification($post_data, 0, $attachments, $row['user_id']),
-					array(), array("system")
-				);
-			}
-		}
-		
-		// reset language
-		$this->setLanguage($userLanguage);
-	}
-
-	/**
-	 * @param $post_data
-	 * @param $user_id
-	 * @return string
-	 */
-	private function formatPostActivationNotification($post_data, $user_id)
-	{		
-		$user_lang = self::_getLanguageInstanceByUsrId($user_id);
-		
-		$message = "";
-		$message .= ilMail::getSalutation($user_id, $user_lang);
-		$message .= "\n\n";
-		$message .= $this->lng->txt('forums_post_activation_mail')."\n\n";
-		
-		$message .= $this->lng->txt("forum").": ".$post_data["top_name"]."\n\n";
-		$message .= $this->lng->txt("thread").": ".$post_data["thr_subject"]."\n\n";
-		$message .= $this->lng->txt("new_post").":\n------------------------------------------------------------\n";
-		$message .= $this->lng->txt("author").": ".$post_data["pos_usr_name"]."\n";
-		$message .= $this->lng->txt("date").": ".$post_data["pos_date"]."\n";
-		$message .= $this->lng->txt("subject").": ".$post_data["pos_subject"]."\n\n";
-		if ($post_data["pos_cens"] == 1)
-		{
-			$message .= $post_data["pos_cens_com"]."\n";
-		}
-		else
-		{
-			$pos_message = $post_data['pos_message'];
-			if(strip_tags($pos_message) != $pos_message)
-			{
-				$pos_message = preg_replace("/\n/i", "", $pos_message);
-				$pos_message = preg_replace("/<br(\s*)(\/?)>/i", "\n", $pos_message);
-				$pos_message = preg_replace("/<p([^>]*)>/i", "\n\n", $pos_message);
-				$pos_message = preg_replace("/<\/p([^>]*)>/i", '', $pos_message);
-			}
-			$message .= strip_tags($pos_message)."\n";
-		}
-		$message .= "------------------------------------------------------------\n";
-	
-		$message .= sprintf($this->lng->txt('forums_notification_show_post'), ILIAS_HTTP_PATH."/goto.php?target=frm_".$post_data["ref_id"]."_".$post_data["pos_thr_fk"]."_".$post_data["pos_pk"].'&client_id='.CLIENT_ID)."\n\n";
-		$message .= sprintf($this->lng->txt('forums_notification_intro'),
-			$this->ilias->ini->readVariable('client', 'name'),
-			ILIAS_HTTP_PATH.'/?client_id='.CLIENT_ID)."\n\n";
-
-		return $message;
-	}
-	
-	function sendPostActivationNotification($post_data)
-	{		
-		global $ilDB, $ilUser, $lng;
-		
-		if (is_array($moderators = $this->getModerators()))
-		{
-			// GET THREAD DATA
-			$result = $ilDB->queryf('
-				SELECT thr_subject FROM frm_threads 
-				WHERE thr_pk = %s',
-			    array('integer'),
-			    array($post_data['pos_thr_fk']));
-			    
-			while($record = $ilDB->fetchAssoc($result))
-			{
-				$post_data['thr_subject'] = $record['thr_subject'];
-				break;
-			}
-	
-			// GET AUTHOR OF NEW POST
-			if($post_data['pos_display_user_id'])
-			{
-				$post_data['pos_usr_name'] = ilObjUser::_lookupLogin($post_data['pos_display_user_id']);
-			}
-			else if(strlen($post_data['pos_usr_alias']))
-			{
-				$post_data['pos_usr_name'] = $post_data['pos_usr_alias'].' ('.$lng->txt('frm_pseudonym').')';
-			}
-			
-			if($post_data['pos_usr_name'] == '')
-			{
-				$post_data['pos_usr_name'] = $this->lng->txt('forums_anonymous');
-			}
-			
-			// save language of the current user
-			global $lng;
-			$userLanguage = $lng;
-			
-			$mail_obj = new ilMail(ANONYMOUS_USER_ID);
-			foreach($moderators as $moderator)
-			{
-				// set forum language instance for earch user
-				$this->setLanguage(self::_getLanguageInstanceByUsrId($moderator));
-				$subject = $this->formatNotificationSubject($post_data);
-				$message = $this->formatPostActivationNotification($post_data, $moderator);
-				$mail_obj->sendMail(
-					ilObjUser::_lookupLogin($moderator), '', '',
-					$subject,
-					$message,
-					array(), array("system")
-				);
-			}
-			
-			// reset language
-			$this->setLanguage($userLanguage);
-		}
-	}
-
-	/**
-	 * @param array $post_data use $post_data['top_name'] for forum-title
-	 * @return string
-	 */
-	public function formatNotificationSubject($post_data)
-	{
-		return $this->lng->txt("forums_notification_subject").' '.$post_data['top_name'];
-	}
-
-	/**
-	 * @param      $post_data
-	 * @param int  $cron
-	 * @param array $attachments 
-	 * @param int 	$user_id 	user_id of mail-recipient
-	 * @return string
-	 */
-	public function formatNotification($post_data, $cron = 0, $attachments = array(), $user_id)
-	{
-		global $ilIliasIniFile;
-
-		$user_lang = self::_getLanguageInstanceByUsrId($user_id);
-		
-		$message = "";
-
-		$message .= ilMail::getSalutation($user_id, $user_lang);
-		$message .= "\n\n";
-		$message .= $this->lng->txt("forums_notification_subject")." ".$post_data['top_name']."\n\n";
-		
-		$message .= $this->lng->txt("forum").": ".$post_data["top_name"]."\n\n";
-		$message .= $this->lng->txt("thread").": ".$post_data["thr_subject"]."\n\n";
-		$message .= $this->lng->txt("new_post").":\n------------------------------------------------------------\n";
-		$message .= $this->lng->txt("author").": ".$post_data["pos_usr_name"]."\n";
-		$message .= $this->lng->txt("date").": ".$post_data["pos_date"]."\n";
-		$message .= $this->lng->txt("subject").": ".$post_data["pos_subject"]."\n\n";
-		
-		if ($post_data["pos_cens"] == 1)
-		{	
-			$message .= $post_data["pos_cens_com"]."\n";
-		}
-		else
-		{
-			$pos_message = $post_data['pos_message'];
-			if(strip_tags($pos_message) != $pos_message)
-			{
-				$pos_message = preg_replace("/\n/i", "", $pos_message);
-				$pos_message = preg_replace("/<br(\s*)(\/?)>/i", "\n", $pos_message);
-				$pos_message = preg_replace("/<p([^>]*)>/i", "\n\n", $pos_message);
-				$pos_message = preg_replace("/<\/p([^>]*)>/i", '', $pos_message);
-			}
-			$message .= strip_tags($pos_message)."\n";
-		}
-		$message .= "------------------------------------------------------------\n";
-
-		if(count($attachments) > 0)
-		{
-			foreach($attachments as $attachment)
-			{
-				$message .= $this->lng->txt('attachment').": ".$attachment."\n";
-			}
-			$message .= "\n------------------------------------------------------------\n";
-		}
-		
-		if ($cron == 1)
-		{
-			$message .= sprintf($this->lng->txt("forums_notification_show_post"), $ilIliasIniFile->readVariable("server","http_path")."/goto.php?target=frm_".$post_data["ref_id"]."_".$post_data["pos_thr_fk"]."_".$post_data["pos_pk"].'&client_id='.CLIENT_ID)."\n\n";
-		}
-		else
-		{
-			$message .= sprintf($this->lng->txt("forums_notification_show_post"), ILIAS_HTTP_PATH."/goto.php?target=frm_".$post_data["ref_id"]."_".$post_data["pos_thr_fk"]."_".$post_data["pos_pk"].'&client_id='.CLIENT_ID)."\n\n";
-		}
-
-		if ($cron == 1)
-		{
-			$message .= sprintf($this->lng->txt("forums_notification_intro"),
-				$this->ilias->ini->readVariable("client","name"),
-				$ilIliasIniFile->readVariable("server","http_path").'/?client_id='.CLIENT_ID)."\n\n";
-		}
-		else
-		{
-			$message .= sprintf($this->lng->txt("forums_notification_intro"),
-				$this->ilias->ini->readVariable("client","name"),
-				ILIAS_HTTP_PATH.'/?client_id='.CLIENT_ID)."\n\n";
-		}
-		
-		return $message;
 	}
 	
 	/**
@@ -2774,6 +2418,11 @@ class ilForum
 		{
 			$merge_thread_target->reopen();
 		}
+		// raise event for updating existing drafts
+		$GLOBALS['ilAppEventHandler']->raise('Modules/Forum', 'mergedThreads',
+			array(  'source_thread_id'  => $merge_thread_source->getId(),
+			        'target_thread_id'  => $merge_thread_target->getId())
+		);
 
 // delete source thread 
 		ilForumTopic::deleteByThreadId($merge_thread_source->getId());

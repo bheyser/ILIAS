@@ -50,12 +50,65 @@ class ilTestQuestionPoolExporter extends ilXmlExporter
 	{
 		include_once './Modules/TestQuestionPool/classes/class.ilObjQuestionPool.php';
 		$qpl = new ilObjQuestionPool($a_id,false);
-
+		$qpl->loadFromDb();
+		
 		include_once("./Modules/TestQuestionPool/classes/class.ilQuestionpoolExport.php");
 		$qpl_exp = new ilQuestionpoolExport($qpl, 'xml');
 		$zip = $qpl_exp->buildExportFile();
 		
 		$GLOBALS['ilLog']->write(__METHOD__.': Created zip file '.$zip);
+	}
+
+	/**
+	 * Get tail dependencies
+	 *
+	 * @param		string		entity
+	 * @param		string		target release
+	 * @param		array		ids
+	 * @return		array		array of array with keys "component", entity", "ids"
+	 */
+	public function getXmlExportTailDependencies($a_entity, $a_target_release, $a_ids)
+	{
+		if($a_entity == 'qpl')
+		{
+			$deps = array();
+
+			$taxIds = $this->getDependingTaxonomyIds($a_ids);
+
+			if(count($taxIds))
+			{
+				$deps[] = array(
+					'component' => 'Services/Taxonomy',
+					'entity' => 'tax',
+					'ids' => $taxIds
+				);
+			}
+
+			return $deps;
+		}
+
+		return parent::getXmlExportTailDependencies($a_entity, $a_target_release, $a_ids);
+	}
+
+	/**
+	 * @param array $testObjIds
+	 * @return array $taxIds
+	 */
+	private function getDependingTaxonomyIds($poolObjIds)
+	{
+		include_once 'Services/Taxonomy/classes/class.ilObjTaxonomy.php';
+
+		$taxIds = array();
+
+		foreach($poolObjIds as $poolObjId)
+		{
+			foreach(ilObjTaxonomy::getUsageOfObject($poolObjId) as $taxId)
+			{
+				$taxIds[$taxId] = $taxId;
+			}
+		}
+
+		return $taxIds;
 	}
 
 	/**

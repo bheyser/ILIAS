@@ -24,7 +24,7 @@ class ilObjNewsSettingsGUI extends ilObjectGUI
 	public function __construct($a_data, $a_id, $a_call_by_reference = true, $a_prepare_output = true)
 	{
 		$this->type = 'nwss';
-		parent::ilObjectGUI($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
+		parent::__construct($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
 
 		$this->lng->loadLanguageModule('news');
 		$this->lng->loadLanguageModule('feed');
@@ -56,8 +56,8 @@ class ilObjNewsSettingsGUI extends ilObjectGUI
 			case 'ilpermissiongui':
 				$this->tabs_gui->setTabActive('perm_settings');
 				include_once("Services/AccessControl/classes/class.ilPermissionGUI.php");
-				$perm_gui =& new ilPermissionGUI($this);
-				$ret =& $this->ctrl->forwardCommand($perm_gui);
+				$perm_gui = new ilPermissionGUI($this);
+				$ret = $this->ctrl->forwardCommand($perm_gui);
 				break;
 
 			default:
@@ -102,7 +102,7 @@ class ilObjNewsSettingsGUI extends ilObjectGUI
 	*/
 	public function editSettings()
 	{
-		global $ilCtrl, $lng, $ilSetting;
+		global $ilCtrl, $lng, $ilSetting, $ilAccess;;
 		
 		$news_set = new ilSetting("news");
 		$feed_set = new ilSetting("feed");
@@ -277,9 +277,12 @@ class ilObjNewsSettingsGUI extends ilObjectGUI
 		$cb_prop->setChecked($disable_repository_feeds);
 		$form->addItem($cb_prop);
 
-		// command buttons
-		$form->addCommandButton("saveSettings", $lng->txt("save"));
-		$form->addCommandButton("view", $lng->txt("cancel"));
+		if($ilAccess->checkAccess('write','',$this->object->getRefId()))
+		{
+			// command buttons
+			$form->addCommandButton("saveSettings", $lng->txt("save"));
+			$form->addCommandButton("view", $lng->txt("cancel"));
+		}
 
 		$this->tpl->setContent($form->getHTML());
 	}
@@ -289,7 +292,12 @@ class ilObjNewsSettingsGUI extends ilObjectGUI
 	*/
 	public function saveSettings()
 	{
-		global $ilCtrl, $ilSetting;
+		global $ilCtrl, $ilSetting, $ilAccess;
+		
+		if(!$ilAccess->checkAccess('write','',$this->object->getRefId()))
+		{
+			$ilCtrl->redirect($this, "view");
+		}
 		
 		// empty news cache
 		include_once("./Services/News/classes/class.ilNewsCache.php");

@@ -8,7 +8,7 @@
 * @version $Id$
 * 
 * @ilCtrl_Calls ilObjAuthSettingsGUI: ilPermissionGUI, ilRegistrationSettingsGUI, ilLDAPSettingsGUI, ilRadiusSettingsGUI
-* @ilCtrl_Calls ilObjAuthSettingsGUI: ilAuthShibbolethSettingsGUI, ilOpenIdSettingsGUI, ilCASSettingsGUI
+* @ilCtrl_Calls ilObjAuthSettingsGUI: ilAuthShibbolethSettingsGUI, ilCASSettingsGUI
 * 
 * @extends ilObjectGUI
 */
@@ -22,10 +22,10 @@ class ilObjAuthSettingsGUI extends ilObjectGUI
 	* Constructor
 	* @access public
 	*/
-	function ilObjAuthSettingsGUI($a_data,$a_id,$a_call_by_reference,$a_prepare_output = true)
+	function __construct($a_data,$a_id,$a_call_by_reference,$a_prepare_output = true)
 	{
 		$this->type = "auth";
-		$this->ilObjectGUI($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
+		parent::__construct($a_data, $a_id, $a_call_by_reference, $a_prepare_output);
 
 		$this->lng->loadLanguageModule('registration');
 
@@ -84,79 +84,56 @@ class ilObjAuthSettingsGUI extends ilObjectGUI
 
 		$auth_cnt = ilObjUser::_getNumberOfUsersPerAuthMode();
 		$auth_modes = ilAuthUtils::_getAllAuthModes();
+		$valid_modes = array(AUTH_LOCAL,AUTH_LDAP,AUTH_SHIBBOLETH,AUTH_CAS,AUTH_RADIUS,AUTH_APACHE);
+		include_once('Services/LDAP/classes/class.ilLDAPServer.php');
+		// icon handlers
+		$icon_ok = "<img src=\"".ilUtil::getImagePath("icon_ok.svg")."\" alt=\"".$this->lng->txt("enabled")."\" title=\"".$this->lng->txt("enabled")."\" border=\"0\" vspace=\"0\"/>";
+		$icon_not_ok = "<img src=\"".ilUtil::getImagePath("icon_not_ok.svg")."\" alt=\"".$this->lng->txt("disabled")."\" title=\"".$this->lng->txt("disabled")."\" border=\"0\" vspace=\"0\"/>";
+
 
 		foreach($auth_modes as $mode => $mode_name)
 		{
-//echo "-".$ilSetting->get('auth_mode')."-".$mode."-";
-			if ($ilSetting->get('auth_mode') == $mode)
+			if(!in_array($mode,$valid_modes) && !ilLDAPServer::isAuthModeLDAP($mode))
 			{
-				$this->tpl->setVariable("NUM_".strtoupper($mode_name),
-					((int) $auth_cnt[$mode_name] + $auth_cnt["default"])." (".$this->lng->txt("auth_per_default").
-						": ".$auth_cnt["default"].")");
+				continue;
+			}
+
+			$this->tpl->setCurrentBlock('auth_mode');
+
+			if(ilLDAPServer::isAuthModeLDAP($mode))
+			{
+				$server = ilLDAPServer::getInstanceByServerId(ilLDAPServer::getServerIdByAuthMode($mode));
+				$this->tpl->setVariable("AUTH_NAME", $server->getName());
+				$this->tpl->setVariable('AUTH_ACTIVE',$server->isActive() ? $icon_ok : $icon_not_ok);
 			}
 			else
 			{
-				$this->tpl->setVariable("NUM_".strtoupper($mode_name),
-					(int) $auth_cnt[$mode_name]);
+				$this->tpl->setVariable("AUTH_NAME", $this->lng->txt("auth_" . $mode_name));
+				$this->tpl->setVariable('AUTH_ACTIVE',$this->ilias->getSetting($mode_name . '_active') || $mode == AUTH_LOCAL ? $icon_ok : $icon_not_ok);
 			}
+
+			if ($ilSetting->get('auth_mode') == $mode)
+			{
+				$this->tpl->setVariable("AUTH_CHECKED","checked=\"checked\"");
+
+				$this->tpl->setVariable("AUTH_USER_NUM",
+										((int) $auth_cnt[$mode_name] + $auth_cnt["default"])." (".$this->lng->txt("auth_per_default").
+										": ".$auth_cnt["default"].")");
+			}
+			else
+			{
+				$this->tpl->setVariable("AUTH_USER_NUM",
+										(int) $auth_cnt[$mode_name]);
+			}
+			$this->tpl->setVariable("AUTH_ID",$mode_name);
+			$this->tpl->setVariable("AUTH_VAL",$mode);
+			$this->tpl->parseCurrentBlock();
 		}
 
 		$this->tpl->setVariable("TXT_CONFIGURE", $this->lng->txt("auth_configure"));
 		$this->tpl->setVariable("TXT_AUTH_REMARK", $this->lng->txt("auth_remark_non_local_auth"));
 		$this->tpl->setVariable("TXT_SUBMIT", $this->lng->txt("save"));
 		$this->tpl->setVariable("CMD_SUBMIT", "setAuthMode");
-				
-		// local vars
-		$checked = "checked=\"checked\"";
-		$disabled = "disabled=\"disabled\"";
-		$style_disabled = "_disabled";
-		
-		// icon handlers
-		$icon_ok = "<img src=\"".ilUtil::getImagePath("icon_ok.svg")."\" alt=\"".$this->lng->txt("enabled")."\" title=\"".$this->lng->txt("enabled")."\" border=\"0\" vspace=\"0\"/>";
-		$icon_not_ok = "<img src=\"".ilUtil::getImagePath("icon_not_ok.svg")."\" alt=\"".$this->lng->txt("disabled")."\" title=\"".$this->lng->txt("disabled")."\" border=\"0\" vspace=\"0\"/>";
-
-		$this->tpl->setVariable("AUTH_LOCAL_ACTIVE", $icon_ok);
-		
-		include_once('Services/LDAP/classes/class.ilLDAPServer.php');
-		$this->tpl->setVariable('AUTH_LDAP_ACTIVE',count(ilLDAPServer::_getActiveServerList()) ? $icon_ok : $icon_not_ok);
-		#$this->tpl->setVariable("AUTH_LDAP_ACTIVE", $this->ilias->getSetting('ldap_active') ? $icon_ok : $icon_not_ok);
-		$this->tpl->setVariable("AUTH_RADIUS_ACTIVE", $this->ilias->getSetting('radius_active') ? $icon_ok : $icon_not_ok);
-		$this->tpl->setVariable("AUTH_SHIB_ACTIVE", $this->ilias->getSetting('shib_active') ? $icon_ok : $icon_not_ok);
-		$this->tpl->setVariable("AUTH_SCRIPT_ACTIVE", $this->ilias->getSetting('script_active') ? $icon_ok : $icon_not_ok);
-		$this->tpl->setVariable("AUTH_CAS_ACTIVE", $this->ilias->getSetting('cas_active') ? $icon_ok : $icon_not_ok);
-		$this->tpl->setVariable("AUTH_APACHE_ACTIVE", $this->ilias->getSetting('apache_active') ? $icon_ok : $icon_not_ok);
-
-		// alter style and disable buttons depending on current selection
-		switch ($this->ilias->getSetting('auth_mode'))
-		{
-			case AUTH_LOCAL: // default
-				$this->tpl->setVariable("CHK_LOCAL", $checked);
-				break;
-				
-			case AUTH_LDAP: // LDAP
-				$this->tpl->setVariable("CHK_LDAP", $checked);
-				break;
-				
-			case AUTH_SHIBBOLETH: // SHIB
-				$this->tpl->setVariable("CHK_SHIB", $checked);
-				break;
-				
-			case AUTH_RADIUS: // RADIUS
-				$this->tpl->setVariable("CHK_RADIUS", $checked);
-				break;
-			
-			case AUTH_CAS: // CAS
-				$this->tpl->setVariable("CHK_CAS", $checked);
-				break;
-				
-			case AUTH_SCRIPT: // script
-				$this->tpl->setVariable("CHK_SCRIPT", $checked);
-				break;
-
-			case AUTH_APACHE: // apache
-				$this->tpl->setVariable("CHK_APACHE", $checked);
-				break;
-		}
 		
 		// auth mode determinitation
 	 	if($this->initAuthModeDetermination())
@@ -199,6 +176,11 @@ class ilObjAuthSettingsGUI extends ilObjectGUI
 				if ($auth_name == 'default')
 				{
 					$name = $this->lng->txt('auth_'.$auth_name)." (".$this->lng->txt('auth_'.ilAuthUtils::_getAuthModeName($auth_key)).")";
+				}
+				else if($id = ilLDAPServer::getServerIdByAuthMode($auth_key))
+				{
+					$server = ilLDAPServer::getInstanceByServerId($id);
+					$name = $server->getName();
 				}
 				else
 				{
@@ -753,8 +735,12 @@ class ilObjAuthSettingsGUI extends ilObjectGUI
 		{
 			switch($auth_mode)
 			{
-				case AUTH_LDAP:
-					$text = $this->lng->txt('auth_ldap');
+				// begin-patch ldap_multiple
+				case ilLDAPServer::isAuthModeLDAP($auth_mode):
+					$auth_id = ilLDAPServer::getServerIdByAuthMode($auth_mode);
+					$server = ilLDAPServer::getInstanceByServerId($auth_id);
+					$text = $server->getName();
+				// end-patch ldap_multiple
 					break;
 				case AUTH_RADIUS:
 					$text = $this->lng->txt('auth_radius');
@@ -778,7 +764,6 @@ class ilObjAuthSettingsGUI extends ilObjectGUI
 					break;
 				// end-patch auth_plugin
 			}
-			
 			
 			$pos = new ilTextInputGUI($text,'position['.$auth_mode.']');
 			$pos->setValue($counter++);
@@ -850,7 +835,7 @@ class ilObjAuthSettingsGUI extends ilObjectGUI
 
 				// Enable tabs
 				$this->tabs_gui->setTabActive('registration_settings');
-				$registration_gui =& new ilRegistrationSettingsGUI();
+				$registration_gui = new ilRegistrationSettingsGUI();
 				$this->ctrl->forwardCommand($registration_gui);
 				break;
 
@@ -860,7 +845,7 @@ class ilObjAuthSettingsGUI extends ilObjectGUI
 				$this->tabs_gui->setTabActive('perm_settings');
 			
 				include_once("Services/AccessControl/classes/class.ilPermissionGUI.php");
-				$perm_gui =& new ilPermissionGUI($this);
+				$perm_gui = new ilPermissionGUI($this);
 				$ret =& $this->ctrl->forwardCommand($perm_gui);
 				break;
 				
@@ -898,14 +883,6 @@ class ilObjAuthSettingsGUI extends ilObjectGUI
 				$this->ctrl->forwardCommand($radius_settings_gui);
 				break;
 				
-			case 'ilopenidsettingsgui':
-				
-				$this->tabs_gui->setTabActive('auth_openid');
-				
-				include_once './Services/OpenId/classes/class.ilOpenIdSettingsGUI.php';
-				$os = new ilOpenIdSettingsGUI($this->object->getRefId());
-				$this->ctrl->forwardCommand($os);
-				break;
 
 			case 'ilauthloginpageeditorgui':
 				
@@ -931,9 +908,9 @@ class ilObjAuthSettingsGUI extends ilObjectGUI
 		return true;
 	}
 	
-	function getAdminTabs(&$tabs_gui)
+	function getAdminTabs()
 	{
-		$this->getTabs($tabs_gui);
+		$this->getTabs();
 	}
 
 	/**
@@ -941,7 +918,7 @@ class ilObjAuthSettingsGUI extends ilObjectGUI
 	* @access	public
 	* @param	object	tabs gui object
 	*/
-	function getTabs(&$tabs_gui)
+	function getTabs()
 	{
 		global $rbacsystem;
 
@@ -949,47 +926,39 @@ class ilObjAuthSettingsGUI extends ilObjectGUI
 
 		if ($rbacsystem->checkAccess("visible,read",$this->object->getRefId()))
 		{		
-			$tabs_gui->addTarget("authentication_settings", $this->ctrl->getLinkTarget($this, "authSettings"),
+			$this->tabs_gui->addTarget("authentication_settings", $this->ctrl->getLinkTarget($this, "authSettings"),
 										 "", "", "");
 		
-			$tabs_gui->addTarget('registration_settings',
+			$this->tabs_gui->addTarget('registration_settings',
 									   $this->ctrl->getLinkTargetByClass('ilregistrationsettingsgui','view'));
 			
-			$tabs_gui->addTarget("auth_ldap", $this->ctrl->getLinkTargetByClass('illdapsettingsgui','serverList'),
+			$this->tabs_gui->addTarget("auth_ldap", $this->ctrl->getLinkTargetByClass('illdapsettingsgui','serverList'),
 								   "", "", "");
 
 										 
-			#$tabs_gui->addTarget("auth_ldap", $this->ctrl->getLinkTarget($this, "editLDAP"),
+			#$this->tabs_gui->addTarget("auth_ldap", $this->ctrl->getLinkTarget($this, "editLDAP"),
 			#					   "", "", "");
 			
-			$tabs_gui->addTarget('auth_shib',$this->ctrl->getLinkTargetByClass('ilauthshibbolethsettingsgui','settings'));
+			$this->tabs_gui->addTarget('auth_shib',$this->ctrl->getLinkTargetByClass('ilauthshibbolethsettingsgui','settings'));
 
-			$tabs_gui->addTarget(
+			$this->tabs_gui->addTarget(
 				'auth_cas',
 				$this->ctrl->getLinkTargetByClass('ilcassettingsgui','settings')
 			);
 								   
-			$tabs_gui->addTarget("auth_radius", $this->ctrl->getLinkTargetByClass('ilradiussettingsgui', "settings"),
+			$this->tabs_gui->addTarget("auth_radius", $this->ctrl->getLinkTargetByClass('ilradiussettingsgui', "settings"),
 									   "", "", "");
 
-			$tabs_gui->addTarget("auth_soap", $this->ctrl->getLinkTarget($this, "editSOAP"),
+			$this->tabs_gui->addTarget("auth_soap", $this->ctrl->getLinkTarget($this, "editSOAP"),
 								 "", "", "");
 								 
-			$tabs_gui->addTarget(
-				'auth_openid',
-				$this->ctrl->getLinkTargetByClass('ilopenidsettingsgui','settings'),
-				'',
-				'',
-				''
-			);
-
-			$tabs_gui->addTarget("apache_auth_settings", $this->ctrl->getLinkTarget($this,'apacheAuthSettings'),
+			$this->tabs_gui->addTarget("apache_auth_settings", $this->ctrl->getLinkTarget($this,'apacheAuthSettings'),
 					"", "", "");
 		}
 
 		if ($rbacsystem->checkAccess('edit_permission',$this->object->getRefId()))
 		{
-			$tabs_gui->addTarget("perm_settings",
+			$this->tabs_gui->addTarget("perm_settings",
 				$this->ctrl->getLinkTargetByClass(array(get_class($this),'ilpermissiongui'), "perm"),
 								 array("perm","info","owner"), 'ilpermissiongui');
 		}
@@ -1028,11 +997,10 @@ class ilObjAuthSettingsGUI extends ilObjectGUI
 
 	public function apacheAuthSettingsObject($form = false)
 	{
-		global $ilDB, $tpl;
+		global $tpl;
 
 		$this->tabs_gui->setTabActive("apache_auth_settings");
-		//$this->setSubTabs("authSettings");
-		//$this->tabs_gui->setSubTabActive("apache_auth_settings");
+
 		if (!$form)
 		{
 			$form = $this->getApacheAuthSettingsForm();
@@ -1069,7 +1037,8 @@ class ilObjAuthSettingsGUI extends ilObjectGUI
 				'apache_auth_username_direct_mapping_fieldname',
 				'apache_default_role', 'apache_auth_target_override_login_page',
 				'apache_auth_enable_override_login_page',
-				'apache_auth_authenticate_on_login_page'
+				'apache_auth_authenticate_on_login_page',
+				'apache_ldap_sid'
 //				'apache_auth_username_by_function_functionname',
 			);
 
@@ -1129,6 +1098,27 @@ class ilObjAuthSettingsGUI extends ilObjectGUI
 
 		$chb_ldap = new ilCheckboxInputGUI($this->lng->txt('apache_enable_ldap'), 'apache_enable_ldap');
 		$chb_ldap->setInfo($this->lng->txt('apache_ldap_hint_ldap_must_be_configured'));
+		
+		$GLOBALS['lng']->loadLanguageModule('auth');
+		include_once './Services/LDAP/classes/class.ilLDAPServer.php';
+		$servers = ilLDAPServer::getServerIds();
+		if(count($servers))
+		{
+			$ldap_server_select = new ilSelectInputGUI($this->lng->txt('auth_ldap_server_ds'), 'apache_ldap_sid');
+			$options[0] = $this->lng->txt('select_one');
+			foreach($servers as $server_id)
+			{
+				$ldap_server = new ilLDAPServer($server_id);
+				$options[$server_id] = $ldap_server->getName();
+			}
+			$ldap_server_select->setOptions($options);
+			$ldap_server_select->setRequired(true);
+
+			$ds = ilLDAPServer::getDataSource(AUTH_APACHE);
+			$ldap_server_select->setValue($ds);
+
+			$chb_ldap->addSubItem($ldap_server_select);
+		}
 		$form->addItem($chb_ldap);
 
 		$txt = new ilTextInputGUI($this->lng->txt('apache_auth_indicator_name'), 'apache_auth_indicator_name');

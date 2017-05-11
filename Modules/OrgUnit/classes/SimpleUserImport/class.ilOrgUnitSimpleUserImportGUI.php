@@ -45,7 +45,13 @@ class ilOrgUnitSimpleUserImportGUI {
 	 * @param $parent_gui
 	 */
 	function __construct($parent_gui) {
-		global $tpl, $ilCtrl, $ilToolbar, $lng, $ilAccess, $log;
+		global $DIC;
+		$tpl = $DIC['tpl'];
+		$ilCtrl = $DIC['ilCtrl'];
+		$ilToolbar = $DIC['ilToolbar'];
+		$lng = $DIC['lng'];
+		$ilAccess = $DIC['ilAccess'];
+		$log = $DIC['log'];
 		$this->tpl = $tpl;
 		$this->ctrl = $ilCtrl;
 		$this->parent_gui = $parent_gui;
@@ -67,6 +73,9 @@ class ilOrgUnitSimpleUserImportGUI {
 	 */
 	public function executeCommand() {
 		$cmd = $this->ctrl->getCmd();
+
+		$this->tabs_gui->clearTargets();
+		$this->tabs_gui->setBackTarget($this->lng->txt("back"), $this->ctrl->getLinkTargetByClass('ilOrgUnitSimpleImportGUI','chooseImport'));
 
 		switch ($cmd) {
 			case 'userImportScreen':

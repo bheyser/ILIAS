@@ -22,6 +22,7 @@
 */
 
 include_once './Services/Table/classes/class.ilTable2GUI.php';
+require_once('./Services/Repository/classes/class.ilObjectPlugin.php');
 
 /**
  * Presentation of search results
@@ -48,6 +49,7 @@ class ilObjectCopySearchResultTableGUI extends ilTable2GUI
 	{
 		global $lng,$ilCtrl,$ilUser,$objDefinition;
 		
+		$this->setId('obj_copy_'.$a_type);
 		parent::__construct($a_parent_class,$a_parent_cmd);
 		$this->type = $a_type;
 		
@@ -61,8 +63,7 @@ class ilObjectCopySearchResultTableGUI extends ilTable2GUI
 		else
 		{
 			include_once "Services/Component/classes/class.ilPlugin.php";
-			$plugin = ilPlugin::getPluginObject(IL_COMP_SERVICE, "Repository", "robj",
-					ilPlugin::lookupNameForId(IL_COMP_SERVICE, "Repository", "robj", $this->type));
+			$plugin = ilObjectPlugin::getRepoPluginObjectByType($this->type);
 			$title = $plugin->txt('obj_'.$this->type.'_duplicate');
 		}		
 		
@@ -72,11 +73,11 @@ class ilObjectCopySearchResultTableGUI extends ilTable2GUI
 		$this->addColumn($this->lng->txt('search_title_description'),'title','99%');
 		
 		$this->setEnableHeader(true);
-		$this->setFormAction($ilCtrl->getFormAction($this->getParentObject()));
 		$this->setRowTemplate("tpl.obj_copy_search_result_row.html", "Services/Object");
 		$this->setEnableTitle(true);
 		$this->setEnableNumInfo(true);
 		$this->setDefaultOrderField('title');
+		$this->setShowRowsSelector(TRUE);
 		
 		if($objDefinition->isContainer($this->type))
 		{

@@ -12,30 +12,32 @@ include_once("./Services/Table/classes/class.ilTableGUI.php");
 *
 * @ilCtrl_Calls ilAdministrationGUI: ilObjGroupGUI, ilObjFolderGUI, ilObjFileGUI, ilObjCourseGUI, ilCourseObjectivesGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjSAHSLearningModuleGUI, ilObjChatroomGUI, ilObjForumGUI
-* @ilCtrl_Calls ilAdministrationGUI: ilObjLearningModuleGUI, ilObjDlBookGUI, ilObjGlossaryGUI
+* @ilCtrl_Calls ilAdministrationGUI: ilObjLearningModuleGUI, ilObjGlossaryGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjQuestionPoolGUI, ilObjSurveyQuestionPoolGUI, ilObjTestGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjSurveyGUI, ilObjExerciseGUI, ilObjMediaPoolGUI, ilObjFileBasedLMGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjCategoryGUI, ilObjUserGUI, ilObjRoleGUI, ilObjUserFolderGUI
-* @ilCtrl_Calls ilAdministrationGUI: ilObjiLincCourseGUI, ilObjiLincClassroomGUI, ilObjLinkResourceGUI
-* @ilCtrl_Calls ilAdministrationGUI: ilObjRoleTemplateGUI, ilObjStyleSheetGUI
+* @ilCtrl_Calls ilAdministrationGUI: ilObjLinkResourceGUI
+* @ilCtrl_Calls ilAdministrationGUI: ilObjRoleTemplateGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjRootFolderGUI, ilObjSessionGUI, ilObjPortfolioTemplateGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjSystemFolderGUI, ilObjRoleFolderGUI, ilObjAuthSettingsGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjChatServerGUI, ilObjLanguageFolderGUI, ilObjMailGUI
-* @ilCtrl_Calls ilAdministrationGUI: ilObjObjectFolderGUI, ilObjPaymentSettingsGUI, ilObjRecoveryFolderGUI
+* @ilCtrl_Calls ilAdministrationGUI: ilObjObjectFolderGUI, ilObjRecoveryFolderGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjSearchSettingsGUI, ilObjStyleSettingsGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjAssessmentFolderGUI, ilObjExternalToolsSettingsGUI, ilObjUserTrackingGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjAdvancedEditingGUI, ilObjPrivacySecurityGUI, ilObjNewsSettingsGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjPersonalDesktopSettingsGUI, ilObjMediaCastGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjLanguageExtGUI, ilObjMDSettingsGUI, ilObjComponentSettingsGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjCalendarSettingsGUI, ilObjSurveyAdministrationGUI
-* @ilCtrl_Calls ilAdministrationGUI: ilObjCategoryReferenceGUI, ilObjCourseReferenceGUI, ilObjRemoteCourseGUI
+* @ilCtrl_Calls ilAdministrationGUI: ilObjCategoryReferenceGUI, ilObjCourseReferenceGUI, ilObjRemoteCourseGUI, ilObjGroupReferenceGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjForumAdministrationGUI, ilObjBlogGUI, ilObjPollGUI, ilObjDataCollectionGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjRemoteCategoryGUI, ilObjRemoteWikiGUI, ilObjRemoteLearningModuleGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjRemoteGlossaryGUI, ilObjRemoteFileGUI, ilObjRemoteGroupGUI, ilObjECSSettingsGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjCloudGUI, ilObjRepositorySettingsGUI, ilObjWebResourceAdministrationGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjCourseAdministrationGUI, ilObjGroupAdministrationGUI, ilObjExerciseAdministrationGUI
-* @ilCtrl_Calls ilAdministrationGUI: ilObjTaxonomyAdministrationGUI
+* @ilCtrl_Calls ilAdministrationGUI: ilObjTaxonomyAdministrationGUI, ilObjLoggingSettingsGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjBibliographicAdminGUI, ilObjBibliographicGUI
+* @ilCtrl_Calls ilAdministrationGUI: ilObjStudyProgrammeAdminGUI, ilObjStudyProgrammeGUI
+* @ilCtrl_Calls ilAdministrationGUI: ilObjBadgeAdministrationGUI, ilMemberExportSettingsGUI
 * // BEGIN WebDAV
 * @ilCtrl_Calls ilAdministrationGUI: ilObjFileAccessSettingsGUI, ilPermissionGUI, ilObjRemoteTestGUI
 * // END WebDAV
@@ -56,7 +58,7 @@ class ilAdministrationGUI
 	* Constructor
 	* @access	public
 	*/
-	function ilAdministrationGUI()
+	function __construct()
 	{
 		global $lng, $ilias, $tpl, $tree, $rbacsystem, $objDefinition,
 			$_GET, $ilCtrl, $ilLog, $ilMainMenu;
@@ -104,7 +106,7 @@ class ilAdministrationGUI
 	/**
 	* execute command
 	*/
-	function &executeCommand()
+	function executeCommand()
 	{
 		global $tree, $rbacsystem, $ilias, $lng, $objDefinition, $ilHelp;
 		
@@ -120,7 +122,7 @@ class ilAdministrationGUI
 		$new_type = $_POST["new_type"]
 			? $_POST["new_type"]
 			: $_GET["new_type"];
-		if ($new_type != "" && $this->ctrl->getCmd() == "create")
+		if ($new_type != "")
 		{
 			$this->creation_mode = true;
 		}
@@ -183,8 +185,7 @@ class ilAdministrationGUI
 					include_once($class_path);
 					$class_name = $this->ctrl->getClassForClasspath($class_path);
 					if (($next_class == "ilobjrolegui" || $next_class == "ilobjusergui"
-						|| $next_class == "ilobjroletemplategui"
-						|| $next_class == "ilobjstylesheetgui"))
+						|| $next_class == "ilobjroletemplategui"))
 					{
 						if ($_GET["obj_id"] != "")
 						{
@@ -205,14 +206,28 @@ class ilAdministrationGUI
 						}
 						else
 						{
-							if(is_subclass_of($class_name, "ilObject2GUI"))
+							if (!$this->creation_mode)
 							{
-								$this->gui_obj = new $class_name($this->cur_ref_id, ilObject2GUI::REPOSITORY_NODE_ID);
+								if(is_subclass_of($class_name, "ilObject2GUI"))
+								{
+									$this->gui_obj = new $class_name($this->cur_ref_id, ilObject2GUI::REPOSITORY_NODE_ID);
+								}
+								else
+								{
+									$this->gui_obj = new $class_name("", $this->cur_ref_id, true, false);
+								}
 							}
 							else
 							{
-								$this->gui_obj = new $class_name("", $this->cur_ref_id, true, false);
-							}						
+								if(is_subclass_of($class_name, "ilObject2GUI"))
+								{
+									$this->gui_obj = new $class_name(null, ilObject2GUI::REPOSITORY_NODE_ID, $this->cur_ref_id);
+								}
+								else
+								{
+									$this->gui_obj = new $class_name("", 0, true, false);
+								}
+							}
 						}
 						$this->gui_obj->setCreationMode($this->creation_mode);
 					}
@@ -354,9 +369,7 @@ class ilAdministrationGUI
 	 */
 	function getDropDown()
 	{
-		global $tree, $rbacsystem, $lng, $ilSetting, $objDefinition;
-
-		$tpl = new ilTemplate("tpl.admin_drop_down.html", true, true, "Services/Administration");
+		global $tree, $rbacsystem, $lng;
 
 		$objects = $tree->getChilds(SYSTEM_FOLDER_ID);
 
@@ -364,9 +377,9 @@ class ilAdministrationGUI
 		{
 			$new_objects[$object["title"].":".$object["child"]]
 				= $object;
-			//have to set it manually as translation type of main node cannot be "sys" as this type is a orgu itself.
+			// have to set it manually as translation type of main node cannot be "sys" as this type is a orgu itself.
 			if($object["type"] == "orgu")
-				$new_objects[$object["title"].":".$object["child"]]["title"] = $lng->txt("obj_orgu");
+				$new_objects[$object["title"].":".$object["child"]]["title"] = $lng->txt("objs_orgu");
 		}
 
 		// add entry for switching to repository admin
@@ -383,8 +396,6 @@ class ilAdministrationGUI
 			"desc" => $lng->txt("repository_admin_desc"),
 			);
 
-//$nd = $tree->getNodeData(SYSTEM_FOLDER_ID);
-//var_dump($nd);
 		$new_objects[$lng->txt("general_settings").":".SYSTEM_FOLDER_ID] =
 			array(
 			"tree" => 1,
@@ -430,7 +441,6 @@ class ilAdministrationGUI
 			$items[] = $c;
 		}
 
-		$cnt = 0;
 		$titems = array();
 		foreach ($items as $i)
 		{
@@ -441,23 +451,26 @@ class ilAdministrationGUI
 		$layout = array(
 			1 => array(
 				"basic" =>
-					array("adm", "stys", "adve", "lngf", "cmps", "accs", "hlps", "trac"),
-				"users" =>
-					array("usrf", 'tos', "rolf", "auth", "ps", "orgu")
+					array("adm", "stys", "adve", "lngf", "hlps", "accs", "cmps", "extt"),
+				"user_administration" =>
+					array("usrf", 'tos', "rolf", "auth", "ps", "orgu"),
+				"learning_outcomes" =>
+					array("skmg", "bdga", "cert", "trac")
 				),
 			2 => array(
-				"services" =>
-					array("pdts", "nwss", "tags", "prfa", "skmg", "cals", "mail", 
-						"---", "seas", "mds", "taxs", "cert", 'ecss', "pays", "extt"
-					// uzk-patch: begin
-						  ,"pdfg"),
-					// uzk-patch: end
+				"user_services" =>
+					array("pdts", "prfa", "nwss", "awra", "cadm", "cals", "mail"),
+				"content_services" =>
+					array("seas", "mds", "tags", "taxs", 'ecss', "otpl"),
+				"maintenance" =>
+					array('sysc', "recf", 'logs', "root", "wfe")
 				),
 			3 => array(
-				"objects" =>
-					array("reps", "---", "bibs", "blga", "chta", "crss", "excs", "facs", "frma",
-						"grps", "lrss", "mcts", "mobs", "svyf", "assf", "wbrs", "wiks",
-						"---", 'otpl',"root", "recf")
+				"container" =>
+					array("reps", "crss", "grps", "prgs"),
+				"content_objects" =>
+					array("bibs", "blga", "chta", "excs", "facs", "frma",
+						"lrss", "mcts", "mobs", "svyf", "assf", "wbrs", "wiks")
 				)
 			);
 		
@@ -541,8 +554,6 @@ class ilAdministrationGUI
 				}
 			}
 		}
-		
-		//$gl->addSeparator();
 
 		echo $gl->getHTML();
 		exit;

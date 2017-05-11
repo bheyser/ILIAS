@@ -12,6 +12,7 @@
 */
 class ilAttendanceList
 {
+	protected $parent_gui;
 	protected $parent_obj; // [object]
 	protected $participants; // [object]
 	protected $waiting_list; // [object]
@@ -36,10 +37,11 @@ class ilAttendanceList
 	 * @param ilParticipants $a_participants_object
 	 * @param ilWaitingList $a_waiting_list
 	 */
-	function __construct($a_parent_obj, ilParticipants $a_participants_object = null, ilWaitingList $a_waiting_list = null)
+	function __construct($a_parent_gui, $a_parent_obj, ilParticipants $a_participants_object = null, ilWaitingList $a_waiting_list = null)
 	{	
 		global $lng;
 		
+		$this->parent_gui = $a_parent_gui;
 		$this->parent_obj = $a_parent_obj;
 		$this->participants = $a_participants_object;
 		$this->waiting_list = $a_waiting_list;
@@ -47,7 +49,12 @@ class ilAttendanceList
 		// always available
 		$this->presets['name'] = array($lng->txt('name'), true);
 		$this->presets['login'] = array($lng->txt('login'), true);
-		$this->presets['email'] = array($lng->txt('email'));	
+		$this->presets['email'] = array($lng->txt('email'));
+		
+		
+		
+		// add exportable fields
+		$this->readOrderedExportableFields();
 		
 		$lng->loadLanguageModule('crs');
 		
@@ -60,16 +67,16 @@ class ilAttendanceList
 			{
 				case 'il_crs_a':
 				case 'il_grp_a':					
-					$this->addRole($role_id, $lng->txt('event_tbl_admins'), 'admin');					
+					$this->addRole($role_id, $lng->txt('event_tbl_admin'), 'admin');
 					break;
 				
 				case 'il_crs_t':					
-					$this->addRole($role_id, $lng->txt('event_tbl_tutors'), 'tutor');					
+					$this->addRole($role_id, $lng->txt('event_tbl_tutor'), 'tutor');
 					break;
 				
 				case 'il_crs_m':
 				case 'il_grp_m':
-					$this->addRole($role_id, $lng->txt('event_tbl_members'), 'member');
+					$this->addRole($role_id, $lng->txt('event_tbl_member'), 'member');
 					break;
 				
 				// local
@@ -81,6 +88,61 @@ class ilAttendanceList
 		}			
 	}
 	
+	/**
+	 * read object export fields
+	 * @return boolean
+	 */
+	protected function readOrderedExportableFields()
+	{
+		include_once('Services/PrivacySecurity/classes/class.ilPrivacySettings.php');
+		include_once('Services/PrivacySecurity/classes/class.ilExportFieldsInfo.php');
+		include_once('Modules/Course/classes/Export/class.ilCourseDefinedFieldDefinition.php');
+		include_once('Services/User/classes/class.ilUserDefinedFields.php');
+
+		$field_info = ilExportFieldsInfo::_getInstanceByType($this->parent_obj->getType());
+		$field_info->sortExportFields();
+
+	 	foreach($field_info->getExportableFields() as $field)
+	 	{
+			switch($field)
+			{
+				case 'username':
+				case 'firstname':
+				case 'lastname':
+				case 'email':
+					continue 2;
+			}
+			
+			ilLoggerFactory::getLogger('mem')->dump($field, ilLogLevel::DEBUG);
+			// Check if default enabled
+			$this->presets[$field] = array(
+				$GLOBALS['lng']->txt($field),
+				false
+			);
+	 	}
+
+		// add udf fields
+	 	$udf = ilUserDefinedFields::_getInstance();
+		foreach($udf->getExportableFields($this->parent_obj->getId()) as $field_id => $udf_data)
+	 	{
+			$this->presets['udf_'.$field_id] = array(
+				$udf_data['field_name'],
+				false
+			);
+	 	}
+		
+		// add cdf fields
+		include_once './Modules/Course/classes/Export/class.ilCourseDefinedFieldDefinition.php';
+		foreach(ilCourseDefinedFieldDefinition::_getFields($this->parent_obj->getId()) as $field_obj)
+		{
+			$this->presets['cdf_'.$field_obj->getId()] = array(
+				$field_obj->getName(),
+				false
+			);
+		}
+		return true;
+	}
+
 	/**
 	 * Add user field
 	 * 
@@ -167,28 +229,57 @@ class ilAttendanceList
 			$user_ids = array_merge($user_ids, $this->waiting_list->getUserIds());
 		}
 		
+		// Finally read user profile data
+		$profile_data = ilObjUser::_readUsersProfileData($user_ids);
+		foreach($profile_data as $user_id => $fields)
+		{
+			foreach((array) $fields as $field => $value)
+			{
+				$a_res[$user_id][$field] = $value;
+			}
+		}
+
+		include_once './Services/User/classes/class.ilUserDefinedFields.php';
+	 	$udf = ilUserDefinedFields::_getInstance();
+		
+		foreach($udf->getExportableFields($this->parent_obj->getId()) as $field_id => $udf_data)
+	 	{
+			foreach($profile_data as $user_id => $field)
+			{
+				include_once './Services/User/classes/class.ilUserDefinedData.php';
+				$udf_data = new ilUserDefinedData($user_id);
+				$a_res[$user_id]['udf_'.$field_id] = (string) $udf_data->get('f_'.$field_id);
+			}
+	 	}
+		
 		if(sizeof($user_ids))
 		{
+			// object specific user data
+			include_once 'Modules/Course/classes/Export/class.ilCourseUserData.php';
+			$cdfs = ilCourseUserData::_getValuesByObjId($this->parent_obj->getId());
+			
 			foreach(array_unique($user_ids) as $user_id)
 			{					
-				if(!isset($a_res[$user_id]))
+				if($tmp_obj = ilObjectFactory::getInstanceByObjId($user_id, false))
 				{
-					if($tmp_obj = ilObjectFactory::getInstanceByObjId($user_id, false))
-					{
-						$a_res[$user_id]['login'] = $tmp_obj->getLogin();
-						$a_res[$user_id]['name'] = $tmp_obj->getLastname().', '.$tmp_obj->getFirstname();		
-						$a_res[$user_id]['email'] = $tmp_obj->getEmail();		
+					$a_res[$user_id]['login'] = $tmp_obj->getLogin();
+					$a_res[$user_id]['name'] = $tmp_obj->getLastname().', '.$tmp_obj->getFirstname();		
+					$a_res[$user_id]['email'] = $tmp_obj->getEmail();		
 
-						if(in_array($user_id, $subscriber_ids))
-						{
-							$a_res[$user_id]['status'] = $lng->txt('crs_subscriber'); 
-						}
-						else
-						{
-							$a_res[$user_id]['status'] = $lng->txt('crs_waiting_list'); 
-						}
-					}			
-				}
+					if(in_array($user_id, $subscriber_ids))
+					{
+						$a_res[$user_id]['status'] = $lng->txt('crs_subscriber'); 
+					}
+					else
+					{
+						$a_res[$user_id]['status'] = $lng->txt('crs_waiting_list'); 
+					}
+					
+					foreach((array) $cdfs[$user_id] as $field_id => $value)
+					{
+						$a_res[$user_id]['cdf_'.$field_id] = (string) $value;
+					}
+				}	
 			}
 		}
 	}
@@ -252,7 +343,7 @@ class ilAttendanceList
 		
 		include_once('./Services/Form/classes/class.ilPropertyFormGUI.php');		
 		$form = new ilPropertyFormGUI();
-		$form->setFormAction($ilCtrl->getFormAction($this->parent_obj,$a_cmd));
+		$form->setFormAction($ilCtrl->getFormAction($this->parent_gui,$a_cmd));
 		$form->setTarget('_blank');
 		$form->setPreventDoubleSubmission(false);
 		$form->setTitle($lng->txt('sess_gen_attendance_list'));
@@ -289,51 +380,71 @@ class ilAttendanceList
 		{
 			$blank->setValue($this->pre_blanks);
 		}
-		
-		$part = new ilFormSectionHeaderGUI();
-		$part->setTitle($lng->txt('event_participant_selection'));
-		$form->addItem($part);
-		
+
+		$checked = array();
+
+		$chk_grp = new ilCheckboxGroupInputGUI($lng->txt('event_user_selection'), 'selection_of_users');
+
 		// participants by roles
 		foreach($this->role_data as $role_id => $role_data)
 		{
-			$chk = new ilCheckboxInputGUI($role_data[0], 'role_'.$role_id);			
-			$chk->setValue(1);
-			$chk->setChecked(1);
-			$form->addItem($chk);
+			$title = ilObject::_lookupTitle($role_id);
+			
+			$role_name = $role_id;
+			if(substr($title, 0, 10) == 'il_'.$this->parent_obj->getType().'_adm')
+			{
+				$role_name = 'adm';
+			}
+			if(substr($title, 0, 10) == 'il_'.$this->parent_obj->getType().'_mem')
+			{
+				$role_name = 'mem';
+			}
+			if(substr($title, 0, 10) == 'il_'.$this->parent_obj->getType().'_tut')
+			{
+				$role_name = 'tut';
+			}
+			
+			$chk = new ilCheckboxOption(sprintf($lng->txt('event_user_selection_include_role'),$role_data[0]), 'role_'.$role_name);
+			$checked[] = 'role_'.$role_name;
+			$chk_grp->addOption($chk);
 		}
-				
-		// not in sessions
+
 		if($this->waiting_list)
 		{
-			$chk = new ilCheckboxInputGUI($lng->txt('group_new_registrations'), 'subscr');			
-			$chk->setValue(1);		
-			$form->addItem($chk);		
+			$chk = new ilCheckboxOption($lng->txt('event_user_selection_include_requests'), 'subscr');
+			$chk_grp->addOption($chk);
 
-			$chk = new ilCheckboxInputGUI($lng->txt('crs_waiting_list'), 'wlist');			
-			$chk->setValue(1);
-			$form->addItem($chk);
+			$chk = new ilCheckboxOption($lng->txt('event_user_selection_include_waiting_list'), 'wlist');
+			$chk_grp->addOption($chk);
 		}
-			
+
 		if($this->user_filters)
 		{
 			foreach($this->user_filters as $sub_id => $sub_item)
 			{
-				$sub = new ilCheckboxInputGUI($sub_item[0], 'members_'.$sub_id);
+				$chk = new ilCheckboxOption(sprintf($lng->txt('event_user_selection_include_filter'),$sub_item[0]),
+											'members_'.$sub_id);
 				if($sub_item[1])
 				{
-					$sub->setChecked(true);
+					$checked[] = 'members_'.$sub_id;
 				}
-				$form->addItem($sub);
+				$chk_grp->addOption($chk);
 			}
 		}
-		
+		$chk_grp->setValue($checked);
+		$form->addItem($chk_grp);
+
 		$form->addCommandButton($a_cmd,$lng->txt('sess_print_attendance_list'));
 		
 		if($this->id && $a_cmd)
 		{
 			include_once "Services/User/classes/class.ilUserFormSettings.php";
 			$settings = new ilUserFormSettings($this->id);
+			if(!$settings->hasStoredEntry())
+			{
+				$settings = new ilUserFormSettings($this->parent_obj->getType().'s_pview', -1);
+			}
+			
 			$settings->deleteValue('desc'); // #11340
 			$settings->exportToForm($form);
 		}
@@ -366,12 +477,30 @@ class ilAttendanceList
 			}
 			
 			$this->setTitle($form->getInput('title'), $form->getInput('desc'));
-			$this->setBlankColumns($form->getInput('blank'));	
-			
+			$this->setBlankColumns($form->getInput('blank'));
+
+			$selection_of_users = (array)$form->getInput('selection_of_users'); // #18238
+
 			$roles = array();
 			foreach(array_keys($this->role_data) as $role_id)
 			{
-				if($form->getInput('role_'.$role_id))
+				$title = ilObject::_lookupTitle($role_id);
+				$role_name = $role_id;
+				if(substr($title, 0, 10) == 'il_'.$this->parent_obj->getType().'_adm')
+				{
+					$role_name = 'adm';
+				}
+				if(substr($title, 0, 10) == 'il_'.$this->parent_obj->getType().'_mem')
+				{
+					$role_name = 'mem';
+				}
+				if(substr($title, 0, 10) == 'il_'.$this->parent_obj->getType().'_tut')
+				{
+					$role_name = 'tut';
+				}
+				
+				
+				if(in_array('role_'.$role_name, (array) $selection_of_users))
 				{
 					$roles[] = $role_id;
 				}
@@ -381,15 +510,15 @@ class ilAttendanceList
 			// not in sessions
 			if($this->waiting_list)
 			{
-				$this->include_subscribers = (bool)$form->getInput('subscr');			
-				$this->include_waiting_list = (bool)$form->getInput('wlist');
+				$this->include_subscribers = (bool)in_array('subscr', $selection_of_users);
+				$this->include_waiting_list = (bool)in_array('wlist', $selection_of_users);
 			}
 			
 			if($this->user_filters)
 			{
 				foreach(array_keys($this->user_filters) as $msub_id)
 				{
-					$this->user_filters[$msub_id][2] = $form->getInput("members_".$msub_id);
+					$this->user_filters[$msub_id][2] = (bool)in_array("members_".$msub_id, $selection_of_users);
 				}			
 			}				
 			
@@ -439,7 +568,8 @@ class ilAttendanceList
 		
 		// title
 		
-		$time = ilFormat::formatUnixTime(time(),true);
+		ilDatePresentation::setUseRelativeDates(false);
+		$time = ilDatePresentation::formatDate(new ilDateTime(time(), IL_CAL_UNIX));
 		
 		$tpl->setVariable('TXT_TITLE', $this->title);
 		if($this->description)
@@ -588,10 +718,10 @@ class ilAttendanceList
 								}							
 
 							default:
-								$value = (string)$user_data[$id];
+								$value = (string) $user_data[$id];
 								break;
 						}
-						$tpl->setVariable("TXT_PRESET", $value);
+						$tpl->setVariable("TXT_PRESET", (string) $value);
 						$tpl->parseCurrentBlock();
 					}
 				}								

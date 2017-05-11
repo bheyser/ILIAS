@@ -197,7 +197,7 @@ abstract class ilAdvancedMDFieldDefinition
 		{
 			$field_ids[] = $row["field_id"];
 		}
-		return $field_id; 
+		return $field_ids; 
 	}
 	
 	/**
@@ -496,12 +496,37 @@ abstract class ilAdvancedMDFieldDefinition
 	}
 	
 	/**
+	 * Is search supported at all
+	 * 
+	 * @return boolean
+	 */
+	public function isSearchSupported()
+	{
+		return true;
+	}	
+	
+	/**
+	 * Is search by filter supported
+	 * 
+	 * @return boolean
+	 */
+	public function isFilterSupported()
+	{
+		return true;
+	}	
+	
+	/**
 	 * Toggle searchable
 	 *
 	 * @param bool searchable	 
 	 */
 	public function setSearchable($a_status)
 	{
+		// see above
+		if(!$this->isSearchSupported())
+		{
+			$a_status = false;
+		}
 	 	$this->searchable = (bool)$a_status;
 	}
 	
@@ -636,7 +661,8 @@ abstract class ilAdvancedMDFieldDefinition
 		$check->setValue(1);
 		$a_form->addItem($check);
 		
-		if(!$perm[ilAdvancedMDPermissionHelper::ACTION_FIELD_EDIT_PROPERTY][ilAdvancedMDPermissionHelper::SUBACTION_FIELD_SEARCHABLE])
+		if(!$perm[ilAdvancedMDPermissionHelper::ACTION_FIELD_EDIT_PROPERTY][ilAdvancedMDPermissionHelper::SUBACTION_FIELD_SEARCHABLE] ||
+			!$this->isSearchSupported())
 		{
 			$check->setDisabled(true);
 		}
@@ -753,7 +779,7 @@ abstract class ilAdvancedMDFieldDefinition
 	 * @param int $a_field_id
 	 * @return string
 	 */
-	protected function generateImportId($a_field_id)
+	public function generateImportId($a_field_id)
 	{
 		return 'il_'.IL_INST_ID.'_adv_md_field_'.$a_field_id;
 	}
@@ -833,7 +859,7 @@ abstract class ilAdvancedMDFieldDefinition
 	/**
 	 * Create new field entry
 	 */
-	public function save()
+	public function save($a_keep_pos = false)
 	{
 		global $ilDB;
 		
@@ -845,7 +871,10 @@ abstract class ilAdvancedMDFieldDefinition
 		$next_id = $ilDB->nextId("adv_mdf_definition");
 		
 		// append		
-		$this->setPosition($this->getLastPosition()+1);
+		if(!$a_keep_pos)
+		{
+			$this->setPosition($this->getLastPosition()+1);
+		}
 		
 		// needs unique import id
 		if(!$this->getImportId())
@@ -857,6 +886,8 @@ abstract class ilAdvancedMDFieldDefinition
 		$fields["field_id"] = array("integer", $next_id);
 		
 		$ilDB->insert("adv_mdf_definition", $fields);
+		
+		$this->setFieldId($next_id);
 	}
 	
 	/**
@@ -1141,6 +1172,28 @@ abstract class ilAdvancedMDFieldDefinition
 	public function prepareElementForSearch(ilADTSearchBridge $a_bridge)
 	{
 		// type-specific		
+	}
+	
+	/**
+	 * Clone field definition
+	 * 
+	 * @param type $a_new_record_id
+	 * @return self
+	 */	
+	public function _clone($a_new_record_id)
+	{
+		$class = get_class($this);
+		$obj = new $class();
+		$obj->setRecordId($a_new_record_id);		
+		$obj->setTitle($this->getTitle());
+		$obj->setDescription($this->getDescription());
+		$obj->setRequired($this->isRequired());
+		$obj->setPosition($this->getPosition());
+		$obj->setSearchable($this->isSearchable());
+		$obj->importFieldDefinition($this->getFieldDefinition());
+		$obj->save(true);
+		
+		return $obj;		
 	}
 }
 

@@ -34,34 +34,39 @@ class ilSkillTree extends ilTree
 			include_once("./Services/Skill/classes/class.ilSkillTemplateReference.php");
 			$path = $this->getPathFull($a_tref_id);
 			$sub_path = $this->getPathFull($a_base_skill_id);
-			foreach ($path as $k => $v)
+			if (is_array($path))
 			{
-				if ($v["child"] != $a_tref_id)
+				foreach ($path as $k => $v)
 				{
-					$path[$k]["skill_id"] = $v["child"];
-					$path[$k]["tref_id"] = 0;
-				}
-				else
-				{
-					$path[$k]["skill_id"] = ilSkillTemplateReference::_lookupTemplateId($a_tref_id);
-					$path[$k]["tref_id"] = $a_tref_id;
+					if ($v["child"] != $a_tref_id)
+					{
+						$path[$k]["skill_id"] = $v["child"];
+						$path[$k]["tref_id"] = 0;
+					}
+					else
+					{
+						$path[$k]["skill_id"] = ilSkillTemplateReference::_lookupTemplateId($a_tref_id);
+						$path[$k]["tref_id"] = $a_tref_id;
+					}
 				}
 			}
 			$found = false;
-			foreach ($sub_path as $s)
+			if (is_array($sub_path))
 			{
-				if ($found)
+				foreach ($sub_path as $s)
 				{
-					$s["skill_id"] = $s["child"];
-					$s["tref_id"] = $a_tref_id;
-					$path[] = $s;
-				}
-				if ($s["child"] == ilSkillTemplateReference::_lookupTemplateId($a_tref_id))
-				{
-					$found = true;
+					if ($found)
+					{
+						$s["skill_id"] = $s["child"];
+						$s["tref_id"] = $a_tref_id;
+						$path[] = $s;
+					}
+					if ($s["child"] == ilSkillTemplateReference::_lookupTemplateId($a_tref_id))
+					{
+						$found = true;
+					}
 				}
 			}
-				
 		}
 		else
 		{
@@ -75,8 +80,12 @@ class ilSkillTree extends ilTree
 				}
 			}
 		}
-		
-		return $path;
+
+		if (is_array($path))
+		{
+			return $path;
+		}
+		return array();
 	}
 
 	/**
@@ -112,6 +121,42 @@ class ilSkillTree extends ilTree
 	{
 		$path = $this->getPathId($a_node_id);
 		return (int) $path[1];
+	}
+
+	/**
+	 * Get max order nr
+	 *
+	 * @param int $a_par_id parent id
+	 * @param bool $a_templates templates? true/false
+	 * @return int max order nr
+	 */
+	function getMaxOrderNr($a_par_id, $a_templates = false)
+	{
+		if ($a_par_id != $this->readRootId())
+		{
+			$childs = $this->getChilds($a_par_id);
+		}
+		else
+		{
+			if ($a_templates)
+			{
+				$childs = $this->getChildsByTypeFilter($a_par_id,
+						array("skrt", "sktp", "sctp"));
+			}
+			else
+			{
+				$childs = $this->getChildsByTypeFilter($a_par_id,
+						array("skrt", "skll", "scat", "sktr"));
+			}
+		}
+
+		$max = 0;
+		foreach ($childs as $k => $c)
+		{
+			$max = max(array($c["order_nr"], $max));
+		}
+
+		return $max;
 	}
 
 

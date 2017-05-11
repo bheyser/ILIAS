@@ -20,8 +20,11 @@ abstract class ilContainerContentGUI
 	const DETAILS_ALL = 2;
 	
 	protected $details_level = self::DETAILS_DEACTIVATED;
-	
-	protected $renderer; // [ilContainerRenderer]
+
+	/**
+	 * @var ilContainerRenderer
+	 */
+	protected $renderer;
 	
 	var $container_gui;
 	var $container_obj;
@@ -182,7 +185,7 @@ abstract class ilContainerContentGUI
 		switch ($ilCtrl->getNextClass())
 		{	
 			case "ilcolumngui":
-				$ilCtrl->setReturn($this->container_gui, "");
+				$this->container_gui->setSideColumnReturn();
 				$html = $this->__forwardToColumnGUI();
 				break;
 				
@@ -364,11 +367,11 @@ abstract class ilContainerContentGUI
 		}
 		
 		// determine item groups
-		while (eregi("\[(item-group-([0-9]*))\]", $a_container_page_html, $found))
+		while (preg_match('~\[(item-group-([0-9]*))\]~i', $a_container_page_html, $found))
 		{
 			$this->addEmbeddedBlock("itgr", (int) $found[2]);
 			
-			$a_container_page_html = eregi_replace("\[".$found[1]."\]", $html, $a_container_page_html);
+			$a_container_page_html = preg_replace('~\['.$found[1].'\]~i', $html, $a_container_page_html);
 		}
 	}
 	
@@ -594,6 +597,7 @@ abstract class ilContainerContentGUI
 			}
 		}
 
+
 		if ($ilSetting->get("item_cmd_asynch"))
 		{
 			$asynch = true;
@@ -601,6 +605,13 @@ abstract class ilContainerContentGUI
 			$asynch_url = $ilCtrl->getLinkTarget($this->container_gui,
 					"getAsynchItemList", "", true, false);
 			$ilCtrl->setParameter($this->container_gui, "cmdrefid", "");
+
+			//#0020343
+			$fold_set = new ilSetting('fold');
+			if ($a_item_data['type'] == 'fold' && $fold_set->get("bgtask_download") && $fold_set->get("enable_download_folder")) {
+				include_once "Services/BackgroundTask/classes/class.ilFolderDownloadBackgroundTaskHandler.php";
+				ilFolderDownloadBackgroundTaskHandler::initObjectListAction();
+			}
 		}
 					
 		include_once "Services/Object/classes/class.ilObjectActivation.php";
@@ -630,17 +641,17 @@ abstract class ilContainerContentGUI
 			// set template (overall or type specific)
 			if (is_int(strpos($a_output_html, "[list-".$type."]")))
 			{
-				$a_output_html = eregi_replace("\[list-".$type."\]",
+				$a_output_html = preg_replace('~\[list-'.$type.'\]~i',
 					$this->renderer->renderSingleTypeBlock($type), $a_output_html);
 			}
 		}
 		
 		// insert all item groups
-		while (eregi("\[(item-group-([0-9]*))\]", $a_output_html, $found))
+		while (preg_match('~\[(item-group-([0-9]*))\]~i', $a_output_html, $found))
 		{
 			$itgr_ref_id = (int) $found[2];
 			
-			$a_output_html = eregi_replace("\[".$found[1]."\]", 
+			$a_output_html = preg_replace('~\['.$found[1].'\]~i',
 				$this->renderer->renderSingleCustomBlock($itgr_ref_id), $a_output_html);
 		}
 
@@ -721,8 +732,8 @@ abstract class ilContainerContentGUI
 		
 		// #16493
 		$perm_ok = ($ilAccess->checkAccess("visible", "", $a_itgr['ref_id']) &&
-			 $ilAccess->checkAccess("read", "", $a_itgr['ref_id']));
-			
+			 $ilAccess->checkAccess("read", "", $a_itgr['ref_id']));			
+
 		include_once('./Services/Container/classes/class.ilContainerSorting.php');			
 		include_once('./Services/Object/classes/class.ilObjectActivation.php');
 		$items = ilObjectActivation::getItemsByItemGroup($a_itgr['ref_id']);
@@ -746,8 +757,17 @@ abstract class ilContainerContentGUI
 		$item_list_gui->getListItemHTML($a_itgr["ref_id"], $a_itgr["obj_id"],
 			$a_itgr["title"], $a_itgr["description"]);
 		$commands_html = $item_list_gui->getCommandsHTML(); 
-		
-		$this->renderer->addCustomBlock($a_itgr["ref_id"], $a_itgr["title"], $commands_html);
+
+		include_once("./Modules/ItemGroup/classes/class.ilObjItemGroup.php");
+		if (ilObjItemGroup::lookupHideTitle($a_itgr["obj_id"]) &&
+			!$this->getContainerGUI()->isActiveAdministrationPanel())
+		{
+			$this->renderer->addCustomBlock($a_itgr["ref_id"], "", $commands_html);
+		}
+		else
+		{
+			$this->renderer->addCustomBlock($a_itgr["ref_id"], $a_itgr["title"], $commands_html);
+		}
 	
 		
 		// render item group sub items
@@ -760,7 +780,8 @@ abstract class ilContainerContentGUI
 		
 		$position = 1;
 		foreach($items as $item)
-		{			
+		{
+			// we are NOT using hasItem() here, because item might be in multiple item groups			
 			$html2 = $this->renderItem($item, $position++, false, "[itgr][".$a_itgr['obj_id']."]");
 			if ($html2 != "")
 			{

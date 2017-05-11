@@ -104,8 +104,11 @@ class ilMemberAgreementGUI
 	{
 		global $ilUser;
 		
-		$form = $this->initFormAgreement($form);
-		self::setCourseDefinedFieldValues($form, $this->obj_id, $ilUser->getId());
+		if(!$form instanceof ilPropertyFormGUI)
+		{
+			$form = $this->initFormAgreement($form);
+			self::setCourseDefinedFieldValues($form, $this->obj_id, $ilUser->getId());
+		}
 		
 		$this->tpl->setContent($form->getHTML());
 		return true;
@@ -156,6 +159,17 @@ class ilMemberAgreementGUI
 			$tpl->setVariable('FIELD_NAME',$lng->txt($field));
 			$tpl->parseCurrentBlock();
 		}
+		
+		// #17609 - not part of ilExportFieldsInfo::getExportableFields()
+		// see ilExportFieldsInfo::getSelectableFieldsInfo()		
+		include_once('Services/User/classes/class.ilUserDefinedFields.php');
+		foreach(ilUserDefinedFields::_getInstance()->getExportableFields($a_obj_id) as $field)
+		{					
+			$tpl->setCurrentBlock('field_item');
+			$tpl->setVariable('FIELD_NAME',$field['field_name']);
+			$tpl->parseCurrentBlock();			
+		}
+		
 		$fields->setHtml($tpl->get());
 		$form->addItem($fields);
 		
@@ -309,8 +323,7 @@ class ilMemberAgreementGUI
 		$form = $this->initFormAgreement();
 		
 		// #14715 - checkInput() does not work for checkboxes
-		if($this->checkAgreement() &&
-			$form->checkInput())
+		if($this->checkAgreement() && $form->checkInput())
 		{
 			self::saveCourseDefinedFields($form, $this->obj_id);
 

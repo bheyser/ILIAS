@@ -36,18 +36,6 @@ include_once 'Services/Search/classes/class.ilAbstractSearch.php';
 
 class ilLMContentSearch extends ilAbstractSearch
 {
-
-	/**
-	* Constructor
-	* @access public
-	*/
-	function ilLMContentSearch(&$query_parser)
-	{
-		global $ilDB;
-
-		parent::ilAbstractSearch($query_parser);
-	}
-
 	function &performSearch()
 	{
 		$this->setFields(array('content'));
@@ -65,7 +53,7 @@ class ilLMContentSearch extends ilAbstractSearch
 			
 		
 		$res = $this->db->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			// workaround to get term ids for definition ids (which is not the same!!!)
 			if ($row->parent_type == "gdf")
@@ -86,20 +74,29 @@ class ilLMContentSearch extends ilAbstractSearch
 	// Protected can be overwritten in Like or Fulltext classes
 	function __createInStatement()
 	{
-		if(!$this->getFilter())
+		global $ilDB;
+		
+		if(!$this->getFilter() and !$this->getIdFilter())
 		{
 			return '';
 		}
-		else
+		
+		$in = '';
+		if($this->getFilter())
 		{
 			$type = "('";
 			$type .= implode("','",$this->getFilter());
 			$type .= "')";
 			
-			$in = " AND parent_type IN ".$type;
+			$in = " AND parent_type IN ".$type.' ';
 
-			return $in;
 		}
+		if($this->getIdFilter())
+		{
+			$in .= ' AND ';
+			$in .= $ilDB->in('parent_id',$this->getIdFilter(),false,'integer');
+		}
+		return $in;
 	}
 
 	function __createAndCondition()

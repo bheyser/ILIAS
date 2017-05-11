@@ -15,11 +15,11 @@ include_once 'Services/Mail/classes/class.ilMail.php';
 class ilMailSummaryNotification extends ilMailNotification
 {
 	/**
-	 *
+	 * {@inheritdoc}
 	 */
-	public function __construct()
+	public function __construct($a_is_personal_workspace = false)
 	{
-		parent::__construct();
+		parent::__construct($a_is_personal_workspace);
 	}
 
 	public function send()
@@ -57,7 +57,7 @@ class ilMailSummaryNotification extends ilMailNotification
 
 			$this->initMail();
 
-			$this->setRecipients($user_id);
+			$this->setRecipients(array($user_id));
 			$this->setSubject($this->getLanguageText('mail_notification_subject'));
 
 			$this->setBody(ilMail::getSalutation($user_id, $this->getLanguage()));

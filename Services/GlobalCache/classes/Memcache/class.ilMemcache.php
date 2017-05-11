@@ -1,6 +1,7 @@
 <?php
 
 require_once('./Services/GlobalCache/classes/class.ilGlobalCacheService.php');
+require_once('class.ilMemcacheServer.php');
 
 /**
  * Class ilMemcache
@@ -10,14 +11,6 @@ require_once('./Services/GlobalCache/classes/class.ilGlobalCacheService.php');
  */
 class ilMemcache extends ilGlobalCacheService {
 
-	const STD_SERVER = '127.0.0.1';
-	const STD_PORT = 11211;
-	/**
-	 * @var array
-	 */
-	protected static $servers = array(
-		self::STD_SERVER => self::STD_PORT,
-	);
 	/**
 	 * @var Memcached
 	 */
@@ -29,11 +22,22 @@ class ilMemcache extends ilGlobalCacheService {
 	 * @param $component
 	 */
 	public function __construct($service_id, $component) {
-		if (! (self::$memcache_object instanceof Memcached) AND $this->getInstallable()) {
+		if (!(self::$memcache_object instanceof Memcached) AND $this->getInstallable()) {
+			/**
+			 * @var $ilMemcacheServer ilMemcacheServer
+			 */
 			$memcached = new Memcached();
-			foreach (self::$servers as $host => $port) {
-				$memcached->addServer($host, $port);
+
+			if (ilMemcacheServer::count() > 0) {
+
+				$memcached->resetServerList();
+				$servers = array();
+				foreach (ilMemcacheServer::where(array( 'status' => ilMemcacheServer::STATUS_ACTIVE ))->get() as $ilMemcacheServer) {
+					$servers[] = array( $ilMemcacheServer->getHost(), $ilMemcacheServer->getPort(), $ilMemcacheServer->getWeight() );
+				}
+				$memcached->addServers($servers);
 			}
+
 			self::$memcache_object = $memcached;
 		}
 		parent::__construct($service_id, $component);
@@ -54,19 +58,19 @@ class ilMemcache extends ilGlobalCacheService {
 	 * @return bool
 	 */
 	public function exists($key) {
-		return $this->getMemcacheObject()->get($this->returnKey($key)) != NULL;
+		return $this->getMemcacheObject()->get($this->returnKey($key)) != null;
 	}
 
 
 	/**
 	 * @param      $key
 	 * @param      $serialized_value
-	 * @param null $ttl
+	 * @param null|int $ttl
 	 *
 	 * @return bool
 	 */
-	public function set($key, $serialized_value, $ttl = NULL) {
-		return $this->getMemcacheObject()->set($this->returnKey($key), $serialized_value, $ttl);
+	public function set($key, $serialized_value, $ttl = null) {
+		return $this->getMemcacheObject()->set($this->returnKey($key), $serialized_value, (int)$ttl);
 	}
 
 
@@ -105,8 +109,20 @@ class ilMemcache extends ilGlobalCacheService {
 		if ($this->getInstallable()) {
 			$stats = $this->getMemcacheObject()->getStats();
 
-			return $stats[self::STD_SERVER . ':' . self::STD_PORT]['pid'] > 0;
+			if (!is_array($stats)) {
+				return false;
+			}
+
+			foreach ($stats as $server) {
+				if ($server['pid'] > 0) {
+					return true;
+				}
+			}
+
+			return false;
 		}
+
+		return false;
 	}
 
 
@@ -125,7 +141,7 @@ class ilMemcache extends ilGlobalCacheService {
 		if ($this->getMemcacheObject() instanceof Memcached) {
 			$stats = $this->getMemcacheObject()->getStats();
 
-			if (! $stats[self::STD_SERVER . ':' . self::STD_PORT]['pid'] > 0) {
+			if (!$stats[self::STD_SERVER . ':' . self::STD_PORT]['pid'] > 0) {
 				return 'No Memcached-Server available';
 			}
 		}

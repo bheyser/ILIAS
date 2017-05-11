@@ -1,5 +1,6 @@
 <?php
 /* Copyright (c) 1998-2010 ILIAS open source, Extended GPL, see docs/LICENSE */
+require_once('./Services/Repository/classes/class.ilObjectPlugin.php');
 
 /**
  * Render add new item selector
@@ -131,7 +132,7 @@ class ilObjectAddNewItemGUI
 		$this->disabled_object_types[] = "rolf";						
 		
 		$parent_type = ilObject::_lookupType($this->parent_ref_id, true);
-		$subtypes = $objDefinition->getCreatableSubObjects($parent_type, $this->mode);		
+		$subtypes = $objDefinition->getCreatableSubObjects($parent_type, $this->mode, $this->parent_ref_id);
 		if (count($subtypes) > 0)
 		{						
 			// grouping of object types
@@ -246,7 +247,7 @@ class ilObjectAddNewItemGUI
 						if ($subitem["plugin"])
 						{
 							include_once("./Services/Component/classes/class.ilPlugin.php");
-							$title = ilPlugin::lookupTxt("rep_robj", $type, "obj_".$type);
+							$title = ilObjectPlugin::lookupTxtById($type, "obj_".$type);
 						}	
 						else
 						{

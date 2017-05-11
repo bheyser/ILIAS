@@ -12,10 +12,17 @@
 */
 class ilExport
 {
-	public static $new_file_structure = array('cat','exc','crs','sess','file','grp','frm', 'usr', 'catr', 'crsr');
+	/**
+	 * @var ilLogger
+	 */
+	protected $log;
+
+	public static $new_file_structure = array('cat','exc','crs','sess','file','grp','frm', 'usr', 'catr', 'crsr', 'grpr');
 	
 	// this should be part of module.xml and be parsed in the future
-	static $export_implementer = array("tst", "lm", "glo");
+	static $export_implementer = array("tst", "lm", "glo", "sahs");
+
+	protected $configs = array();
 	
 	/**
 	 * Default constructor
@@ -23,9 +30,40 @@ class ilExport
 	 */
 	public function __construct()
 	{
-		
+		$this->log = ilLoggerFactory::getLogger('exp');
 	}
-	
+
+	/**
+	 * Get configuration (note that configurations are optional, null may be returned!)
+	 *
+	 * @param string $a_comp component (e.g. "Modules/Glossary")
+	 * @return ilExportConfig $a_comp configuration object or null
+	 * @throws ilExportException
+	 */
+	function getConfig($a_comp)
+	{
+		// if created, return existing config object
+		if (isset($this->configs[$a_comp]))
+		{
+			return $this->configs[$a_comp];
+		}
+
+		// create instance of export config object
+		$comp_arr = explode("/", $a_comp);
+		$a_class = "il".$comp_arr[1]."ExportConfig";
+		$export_config_file = "./".$a_comp."/classes/class.".$a_class.".php";
+		if (!is_file($export_config_file))
+		{
+			include_once("./Services/Export/exceptions/class.ilExportException.php");
+			throw new ilExportException('Component "'.$a_comp.'" does not provide ExportConfig class.');
+		}
+		include_once($export_config_file);
+		$exp_config = new $a_class();
+		$this->configs[$a_comp] = $exp_config;
+
+		return $exp_config;
+	}
+
 
 	/**
 	* Get a list of subitems of a repository resource, that implement
@@ -131,7 +169,7 @@ class ilExport
 	/**
 	 * Get Export Files for a repository object
 	 */
-	function _getExportFiles($a_obj_id, $a_export_types = "", $a_obj_type = "")
+	static function _getExportFiles($a_obj_id, $a_export_types = "", $a_obj_type = "")
 	{
 		$GLOBALS['ilLog']->write(__METHOD__);
 
@@ -174,7 +212,7 @@ class ilExport
 				if ($entry != "." and
 					$entry != ".." and
 					substr($entry, -4) == ".zip" and
-					ereg("^[0-9]{10}_{2}[0-9]+_{2}(".$a_obj_type."_)*[0-9]+\.zip\$", $entry))
+					preg_match("/^[0-9]{10}_{2}[0-9]+_{2}(".$a_obj_type."_)*[0-9]+\.zip\$/", $entry))
 				{
 					$ts = substr($entry, 0, strpos($entry, "__"));
 					$file[$entry.$type] = array("type" => $type, "file" => $entry,
@@ -193,10 +231,14 @@ class ilExport
 		return $file;
 	}
 
+
 	/**
-	* Create export directory
-	*/
-	function _createExportDirectory($a_obj_id, $a_export_type = "xml", $a_obj_type = "")
+	 * @param $a_obj_id
+	 * @param string $a_export_type
+	 * @param string $a_obj_type
+	 * @return bool
+	 */
+	public static function _createExportDirectory($a_obj_id, $a_export_type = "xml", $a_obj_type = "")
 	{
 		global $ilErr;
 		
@@ -214,7 +256,7 @@ class ilExport
 	* Generates an index.html file including links to all xml files included
 	* (for container exports)
 	*/
-	function _generateIndexFile($a_filename, $a_obj_id, $a_files, $a_type = "")
+	static function _generateIndexFile($a_filename, $a_obj_id, $a_files, $a_type = "")
 	{
 		global $lng;
 		
@@ -276,13 +318,17 @@ class ilExport
 	 *
 	 * @return array success and info array
 	 */
-	function exportObject($a_type, $a_id, $a_target_release)
+	function exportObject($a_type, $a_id, $a_target_release = "")
 	{
-		global $objDefinition, $tpl;
-				
-		$comp = $objDefinition->getComponentForType($a_type);
-		$c = explode("/", $comp);
-		$class = "il".$c[1]."Exporter";
+		$this->log->debug("export type: $a_type, id: $a_id, target_release: ".$a_target_release);
+
+		// if no target release specified, use latest major release number
+		if ($a_target_release == "")
+		{
+			$v = explode(".", ILIAS_VERSION_NUMERIC);
+			$a_target_release = $v[0].".".$v[1].".0";
+			$this->log->debug("target_release set to: ".$a_target_release);
+		}
 		
 		// manifest writer
 		include_once "./Services/Xml/classes/class.ilXmlWriter.php";
@@ -308,8 +354,13 @@ class ilExport
 		
 		$this->export_run_dir = $export_dir."/".$sub_dir;
 		ilUtil::makeDirParents($this->export_run_dir);
+		$this->log->debug("export dir: ".$this->export_run_dir);
 
 		$this->cnt = array();
+				
+		include_once './Services/Export/classes/class.ilImportExportFactory.php';
+		$class = ilImportExportFactory::getExporterClass($a_type);
+		$comp = ilImportExportFactory::getComponentForExport($a_type);		
 		
 		$success = $this->processExporter($comp, $class, $a_type, $a_target_release, $a_id);
 
@@ -318,6 +369,7 @@ class ilExport
 		$this->manifest_writer->xmlDumpFile($this->export_run_dir."/manifest.xml", false);
 
 		// zip the file
+		$this->log->debug("zip: ".$export_dir."/".$new_file);
 		ilUtil::zip($this->export_run_dir, $export_dir."/".$new_file);
 		ilUtil::delDir($this->export_run_dir);
 
@@ -354,7 +406,14 @@ class ilExport
 		$a_component, $a_title, $a_export_dir, $a_type_for_file = "")
 	{
 		global $objDefinition, $tpl;
-		
+
+		// if no target release specified, use latest major release number
+		if ($a_target_release == "")
+		{
+			$v = explode(".", ILIAS_VERSION_NUMERIC);
+			$a_target_release = $v[0].".".$v[1].".0";
+		}
+
 		if ($a_type_for_file == "")
 		{
 			$a_type_for_file = $a_entity;
@@ -409,12 +468,20 @@ class ilExport
 	/**
 	 * Process exporter
 	 *
-	 * @param
-	 * @return
+	 * @param string $a_comp e.g. "Modules/Forum"
+	 * @param string $a_class
+	 * @param string $a_entity e.g. "frm"
+	 * @param string $a_target_release e.g. "5.1.0"
+	 * @param string $a_id id of entity (e.g. object id)
+	 * @return bool success true/false
+	 * @throws ilExportException
 	 */
 	function processExporter($a_comp, $a_class, $a_entity, $a_target_release, $a_id)
 	{
 		$success = true;
+
+		$this->log->debug("process exporter, comp: ".$a_comp.", class: ".$a_class.", entity: ".$a_entity.
+			", target release ".$a_target_release.", id: ".$a_id);
 
 		if (!is_array($a_id))
 		{
@@ -426,15 +493,19 @@ class ilExport
 		}
 
 		// get exporter object
-		$export_class_file = "./".$a_comp."/classes/class.".$a_class.".php";
-//echo "1-".$export_class_file."-"; exit;
-		if (!is_file($export_class_file))
+		if(!class_exists($a_class))
 		{
-echo "1-not found:".$export_class_file."-"; exit;
-			return false;
+			$export_class_file = "./".$a_comp."/classes/class.".$a_class.".php";
+			if (!is_file($export_class_file))
+			{
+				include_once("./Services/Export/exceptions/class.ilExportException.php");
+				throw new ilExportException('Export class file "'.$export_class_file.'" not found.');
+			}
+			include_once($export_class_file);
 		}
-		include_once($export_class_file);
+		
 		$exp = new $a_class();
+		$exp->setExport($this);
 		if (!isset($this->cnt[$a_comp]))
 		{
 			$this->cnt[$a_comp] = 1;
@@ -446,11 +517,13 @@ echo "1-not found:".$export_class_file."-"; exit;
 		$set_dir_relative = $a_comp."/set_".$this->cnt[$a_comp];
 		$set_dir_absolute = $this->export_run_dir."/".$set_dir_relative;
 		ilUtil::makeDirParents($set_dir_absolute);
+		$this->log->debug("dir: ".$set_dir_absolute);
+
+		$this->log->debug("init exporter");
 		$exp->init();
 
-		$sv = $exp->determineSchemaVersion($a_entity, $a_target_release);
-
 		// process head dependencies
+		$this->log->debug("process head dependencies for ".$a_entity);
 		$sequence = $exp->getXmlExportHeadDependencies($a_entity, $a_target_release, $a_id);
 		foreach ($sequence as $s)
 		{
@@ -467,6 +540,11 @@ echo "1-not found:".$export_class_file."-"; exit;
 		// write export.xml file
 		$export_writer = new ilXmlWriter();
 		$export_writer->xmlHeader();
+
+		$sv = $exp->determineSchemaVersion($a_entity, $a_target_release);
+		$this->log->debug("schema version for entity: $a_entity, target release: $a_target_release");
+		$this->log->debug("...is: ".$sv["schema_version"].", namespace: ".$sv["namespace"].
+			", xsd file: ".$sv["xsd_file"].", uses_dataset: ".((int)$sv["uses_dataset"]));
 
 		$attribs = array("InstallationId" => IL_INST_ID,
 			"InstallationUrl" => ILIAS_HTTP_PATH,
@@ -511,6 +589,7 @@ echo "1-not found:".$export_class_file."-"; exit;
 			array("Component" => $a_comp, "Path" => $set_dir_relative."/export.xml"));
 
 		// process tail dependencies
+		$this->log->debug("process tail dependencies of ".$a_entity);
 		$sequence = $exp->getXmlExportTailDependencies($a_entity, $a_target_release, $a_id);
 		foreach ($sequence as $s)
 		{
@@ -524,6 +603,7 @@ echo "1-not found:".$export_class_file."-"; exit;
 			}
 		}
 
+		$this->log->debug("returning ".((int) $success)." for ".$a_entity);
 		return $success;
 	}
 }

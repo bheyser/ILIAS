@@ -10,6 +10,18 @@ class ilADTIntegerSearchBridgeSingle extends ilADTSearchBridgeSingle
 	}
 	
 	
+	// table2gui / filter	
+	
+	public function loadFilter()
+	{
+		$value = $this->readFilter();
+		if($value !== null)
+		{
+			$this->getADT()->setNumber($value);
+		}
+	}
+	
+	
 	// form
 	
 	public function addToForm()
@@ -34,6 +46,8 @@ class ilADTIntegerSearchBridgeSingle extends ilADTSearchBridgeSingle
 			$number->setSize($length);
 			$number->setMaxLength($length);
 		}
+		
+		$number->setValue($this->getADT()->getNumber());
 		
 		$this->addToParentElement($number);
 	}
@@ -68,8 +82,10 @@ class ilADTIntegerSearchBridgeSingle extends ilADTSearchBridgeSingle
 		}
 	}
 	
-	public function isInCondition(ilADTInteger $a_adt)
+	public function isInCondition(ilADT $a_adt)
 	{
+		assert($a_adt instanceof ilADTInteger);
+		
 		return $this->getADT()->equals($a_adt);
 	}		
 	
@@ -89,7 +105,7 @@ class ilADTIntegerSearchBridgeSingle extends ilADTSearchBridgeSingle
 		$a_value = unserialize($a_value);
 		if(is_array($a_value))
 		{
-			$this->getLowerADT()->setNumber($a_value[0]);			
+			$this->getADT()->setNumber($a_value[0]);			
 		}		
 	}
 }

@@ -54,21 +54,25 @@ class ilCourseObjectivesGUI
 	protected $test_type = 0;
 	// end-patch lok
 	
-	function ilCourseObjectivesGUI($a_course_id)
+	/**
+	 * Constructor
+	 * @param int $a_course_id
+	 */
+	public function __construct($a_course_id)
 	{
 		include_once './Modules/Course/classes/class.ilCourseObjective.php';
 
 		global $ilCtrl,$lng,$ilErr,$ilias,$tpl,$tree,$ilTabs;
 
-		$this->ctrl =& $ilCtrl;
+		$this->ctrl = $ilCtrl;
 		$this->ctrl->saveParameter($this,array("ref_id"));
 
-		$this->ilErr =& $ilErr;
-		$this->lng =& $lng;
+		$this->ilErr = $ilErr;
+		$this->lng = $lng;
 		$this->lng->loadLanguageModule('crs');
-		$this->tpl =& $tpl;
-		$this->tree =& $tree;
-		$this->tabs_gui =& $ilTabs;
+		$this->tpl = $tpl;
+		$this->tree = $tree;
+		$this->tabs_gui = $ilTabs;
 		
 		$this->course_id = $a_course_id;
 		$this->__initCourseObject();
@@ -82,7 +86,7 @@ class ilCourseObjectivesGUI
 	/**
 	 * execute command
 	 */
-	function &executeCommand()
+	function executeCommand()
 	{
 		global $ilTabs;
 
@@ -189,7 +193,7 @@ class ilCourseObjectivesGUI
 
 		ilUtil::sendQuestion($this->lng->txt('crs_delete_objectve_sure'));
 
-		$tpl =& new ilTemplate("tpl.table.html", true, true);
+		$tpl = new ilTemplate("tpl.table.html", true, true);
 		$tpl->addBlockfile("TBL_CONTENT", "tbl_content", "tpl.crs_objectives_delete_row.html",'Modules/Course');
 
 		$counter = 0;
@@ -394,7 +398,7 @@ class ilCourseObjectivesGUI
 	function __initLMObject($a_objective_id = 0)
 	{
 		include_once './Modules/Course/classes/class.ilCourseObjectiveMaterials.php';
-		$this->objectives_lm_obj =& new ilCourseObjectiveMaterials($a_objective_id);
+		$this->objectives_lm_obj = new ilCourseObjectiveMaterials($a_objective_id);
 
 		return true;
 	}
@@ -408,7 +412,7 @@ class ilCourseObjectivesGUI
 	function __initQuestionObject($a_objective_id = 0)
 	{
 		include_once './Modules/Course/classes/class.ilCourseObjectiveQuestion.php';
-		$this->objectives_qst_obj =& new ilCourseObjectiveQuestion($a_objective_id);
+		$this->objectives_qst_obj = new ilCourseObjectiveQuestion($a_objective_id);
 
 		return $this->objectives_qst_obj;
 	}
@@ -889,9 +893,8 @@ class ilCourseObjectivesGUI
 			$this->objectives_qst_obj->updateTest($test['test_objective_id']);
 		}
 
-		ilUtil::sendSuccess($this->lng->txt('settings_saved'));
-		$this->finalTestAssignment();
-		
+		ilUtil::sendSuccess($this->lng->txt('settings_saved'),true);
+		$this->ctrl->returnToParent($this);
 	}
 	
 	
@@ -1213,6 +1216,31 @@ class ilCourseObjectivesGUI
 	}
 	
 	/**
+	 * Show test assignment form
+	 * @param ilPropertyFormGUI $form
+	 */
+	protected function finalSeparatedTestAssignment(ilPropertyFormGUI $form = null)
+	{
+		global $ilAccess, $ilErr;
+		
+		if(!$ilAccess->checkAccess('write','',$this->course_obj->getRefId()))
+		{
+			$ilErr->raiseError($this->lng->txt('permission_denied'),$ilErr->WARNING);
+		}
+		if(!$_GET['objective_id'])
+		{
+			ilUtil::sendFailure($this->lng->txt('crs_no_objective_selected'),true);
+			$this->ctrl->returnToParent($this);
+		}
+		$this->ctrl->saveParameter($this,'objective_id');
+		$this->objective = new ilCourseObjective($this->course_obj,(int) $_GET['objective_id']);
+		
+		$this->initWizard(6);
+		$form = $this->initFormTestAssignment();
+		$GLOBALS['tpl']->setContent($form->getHtml());
+	}
+	
+	/**
 	 * self assessment limits
 	 *
 	 * @access protected
@@ -1230,7 +1258,7 @@ class ilCourseObjectivesGUI
 		if(!$_GET['objective_id'])
 		{
 			ilUtil::sendFailure($this->lng->txt('crs_no_objective_selected'),true);
-			$this->ctrl->redirect($this,'listObjectives');
+			$this->ctrl->returnToParent($this);
 		}
 
 		$this->setSubTabs("final_test_limits");
@@ -1493,13 +1521,13 @@ class ilCourseObjectivesGUI
 		if($_SESSION['objective_mode'] == self::MODE_CREATE)
 		{
 			// checklist gui start
-			$check_list->setHeading($this->lng->txt('crs_add_objective'));
+			$check_list->setHeading($this->lng->txt('crs_checklist_objective'));
 			// checklist gui end
 		}
 		else
 		{
 			// checklist gui start
-			$check_list->setHeading($this->lng->txt('crs_update_objective'));
+			$check_list->setHeading($this->lng->txt('crs_checklist_objective'));
 			// checklist gui end
 		}
 		
@@ -1512,11 +1540,19 @@ class ilCourseObjectivesGUI
 			// checklist gui end
 
 			// begin-patch lok
-			if($step == 3 and !$this->getSettings()->worksWithInitialTest())
+			if($step == 3 and (!$this->getSettings()->worksWithInitialTest() or $this->getSettings()->hasSeparateInitialTests()))
 			{
 				continue;
 			}
-			if($step == 4 and !$this->getSettings()->worksWithInitialTest())
+			if($step == 4 and (!$this->getSettings()->worksWithInitialTest() or $this->getSettings()->hasSeparateInitialTests()))
+			{
+				continue;
+			}
+			if($step == 5 and $this->getSettings()->hasSeparateQualifiedTests())
+			{
+				continue;
+			}
+			if($step == 6 and $this->getSettings()->hasSeparateQualifiedTests())
 			{
 				continue;
 			}

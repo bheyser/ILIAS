@@ -22,13 +22,17 @@ class ilEventParticipants
 
 	var $event_id = null;
 	
-	function ilEventParticipants($a_event_id)
+	/**
+	 * Constructor
+	 * @param int $a_event_id
+	 */
+	public function __construct($a_event_id)
 	{
 		global $ilErr,$ilDB,$lng,$tree;
 
-		$this->ilErr =& $ilErr;
-		$this->db  =& $ilDB;
-		$this->lng =& $lng;
+		$this->ilErr = $ilErr;
+		$this->db  = $ilDB;
+		$this->lng = $lng;
 
 		$this->event_id = $a_event_id;
 		$this->__read();
@@ -103,6 +107,11 @@ class ilEventParticipants
 		// refresh learning progress status after updating participant
 		include_once("./Services/Tracking/classes/class.ilLPStatusWrapper.php");
 		ilLPStatusWrapper::_updateStatus($this->getEventId(), $this->getUserId());
+		
+		if(!$this->getRegistered())
+		{
+			self::handleAutoFill($this->getEventId());
+		}
 
 		return true;
 	}
@@ -132,7 +141,7 @@ class ilEventParticipants
 		ilEventParticipants::_updateParticipation($a_usr_id,$this->getEventId(),$a_status);
 	}
 
-	function _updateParticipation($a_usr_id,$a_event_id,$a_status)
+	public static function _updateParticipation($a_usr_id,$a_event_id,$a_status)
 	{
 		global $ilDB;
 
@@ -167,7 +176,7 @@ class ilEventParticipants
 		return true;
 	}
 
-	function _getRegistered($a_event_id)
+	public static function _getRegistered($a_event_id)
 	{
 		global $ilDB;
 
@@ -175,14 +184,14 @@ class ilEventParticipants
 			"WHERE event_id = ".$ilDB->quote($a_event_id ,'integer')." ".
 			"AND registered = ".$ilDB->quote(1 ,'integer');
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$user_ids[] = $row->usr_id;
 		}
 		return $user_ids ? $user_ids : array();
 	}
 
-	function _getParticipated($a_event_id)
+	public static function _getParticipated($a_event_id)
 	{
 		global $ilDB;
 
@@ -190,7 +199,7 @@ class ilEventParticipants
 			"WHERE event_id = ".$ilDB->quote($a_event_id ,'integer')." ".
 			"AND participated = 1";
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$user_ids[] = $row->usr_id;
 		}
@@ -220,14 +229,14 @@ class ilEventParticipants
 			"WHERE event_id = ".$ilDB->quote($a_event_id ,'integer')." ".
 			"AND usr_id = ".$ilDB->quote($a_usr_id ,'integer')." ";
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			return (bool) $row->registered;
 		}
 		return false;
 	}
 
-	function _register($a_usr_id,$a_event_id)
+	public static function _register($a_usr_id,$a_event_id)
 	{
 		global $ilDB;
 
@@ -266,7 +275,7 @@ class ilEventParticipants
 		return ilEventParticipants::_register($a_usr_id,$this->getEventId());
 	}
 			
-	function _unregister($a_usr_id,$a_event_id)
+	public static function _unregister($a_usr_id,$a_event_id)
 	{
 		global $ilDB;
 
@@ -298,6 +307,8 @@ class ilEventParticipants
 		include_once("./Services/Tracking/classes/class.ilLPStatusWrapper.php");
 		ilLPStatusWrapper::_updateStatus($a_event_id, $a_usr_id);
 		
+		self::handleAutoFill($a_event_id);
+		
 		return true;
 	}
 	function unregister($a_usr_id)
@@ -305,7 +316,7 @@ class ilEventParticipants
 		return ilEventParticipants::_unregister($a_usr_id,$this->getEventId());
 	}
 
-	function _lookupMark($a_event_id,$a_usr_id)
+	public static function _lookupMark($a_event_id,$a_usr_id)
 	{
 		include_once "Services/Tracking/classes/class.ilLPMarks.php";
 		$lp_mark = new ilLPMarks($a_event_id, $a_usr_id);
@@ -318,7 +329,7 @@ class ilEventParticipants
 			"WHERE event_id = ".$ilDB->quote($a_event_id ,'integer')." ".
 			"AND usr_id = ".$ilDB->quote($a_usr_id ,'integer')." ";
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			return $row->mark;
 		}
@@ -339,7 +350,7 @@ class ilEventParticipants
 			"WHERE event_id = ".$ilDB->quote($a_event_id ,'integer')." ".
 			"AND usr_id = ".$ilDB->quote($a_usr_id ,'integer')." ";
 		$res = $ilDB->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			return $row->e_comment;
 		}
@@ -357,7 +368,7 @@ class ilEventParticipants
 		$this->event_id = $a_event_id;
 	}
 
-	function _deleteByEvent($a_event_id)
+	public static function _deleteByEvent($a_event_id)
 	{
 		global $ilDB;
 
@@ -370,7 +381,7 @@ class ilEventParticipants
 
 		return true;
 	}
-	function _deleteByUser($a_usr_id)
+	public static function _deleteByUser($a_usr_id)
 	{
 		global $ilDB;
 		
@@ -393,7 +404,7 @@ class ilEventParticipants
 		$query = "SELECT * FROM event_participants ".
 			"WHERE event_id = ".$ilDB->quote($this->getEventId())." ";
 		$res = $this->db->query($query);
-		while($row = $res->fetchRow(DB_FETCHMODE_OBJECT))
+		while($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT))
 		{
 			$this->participants[$row->usr_id]['usr_id'] = $row->usr_id;
 			$this->participants[$row->usr_id]['registered'] = $row->registered;
@@ -417,6 +428,17 @@ class ilEventParticipants
 				$this->participated[] = $row->usr_id;
 			}
 		}
+	}
+	
+	/**
+	 * Trigger auto-fill from waiting list
+	 * 
+	 * @param int $a_obj_id
+	 */
+	protected static function handleAutoFill($a_obj_id)
+	{
+		$sess = new ilObjSession($a_obj_id, false);
+		$sess->handleAutoFill();
 	}
 }
 ?>

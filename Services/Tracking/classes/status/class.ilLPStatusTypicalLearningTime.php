@@ -16,15 +16,15 @@ include_once './Services/MetaData/classes/class.ilMDEducational.php'; // #15556
 class ilLPStatusTypicalLearningTime extends ilLPStatus
 {
 
-	function ilLPStatusTypicalLearningTime($a_obj_id)
+	function __construct($a_obj_id)
 	{
 		global $ilDB;
 
-		parent::ilLPStatus($a_obj_id);
-		$this->db =& $ilDB;
+		parent::__construct($a_obj_id);
+		$this->db = $ilDB;
 	}
 
-	function _getInProgress($a_obj_id)
+	static function _getInProgress($a_obj_id)
 	{
 		global $ilDB;
 
@@ -44,7 +44,7 @@ class ilLPStatusTypicalLearningTime extends ilLPStatus
 		return $user_ids ? $user_ids : array();
 	}
 
-	function _getCompleted($a_obj_id)
+	static function _getCompleted($a_obj_id)
 	{
 		global $ilDB;
 
@@ -65,8 +65,8 @@ class ilLPStatusTypicalLearningTime extends ilLPStatus
 		return $user_ids ? $user_ids : array();
 	}
 
-	function _getStatusInfo($a_obj_id)
-	{
+	static function _getStatusInfo($a_obj_id)
+	{		
 		$status_info['tlt'] = ilMDEducational::_getTypicalLearningTimeSeconds($a_obj_id);
 
 		return $status_info;
@@ -117,7 +117,7 @@ class ilLPStatusTypicalLearningTime extends ilLPStatus
 	 * @return	integer		percentage
 	 */
 	function determinePercentage($a_obj_id, $a_user_id, $a_obj = null)
-	{
+	{		
 		$tlt = (int) ilMDEducational::_getTypicalLearningTimeSeconds($a_obj_id);
 		$re = ilChangeEvent::_lookupReadEvents($a_obj_id, $a_user_id);
 		$spent = (int) $re[0]["spent_seconds"];
