@@ -142,6 +142,11 @@ class ilHtmlToPdfTransformerFactory
 		$this->transformer = new $class_name;
 		if($this->transformer->isActive())
 		{
+			if(basename($output) == $output)
+			{
+				$output = ilUtil::getDataDir() . '/temp/' . $output;
+			}
+
 			$this->transformer->createPDFFileFromHTMLString($src, $output);
 			$this->deliverPDF($output, $delivery_type);
 		}
