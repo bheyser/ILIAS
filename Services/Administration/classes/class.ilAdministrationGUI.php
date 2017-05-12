@@ -461,7 +461,10 @@ class ilAdministrationGUI
 				"user_services" =>
 					array("pdts", "prfa", "nwss", "awra", "cadm", "cals", "mail"),
 				"content_services" =>
-					array("seas", "mds", "tags", "taxs", 'ecss', "otpl"),
+					array("seas", "mds", "tags", "taxs", 'ecss', "otpl"
+				// uzk-patch: begin
+						  ,"pdfg"),
+				// uzk-patch: end),
 				"maintenance" =>
 					array('sysc', "recf", 'logs', "root", "wfe")
 				),
