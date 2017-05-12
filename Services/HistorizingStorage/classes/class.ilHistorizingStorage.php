@@ -42,7 +42,9 @@ abstract class ilHistorizingStorage
 	 *
 	 * @return string Name of the table which contains the historized records.
 	 */
-	protected abstract function getHistorizedTableName();
+	protected static function getHistorizedTableName()
+	{
+	}
 
 	/**
 	 * Returns the column name which holds the current records version.
@@ -56,7 +58,9 @@ abstract class ilHistorizingStorage
 	 *
 	 * @return string Name of the column which is used to track the records version.
 	 */
-	protected abstract function getVersionColumnName();
+	protected static function getVersionColumnName()
+	{
+	}
 
 	/**
 	 * Returns the column name which holds the current records historic state.
@@ -70,7 +74,9 @@ abstract class ilHistorizingStorage
 	 *
 	 * @return string Name of the column which holds the current records historic state.
 	 */
-	protected abstract function getHistoricStateColumnName();
+	protected static function getHistoricStateColumnName()
+	{
+	}
 
 	/**
 	 * Returns the column name which holds the current records creator id.
@@ -84,7 +90,9 @@ abstract class ilHistorizingStorage
 	 *
 	 * @return string Name of the column which holds the current records creator.
 	 */
-	protected abstract function getCreatorColumnName();
+	protected static function getCreatorColumnName()
+	{
+	}
 
 	/**
 	 * Returns the column name which holds the current records creation timestamp is integer.
@@ -98,7 +106,9 @@ abstract class ilHistorizingStorage
 	 *
 	 * @return string Name of the column which holds the current records creator.
 	 */
-	protected abstract function getCreatedColumnName();
+	protected static function getCreatedColumnName()
+	{
+	}
 
 	/**
 	 * Defines the content columns for the historized records.
@@ -119,7 +129,9 @@ abstract class ilHistorizingStorage
 	 *
 	 * @return Array Array with field definitions in the format "fieldname" => "datatype".
 	 */
-	protected abstract function getContentColumnsDefinition();
+	protected static function getContentColumnsDefinition()
+	{
+	}
 
 	/**
 	 * Returns the column name which holds the current records unique record id.
@@ -134,7 +146,9 @@ abstract class ilHistorizingStorage
 	 *
 	 * @return string Name of the column which holds the current records database id.
 	 */
-	protected abstract function getRecordIdColumn();
+	protected static function getRecordIdColumn()
+	{
+	}
 
 	/**
 	 * Returns the column name which holds the current records case db-id.
@@ -150,7 +164,9 @@ abstract class ilHistorizingStorage
 	 *
 	 * @return array Name of the column which holds the current records case id.
 	 */
-	protected abstract function getCaseIdColumns();
+	protected static function getCaseIdColumns()
+	{
+	}
 
 	#endregion
 

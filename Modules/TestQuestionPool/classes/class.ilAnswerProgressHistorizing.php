@@ -23,7 +23,7 @@ class ilAnswerProgressHistorizing extends ilHistorizingStorage
 	 *
 	 * @return string Name of the table which contains the historized records.
 	 */
-	protected function getHistorizedTableName()
+	protected static function getHistorizedTableName()
 	{
 		return 'hist_answer_progress';
 	}
@@ -39,7 +39,7 @@ class ilAnswerProgressHistorizing extends ilHistorizingStorage
 	 *
 	 * @return string Name of the column which is used to track the records version.
 	 */
-	protected function getVersionColumnName()
+	protected static function getVersionColumnName()
 	{
 		return 'hist_version';
 	}
@@ -55,7 +55,7 @@ class ilAnswerProgressHistorizing extends ilHistorizingStorage
 	 *
 	 * @return string Name of the column which holds the current records historic state.
 	 */
-	protected function getHistoricStateColumnName()
+	protected static function getHistoricStateColumnName()
 	{
 		return 'hist_historic';
 	}
@@ -71,7 +71,7 @@ class ilAnswerProgressHistorizing extends ilHistorizingStorage
 	 *
 	 * @return string Name of the column which holds the current records creator.
 	 */
-	protected function getCreatorColumnName()
+	protected static function getCreatorColumnName()
 	{
 		return 'creator_user_id';
 	}
@@ -87,7 +87,7 @@ class ilAnswerProgressHistorizing extends ilHistorizingStorage
 	 *
 	 * @return string Name of the column which holds the current records creator.
 	 */
-	protected function getCreatedColumnName()
+	protected static function getCreatedColumnName()
 	{
 		return 'created_ts';
 	}
@@ -110,7 +110,7 @@ class ilAnswerProgressHistorizing extends ilHistorizingStorage
 	 *
 	 * @return Array Array with field definitions in the format "fieldname" => "datatype".
 	 */
-	protected function getContentColumnsDefinition()
+	protected static function getContentColumnsDefinition()
 	{
 		$definition =  array(
 			'solution_id'		=> 'integer',
@@ -134,7 +134,7 @@ class ilAnswerProgressHistorizing extends ilHistorizingStorage
 	 *
 	 * @return string Name of the column which holds the current records database id.
 	 */
-	protected function getRecordIdColumn()
+	protected static function getRecordIdColumn()
 	{
 		return 'row_id';
 	}
@@ -152,7 +152,7 @@ class ilAnswerProgressHistorizing extends ilHistorizingStorage
 	 *
 	 * @return array Name of the column which holds the current records case id.
 	 */
-	protected function getCaseIdColumns()
+	protected static function getCaseIdColumns()
 	{
 		return array(
 			'active_fi'	 		=> 'integer',
