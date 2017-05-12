@@ -30,9 +30,9 @@ class ilHtmlToPdfTransformerGUIFactory
 	 */
 	public function __construct()
 	{
-		global $lng, $ilCtrl;
-		$this->lng = $lng;
-		$this->ctrl = $ilCtrl;
+		global $DIC;
+		$this->lng = $DIC['lng'];
+		$this->ctrl = $DIC['ilCtrl'];
 		$this->transformer_factory = new ilHtmlToPdfTransformerFactory();
 	}
 

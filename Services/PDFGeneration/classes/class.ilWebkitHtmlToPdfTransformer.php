@@ -304,24 +304,24 @@ class ilWebkitHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	 */
 	protected function runCommandLine($a_path_to_file, $a_target)
 	{
-		global $ilLog;
+		global $DIC;
 		$temp_file		= $this->getPdfTempName();
 		$args			= $this->getCommandLineConfig() . ' ' . $a_path_to_file . ' ' . $temp_file . $this->redirectLog();
 		$return_value	= ilUtil::execQuoted($this->getWKHTMLToPdfPath(), $args);
 
-		$ilLog->write('ilWebkitHtmlToPdfTransformer command line config: ' . $args);
+		$DIC['ilLog']->write('ilWebkitHtmlToPdfTransformer command line config: ' . $args);
 		foreach($return_value as $key => $value)
 		{
-			$ilLog->write('ilWebkitHtmlToPdfTransformer return value line ' . $key . ' : ' . $value );
+			$DIC['ilLog']->write('ilWebkitHtmlToPdfTransformer return value line ' . $key . ' : ' . $value );
 		}
 		if(file_exists($temp_file))
 		{
-			$ilLog->write('ilWebkitHtmlToPdfTransformer file exists: ' . $temp_file . ' file size is :' . filesize($temp_file) . ' bytes, will be renamed to '. $a_target);
+			$DIC['ilLog']->write('ilWebkitHtmlToPdfTransformer file exists: ' . $temp_file . ' file size is :' . filesize($temp_file) . ' bytes, will be renamed to '. $a_target);
 			rename($temp_file, $a_target);
 		}
 		else
 		{
-			$ilLog->write('ilWebkitHtmlToPdfTransformer error: ' . print_r($return_value, true) );
+			$DIC['ilLog']->write('ilWebkitHtmlToPdfTransformer error: ' . print_r($return_value, true) );
 		}
 	}
 

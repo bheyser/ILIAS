@@ -194,7 +194,7 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	 */
 	public function createPDFFileFromHTMLFile($a_path_to_file, $a_target)
 	{
-		global $ilLog;
+		global $DIC;
 
 		if(file_exists($a_path_to_file))
 		{
@@ -206,20 +206,20 @@ class ilPhantomJsHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 			$args = ' ' . $a_path_to_file .' ' . $temp_file . ' ' . $this->getCommandLineConfig() .'';
 			$return_value = ilUtil::execQuoted( $this->getPhantomJsPath() . ' ' . $this->path_to_rasterize. ' ', $args);
 
-			$ilLog->write('ilPhantomJsHtmlToPdfTransformer command line config: ' . $args);
+			$DIC['ilLog']->write('ilPhantomJsHtmlToPdfTransformer command line config: ' . $args);
 			foreach($return_value as $key => $value)
 			{
-				$ilLog->write('ilPhantomJsHtmlToPdfTransformer return value line ' . $key . ' : ' . $value );
+				$DIC['ilLog']->write('ilPhantomJsHtmlToPdfTransformer return value line ' . $key . ' : ' . $value );
 			}
 
 			if(file_exists($temp_file))
 			{
-				$ilLog->write('ilWebkitHtmlToPdfTransformer file exists: ' . $temp_file . ' file size is :' . filesize($temp_file) . ' bytes, will be renamed to '. $a_target);
+				$DIC['ilLog']->write('ilWebkitHtmlToPdfTransformer file exists: ' . $temp_file . ' file size is :' . filesize($temp_file) . ' bytes, will be renamed to '. $a_target);
 				rename($temp_file, $a_target);
 			}
 			else
 			{
-				$ilLog->write('ilPhantomJsHtmlToPdfTransformer error: ' . print_r($return_value, true) );
+				$DIC['ilLog']->write('ilPhantomJsHtmlToPdfTransformer error: ' . print_r($return_value, true) );
 			}
 		}
 	}

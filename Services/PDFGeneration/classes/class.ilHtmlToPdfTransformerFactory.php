@@ -38,7 +38,7 @@ class ilHtmlToPdfTransformerFactory
 	 */
 	public function __construct($component = '')
 	{
-		global $lng;
+		global $DIC;
 
 		$this->getValidEngines();
 
@@ -48,7 +48,7 @@ class ilHtmlToPdfTransformerFactory
 			$setting = $component . '_' . $setting;
 		}
 		$this->pdf_transformer_settings	= new ilSetting($setting);
-		$this->lng	= $lng;
+		$this->lng	= $DIC['lng'];
 	}
 
 	/**

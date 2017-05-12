@@ -72,7 +72,7 @@ class ilFopHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	 */
 	protected function deliverPDFFromFO($fo)
 	{
-		global $ilLog;
+		global $DIC;
 
 		include_once "./Services/Utilities/classes/class.ilUtil.php";
 		$fo_file = ilUtil::ilTempnam() . ".fo";
@@ -86,12 +86,12 @@ class ilFopHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 		}
 		catch(XML_RPC2_FaultException $e)
 		{
-			$ilLog->write(__METHOD__.': '.$e->getMessage());
+			$DIC['ilLog']->write(__METHOD__.': '.$e->getMessage());
 			return false;
 		}
 		catch(Exception $e)
 		{
-			$ilLog->write(__METHOD__.': '.$e->getMessage());
+			$DIC['ilLog']->write(__METHOD__.': '.$e->getMessage());
 			return false;
 		}
 	}
@@ -103,7 +103,7 @@ class ilFopHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 	 */
 	protected function createPDFFileFromFO($fo, $target)
 	{
-		global $ilLog;
+		global $DIC;
 		$this->xsl = $this->getXsl();
 		include_once "./Services/Utilities/classes/class.ilUtil.php";
 		$fo_file = ilUtil::ilTempnam() . ".fo";
@@ -119,12 +119,12 @@ class ilFopHtmlToPdfTransformer extends ilAbstractHtmlToPdfTransformer
 		}
 		catch(XML_RPC2_FaultException $e)
 		{
-			$ilLog->write(__METHOD__.': '.$e->getMessage());
+			$DIC['ilLog']->write(__METHOD__.': '.$e->getMessage());
 			return false;
 		}
 		catch(Exception $e)
 		{
-			$ilLog->write(__METHOD__.': '.$e->getMessage());
+			$DIC['ilLog']->write(__METHOD__.': '.$e->getMessage());
 			return false;
 		}
 	}

@@ -37,6 +37,8 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 	 * @var ilCtrl
 	 */
 	protected $ctrl;
+	
+	protected $tabs;
 
 	/**
 	 * @param int $a_id
@@ -45,15 +47,16 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 	 */
 	public function __construct($a_id = 0, $a_id_type = self::REPOSITORY_NODE_ID, $a_parent_node_id = 0)
 	{
-		global $ilToolbar, $ilCtrl;
+		global $DIC;
 		/** @var $ilias ILIAS */
 		parent::__construct($a_id, $a_id_type, $a_parent_node_id);
 		$this->lng->loadLanguageModule('pdfgen');
 		$this->transformer_factory		= new ilHtmlToPdfTransformerFactory();
 		$this->transformer_gui_factory	= new ilHtmlToPdfTransformerGUIFactory();
 		$this->pdf_transformer_settings	= new ilSetting('pdf_transformer');
-		$this->toolbar 					= $ilToolbar;
-		$this->ctrl 					= $ilCtrl;
+		$this->toolbar 					= $DIC['ilToolbar'];
+		$this->ctrl 					= $DIC['ilCtrl'];
+		$this->tabs						= $DIC['ilTabs'];
 	}
 
 	/**
@@ -164,18 +167,16 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 	 */
 	public function getAdminTabs()
 	{
-		global $DIC;
-		$tabs_gui = $DIC['ilTabs'];
 		if($this->checkPermissionBool('read'))
 		{
-			$tabs_gui->addTarget('settings', $this->ctrl->getLinkTarget($this, 'view'), array(), __CLASS__);
+			$this->tabs->addTarget('settings', $this->ctrl->getLinkTarget($this, 'view'), array(), __CLASS__);
 		}
 
-		$this->transformer_gui_factory->addTabs($tabs_gui);
+		$this->transformer_gui_factory->addTabs($this->tabs);
 
 		if($this->checkPermissionBool('edit_permission'))
 		{
-			$tabs_gui->addTarget('perm_settings',
+			$this->tabs->addTarget('perm_settings',
 				$this->ctrl->getLinkTargetByClass('ilpermissiongui', 'perm'),
 				array(), 'ilpermissiongui');
 		}
@@ -184,8 +185,7 @@ class ilObjPDFGenerationGUI extends ilObject2GUI
 
 	protected function setActiveTab()
 	{
-		global $ilTabs;
-		$ilTabs->setTabActive($this->active_tab);
+		$this->tabs->setTabActive($this->active_tab);
 	}
 
 	/**
