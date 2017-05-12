@@ -5047,7 +5047,7 @@ $ilDB->insert("copg_pobj_def", array(
 'parent_type' => array('text', 'lobj'), 'class_name' => array('text', 'ilLOPage'), 'directory' => array('text', 'classes/Objectives'), 'component' => array('text', 'Modules/Course')));
 
 $ilDB->insert("copg_pobj_def", array(
-'parent_type' => array('text', 'prtt'), 'class_name' => array('text', 'ilPortfolioTemplatePage'), 'directory' => array('text', 'classes'), 'component' => array('text', 'Modules/Portfolio')));
+'parent_type' => array('text', 'lm'), 'class_name' => array('text', 'ilLMPage'), 'directory' => array('text', 'classes'), 'component' => array('text', 'Modules/LearningModule')));
 
 $ilDB->insert("copg_pobj_def", array(
 'parent_type' => array('text', 'blp'), 'class_name' => array('text', 'ilBlogPosting'), 'directory' => array('text', 'classes'), 'component' => array('text', 'Modules/Blog')));
@@ -10256,7 +10256,7 @@ $ilDB->insert("ctrl_calls", array(
 'parent' => array('text', 'iladministrationgui'), 'child' => array('text', 'ilobjworkflowenginegui'), 'comp_prefix' => array('text', '')));
 
 $ilDB->insert("ctrl_calls", array(
-'parent' => array('text', 'ilobjportfoliotemplategui'), 'child' => array('text', 'ilobjstylesheetgui'), 'comp_prefix' => array('text', '')));
+'parent' => array('text', 'iladministrationgui'), 'child' => array('text', 'ilobjchatroomadmingui'), 'comp_prefix' => array('text', '')));
 
 $ilDB->insert("ctrl_calls", array(
 'parent' => array('text', 'iladministrationgui'), 'child' => array('text', 'ilobjitemgroupgui'), 'comp_prefix' => array('text', '')));
@@ -11123,7 +11123,7 @@ $ilDB->insert("ctrl_calls", array(
 'parent' => array('text', 'ilobjmdsettingsgui'), 'child' => array('text', 'iladvancedmdsettingsgui'), 'comp_prefix' => array('text', '')));
 
 $ilDB->insert("ctrl_calls", array(
-'parent' => array('text', 'ilobjpaymentsettingsgui'), 'child' => array('text', 'ilshoppagegui'), 'comp_prefix' => array('text', '')));
+'parent' => array('text', 'ilmdeditorgui'), 'child' => array('text', 'ilformpropertydispatchgui'), 'comp_prefix' => array('text', '')));
 
 $ilDB->insert("ctrl_calls", array(
 'parent' => array('text', 'ilinfoscreengui'), 'child' => array('text', 'ilnotegui'), 'comp_prefix' => array('text', '')));
@@ -29927,9 +29927,6 @@ $ilDB->addIndex("mail_man_tpl", $in_fields, "i1", false);
 
 $ilDB->createSequence("mail_man_tpl", 1);
 
-$in_fields = array("question_id");
-$ilDB->addIndex("page_question", $in_fields, "i2", false);
-
 
 //
 // mail_obj_data
@@ -31996,12 +31993,6 @@ $fields = array (
 	,"editing_time" => array (
 		"notnull" => false
 		,"type" => "timestamp"
-	)
-	,"ident" => array (
-		"notnull" => false
-		,"length" => 4
-		,"unsigned" => false
-		,"type" => "integer"
 	)
 );
 $ilDB->createTable("obj_user_data_hist", $fields);
@@ -45883,21 +45874,6 @@ $ilDB->addPrimaryKey("sahs_sc13_seq_mapinfo", $pk_fields);
 $in_fields = array("targetobjectiveid");
 $ilDB->addIndex("sahs_sc13_seq_mapinfo", $in_fields, "i1", false);
 
-$ilDB->insert("rbac_templates", array(
-'rol_id' => array('integer', '80'), 'type' => array('text', 'mep'), 'ops_id' => array('integer', '58'), 'parent' => array('integer', '8')));
-
-$ilDB->insert("rbac_templates", array(
-'rol_id' => array('integer', '110'), 'type' => array('text', 'mep'), 'ops_id' => array('integer', '58'), 'parent' => array('integer', '8')));
-
-$ilDB->insert("rbac_templates", array(
-'rol_id' => array('integer', '111'), 'type' => array('text', 'mep'), 'ops_id' => array('integer', '58'), 'parent' => array('integer', '8')));
-
-$ilDB->insert("rbac_templates", array(
-'rol_id' => array('integer', '126'), 'type' => array('text', 'mep'), 'ops_id' => array('integer', '58'), 'parent' => array('integer', '8')));
-
-$ilDB->insert("rbac_templates", array(
-'rol_id' => array('integer', '3'), 'type' => array('text', 'mep'), 'ops_id' => array('integer', '58'), 'parent' => array('integer', '8')));
-
 
 //
 // sahs_sc13_seq_node
@@ -48657,12 +48633,6 @@ $ilDB->insert("settings", array(
 
 $ilDB->insert("settings", array(
 'module' => array('text', 'common'), 'keyword' => array('text', 'db_hotfixes_5_2'), 'value' => array('clob', '7')));
-
-$ilDB->insert("settings", array(
-'module' => array('text', 'mobs'), 'keyword' => array('text', 'black_list_file_types'), 'value' => array('clob', 'html')));
-
-$ilDB->insert("settings", array(
-'module' => array('text', 'common'), 'keyword' => array('text', 'db_hotfixes_5_0'), 'value' => array('clob', '23')));
 
 $ilDB->insert("settings", array(
 'module' => array('text', 'mobs'), 'keyword' => array('text', 'black_list_file_types'), 'value' => array('clob', 'html')));
@@ -52406,50 +52376,6 @@ $ilDB->insert("sysc_tasks", array(
 
 $ilDB->insert("sysc_tasks", array(
 'id' => array('integer', '5'), 'grp_id' => array('integer', '1'), 'last_update' => array('timestamp', ''), 'status' => array('integer', '0'), 'identifier' => array('text', 'duplicates')));
-
-
-//
-// sysc_tasks
-//
-$fields = array (
-	"id" => array (
-		"notnull" => true
-		,"length" => 4
-		,"unsigned" => false
-		,"default" => ""
-		,"type" => "integer"
-	)
-	,"grp_id" => array (
-		"notnull" => true
-		,"length" => 4
-		,"unsigned" => false
-		,"default" => ""
-		,"type" => "integer"
-	)
-	,"last_update" => array (
-		"notnull" => false
-		,"type" => "timestamp"
-	)
-	,"status" => array (
-		"notnull" => true
-		,"length" => 1
-		,"unsigned" => false
-		,"default" => "0"
-		,"type" => "integer"
-	)
-	,"identifier" => array (
-		"notnull" => false
-		,"length" => 64
-		,"fixed" => false
-		,"type" => "text"
-	)
-);
-$ilDB->createTable("sysc_tasks", $fields);
-
-$pk_fields = array("id");
-$ilDB->addPrimaryKey("sysc_tasks", $pk_fields);
-
-$ilDB->createSequence("sysc_tasks", 1);
 
 
 //

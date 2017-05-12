@@ -75,7 +75,6 @@ if(!$ilDB->tableExists('hist_answer_progress'))
 <?php
 	include_once('./Services/Migration/DBUpdate_3560/classes/class.ilDBUpdateNewObjectType.php');
 	ilDBUpdateNewObjectType::addAdminNode('pdfg', 'PDFGeneration');
-}
 ?>
 <#3>
 <?php
