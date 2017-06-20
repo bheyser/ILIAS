@@ -454,10 +454,35 @@ class ilTestArchiver
 		
 		$zip_output_path = $this->getZipExportDirectory();
 		$zip_output_filename = 'test_archive_obj_'.$this->test_obj_id . '_' . time() . '_.zip';
-		
-		ilUtil::zip($this->getTestArchive(), $zip_output_path . self::DIR_SEP . $zip_output_filename, true);
+
+		//uzk-patch: begin
+		$start_time = microtime(TRUE);
+		$this->compressFaster($this->getTestArchive(), $zip_output_path . self::DIR_SEP . $zip_output_filename);
+		$dur = microtime(true) - $start_time;
+		global $ilLog;
+		$ilLog->write(sprintf('Compression took %s seconds.', $dur));
 		return;
 	}
+	
+	private function compressFaster($a_dir, $a_file)
+	{
+		$cdir = getcwd();
+		$a_dir .="/*";
+		$pathinfo = pathinfo($a_dir);
+		chdir($pathinfo["dirname"]);
+		$zip = PATH_TO_ZIP;
+		if(!$zip)
+		{
+			chdir($cdir);
+			return false;
+		}
+		$name = basename($a_dir);
+		$zipcmd = "-r -0 ".ilUtil::escapeShellArg($a_file)." ".$name;
+		ilUtil::execQuoted($zip, $zipcmd);
+		chdir($cdir);
+		return true;
+	}
+	//uzk-patch: end
 
 	#endregion
 

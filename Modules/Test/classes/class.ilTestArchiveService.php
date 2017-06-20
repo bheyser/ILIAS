@@ -86,10 +86,23 @@ class ilTestArchiveService
 		require_once 'Modules/Test/classes/class.ilTestResultHeaderLabelBuilder.php';
 		$testResultHeaderLabelBuilder = new ilTestResultHeaderLabelBuilder($GLOBALS['DIC']->language(), $GLOBALS['DIC']['ilObjDataCache']);
 
-		return $gui->getPassListOfAnswers(
-			$results, $activeId, $pass, true, false, false, true, false, null, $testResultHeaderLabelBuilder
-		);
+		//uzk-patch: begin
+		return $this->buildUZKHeader($gui, $activeId, $pass) . $gui->getPassListOfAnswers(
+				$results, $activeId, $pass, true, false, false, true, false, null, $testResultHeaderLabelBuilder
+			);
 	}
+
+	/**
+	 * @param $gui ilTestServiceGUI
+	 * @param $activeId
+	 * @param $pass
+	 * @return string
+	 */
+	private function buildUZKHeader($gui, $activeId, $pass)
+	{
+		return $this->testOBJ->lookupExamId($activeId, $pass) . $gui->getResultsHeadUserAndPass($activeId, $pass + 1);
+	}
+	//uzk-patch: end
 
 	/**
 	 * @param $activeId
