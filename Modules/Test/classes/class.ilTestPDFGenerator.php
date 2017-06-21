@@ -105,9 +105,15 @@ class ilTestPDFGenerator
 		{
 			$filename .= '.pdf';
 		}
-		
+
+		//uzk-patch: begin
+		$start_time = microtime(TRUE);
 		$pdf_factory = new ilHtmlToPdfTransformerFactory();
 		$pdf_factory->deliverPDFFromHTMLString($pdf_output, $filename, $output_mode);
+		$dur = microtime(true) - $start_time;
+		global $ilLog;
+		$ilLog->write(sprintf('PDF creation for %s took %s seconds.', basename($filename), $dur));
+		//uzk-patch: end
 	}
 	
 	public static function preprocessHTML($html)
