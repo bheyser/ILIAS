@@ -294,7 +294,9 @@ class ilMainMenuGUI
 			}
 			else
 			{
-				if($this->getMode() != self::MODE_TOPBAR_REDUCED && !$ilUser->isAnonymous())
+				// uzk-patch: begin
+				if(false && $this->getMode() != self::MODE_TOPBAR_REDUCED && !$ilUser->isAnonymous())
+				// uzk-patch: end
 				{
 					$notificationSettings = new ilSetting('notifications');
 					$chatSettings = new ilSetting('chatroom');
