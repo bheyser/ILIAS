@@ -100,7 +100,13 @@ class ilTestArchiveService
 	 */
 	private function buildUZKHeader($gui, $activeId, $pass)
 	{
-		return $this->testOBJ->lookupExamId($activeId, $pass) . $gui->getResultsHeadUserAndPass($activeId, $pass + 1);
+		$dateType = ilDatePresentation::useRelativeDates();
+		ilDatePresentation::setUseRelativeDates(false);
+		$custom_head = $this->testOBJ->lookupExamId($activeId, $pass);
+		$custom_head .= ' - ' . $this->testOBJ->getTitle();
+		$custom_head .= ' - ' . ilDatePresentation::formatDate(new ilDateTime($this->testOBJ->getPassFinishDate($activeId, $pass), IL_CAL_UNIX));
+		ilDatePresentation::setUseRelativeDates($dateType);
+		return $custom_head . $gui->getResultsHeadUserAndPass($activeId, $pass + 1);
 	}
 	//uzk-patch: end
 
