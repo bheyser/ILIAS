@@ -67,7 +67,7 @@ class ilObjGroup extends ilContainer implements ilMembershipRegistrationCodes
 	protected $waiting_list = false;
 	protected $auto_fill_from_waiting; // [bool]
 	protected $leave_end; // [ilDate]
-	protected $show_members;
+	protected $show_members = 1;
 	
 	
 	// Map
@@ -2076,9 +2076,15 @@ class ilObjGroup extends ilContainer implements ilMembershipRegistrationCodes
 		return true;
 	}
 	
+	/**
+	 * Minimum members check
+	 * @global $ilDB $ilDB
+	 * @return array
+	 */
 	public static function findGroupsWithNotEnoughMembers()
 	{
-		global $ilDB;
+		$ilDB = $GLOBALS['DIC']->database();
+		$tree = $GLOBALS['DIC']->repositoryTree();
 		
 		$res = array();
 		
@@ -2099,6 +2105,14 @@ class ilObjGroup extends ilContainer implements ilMembershipRegistrationCodes
 			/* " AND (grp_start IS NULL OR grp_start > ".$ilDB->quote($now, "integer").")" */);
 		while($row = $ilDB->fetchAssoc($set))
 		{
+			$refs = ilObject::_getAllReferences($row['obj_id']);
+			$ref = end($refs);
+			
+			if($tree->isDeleted($ref))
+			{
+				continue;
+			}
+			
 			$part = new ilGroupParticipants($row["obj_id"]);			
 			$reci = $part->getNotificationRecipients();
 			if(sizeof($reci))
