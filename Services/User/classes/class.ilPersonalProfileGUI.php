@@ -573,10 +573,11 @@ class ilPersonalProfileGUI
 			$this->ctrl->getLinkTarget($this, "showPublicProfile"));
 
 		// export
-		$ilTabs->addTab("export",
+		// uzk-patch: begin
+		/*$ilTabs->addTab("export",
 			$this->lng->txt("export")."/".$this->lng->txt("import"),
-			$this->ctrl->getLinkTarget($this, "showExportImport"));
-
+			$this->ctrl->getLinkTarget($this, "showExportImport"));*/
+		// uzk-patch: end
 		// #17570
 		if(($ilUser->getPref("public_profile") && 
 			$ilUser->getPref("public_profile") != "n") || 
