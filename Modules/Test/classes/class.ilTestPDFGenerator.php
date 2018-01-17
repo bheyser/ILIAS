@@ -18,12 +18,26 @@ class ilTestPDFGenerator
 
 	private static function buildHtmlDocument($contentHtml, $styleHtml)
 	{
+		$math_jax = '';
+		$mathJaxSetting = new ilSetting('MathJax');
+		if($mathJaxSetting->get("enable"))
+		{
+			$math_jax = '	<script type="text/x-mathjax-config">
+						  MathJax.Hub.Config({tex2jax: {inlineMath: [[\'$\',\'$\'], [\'\\\(\',\'\\\)\']]}});
+						</script>
+						<script type="text/javascript" async src="'.$mathJaxSetting->get("path_to_mathjax").'"></script>
+ 				';
+		}
+
+		require_once('Services/MathJax/classes/class.ilMathJax.php');
+		ilMathJax::getInstance()->init(ilMathJax::PURPOSE_EXPORT);
 		return "
 			<html>
 				<head>
 					<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />
  					$styleHtml
- 				</head>
+ 					$math_jax
+ 					</head>
 				<body>$contentHtml</body>
 			</html>
 		";
@@ -50,11 +64,13 @@ class ilTestPDFGenerator
 		
 		$invalid_elements = array();
 
+		//uzk-patch: begin
 		#$script_elements     = $dom->getElementsByTagName('script');
 		#foreach($script_elements as $elm)
 		#{
-			#$invalid_elements[] = $elm;
+		#$invalid_elements[] = $elm;
 		#}
+		//uzk-patch: end
 
 		foreach($invalid_elements as $elm)
 		{
