@@ -39,13 +39,16 @@ var ilPhantomJsWrapper =  (function () {
 		pro.phantom_page.clipRect = {top: 0, left: 0, width: viewport[0], height: viewport[1]};
 	};
 	
-	pub.renderPageObject = function(src_file, out_file, delay)
+	pub.renderPageObject = function(src_file, out_file, delay, zoom)
 	{
 		pro.out_file	= out_file;
 		pro.delay		= delay;
 
 		pro.phantom_page.open(src_file, function (status)
 		{
+			pro.phantom_page.evaluate(function(zoom) {
+				document.querySelector('body').style.zoom = zoom;
+			}, zoom);
 			if (status !== 'success')
 			{
 				console.log('Unable to load the address!');
@@ -160,7 +163,8 @@ var ilPhantomJsHelper =  (function () {
 					height: size[1],
 					margin: pro.json.margin,
 					header: pro.appendHeaderCallback(),
-					footer: pro.appendFooterCallback()
+					footer: pro.appendFooterCallback(),
+					zoom  : pro.json.zoom
 				};
 			}
 			else {
@@ -169,7 +173,8 @@ var ilPhantomJsHelper =  (function () {
 					orientation: pro.json.orientation,
 					margin:      pro.json.margin,
 					header:      pro.appendHeaderCallback(),
-					footer:      pro.appendFooterCallback()
+					footer:      pro.appendFooterCallback(),
+					zoom  :      pro.json.zoom
 				};
 			}
 		ilPhantomJsWrapper.configurePageObject(page_object);
@@ -179,7 +184,7 @@ var ilPhantomJsHelper =  (function () {
 
 	pro.renderPage = function()
 	{
-		ilPhantomJsWrapper.renderPageObject(pro.src_file, pro.out_file, pro.json.delay);
+		ilPhantomJsWrapper.renderPageObject(pro.src_file, pro.out_file, pro.json.delay, pro.json.zoom);
 	};
 
 	pub.Init = function(src_file, out_file, json)
