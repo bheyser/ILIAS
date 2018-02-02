@@ -4998,7 +4998,12 @@ abstract class assQuestion
 			'active_fi' => array('integer', $activeId),
 			'pass' => array('integer', $pass)
 		);
-		
+
+		if( $this->getStep() !== NULL )
+		{
+			$whereData['step'] = array("integer", $this->getStep());
+		}
+
 		return $ilDB->update('tst_solutions', $fieldData, $whereData);
 	}
 	// fau.
@@ -5218,6 +5223,7 @@ abstract class assQuestion
 	 */
 	public function lookupForExistingSolutions($activeId, $pass)
 	{
+		/** @var $ilDB \ilDBInterface  */
 		global $ilDB;
 
 		$return = array(
@@ -5231,8 +5237,17 @@ abstract class assQuestion
 			WHERE active_fi = %s
 			AND question_fi = %s
 			AND pass = %s
+		";
+
+		if( $this->getStep() !== NULL )
+		{
+			$query .= " AND step = " . $ilDB->quote((int)$this->getStep(), 'integer') . " ";
+		}
+
+		$query .= "
 			GROUP BY authorized
 		";
+
 		$result = $ilDB->queryF($query, array('integer', 'integer', 'integer'), array($activeId, $this->getId(), $pass));
 
 		while ($row = $ilDB->fetchAssoc($result))
@@ -5260,6 +5275,11 @@ abstract class assQuestion
 			AND pass = %s
 		";
 
+		if( $this->getStep() !== NULL )
+		{
+			$query .= " AND step = " . $ilDB->quote((int)$this->getStep(), 'integer') . " ";
+		}
+
 		return $ilDB->manipulateF($query, array('integer', 'integer', 'integer'),
 			array($activeId, $this->getId(), $pass)
 		);
@@ -5285,7 +5305,12 @@ abstract class assQuestion
 			AND question_fi = %s
 			AND pass = %s
 		";
-		
+
+		if( $this->getStep() !== NULL )
+		{
+			$query .= " AND step = " . $ilDB->quote((int)$this->getStep(), 'integer') . " ";
+		}
+
 		return $ilDB->manipulateF($query, array('integer', 'integer', 'integer'),
 			array($activeId, $this->getId(), $pass)
 		);
