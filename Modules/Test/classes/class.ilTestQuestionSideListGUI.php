@@ -187,6 +187,21 @@ class ilTestQuestionSideListGUI
 				$tpl->parseCurrentBlock();
 			}
 			
+			if( true && isset($row['answerstatus']) )
+			{
+				require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionList.php';
+				
+				switch( $row['answerstatus'] )
+				{
+					case ilAssQuestionList::QUESTION_ANSWER_STATUS_CORRECT_ANSWERED:
+						$class .= ' passed';
+						break;
+					case ilAssQuestionList::QUESTION_ANSWER_STATUS_WRONG_ANSWERED:
+						$class .= ' failed';
+						break;
+				}
+			}
+			
 			if( $this->isDisabled() || $row['disabled'] )
 			{
 				$tpl->setCurrentBlock('disabled_entry');

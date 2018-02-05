@@ -307,7 +307,7 @@ class ilTestService
 			}
 
 // fau: testNav - add number parameter for getQuestionTitle()
-			$data[] = array(
+			$qstData = array(
 				'order' => $value["nr"],
 				'title' => $this->object->getQuestionTitle($value["title"], $value["nr"]),
 				'description' => $description,
@@ -320,6 +320,13 @@ class ilTestService
 				'obligatory' => $value['obligatory'],
 				'isAnswered' => $value['isAnswered']
 			);
+			
+			if( isset($value['answerstatus']) )
+			{
+				$qstData['answerstatus'] = $value['answerstatus'];
+			}
+			
+			$data[] = $qstData;
 			
 			$firstQuestion = false;
 // fau.
