@@ -439,3 +439,11 @@ $ilCtrlStructureReader->getStructure();
 <?php
 $ilCtrlStructureReader->getStructure();
 ?>
+<#29>
+<?php
+$ilCtrlStructureReader->getStructure();
+?>
+<#30>
+<?php
+$ilDB->modifyTableColumn('il_dcl_tableview', 'roles',array('type' => 'clob'));
+?>
