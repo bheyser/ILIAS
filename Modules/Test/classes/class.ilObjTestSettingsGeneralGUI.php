@@ -132,6 +132,106 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 				$this->$cmd();
 		}
 	}
+	
+	private function showDraftCmd()
+	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+
+		require_once 'Services/Form/classes/class.ilPropertyFormGUI.php';
+		$form = new ilPropertyFormGUI();
+
+
+		$seqheader = new ilFormSectionHeaderGUI();
+		$seqheader->setTitle($this->lng->txt("tst_presentation_properties"));
+		$form->addItem($seqheader);
+
+		
+		$instant_feedback_enabled = new ilCheckboxInputGUI($DIC->language()->txt('tst_instant_feedback'), 'instant_feedback_enabled');
+		$instant_feedback_enabled->setInfo('Dem Teilnehmer stehen für die Beantwortung von Fragen Rückmeldungen zur Verfügung.');
+		$instant_feedback_enabled->setChecked(true);
+		$form->addItem($instant_feedback_enabled);
+		
+		
+		
+				$instant_feedback = new ilCheckboxGroupInputGUI('Art der Rückmeldung', 'instant_feedback');
+				$instant_feedback->setRequired(true);
+				$instant_feedback_enabled->addSubItem($instant_feedback);
+				
+					$instant_feedback->addOption(new ilCheckboxOption(
+						$DIC->language()->txt('tst_instant_feedback_results'), 'instant_feedback_points',
+						$DIC->language()->txt('tst_instant_feedback_results_desc')
+					));
+					$instant_feedback->addOption(new ilCheckboxOption(
+						$DIC->language()->txt('tst_instant_feedback_answer_generic'), 'instant_feedback_generic',
+						$DIC->language()->txt('tst_instant_feedback_answer_generic_desc')
+					));
+					$instant_feedback->addOption(new ilCheckboxOption(
+						$DIC->language()->txt('tst_instant_feedback_answer_specific'), 'instant_feedback_specific',
+						$DIC->language()->txt('tst_instant_feedback_answer_specific_desc')
+					));
+					$instant_feedback->addOption(new ilCheckboxOption(
+						$DIC->language()->txt('tst_instant_feedback_solution'), 'instant_feedback_solution',
+						$DIC->language()->txt('tst_instant_feedback_solution_desc')
+					));
+		
+		
+					
+					
+				$instant_feedback_forced = new ilCheckboxInputGUI('Rückmeldung nach Beantwortung erzwingen', 'instant_feedback_forced');
+				$instant_feedback_forced->setInfo('Die Präsentation der Rückmeldungen wird nach Beantworten einer Frage erzwungen.');
+				$instant_feedback_enabled->addSubItem($instant_feedback_forced);
+		
+		
+		
+		$radioGroup = new ilRadioGroupInputGUI('Teilnehmerantworten', 'answer_fixation');
+		$radioGroup->setRequired(true);
+		$form->addItem($radioGroup);
+		
+			$radioOption = new ilRadioOption(
+				'Teilnehmerantworten können beliebig oft verändert werden', #$this->lng->txt('tst_instant_feedback_handling_none'),
+				self::INST_FB_HANDLING_OPT_NONE
+			);
+			#$radioOption->setInfo($this->lng->txt('tst_instant_feedback_handling_none_desc'));
+			$radioOption->setInfo('Solange der Test Durchlauf nicht abgeschlossen wurde, können Teilnehmer eingereichte Antworten beliebig oft verändern.');
+			$radioGroup->addOption($radioOption);
+			
+			$radioOption = new ilRadioOption(
+				'Teilnehmerantworten bei Anzeige von Rückmeldungen festschreiben', #$this->lng->txt('tst_instant_feedback_handling_freeze'),
+				self::INST_FB_HANDLING_OPT_FREEZE
+			);
+			#$radioOption->setInfo($this->lng->txt('tst_instant_feedback_handling_freeze_desc'));
+			$radioOption->setInfo('Teilnehmerantworten werden nach Präsentation der Rückmeldung zur Frage festgeschrieben und können nicht mehr verändert werden.');
+			$radioGroup->addOption($radioOption);
+		
+			$radioOption = new ilRadioOption(
+				'Teilnehmerantworten bei Präsentation von Folgefragen festschreiben', #$this->lng->txt('tst_instant_feedback_handling_freeze'),
+				self::INST_FB_HANDLING_OPT_FREEZE
+			);
+			#$radioOption->setInfo($this->lng->txt('tst_instant_feedback_handling_freeze_desc'));
+			$radioOption->setInfo('Teilnehmerantworten werden nach Präsentation der nächsten Frage festgeschrieben und können nicht mehr verändert werden.');
+			$radioGroup->addOption($radioOption);
+
+			#$radioOption = new ilRadioOption(
+			#	$this->lng->txt('tst_instant_feedback_handling_force_and_freeze'),
+			#	self::INST_FB_HANDLING_OPT_FORCE_AND_FREEZE
+			#);
+			#$radioOption->setInfo($this->lng->txt('tst_instant_feedback_handling_force_and_freeze_desc'));
+			#$radioGroup->addOption($radioOption);
+			#$radioOption = new ilRadioOption(
+			#	$this->lng->txt('tst_instant_feedback_handling_force'),
+			#	self::INST_FB_HANDLING_OPT_FORCE
+			#);
+			#$radioOption->setInfo($this->lng->txt('tst_instant_feedback_handling_force_desc'));
+			#$radioGroup->addOption($radioOption);
+			#$radioGroup->setValue($this->getInstFbHandlingValue(
+			#	$this->testOBJ->isInstantFeedbackAnswerFixationEnabled(),
+			#	$this->testOBJ->isForceInstantFeedbackEnabled()
+			#));
+		
+		
+			
+		$DIC->ui()->mainTemplate()->setContent($form->getHTML());
+	}
 
 	private function showFormCmd(ilPropertyFormGUI $form = null)
 	{
