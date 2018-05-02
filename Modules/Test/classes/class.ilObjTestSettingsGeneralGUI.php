@@ -177,18 +177,38 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 		
 					
 					
-				$instant_feedback_forced = new ilCheckboxInputGUI('Rückmeldung nach Beantwortung erzwingen', 'instant_feedback_forced');
-				$instant_feedback_forced->setInfo('Die Präsentation der Rückmeldungen wird nach Beantworten einer Frage erzwungen.');
-				$instant_feedback_enabled->addSubItem($instant_feedback_forced);
+				$radioGroup = new ilRadioGroupInputGUI('Ereignis der Rückmeldung', 'feedback_event');
+				$radioGroup->setRequired(true);
+				$radioGroup->setValue(0);
+				$instant_feedback_enabled->addSubItem($radioGroup);
+				
+					$radioOption = new ilRadioOption(
+						'Der Teilnehmer kann die Rückmeldung optional abrufen',
+						0
+					);
+					$radioOption->setInfo('Die Rückmeldung steht zur Verfügung, wird aber erst präsentiert, wenn der Teilnehmer sie abruft.');
+					$radioGroup->addOption($radioOption);
+				
+					$radioOption = new ilRadioOption(
+						'Die Rückmeldung wird durch Beantwortung einer Frage präsentiert', #$this->lng->txt('tst_instant_feedback_handling_none'),
+						1
+					);
+					$radioOption->setInfo('Die Rückmeldung wird ohne Einfluß des Teilnehmers mit Beantworung einer Frage präsentiert.');
+					$radioGroup->addOption($radioOption);
+		
+				#$instant_feedback_forced = new ilCheckboxInputGUI('Rückmeldung nach Beantwortung erzwingen', 'instant_feedback_forced');
+				#$instant_feedback_forced->setInfo('Die Präsentation der Rückmeldungen wird nach Beantworten einer Frage erzwungen.');
+				#$instant_feedback_enabled->addSubItem($instant_feedback_forced);
 		
 		
 		
 		$radioGroup = new ilRadioGroupInputGUI('Teilnehmerantworten', 'answer_fixation');
 		$radioGroup->setRequired(true);
+		$radioGroup->setValue(self::INST_FB_HANDLING_OPT_NONE);
 		$form->addItem($radioGroup);
 		
 			$radioOption = new ilRadioOption(
-				'Teilnehmerantworten können beliebig oft verändert werden', #$this->lng->txt('tst_instant_feedback_handling_none'),
+				'Die Teilnehmerantworten werden im Test Durchlauf nicht festgeschrieben', #$this->lng->txt('tst_instant_feedback_handling_none'),
 				self::INST_FB_HANDLING_OPT_NONE
 			);
 			#$radioOption->setInfo($this->lng->txt('tst_instant_feedback_handling_none_desc'));
@@ -196,19 +216,19 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 			$radioGroup->addOption($radioOption);
 			
 			$radioOption = new ilRadioOption(
-				'Teilnehmerantworten bei Anzeige von Rückmeldungen festschreiben', #$this->lng->txt('tst_instant_feedback_handling_freeze'),
+				'Nach Anzeige der Rückmeldung werden Teilnehmerantworten festgeschrieben', #$this->lng->txt('tst_instant_feedback_handling_freeze'),
 				self::INST_FB_HANDLING_OPT_FREEZE
 			);
 			#$radioOption->setInfo($this->lng->txt('tst_instant_feedback_handling_freeze_desc'));
-			$radioOption->setInfo('Teilnehmerantworten werden nach Präsentation der Rückmeldung zur Frage festgeschrieben und können nicht mehr verändert werden.');
+			$radioOption->setInfo('Teilnehmerantworten werden nach dem Präsentieren der Rückmeldung zur Frage festgeschrieben und können nicht mehr verändert werden.');
 			$radioGroup->addOption($radioOption);
 		
 			$radioOption = new ilRadioOption(
-				'Teilnehmerantworten bei Präsentation von Folgefragen festschreiben', #$this->lng->txt('tst_instant_feedback_handling_freeze'),
+				'Nach Anzeige von Folgefragen werden Teilnehmerantworten festgeschrieben', #$this->lng->txt('tst_instant_feedback_handling_freeze'),
 				self::INST_FB_HANDLING_OPT_FREEZE
 			);
 			#$radioOption->setInfo($this->lng->txt('tst_instant_feedback_handling_freeze_desc'));
-			$radioOption->setInfo('Teilnehmerantworten werden nach Präsentation der nächsten Frage festgeschrieben und können nicht mehr verändert werden.');
+			$radioOption->setInfo('Teilnehmerantworten werden nach dem Präsentieren der nächsten Frage festgeschrieben und können nicht mehr verändert werden.');
 			$radioGroup->addOption($radioOption);
 
 			#$radioOption = new ilRadioOption(
