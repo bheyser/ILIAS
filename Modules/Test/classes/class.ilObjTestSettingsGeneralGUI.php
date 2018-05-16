@@ -230,6 +230,14 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 			#$radioOption->setInfo($this->lng->txt('tst_instant_feedback_handling_freeze_desc'));
 			$radioOption->setInfo('Teilnehmerantworten werden nach dem Präsentieren der nächsten Frage festgeschrieben und können nicht mehr verändert werden.');
 			$radioGroup->addOption($radioOption);
+		
+			$radioOption = new ilRadioOption(
+				'Die Anzeige von Folgefragen oder der Rückmeldung schreibt Teilnehmerantworten fest', #$this->lng->txt('tst_instant_feedback_handling_freeze'),
+				self::INST_FB_HANDLING_OPT_FREEZE
+			);
+			#$radioOption->setInfo($this->lng->txt('tst_instant_feedback_handling_freeze_desc'));
+			$radioOption->setInfo('Teilnehmerantworten werden mit der Präsentation der nächsten Frage oder der Rückmeldung zur aktuellen Frage festgeschrieben und können nicht mehr verändert werden.');
+			$radioGroup->addOption($radioOption);
 
 			#$radioOption = new ilRadioOption(
 			#	$this->lng->txt('tst_instant_feedback_handling_force_and_freeze'),
