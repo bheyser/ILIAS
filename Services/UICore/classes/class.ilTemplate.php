@@ -1037,11 +1037,8 @@ class ilTemplate extends HTML_Template_ITX
 		$ftpl->setVariable("ELAPSED_TIME",
 			", ".number_format($ilBench->getMeasuredTime("Core", "ElapsedTimeUntilFooter"),1).' seconds');
 		// END Usability: Non-Delos Skins can display the elapsed time in the footer
-		
-		// uzk-patch: begin
-		//$this->setVariable("FOOTER", $ftpl->get());
-		$this->setVariable("FOOTER", "");
-		// uzk-patch: end
+
+		$this->setVariable("FOOTER", $ftpl->get());
 	}
 
 
