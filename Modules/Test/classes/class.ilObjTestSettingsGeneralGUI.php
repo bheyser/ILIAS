@@ -147,13 +147,13 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 
 		
 		$instant_feedback_enabled = new ilCheckboxInputGUI($DIC->language()->txt('tst_instant_feedback'), 'instant_feedback_enabled');
-		$instant_feedback_enabled->setInfo('Dem Teilnehmer stehen für die Beantwortung von Fragen Rückmeldungen zur Verfügung.');
+		$instant_feedback_enabled->setInfo('When questions are configured with feedback it is provided to participants during the test pass.');
 		$instant_feedback_enabled->setChecked(true);
 		$form->addItem($instant_feedback_enabled);
 		
 		
 		
-				$instant_feedback = new ilCheckboxGroupInputGUI('Art der Rückmeldung', 'instant_feedback');
+				$instant_feedback = new ilCheckboxGroupInputGUI('Included Contents', 'instant_feedback');
 				$instant_feedback->setRequired(true);
 				$instant_feedback_enabled->addSubItem($instant_feedback);
 				
@@ -177,23 +177,23 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 		
 					
 					
-				$radioGroup = new ilRadioGroupInputGUI('Ereignis der Rückmeldung', 'feedback_event');
+				$radioGroup = new ilRadioGroupInputGUI('Feedback Trigger', 'feedback_trigger');
 				$radioGroup->setRequired(true);
 				$radioGroup->setValue(0);
 				$instant_feedback_enabled->addSubItem($radioGroup);
 				
 					$radioOption = new ilRadioOption(
-						'Der Teilnehmer kann die Rückmeldung optional abrufen',
+						'Participants can Trigger the Feedback Manually',
 						0
 					);
-					$radioOption->setInfo('Die Rückmeldung steht zur Verfügung, wird aber erst präsentiert, wenn der Teilnehmer sie abruft.');
+					$radioOption->setInfo('The feedback is availble but will only be shown when a participant triggers the presentation manually.');
 					$radioGroup->addOption($radioOption);
 				
 					$radioOption = new ilRadioOption(
-						'Die Rückmeldung wird durch Beantwortung einer Frage präsentiert', #$this->lng->txt('tst_instant_feedback_handling_none'),
+						'The Feedback is Triggered by Answering Questions', #$this->lng->txt('tst_instant_feedback_handling_none'),
 						1
 					);
-					$radioOption->setInfo('Die Rückmeldung wird ohne Einfluß des Teilnehmers mit Beantworung einer Frage präsentiert.');
+					$radioOption->setInfo('The presentation of feedback is forced to all participants with answering a question.');
 					$radioGroup->addOption($radioOption);
 		
 				#$instant_feedback_forced = new ilCheckboxInputGUI('Rückmeldung nach Beantwortung erzwingen', 'instant_feedback_forced');
@@ -202,41 +202,41 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 		
 		
 		
-		$radioGroup = new ilRadioGroupInputGUI('Teilnehmerantworten', 'answer_fixation');
+		$radioGroup = new ilRadioGroupInputGUI('Participant Answers', 'answer_fixation');
 		$radioGroup->setRequired(true);
 		$radioGroup->setValue(self::INST_FB_HANDLING_OPT_NONE);
 		$form->addItem($radioGroup);
 		
 			$radioOption = new ilRadioOption(
-				'Die Teilnehmerantworten werden im Test Durchlauf nicht festgeschrieben', #$this->lng->txt('tst_instant_feedback_handling_none'),
+				"Do not Lock Participants Answers during Test Passes", #$this->lng->txt('tst_instant_feedback_handling_none'),
 				self::INST_FB_HANDLING_OPT_NONE
 			);
 			#$radioOption->setInfo($this->lng->txt('tst_instant_feedback_handling_none_desc'));
-			$radioOption->setInfo('Solange der Test Durchlauf nicht abgeschlossen wurde, können Teilnehmer eingereichte Antworten beliebig oft verändern.');
+			$radioOption->setInfo('As long as a test pass was not finished, participants can change their answers at any time.');
 			$radioGroup->addOption($radioOption);
 			
 			$radioOption = new ilRadioOption(
-				'Nach Anzeige der Rückmeldung werden Teilnehmerantworten festgeschrieben', #$this->lng->txt('tst_instant_feedback_handling_freeze'),
+				'Lock Answers with the Presentation of Feedback', #$this->lng->txt('tst_instant_feedback_handling_freeze'),
 				self::INST_FB_HANDLING_OPT_FREEZE
 			);
 			#$radioOption->setInfo($this->lng->txt('tst_instant_feedback_handling_freeze_desc'));
-			$radioOption->setInfo('Teilnehmerantworten werden nach dem Präsentieren der Rückmeldung zur Frage festgeschrieben und können nicht mehr verändert werden.');
+			$radioOption->setInfo("After the feedback for a question is shown participant answers are locked, participants cannot change these answers any longer.");
 			$radioGroup->addOption($radioOption);
 		
 			$radioOption = new ilRadioOption(
-				'Nach Anzeige von Folgefragen werden Teilnehmerantworten festgeschrieben', #$this->lng->txt('tst_instant_feedback_handling_freeze'),
+				'Lock Answers with the Presentation of Follow-Up Questions', #$this->lng->txt('tst_instant_feedback_handling_freeze'),
 				self::INST_FB_HANDLING_OPT_FREEZE
 			);
 			#$radioOption->setInfo($this->lng->txt('tst_instant_feedback_handling_freeze_desc'));
-			$radioOption->setInfo('Teilnehmerantworten werden nach dem Präsentieren der nächsten Frage festgeschrieben und können nicht mehr verändert werden.');
+			$radioOption->setInfo('Showing the follow-up question will lock participant answers for the previous question, participants cannot change these answers any longer.');
 			$radioGroup->addOption($radioOption);
 		
 			$radioOption = new ilRadioOption(
-				'Die Anzeige von Folgefragen oder der Rückmeldung schreibt Teilnehmerantworten fest', #$this->lng->txt('tst_instant_feedback_handling_freeze'),
+				'Lock Answers with the Presentation of Feedback or Follow-Up Questions', #$this->lng->txt('tst_instant_feedback_handling_freeze'),
 				self::INST_FB_HANDLING_OPT_FREEZE
 			);
 			#$radioOption->setInfo($this->lng->txt('tst_instant_feedback_handling_freeze_desc'));
-			$radioOption->setInfo('Teilnehmerantworten werden mit der Präsentation der nächsten Frage oder der Rückmeldung zur aktuellen Frage festgeschrieben und können nicht mehr verändert werden.');
+			$radioOption->setInfo("Participant Answers for a question will be locked either with the presentation of the questions's feedback or when the follow-up question is shown.");
 			$radioGroup->addOption($radioOption);
 
 			#$radioOption = new ilRadioOption(
