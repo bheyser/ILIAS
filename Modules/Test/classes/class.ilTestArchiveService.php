@@ -81,10 +81,10 @@ class ilTestArchiveService
 			$activeId, $pass, false
 		);
 		
-		$gui = new ilTestServiceGUI($this->testOBJ);
-
-		require_once 'Modules/Test/classes/class.ilTestResultHeaderLabelBuilder.php';
-		$testResultHeaderLabelBuilder = new ilTestResultHeaderLabelBuilder($GLOBALS['DIC']->language(), $GLOBALS['DIC']['ilObjDataCache']);
+		// uni-goettingen-patch: begin
+		require_once 'Modules/Test/classes/class.ilTestServicePdfGUI.php';
+		$gui = new ilTestServicePdfGUI($this->testOBJ);
+		// uni-goettingen-patch: end
 
 		return $gui->getPassListOfAnswers(
 			$results, $activeId, $pass, true, false, false, true, false, null, $testResultHeaderLabelBuilder

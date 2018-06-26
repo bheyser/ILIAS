@@ -174,6 +174,12 @@ class assOrderingQuestion extends assQuestion implements ilObjQuestionScoringAdj
 			$this->element_height = $data["element_height"];
 			$this->setEstimatedWorkingTime(substr($data["working_time"], 0, 2), substr($data["working_time"], 3, 2), substr($data["working_time"], 6, 2));
 			
+			//auding-patch: start
+			$this->setAudingFile($data['auding_file']);
+			$this->setAudingNrOfSends($data['auding_nr_of_sends']);
+			$this->setAudingActivate($data['auding_activate']);
+			$this->setAudingMode($data['auding_mode']);
+			//auding-patch: end
 			try
 			{
 				$this->setAdditionalContentEditingMode($data['add_cont_edit_mode']);
@@ -247,6 +253,9 @@ class assOrderingQuestion extends assQuestion implements ilObjQuestionScoringAdj
 		
 		$clone->onDuplicate($thisObjId, $this_id, $clone->getObjId(), $clone->getId());
 		
+		//auding-patch: start
+		$clone->duplicateAudingFile($original_id);
+		//auding-patch: end
 		return $clone->id;
 	}
 	
@@ -292,6 +301,9 @@ class assOrderingQuestion extends assQuestion implements ilObjQuestionScoringAdj
 		
 		$clone->onCopy($source_questionpool_id, $original_id, $clone->getObjId(), $clone->getId());
 		
+		//auding-patch: start
+		$clone->duplicateAudingFile($original_id);
+		//auding-patch: end
 		return $clone->id;
 	}
 
@@ -329,6 +341,9 @@ class assOrderingQuestion extends assQuestion implements ilObjQuestionScoringAdj
 
 		$clone->onCopy($sourceParentId, $sourceQuestionId, $clone->getObjId(), $clone->getId());
 
+		//auding-patch: start
+		$clone->duplicateAudingFile($sourceQuestionId);
+		//auding-patch: end
 		return $clone->id;
 	}
 
@@ -369,7 +384,9 @@ class assOrderingQuestion extends assQuestion implements ilObjQuestionScoringAdj
 	function copyImages($question_id, $source_questionpool)
 	{
 		global $ilLog;
-		if ($this->getOrderingType() == OQ_PICTURES)
+		//uni-goettingen-patch: begin
+		if ($this->getOrderingType() == OQ_PICTURES || $this->getOrderingType() == OQ_NESTED_PICTURES)
+		//uni-goettingen-patch: end
 		{
 			$imagepath = $this->getImagePath();
 			$imagepath_original = str_replace("/$this->id/images", "/$question_id/images", $imagepath);
@@ -1436,29 +1453,58 @@ class assOrderingQuestion extends assQuestion implements ilObjQuestionScoringAdj
 	{
 		return $this->fetchSolutionSubmit($_POST);
 	}
+		}
+	}
+// uni-goettingen-patch: begin
 
-	/**
-	 * @param $user_order
-	 * @param $nested_solution
-	 * @return int
+	/***
+	 * @param array $new_hierarchy
+	 * @param bool 	$with_random_id
 	 */
-	protected function calculateReachedPointsForSolution(ilAssOrderingElementList $solutionOrderingElementList)
+	/*	
+		public function setLeveledOrdering($new_hierarchy, $with_random_id = false)
 	{
-		$reachedPoints = $this->getPoints();
-
-		foreach($this->getOrderingElementList() as $correctElement)
+			if($with_random_id == true)
 		{
-			$userElement = $solutionOrderingElementList->getElementByPosition( $correctElement->getPosition() );
+				//for test output
+				if(is_array($new_hierarchy))
+				{
+					foreach($new_hierarchy as $id)
+					{
+						$ordering_depth                  = 0;
+						$this->leveled_ordering[$id->id] = $ordering_depth;
 			
-			if( !$correctElement->isSameElement($userElement) )
+						if(is_array($id->children))
 			{
-				$reachedPoints = 0;
-				break;
+							foreach($id->children as $child)
+							{
+								$this->getDepthRecursive($child, $ordering_depth, true);
 			}
 		}
+					}
+				}
+			}	
+			else
+			{
+				if(is_array($new_hierarchy))
+				{
+					foreach($new_hierarchy as $id)
+					{
+						$ordering_depth           = 0;
+						$this->leveled_ordering[] = $ordering_depth;
 		
-		return $reachedPoints;
+						if(is_array($id->children))
+						{
+							foreach($id->children as $child)
+							{
+								$this->getDepthRecursive($child, $ordering_depth, $with_random_id);
 	}
+						}
+					}
+				}
+			}
+		} 
+	*/ // uni-goettingen-patch: end	
 
 	/***
 	 * @param object 	$child
@@ -1483,6 +1529,41 @@ class assOrderingQuestion extends assQuestion implements ilObjQuestionScoringAdj
 		return $this->old_ordering_depth;
 	}
 	
+	// uni-goettingen-patch: begin	
+	/***
+	 * @param array $new_hierarchy
+	 * @param bool 	$with_random_id
+	 */
+	public function setLeveledOrdering($new_hierarchy, $with_random_id = false)
+	{
+		$this->getRecursive($new_hierarchy,-1,$with_random_id);
+	}
+	
+	/***
+	 * @param array 	$hierarchy
+	 * @param integer 	$ordering_depth
+	 * @param bool 		$with_random_id
+	 */
+	public function getRecursive($hierarchy,$depth, $with_random_id = false)
+	{
+		$depth++;
+		if(is_array($hierarchy))
+		{
+			foreach ($hierarchy as $subArray)
+			{
+				if(is_array($subArray->children))
+				{
+					$this->leveled_ordering[$subArray->id] = $depth;
+					$this->getRecursive($subArray->children, $depth,$with_random_id);
+				}
+				else
+				{
+					$this->leveled_ordering[$subArray->id] = $depth;
+				}
+			}
+		}
+	}
+	// uni-goettingen-patch: end	
 	/***
 	 * @param integer $a_random_id
 	 * @return integer

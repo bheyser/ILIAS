@@ -404,6 +404,9 @@ class assClozeTestImport extends assQuestionImport
 			);
 		}
 		$this->object->saveToDb();
+		//auding-patch: start
+		$this->importAudingData($this->object->getId(), $item);
+		//auding-patch: end
 		if (count($item->suggested_solutions))
 		{
 			foreach ($item->suggested_solutions as $suggested_solution)
@@ -412,17 +415,11 @@ class assClozeTestImport extends assQuestionImport
 			}
 			$this->object->saveToDb();
 		}
-		if ($tst_id > 0)
-		{
-			$q_1_id = $this->object->getId();
-			$question_id = $this->object->duplicate(true, null, null, null, $tst_id);
-			$tst_object->questions[$question_counter++] = $question_id;
-			$import_mapping[$item->getIdent()] = array("pool" => $q_1_id, "test" => $question_id);
-		}
-		else
-		{
-			$import_mapping[$item->getIdent()] = array("pool" => $this->object->getId(), "test" => 0);
-		}
+		// uni-goettingen-patch: begin
+		$this->handleMappingAndDuplication(
+			$item, $tst_id, $tst_object, $question_counter, $import_mapping
+		);
+		// uni-goettingen-patch: end
 		$this->object->saveToDb();
 		if(count($combination) > 0)
 		{

@@ -313,7 +313,9 @@ abstract class ilTestExport
 		$row = 1;
 		$col = 0;
 
-		if($this->test_obj->getAnonymity())
+		// uni-goettingen-patch: begin
+		if ($this->test_obj->isFullyAnonymized())
+		// uni-goettingen-patch: end
 		{
 			$worksheet->setFormattedExcelTitle($worksheet->getColumnCoord($col++) . $row, $this->lng->txt('counter'));
 		}
@@ -376,7 +378,10 @@ abstract class ilTestExport
 				$row++;
 			}
 
-			if($this->test_obj->getAnonymity())
+				$col = 0;
+				// uni-goettingen-patch: begin
+				if ($this->test_obj->isFullyAnonymized())
+				// uni-goettingen-patch: end
 			{
 				$worksheet->setCell($row, $col++, $counter);
 			}
@@ -810,7 +815,9 @@ abstract class ilTestExport
 		$rows = array();
 		$datarow = array();
 		$col = 1;
-		if ($this->test_obj->getAnonymity())
+		// uni-goettingen-patch: begin
+		if ($this->test_obj->isFullyAnonymized())
+		// uni-goettingen-patch: end
 		{
 			array_push($datarow, $this->lng->txt("counter"));
 			$col++;
@@ -890,7 +897,9 @@ abstract class ilTestExport
 			if (!$remove)
 			{
 				$datarow2 = array();
-				if ($this->test_obj->getAnonymity())
+				// uni-goettingen-patch: begin
+				if ($this->test_obj->isFullyAnonymized())
+				// uni-goettingen-patch: end
 				{
 					array_push($datarow2, $counter);
 				}
@@ -1028,10 +1037,215 @@ abstract class ilTestExport
 			return $csv;
 		}
 	}
+	// uni-goettingen-patch: begin
+	function exportToFlexNowGraded($deliver = TRUE, $filterby = "", $filtertext = "", $passedonly = FALSE)
+	{
+		global $ilLog;
 
-	abstract protected function initXmlExport();
+		if (strcmp($this->mode, "aggregated") == 0) return $this->aggregatedResultsToCSV($deliver);
 	
-	abstract protected function getQuestionIds();
+		$rows = array();
+		$datarow = array();
+		$col = 1;
+		// uni-goettingen-patch: begin
+		if ($this->test_obj->isFullyAnonymized())
+		// uni-goettingen-patch: end
+		{
+			array_push($datarow, $this->lng->txt("counter"));
+			$col++;
+		}
+		else
+		{
+			// Spaltennamen unabhaengig von der Benutzersprache
+			array_push($datarow, "Matrnr");
+			$col++;
+			array_push($datarow, "Name");
+			$col++;
+		}
+		array_push($datarow, "Benutzername");
+		$col++;
+		array_push($datarow, "Testergebnis in Punkten");
+		$col++;
+		array_push($datarow, "Maximal erreichbare Punktzahl");
+		$col++;
+		array_push($datarow, "Note");
+		$col++;
+
+		$data =& $this->test_obj->getCompleteEvaluationData(TRUE, $filterby, $filtertext);
+		$headerrow = $datarow;
+		$counter = 1;
+		foreach ($data->getParticipants() as $active_id => $userdata)
+		{
+			$user_id = ilObjTest::_getUserIdFromActiveId($active_id);
+
+			$user_matrnr = ilObjUser::_lookupMatriculation($user_id);
+
+			$datarow = $headerrow;
+			$remove = FALSE;
+			if ($passedonly)
+			{
+				if ($data->getParticipant($active_id)->getPassed() == FALSE)
+				{
+					$remove = TRUE;
+				}
+			}
+			if (!$remove)
+			{
+				$datarow2 = array();
+				// uni-goettingen-patch: begin
+				if ($this->test_obj->isFullyAnonymized())
+				// uni-goettingen-patch: end
+				{
+					array_push($datarow2, $counter);
+				}
+				else
+				{
+					array_push($datarow2, $user_matrnr);
+					array_push($datarow2, $data->getParticipant($active_id)->getName());
+					array_push($datarow2, $data->getParticipant($active_id)->getLogin());
+				}
+				array_push($datarow2, $data->getParticipant($active_id)->getReached());
+				array_push($datarow2, $data->getParticipant($active_id)->getMaxpoints());
+				array_push($datarow2, $data->getParticipant($active_id)->getMark());
+
+				for ($pass = 0; $pass <= $data->getParticipant($active_id)->getLastPass(); $pass++)
+				{
+					$finishdate = $this->test_obj->getPassFinishDate($active_id, $pass);
+					if ($finishdate > 0)
+					{
+						if ($counter == 1 && $pass == 0)
+						{
+							array_push($rows, $datarow);
+						}
+						$datarow = array();
+						array_push($rows, $datarow2);
+						$datarow2 = array();
+					}
+				}
+				$counter++;
+			}
+		}
+		$csv = "";
+		$separator = ";";
+		foreach ($rows as $evalrow)
+		{
+			$csvrow =& $this->test_obj->processCSVRow($evalrow, TRUE, $separator);
+			$csv .= join($csvrow, $separator) . "\n";
+		}
+		if ($deliver)
+		{
+			ilUtil::deliverData($csv, ilUtil::getASCIIFilename($this->test_obj->getTitle() . "_flexnow.csv"));
+			exit;
+		}
+		else
+		{
+			return $csv;
+		}
+	}
+	
+	function exportToFlexNowUngraded($deliver = TRUE, $filterby = "", $filtertext = "", $passedonly = FALSE)
+	{
+		global $ilLog;
+
+		if (strcmp($this->mode, "aggregated") == 0) return $this->aggregatedResultsToCSV($deliver);
+
+		$rows = array();
+		$datarow = array();
+		$col = 1;
+		if ($this->test_obj->isFullyAnonymized())
+		{
+			array_push($datarow, $this->lng->txt("counter"));
+			$col++;
+		}
+		else
+		{
+			array_push($datarow, "Matrnr");
+			$col++;
+			array_push($datarow, "Name");
+			$col++;
+		}
+		array_push($datarow, "Benutzername");
+		$col++;
+		array_push($datarow, "Testergebnis in Punkten");
+		$col++;
+		array_push($datarow, "Maximal erreichbare Punktzahl");
+		$col++;
+		array_push($datarow, "Prüfungsbemerkung");
+		$col++;
+		array_push($datarow, "Prfbem");
+		$col++;
+
+		$data =& $this->test_obj->getCompleteEvaluationData(TRUE, $filterby, $filtertext);
+		$headerrow = $datarow;
+		$counter = 1;
+		foreach ($data->getParticipants() as $active_id => $userdata)
+		{
+			$user_id = ilObjTest::_getUserIdFromActiveId($active_id);
+
+			$user_matrnr = ilObjUser::_lookupMatriculation($user_id);
+
+			$datarow = $headerrow;
+			$remove = FALSE;
+			if ($passedonly)
+			{
+				if ($data->getParticipant($active_id)->getPassed() == FALSE)
+				{
+					$remove = TRUE;
+				}
+			}
+			if (!$remove)
+			{
+				$datarow2 = array();
+				if ($this->test_obj->isFullyAnonymized())
+				{
+					array_push($datarow2, $counter);
+				}
+				else
+				{
+					array_push($datarow2, $user_matrnr);
+					array_push($datarow2, $data->getParticipant($active_id)->getName());
+					array_push($datarow2, $data->getParticipant($active_id)->getLogin());
+				}
+				array_push($datarow2, $data->getParticipant($active_id)->getReached());
+				array_push($datarow2, $data->getParticipant($active_id)->getMaxpoints());
+				array_push($datarow2, $data->getParticipant($active_id)->getMark());
+				array_push($datarow2, $data->getParticipant($active_id)->getMarkOfficial());
+
+				for ($pass = 0; $pass <= $data->getParticipant($active_id)->getLastPass(); $pass++)
+				{
+					$finishdate = $this->test_obj->getPassFinishDate($active_id, $pass);
+					if ($finishdate > 0)
+					{
+						if ($counter == 1 && $pass == 0)
+						{
+							array_push($rows, $datarow);
+						}
+						$datarow = array();
+						array_push($rows, $datarow2);
+						$datarow2 = array();
+					}
+				}
+				$counter++;
+			}
+		}
+		$csv = "";
+		$separator = ";";
+		foreach ($rows as $evalrow)
+		{
+			$csvrow =& $this->test_obj->processCSVRow($evalrow, TRUE, $separator);
+			$csv .= join($csvrow, $separator) . "\n";
+		}
+		if ($deliver)
+		{
+			ilUtil::deliverData($csv, ilUtil::getASCIIFilename($this->test_obj->getTitle() . "_flexnow.csv"));
+			exit;
+		}
+		else
+		{
+			return $csv;
+		}
+	}
+	// uni-goettingen-patch: end
 
 	/**
 	* build xml export file
@@ -1109,14 +1323,18 @@ abstract class ilTestExport
 		{
 			// dump results xml document to file
 			include_once "./Modules/Test/classes/class.ilTestResultsToXML.php";
-			$resultwriter = new ilTestResultsToXML($this->test_obj->getTestId(), $this->test_obj->getAnonymity());
-			$resultwriter->setIncludeRandomTestQuestionsEnabled($this->test_obj->isRandomTest());
+			// uni-goettingen-patch: begin
+			$resultwriter = new ilTestResultsToXML($this->test_obj->getTestId(), $this->test_obj->isFullyAnonymized());
+			// uni-goettingen-patch: end
 			$ilBench->start("TestExport", "buildExportFile_results");
 			$resultwriter->xmlDumpFile($this->export_dir."/".$this->subdir."/".$this->resultsfile, false);
 			$ilBench->stop("TestExport", "buildExportFile_results");
 		}
 
 			// add media objects which were added with tiny mce
+		// uni-goettingen-patch: begin
+		$this->exportAuding($this->export_dir."/".$this->subdir);
+		// uni-goettingen-patch: end
 		$ilBench->start("QuestionpoolExport", "buildExportFile_saveAdditionalMobs");
 		$this->exportXHTMLMediaObjects($this->export_dir."/".$this->subdir);
 		$ilBench->stop("QuestionpoolExport", "buildExportFile_saveAdditionalMobs");
@@ -1199,52 +1417,19 @@ abstract class ilTestExport
 		}
 	}
 	
-	/**
-	 * @param ilXmlWriter $a_xml_writer
-	 * @param $questions
-	 */
-	protected function populateQuestionSkillAssignmentsXml(ilXmlWriter $a_xml_writer, ilAssQuestionSkillAssignmentList $assignmentList, $questions)
+	// uni-goettingen-patch: begin
+	public function exportAuding($a_target_dir)
 	{
-		require_once 'Modules/TestQuestionPool/classes/questions/class.ilAssQuestionSkillAssignmentExporter.php';
-		$skillQuestionAssignmentExporter = new ilAssQuestionSkillAssignmentExporter();
-		$skillQuestionAssignmentExporter->setXmlWriter($a_xml_writer);
-		$skillQuestionAssignmentExporter->setQuestionIds($questions);
-		$skillQuestionAssignmentExporter->setAssignmentList($assignmentList);
-		$skillQuestionAssignmentExporter->export();
+		foreach($this->test_obj->questions as $question_id)
+	{
+			$subdir = "il_".IL_INST_ID."_auding_".$question_id;
+			ilUtil::makeDir($a_target_dir."/objects/".$subdir);
+			$auding_file=ilUtil::getDataDir() . "/assessment_auding/".(int) $question_id."/auding/";
+			ilUtil::rCopy($auding_file, $a_target_dir."/objects/".$subdir);
 	}
 	
-	protected function populateSkillLevelThresholdsXml(ilXmlWriter $a_xml_writer, ilAssQuestionSkillAssignmentList $assignmentList)
-	{
-		global $ilDB;
-		
-		require_once 'Modules/Test/classes/class.ilTestSkillLevelThresholdList.php';
-		$thresholdList = new ilTestSkillLevelThresholdList($ilDB);
-		$thresholdList->setTestId($this->test_obj->getTestId());
-		$thresholdList->loadFromDb();
-		
-		require_once 'Modules/Test/classes/class.ilTestSkillLevelThresholdExporter.php';
-		$skillLevelThresholdExporter = new ilTestSkillLevelThresholdExporter();
-		$skillLevelThresholdExporter->setXmlWriter($a_xml_writer);
-		$skillLevelThresholdExporter->setAssignmentList($assignmentList);
-		$skillLevelThresholdExporter->setThresholdList($thresholdList);
-		$skillLevelThresholdExporter->export();
 	}
-	
-	/**
-	 * @return ilAssQuestionSkillAssignmentList
-	 */
-	protected function buildQuestionSkillAssignmentList()
-	{
-		global $ilDB;
-		
-		require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionSkillAssignmentList.php';
-		$assignmentList = new ilAssQuestionSkillAssignmentList($ilDB);
-		$assignmentList->setParentObjId($this->test_obj->getId());
-		$assignmentList->loadFromDb();
-		$assignmentList->loadAdditionalSkillData();
-		
-		return $assignmentList;
-	}
+	// uni-goettingen-patch: end
 }
 
 ?>

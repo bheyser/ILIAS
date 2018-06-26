@@ -32,7 +32,12 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 		 */
 		global $ilAccess;
 
-		if(!$ilAccess->checkAccess('write', '', $this->ref_id))
+		// uni-goettingen-patch: begin
+		if(
+			!$ilAccess->checkAccess("write", "", $this->ref_id) &&
+			!$ilAccess->checkAccess("man_scoring_access", "", $this->ref_id)
+		)
+		// uni-goettingen-patch: end
 		{
 			ilUtil::sendFailure($this->lng->txt('cannot_edit_test'), true);
 			$this->ctrl->redirectByClass('ilobjtestgui', 'infoScreen');
@@ -71,7 +76,12 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 		 */
 		global $tpl, $ilAccess;
 
-		if(!$ilAccess->checkAccess('write', '', $this->ref_id))
+		// uni-goettingen-patch: begin
+		if(
+			!$ilAccess->checkAccess("write", "", $this->ref_id) &&
+			!$ilAccess->checkAccess("man_scoring_access", "", $this->ref_id)
+		)
+		// uni-goettingen-patch: end
 		{
 			ilUtil::sendInfo($this->lng->txt('cannot_edit_test'), true);
 			$this->ctrl->redirectByClass('ilobjtestgui', 'infoScreen');
@@ -174,15 +184,29 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 		$tpl->setContent($table->getHTML());
 	}
 	
-	public function saveManScoringByQuestion()
+	// uni-goettingen-patch: begin
+	/**
+	 * @param bool $ajax
+	 */
+	public function saveManScoringByQuestion($ajax = false)
+	// uni-goettingen-patch: end
 	{
 		/**
 		 * @var $ilAccess ilAccessHandler
 		 */
 		global  $ilAccess, $lng;
 
-		if(!$ilAccess->checkAccess('write', '', $this->ref_id))
+		// uni-goettingen-patch: begin
+		if(
+			!$ilAccess->checkAccess("write", "", $this->ref_id) &&
+			!$ilAccess->checkAccess("man_scoring_access", "", $this->ref_id)
+		)
 		{
+			if ($ajax) {
+				echo $this->lng->txt('cannot_edit_test');
+				exit();
+			}
+			// uni-goettingen-patch: end
 			ilUtil::sendInfo($this->lng->txt('cannot_edit_test'), true);
 			$this->ctrl->redirectByClass('ilobjtestgui', 'infoScreen');
 		}
@@ -252,6 +276,9 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 		
 		$changed_one = false;
 		$lastAndHopefullyCurrentQuestionId = null;
+		// uni-goettingen-patch: begin
+		$active_ids = array();
+		// uni-goettingen-patch: end
 		foreach($_POST['scoring'] as $pass => $active_ids)
 		{
 			foreach((array)$active_ids as $active_id => $questions)
@@ -265,6 +292,9 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 
 				foreach((array)$questions as $qst_id => $reached_points)
 				{
+					// uni-goettingen-patch: begin
+					$this->saveFeedback($active_id, $qst_id, $pass);
+					// uni-goettingen-patch: emd
 					$update_participant = assQuestion::_setReachedPoints(
 						$active_id, $qst_id, $reached_points, $maxPointsByQuestionId[$qst_id], $pass, 1, $this->object->areObligationsEnabled()
 					);
@@ -283,6 +313,9 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 			}
 		}
 
+		$correction_feedback = array();
+		$correction_points = 0;
+		// uni-goettingen-patch: end
 		if($changed_one)
 		{
 			$qTitle = '';
@@ -298,11 +331,41 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 
 			require_once './Modules/Test/classes/class.ilTestScoring.php';
 			$scorer = new ilTestScoring($this->object);
+			// uni-goettingen-patch: begin
 			$scorer->setPreserveManualScores(true);
+			if(is_array($active_ids) && count($active_ids) == 1)
+			{
+				reset($active_ids);
+				$active_id = key($active_ids);
+				$scorer->recalculateSolution($active_id, $pass);
+				$correction_feedback = $this->object->getSingleManualFeedback($active_id, $qst_id, $pass);
+				$correction_points = assQuestion::_getReachedPoints($active_id, $qst_id, $pass);
+			}
+			else
+			{
 			$scorer->recalculateSolutions();
 		}
+		}
+		if($ajax && is_array($correction_feedback) && count($correction_feedback) > 0)
+		{
+			$correction_feedback['finalized_by'] = ilObjUser::_lookupFullname($correction_feedback['finalized_by_usr_id']);
+			if(strlen($correction_feedback['finalized_tstamp']) > 0)
+			{
+				$time = new ilDateTime($correction_feedback['finalized_tstamp'], IL_CAL_UNIX);
+				$correction_feedback['finalized_on_date'] = $time->get(IL_CAL_DATETIME);
+			}
+			else
+			{
+				$correction_feedback['finalized_on_date'] = '';
+			}
 		
+			echo json_encode(array( 'feedback' => $correction_feedback, 'points' => $correction_points));
+			exit();
+		}
+		else
+		{
 		$this->showManScoringByQuestionParticipantsTable();
+	}
 	}
 
 	/**
@@ -345,16 +408,76 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 		$pass        = $_GET['pass_id'];
 		$question_id = $_GET['qst_id'];
 
+		// uni-goettingen-patch: begin
 		$data = $this->object->getCompleteEvaluationData(FALSE);
 		$participant = $data->getParticipant($active_id);
 		
 		$question_gui = $this->object->createQuestionGUI('', $question_id);
+		$result_output  = $question_gui->getSolutionOutput($active_id, $pass, FALSE, FALSE, FALSE, $this->object->getShowSolutionFeedback());
+		$max_points     = $question_gui->object->getMaximumPoints();
 
-		$tmp_tpl = new ilTemplate('tpl.il_as_tst_correct_solution_output.html', TRUE, TRUE, 'Modules/Test');
-		$result_output = $question_gui->getSolutionOutput($active_id, $pass, FALSE, FALSE, FALSE, $this->object->getShowSolutionFeedback(), FALSE, TRUE);
+		$tpl = new ilTemplate('tpl.il_as_tst_correct_solution_output.html', TRUE, TRUE, 'Modules/Test');
+		$this->appendUserNameToModal($tpl, $participant);
+		$this->appendQuestionTitleToModal($tpl, $question_id, $max_points, $question_gui->object->getTitle());
+		$this->appendSolutionAndPointsToModal($tpl, $result_output, $question_gui->object->getReachedPoints($active_id, $pass), $max_points);
+		$this->appendFormToModal($tpl, $pass, $active_id, $question_id, $max_points);
+		// uni-goettingen-patch: end
+		echo $tpl->get();
+		exit();
+	}
+
+	// uni-goettingen-patch: begin
+	public function checkConstraintsBeforeSaving()
+	{
+			$this->saveManScoringByQuestion(true);
+	}
+	
+
+	private function enforceAccessConstraint()
+	{
+		/**
+		 * @var $ilAccess ilAccessHandler
+		 */
+		global $ilAccess;
+		if(
+			!$ilAccess->checkAccess("write", "", $this->ref_id) &&
+			!$ilAccess->checkAccess("man_scoring_access", "", $this->ref_id)
+		)
+		{
+			exit();
+		}
+	}
+
+	/**
+	 * @param ilTemplate $tmp_tpl
+	 * @param $participant
+	 */
+	private function appendUserNameToModal($tmp_tpl, $participant)
+	{
+		/**
+		 * @var $ilAccess ilAccessHandler
+		 */
+		global $ilAccess;
+		// uni-goettingen-patch: begin
+		if ( $this->object->isFullyAnonymized()  ||
+			( $this->object->getAnonymity() == 2 && !$ilAccess->checkAccess('write','',$this->object->getRefId())))
+		{
+			$tmp_tpl->setVariable('TEXT_YOUR_SOLUTION', $this->lng->txt('answers_of') .' '. $this->lng->txt('anonymous'));
+		}
+		else
+		{
 		$tmp_tpl->setVariable('TEXT_YOUR_SOLUTION', $this->lng->txt('answers_of') .' '. $participant->getName());
-		$maxpoints = $question_gui->object->getMaximumPoints();
-
+		}
+		}
+		// uni-goettingen-patch: end
+	/**
+	 * @param ilTemplate $tmp_tpl
+	 * @param $question_id
+	 * @param $max_points
+	 * @param $title
+	 */
+	private function appendQuestionTitleToModal($tmp_tpl, $question_id, $max_points, $title)
+	{
 		$add_title = ' ['. $this->lng->txt('question_id_short') . ': ' . $question_id  . ']';
 		
 		if($maxpoints == 1)

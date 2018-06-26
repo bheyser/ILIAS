@@ -38,12 +38,16 @@ class ilTestParticipantData
 	/**
 	 * @var array
 	 */
-	private $byActiveId;
+	// auding-patch: begin
+	protected $byActiveId;
+	// auding-patch: end
 
 	/**
 	 * @var array
 	 */
-	private $byUserId;
+	// auding-patch: begin
+	protected $byUserId;
+	// auding-patch: end
 
 	/**
 	 * @var array
@@ -181,6 +185,12 @@ class ilTestParticipantData
 	{
 		return $this->buildFormatedFullname($this->byActiveId[$activeId]);
 	}
+	// uni-goettingen-patch: begin
+	public function getMatriculationByActiveId($activeId)
+	{
+		return $usrData['matriculation'];
+	}
+	// uni-goettingen-patch: end
 
 	public function getFileSystemCompliantFullnameByActiveId($activeId)
 	{

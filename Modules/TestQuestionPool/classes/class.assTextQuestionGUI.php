@@ -188,6 +188,13 @@ class assTextQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 			$template->setCurrentBlock('essay_textarea');
 			$template->setVariable("TA_ESSAY", $this->object->prepareTextareaOutput($solution, TRUE, true));
 		}
+		// uni-goettingen-patch: begin
+		$md5_raw_text = str_replace("\n", "\\n",
+						str_replace('"', '\\"', 
+						str_replace("\\", "\\\\",
+							$solution)));
+		$template->setVariable("MD5RAWTEXT", $md5_raw_text);
+		// uni-goettingen-patch: end
 		$template->parseCurrentBlock();
 
 		$questiontext = $this->object->getQuestion();
@@ -368,7 +375,9 @@ class assTextQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 		
 		$questiontext = $this->object->getQuestion();
 		$template->setVariable("QUESTIONTEXT", $this->object->prepareTextareaOutput($questiontext, TRUE));
-		$template->setVariable("QID", $this->object->getId());
+		//auding-patch: start
+		$this->outAudingPreview($template);
+		//auding-patch: end
 		
 		$questionoutput = $template->get();
 		
@@ -425,6 +434,9 @@ class assTextQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 		$template->setVariable("ESSAY", ilUtil::prepareFormOutput($user_solution));
 		$questiontext = $this->object->getQuestion();
 		$template->setVariable("QUESTIONTEXT", $this->object->prepareTextareaOutput($questiontext, TRUE));
+		//auding-patch: start
+		$this->outAuding($template);
+		//auding-patch: end
 		$questionoutput = $template->get();
 		
 		$questionoutput .= $this->getJsCode();

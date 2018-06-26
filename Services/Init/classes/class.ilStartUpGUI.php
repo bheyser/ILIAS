@@ -434,6 +434,9 @@ class ilStartUpGUI
 		$page_editor_html = $this->showSamlLoginForm($page_editor_html);
 		$page_editor_html = $this->showRegistrationLinks($page_editor_html);
 		$page_editor_html = $this->showTermsOfServiceLink($page_editor_html);
+		// uni-goettingen-patch: begin
+		$page_editor_html = $this->showSeatNumber($page_editor_html);
+		// uni-goettingen-patch: end
 		$page_editor_html = $this->purgePlaceholders($page_editor_html);
 		
 		// not controlled by login page editor
@@ -460,6 +463,57 @@ class ilStartUpGUI
 
 		$tpl->show("DEFAULT", false);
 	}
+	// uni-goettingen-patch: begin
+	protected function showSeatNumber($page_editor_html)
+	{
+		global $lng, $ilDB;
+
+		$utpl = new ilTemplate('tpl.login_seat_number.html',true,true,'Services/Init');
+		//$utpl->setVariable("USER_AGREEMENT", $lng->txt("usr_agreement"));
+		$ip_adress = $_SERVER['REMOTE_ADDR'];
+		//echo gethostbyaddr($_SERVER['REMOTE_ADDR']);
+
+		$result = $ilDB->query("SELECT seatnr, sector FROM seat_number WHERE ip = ".$ilDB->quote($ip_adress, "text"));
+		$record = $ilDB->fetchAssoc($result);
+
+		//$seat_adress =  substr(strrchr($ip_adress,'.'),1);
+		$utpl->setVariable("SEAT_NUMBER", $record["seatnr"]);
+
+		switch ($record["sector"]) {
+		    case 0:
+		        $utpl->setVariable("SECTOR", "#153470");
+		        break;
+		    case 1:
+		        $utpl->setVariable("SECTOR", "#153470");
+		        break;
+		    case 2:
+		        $utpl->setVariable("SECTOR", "red");
+		        break;
+			case 3:
+		        $utpl->setVariable("SECTOR", "green");
+		        break;
+			case 4:
+		        $utpl->setVariable("SECTOR", "grey");
+		        break;
+			case 5:
+		        $utpl->setVariable("SECTOR", "#b5763a");
+		        break;
+			default:
+		       $utpl->setVariable("SECTOR", "#153470");
+		}
+
+		//$utpl->setVariable("SECTOR", "red");
+		//$utpl->setVariable("LINK_USER_AGREEMENT",$this->ctrl->getLinkTarget($this, "showUserAgreement"));
+
+		return $this->substituteLoginPageElements(
+			$GLOBALS['tpl'],
+			$page_editor_html,
+			$utpl->get(),
+			'[list-user-agreement]',
+			'SEAT_NUMBER'
+		);
+	}
+	// uni-goettingen-patch: end
 	
 	protected function showCodeForm($a_username = null, $a_form = null)
 	{
@@ -1478,7 +1532,9 @@ class ilStartUpGUI
 	*/
 	function showLogout()
 	{
-		global $tpl, $ilSetting, $lng, $ilIliasIniFile;
+		// uni-goettingen-patch: begin
+		global $tpl, $ilSetting, $ilAuth, $lng, $ilIliasIniFile, $ilDB;
+		// uni-goettingen-patch: end
 		
 		ilSession::setClosingContext(ilSession::SESSION_CLOSE_USER);		
 		$GLOBALS['DIC']['ilAuthSession']->logout();
@@ -1526,6 +1582,37 @@ class ilStartUpGUI
 		$tpl->setVariable("TXT_LOGOUT_TEXT", $lng->txt("logout_text"));
 		$tpl->setVariable("TXT_LOGIN", $lng->txt("login_to_ilias"));
 		$tpl->setVariable("CLIENT_ID","?client_id=".$client_id."&lang=".$lng->getLangKey());
+		// uni-goettingen-patch: begin
+		$ip_adress = $_SERVER['REMOTE_ADDR'];
+		$result = $ilDB->query("SELECT seatnr, sector FROM seat_number WHERE ip = ".$ilDB->quote($ip_adress, "text"));
+		$record = $ilDB->fetchAssoc($result);
+
+		//$seat_adress =  substr(strrchr($ip_adress,'.'),1);
+		$tpl->setVariable("SEAT_NUMBER", $record["seatnr"]);
+
+		switch ($record["sector"]) {
+		    case 0:
+		        $tpl->setVariable("SECTOR", "#153470");
+		        break;
+		    case 1:
+		        $tpl->setVariable("SECTOR", "#153470");
+		        break;
+		    case 2:
+		        $tpl->setVariable("SECTOR", "red");
+		        break;
+			case 3:
+		        $tpl->setVariable("SECTOR", "green");
+		        break;
+			case 4:
+		        $tpl->setVariable("SECTOR", "grey");
+		        break;
+			case 5:
+		        $tpl->setVariable("SECTOR", "#b5763a");
+		        break;
+			default:
+		       $tpl->setVariable("SECTOR", "#153470");
+		}
+		// uni-goettingen-patch: end
 
 		$tpl->show();
 	}

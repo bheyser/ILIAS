@@ -68,7 +68,9 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 	function &getHeaderNames()
 	{
 		$headernames = array();
-		if ($this->object->getAnonymity())
+		// uni-goettingen-patch: begin
+		if ($this->object->isFullyAnonymized())
+		// uni-goettingen-patch: end
 		{
 			array_push($headernames, $this->lng->txt("counter"));
 		}
@@ -100,7 +102,9 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 	function &getHeaderVars()
 	{
 		$headervars = array();
-		if ($this->object->getAnonymity())
+		// uni-goettingen-patch: begin
+		if ($this->object->isFullyAnonymized())
+		// uni-goettingen-patch: end
 		{
 			array_push($headervars, "counter");
 		}
@@ -159,10 +163,12 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 
 		include_once "./Modules/Test/classes/tables/class.ilEvaluationAllTableGUI.php";
 		
+		// uni-goettingen-patch: begin
 		$table_gui = new ilEvaluationAllTableGUI(
-				$this, 'outEvaluation', $this->object->getAnonymity(), $this->object->isOfferingQuestionHintsEnabled()
+				$this, 'outEvaluation', $this->object->isFullyAnonymized(), $this->object->isOfferingQuestionHintsEnabled()
 		);
 		
+		// uni-goettingen-patch: end
 		$data = array();
 		$arrFilter = array();
 		
@@ -212,7 +218,9 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 				{
 					// build the evaluation row
 					$evaluationrow = array();
-					if ($this->object->getAnonymity())
+					// uni-goettingen-patch: begin
+					if ($this->object->isFullyAnonymized())
+					// uni-goettingen-patch: end
 					{
 						$evaluationrow['name'] = $counter;
 						$evaluationrow['login'] = '';
@@ -283,10 +291,16 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 			$export_type = new ilSelectInputGUI($this->lng->txt('exp_eval_data'), 'export_type');
 			$options = array(
 				'excel' => $this->lng->txt('exp_type_excel'),
-				'csv'   => $this->lng->txt('exp_type_spss')
+				// uni-goettingen-patch: begin
+				'csv'   => $this->lng->txt('exp_type_spss'),
+				'flexnowgraded'   => $this->lng->txt('exp_type_flexnow_graded'),
+				'flexnowungraded'   => $this->lng->txt('exp_type_flexnow_ungraded')
+				// uni-goettingen-patch: end
 			);
 			
-			if(!$this->object->getAnonymity())
+			// uni-goettingen-patch: begin
+			if (!$this->object->isFullyAnonymized())
+			// uni-goettingen-patch: end
 			{
 				include_once 'Services/Certificate/classes/class.ilCertificate.php';
 				include_once 'Modules/Test/classes/class.ilTestCertificateAdapter.php';
@@ -627,6 +641,11 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 			$average_passed_reached = $total_passed ? $total_passed_reached / $total_passed : 0;
 			$average_passed_max = $total_passed ? $total_passed_max / $total_passed : 0;
 			$average_passed_time = $total_passed ? $total_passed_time / $total_passed : 0;
+			// uni-goettingen-patch: begin
+			if (count($foundParticipants)>0) {
+				$total_passed .= " (".round($total_passed/count($foundParticipants) * 100.0,2). "%)";
+			}
+			// uni-goettingen-patch: end
 			array_push($data, array(
 				'result' => $this->lng->txt("tst_eval_total_passed"),
 				'value'  => $total_passed
@@ -752,6 +771,18 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 				}
 				$this->ctrl->redirect($this, "exportCertificate");
 				break;
+			// uni-goettingen-patch: begin
+			case "flexnowgraded":
+				require_once './Modules/Test/classes/class.ilTestExport.php';
+				$exportObj = new ilTestExport($this->object, "results");
+				$exportObj->exportToFlexNowGraded($deliver = TRUE, $filterby, $filtertext, $passedonly);
+				break;
+
+			case "flexnowungraded":
+				require_once './Modules/Test/classes/class.ilTestExport.php';
+				$exportObj = new ilTestExport($this->object, "results");
+				$exportObj->exportToFlexNowUngraded($deliver = TRUE, $filterby, $filtertext, $passedonly);
+			// uni-goettingen-patch: end
 		}
 	}
 
@@ -978,7 +1009,11 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 
 		$list_of_answers = $this->getPassListOfAnswers($result_array, $active_id, $pass, $_SESSION['tst_results_show_best_solutions'], false, false, false, true, $objectivesList, $testResultHeaderLabelBuilder);
 		$template->setVariable("LIST_OF_ANSWERS", $list_of_answers);
-		$template->setVariable("PASS_DETAILS", $this->ctrl->getHTML($overviewTableGUI));
+		// uni-goettingen-patch: begin
+		$tableHTML = $this->ctrl->getHTML($overviewTableGUI);
+		$tableHTML = str_replace("</tbody>", $this->addSummary($result_array), $tableHTML);
+		$template->setVariable("PASS_DETAILS", $tableHTML);
+		// uni-goettingen-patch: end
 
 		if( !$this->getObjectiveOrientedContainer()->isObjectiveOrientedPresentationRequired() )
 		{
@@ -1011,6 +1046,22 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 			$this->tpl->setVariable("ADM_CONTENT", $template->get());
 		}
 	}
+	// uni-goettingen-patch: begin
+	function addSummary($data)
+	{
+		global $ilUser;
+		$total = $this->lng->txtlng("common", "total", $ilUser->getLanguage());
+		$max_points = $data["pass"]["total_max_points"];
+		$reached_points = $data["pass"]["total_reached_points"];
+		$percent = round(strval($data["pass"]["percent"]*100), 2)." %";
+		return 	"<tr><td><b>$total</b></td>".
+						"<td></td><td></td>".
+						"<td><b>$max_points</b></td>".
+						"<td><b>$reached_points</b></td>".
+						"<td><b>$percent</b></td>".
+						"</tr></tbody>";
+	}
+	// uni-goettingen-patch: end
 
 	/**
 	* Output of the pass overview for a test called from the statistics
@@ -1317,7 +1368,9 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 		$tpl->setVariable("TEXT_RESULTS", $testResultHeaderLabelBuilder->getPassDetailsHeaderLabel($pass+1));
 		$tpl->setVariable("FORMACTION", $this->ctrl->getFormAction($this));
 
-		$uname = $this->object->userLookupFullName($user_id, TRUE);
+		// uni-goettingen-patch: begin
+		$uname = $this->object->userLookupRealFullName($user_id, TRUE);
+		// uni-goettingen-patch: end
 		$user_data = $this->getAdditionalUsrDataHtmlAndPopulateWindowTitle($testSession, $active_id, TRUE);
 		if( !$this->getObjectiveOrientedContainer()->isObjectiveOrientedPresentationRequired() )
 		{
@@ -1369,7 +1422,9 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 		$testSession = $this->testSessionFactory->getSession();
 		$active_id = $testSession->getActiveId();
 		$user_id = $ilUser->getId();
-		$uname = $this->object->userLookupFullName($user_id, TRUE);
+		// uni-goettingen-patch: begin
+		$uname = $this->object->userLookupRealFullName($user_id, TRUE);
+		// uni-goettingen-patch: end
 
 		if( !$this->object->canShowTestResults($testSession) )
 		{
@@ -1468,7 +1523,9 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 
 		if( !$this->getObjectiveOrientedContainer()->isObjectiveOrientedPresentationRequired() )
 		{
-			if ($this->object->getAnonymity())
+			// uni-goettingen-patch: begin
+			if ($this->object->isFullyAnonymized())
+			// uni-goettingen-patch: end
 			{
 				$template->setVariable("TEXT_HEADING", $this->lng->txt("tst_result"));
 			}
@@ -1507,7 +1564,9 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 	*/
 	function outUserListOfAnswerPasses()
 	{
-		global $ilUser, $ilObjDataCache;
+		// uni-goettingen-patch: begin
+		global $ilUser, $ilObjDataCache, $ilDB;
+		// uni-goettingen-patch: end
 
 		if (!$this->object->getShowSolutionPrintview())
 		{
@@ -1597,6 +1656,24 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 		$template->setVariable("BACK_URL", $this->ctrl->getLinkTargetByClass("ilobjtestgui", "infoScreen"));
 		$template->setVariable("PRINT_TEXT", $this->lng->txt("print"));
 		$template->setVariable("PRINT_URL", "javascript:window.print();");
+		// uni-goettingen-patch: begin
+		$user_id = $this->object->_getUserIdFromActiveId($active_id);
+		// $user_id .= "\$this->object";
+		$uname = $this->object->userLookupRealFullName($user_id, TRUE);
+		$matNo = $this->object->userLookupMatriculation($user_id);
+
+		$template->setVariable("USER_NAME", $uname);
+		$template->setVariable("MAT_NR",    $matNo);
+		$template->setVariable("DATE",		date("d.m.Y H:i"));
+		$template->setVariable("DATE_SIG",	date("d.m.Y H:i"));
+		$template->setVariable("TITLE",		$this->object->getTitle());
+
+		$ip_address = $_SERVER['REMOTE_ADDR'];
+		$result = $ilDB->query("SELECT seatnr, sector FROM seat_number WHERE ip = ".$ilDB->quote($ip_address, "text"));
+		$record = $ilDB->fetchAssoc($result);
+
+		$template->setVariable("SEAT_NR", $record["seatnr"]);
+		// uni-goettingen-patch: end
 
 		$user_data = $this->getAdditionalUsrDataHtmlAndPopulateWindowTitle($testSession, $active_id, TRUE);
 		$template->setVariable("USER_DATA", $user_data);

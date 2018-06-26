@@ -13,6 +13,9 @@ class assLongMenu extends assQuestion implements ilObjQuestionScoringAdjustable
 	private $answerType, $long_menu_text, $answers, $correct_answers, $json_structure, $ilDB;
 	private $specificFeedbackSetting, $minAutoComplete;
 	
+	// uni-goettingen-patch: start
+	private $identical_scoring;
+	// uni-goettingen-patch: end
 	const ANSWER_TYPE_SELECT_VAL	= 0;
 	const ANSWER_TYPE_TEXT_VAL		= 1;
 	const GAP_PLACEHOLDER			= 'Longmenu';
@@ -32,6 +35,9 @@ class assLongMenu extends assQuestion implements ilObjQuestionScoringAdjustable
 		$this->minAutoComplete = self::MIN_LENGTH_AUTOCOMPLETE;
 		parent::__construct($title, $comment, $author, $owner, $question);
 		$this->ilDB = $GLOBALS['DIC']['ilDB'];
+		// uni-goettingen-patch: begin
+		$this->identical_scoring = 1;
+		// uni-goettingen-patch: end
 	}
 	
 	/**
@@ -207,6 +213,26 @@ class assLongMenu extends assQuestion implements ilObjQuestionScoringAdjustable
 		}
 		return true;
 	}
+	// uni-goettingen-patch: begin
+	protected function checkIfEnoughUniqueAnswersExists($correct_answers)
+	{
+		$map = array();
+		foreach($correct_answers as $key => $correct_answers_row)
+		{
+			foreach($correct_answers_row[0] as $position => $answer)
+			{
+				if(array_key_exists($answer, $map))
+				{
+					return false;
+				}
+				else
+				{
+					$map[$answer] = 1;
+				}
+			}
+		}
+		return true;
+	}
 	
 	private function correctAnswerDoesNotExistInAnswerOptions($answers, $answer_options)
 	{
@@ -248,16 +274,23 @@ class assLongMenu extends assQuestion implements ilObjQuestionScoringAdjustable
 			array( "integer" ),
 			array( $this->getId() )
 		);
+		// uni-goettingen-patch: begin
 		$this->ilDB->manipulateF( "INSERT INTO " . $this->getAdditionalTableName(
-			) . " (question_fi, long_menu_text, feedback_setting, min_auto_complete) VALUES (%s, %s, %s, %s)",
-			array( "integer", "text", "integer", "integer"),
+			) . " (question_fi, long_menu_text, feedback_setting, min_auto_complete, identical_scoring) VALUES (%s, %s, %s, %s, %s)",
+			array( "integer", "text", "integer", "integer", "integer"),
 			array(
 				$this->getId(),
 				$this->getLongMenuTextValue(),
 				(int)$this->getSpecificFeedbackSetting(),
-				(int)$this->getMinAutoComplete()
+				(int)$this->getMinAutoComplete(),
+				(int)$this->getIdenticalScoring()
 			)
 		);
+		if($this->getIdenticalScoring() == 0 && ! $this->checkIfEnoughUniqueAnswersExists($this->getCorrectAnswers()))
+		{
+			ilUtil::sendQuestion($this->lng->txt('not_enough_unique_answers'), true);
+		}
+		// uni-goettingen-patch: end
 		$this->createFileFromArray();
 	}
 
@@ -378,6 +411,9 @@ class assLongMenu extends assQuestion implements ilObjQuestionScoringAdjustable
 			$this->setOriginalId($data["original_id"]);
 			$this->setAuthor($data["author"]);
 			$this->setPoints($data["points"]);
+			// uni-goettingen-patch: begin
+			$this->setIdenticalScoring($data["identical_scoring"]);
+			// uni-goettingen-patch: end
 			$this->setOwner($data["owner"]);
 			include_once("./Services/RTE/classes/class.ilRTE.php");
 			$this->setQuestion(ilRTE::_replaceMediaObjectImageSrc($data['question_text'], 1));
@@ -385,6 +421,12 @@ class assLongMenu extends assQuestion implements ilObjQuestionScoringAdjustable
 			$this->setLongMenuTextValue(ilRTE::_replaceMediaObjectImageSrc($data['long_menu_text'], 1));
 			$this->loadCorrectAnswerData($question_id);
 			$this->setMinAutoComplete($data["min_auto_complete"]);
+			//auding-patch: start
+			$this->setAudingFile($data['auding_file']);
+			$this->setAudingNrOfSends($data['auding_nr_of_sends']);
+			$this->setAudingActivate($data['auding_activate']);
+			$this->setAudingMode($data['auding_mode']);
+			//auding-patch: end
 			if( isset($data['feedback_setting']) )
 			{
 				$this->setSpecificFeedbackSetting((int)$data['feedback_setting']);
@@ -534,6 +576,9 @@ class assLongMenu extends assQuestion implements ilObjQuestionScoringAdjustable
 		$clone->copyXHTMLMediaObjectsOfQuestion($this_id);
 		$clone->onDuplicate($thisObjId, $this_id, $clone->getObjId(), $clone->getId());
 
+		//auding-patch: start
+		$clone->duplicateAudingFile($original_id);
+		//auding-patch: end
 		return $clone->id;
 	}
 
@@ -562,6 +607,9 @@ class assLongMenu extends assQuestion implements ilObjQuestionScoringAdjustable
 
 		$clone->onCopy($source_questionpool_id, $original_id, $clone->getObjId(), $clone->getId());
 
+		//auding-patch: start
+		$clone->duplicateAudingFile($original_id);
+		//auding-patch: end
 		return $clone->id;
 	}
 
@@ -595,6 +643,9 @@ class assLongMenu extends assQuestion implements ilObjQuestionScoringAdjustable
 
 		$clone->onCopy($sourceParentId, $sourceQuestionId, $clone->getObjId(), $clone->getId());
 
+		//auding-patch: start
+		$clone->duplicateAudingFile($sourceQuestionId);
+		//auding-patch: end
 		return $clone->id;
 	}
 	
@@ -636,6 +687,9 @@ class assLongMenu extends assQuestion implements ilObjQuestionScoringAdjustable
 	protected function calculateReachedPointsForSolution($found_values, $active_id = 0)
 	{
 		$points = 0;
+		// uni-goettingen-patch: begin
+		$solution_values_text = array();
+		// uni-goettingen-patch: end
 		foreach($found_values as $key => $answer)
 		{
 			if($answer != '')
@@ -643,7 +697,19 @@ class assLongMenu extends assQuestion implements ilObjQuestionScoringAdjustable
 				$correct_answers = $this->getCorrectAnswersForGap($this->id, $key);
 				if(in_array($answer, $correct_answers))
 				{
-					$points += $this->getPointsForGap($this->id, $key);
+					// uni-goettingen-patch: begin
+					$points_gap = $this->getPointsForGap($this->id, $key);
+					if(!$this->getIdenticalScoring())
+					{
+						// check if the same solution text was already entered
+						if((in_array($answer, $solution_values_text)) && ($points > 0))
+						{
+							$points_gap = 0;
+						}
+					}
+					$points += $points_gap;
+					array_push($solution_values_text, $answer);
+					// uni-goettingen-patch: end
 				}
 			}
 		}
@@ -942,4 +1008,15 @@ class assLongMenu extends assQuestion implements ilObjQuestionScoringAdjustable
 		$result['mobs'] = $mobs;
 		return json_encode($result);
 	}
+	// uni-goettingen-patch: begin
+	public function getIdenticalScoring()
+	{
+		return ($this->identical_scoring) ? 1 : 0;
+	}
+
+	public function setIdenticalScoring($a_identical_scoring)
+	{
+		$this->identical_scoring = ($a_identical_scoring) ? 1 : 0;
+	}
+	// uni-goettingen-patch: begin
 }

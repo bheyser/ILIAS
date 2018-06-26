@@ -169,6 +169,9 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		
 		$this->handleUserSettings();
 		
+		// uni-goettingen-patch: begin
+		$this->startScreenShotTool();
+		// uni-goettingen-patch: end
 		if( $this->dynamicQuestionSetConfig->isAnyQuestionFilterEnabled() )
 		{
 			$this->ctrl->redirect($this, ilTestPlayerCommands::SHOW_QUESTION_SELECTION);
@@ -192,6 +195,9 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		);
 		
 		$this->ctrl->saveParameter($this, 'tst_javascript');
+		// uni-goettingen-patch: begin
+		$this->startScreenShotTool();
+		// uni-goettingen-patch: end
 		
 		if( $this->dynamicQuestionSetConfig->isAnyQuestionFilterEnabled() )
 		{

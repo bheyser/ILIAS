@@ -24,7 +24,7 @@ class ilTestServiceGUI
 	 * @var ilObjTest
 	 */
 	public $object = null;
-	
+
 	/**
 	 * @var ilTestService
 	 */
@@ -37,12 +37,12 @@ class ilTestServiceGUI
 
 	var $lng;
 	var $tpl;
-	
+
 	/**
 	 * @var ilCtrl
 	 */
 	var $ctrl;
-	
+
 	/**
 	 * @var ilTabsGUI
 	 */
@@ -52,22 +52,22 @@ class ilTestServiceGUI
 	 * @var ilObjectDataCache
 	 */
 	protected $objCache;
-	
+
 	var $ilias;
 	var $tree;
 	var $ref_id;
-	
+
 	/**
 	 * factory for test session
 	 *
-	 * @var ilTestSessionFactory 
+	 * @var ilTestSessionFactory
 	 */
 	protected $testSessionFactory = null;
 
 	/**
 	 * factory for test sequence
 	 *
-	 * @var ilTestSequenceFactory 
+	 * @var ilTestSequenceFactory
 	 */
 	protected $testSequenceFactory = null;
 
@@ -80,7 +80,7 @@ class ilTestServiceGUI
 	 * @var ilTestObjectiveOrientedContainer
 	 */
 	private $objectiveOrientedContainer;
-	
+
 	private $contextResultPresentation = true;
 
 	/**
@@ -98,9 +98,9 @@ class ilTestServiceGUI
 	{
 		$this->contextResultPresentation = $contextResultPresentation;
 	}
-	
+
 	/**
-	 * The constructor takes the test object reference as parameter 
+	 * The constructor takes the test object reference as parameter
 	 *
 	 * @param object $a_object Associated ilObjTest class
 	 * @access public
@@ -121,7 +121,7 @@ class ilTestServiceGUI
 		$this->ref_id = $a_object->ref_id;
 
 		$this->service = new ilTestService($a_object);
-		
+
 		require_once 'Modules/Test/classes/class.ilTestSessionFactory.php';
 		$this->testSessionFactory = new ilTestSessionFactory($this->object);
 
@@ -169,7 +169,7 @@ class ilTestServiceGUI
 		}
 
 		$scoredPass = $this->object->_getResultPass($testSession->getActiveId());
-		
+
 		require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionHintTracking.php';
 		$questionHintRequestRegister = ilAssQuestionHintTracking::getRequestRequestStatisticDataRegisterByActiveId(
 			$testSession->getActiveId()
@@ -205,25 +205,25 @@ class ilTestServiceGUI
 			if($withResults)
 			{
 				$result_array = $this->object->getTestResult($testSession->getActiveId(), $pass, false, $considerHiddenQuestions, $considerOptionalQuestions);
-				
+
 				foreach($result_array as $resultStructKEY => $question)
 				{
 					if( $resultStructKEY === 'test' || $resultStructKEY === 'pass' )
 					{
 						continue;
 					}
-					
+
 					$requestData = $questionHintRequestRegister->getRequestByTestPassIndexAndQuestionId($pass, $question['qid']);
-					
+
 					if( $requestData instanceof ilAssQuestionHintRequestStatisticData && $result_array[$resultStructKEY]['requested_hints'] === null )
 					{
 						$result_array['pass']['total_requested_hints'] += $requestData->getRequestsCount();
-						
+
 						$result_array[$resultStructKEY]['requested_hints'] = $requestData->getRequestsCount();
 						$result_array[$resultStructKEY]['hint_points'] = $requestData->getRequestsPoints();
 					}
 				}
-				
+
 				if(!$result_array['pass']['total_max_points'])
 				{
 					$percentage = 0;
@@ -279,7 +279,7 @@ class ilTestServiceGUI
 	{
 		return $this->objectiveOrientedContainer;
 	}
-	
+
 	/**
 	 * execute command
 	 */
@@ -307,7 +307,7 @@ class ilTestServiceGUI
 	{
 		return $cmd;
 	}
-	
+
 	protected function handleTabs($activeTabId)
 	{
 		if( $this->getObjectiveOrientedContainer()->isObjectiveOrientedPresentationRequired() )
@@ -315,21 +315,21 @@ class ilTestServiceGUI
 			require_once 'Services/Link/classes/class.ilLink.php';
 			$courseLink = ilLink::_getLink($this->getObjectiveOrientedContainer()->getRefId());
 			$this->tabs->setBack2Target($this->lng->txt('back_to_objective_container'), $courseLink);
-			
+
 			$this->tabs->addTab(
 				'results_pass_oriented', $this->lng->txt('tst_tab_results_pass_oriented'),
 				$this->ctrl->getLinkTargetByClass('ilTestEvaluationGUI', 'outUserResultsOverview')
 			);
-			
+
 			$this->tabs->addTab(
 				'results_objective_oriented', $this->lng->txt('tst_tab_results_objective_oriented'),
 				$this->ctrl->getLinkTargetByClass('ilTestEvalObjectiveOrientedGUI', 'showVirtualPass')
 			);
-			
+
 			$this->tabs->setTabActive($activeTabId);
 		}
 	}
-	
+
 	/**
 	 * @return bool
 	 */
@@ -347,7 +347,7 @@ class ilTestServiceGUI
 
 		return true;
 	}
-	
+
 	/**
 	 * @return ilTestPassOverviewTableGUI $tableGUI
 	 */
@@ -356,15 +356,15 @@ class ilTestServiceGUI
 		require_once 'Modules/Test/classes/tables/class.ilTestPassOverviewTableGUI.php';
 
 		$table = new ilTestPassOverviewTableGUI($targetGUI, '');
-		
+
 		$table->setPdfPresentationEnabled(
 			isset($_GET['pdf']) && $_GET['pdf'] == 1
 		);
-		
+
 		$table->setObjectiveOrientedPresentationEnabled(
 			$this->getObjectiveOrientedContainer()->isObjectiveOrientedPresentationRequired()
 		);
-		
+
 		return $table;
 	}
 
@@ -378,8 +378,13 @@ class ilTestServiceGUI
 	 * @return string HTML code of the list of answers
 	 * @access public
 	 */
-	function getPassListOfAnswers(&$result_array, $active_id, $pass, $show_solutions = FALSE, $only_answered_questions = FALSE, $show_question_only = FALSE, $show_reached_points = FALSE, $anchorNav = false, ilTestQuestionRelatedObjectivesList $objectivesList = null, ilTestResultHeaderLabelBuilder $testResultHeaderLabelBuilder = null)
+	// uni-goettingen-patch: begin
+	function getPassListOfAnswers(&$result_array, $active_id, $pass, $show_solutions = FALSE, $only_answered_questions = FALSE, $show_question_only = FALSE, $show_reached_points = FALSE, $anchorNav = false, ilTestQuestionRelatedObjectivesList $objectivesList = null, ilTestResultHeaderLabelBuilder $testResultHeaderLabelBuilder = null, $show_print_watermark = FALSE)
+	// uni-goettingen-patch: end
 	{
+		// uni-goettingen-patch: begin
+		global $ilUser;
+		// uni-goettingen-patch: end
 		$maintemplate = new ilTemplate("tpl.il_as_tst_list_of_answers.html", TRUE, TRUE, "Modules/Test");
 
 		$counter = 1;
@@ -400,7 +405,7 @@ class ilTestServiceGUI
 						{
 							$question_gui->setRenderPurpose(assQuestionGUI::RENDER_PURPOSE_PRINT_PDF);
 						}
-						
+
 						if($anchorNav)
 						{
 							$template->setCurrentBlock('block_id');
@@ -423,7 +428,7 @@ class ilTestServiceGUI
 						$template->setVariable("TXT_QUESTION_ID", $this->lng->txt('question_id_short'));
 						$template->setVariable("QUESTION_ID", $question_gui->object->getId());
 						$template->setVariable("QUESTION_TITLE", $this->object->getQuestionTitle($question_gui->object->getTitle()));
-						
+
 						if( $objectivesList !== null )
 						{
 							$objectives = $this->lng->txt('tst_res_lo_objectives_header').': ';
@@ -435,7 +440,7 @@ class ilTestServiceGUI
 
 						$showFeedback = $this->isContextResultPresentation() && $this->object->getShowSolutionFeedback();
 						$show_solutions = $this->isContextResultPresentation() && $show_solutions;
-						
+
 						if($show_solutions)
 						{
 							$compare_template = new ilTemplate('tpl.il_as_tst_answers_compare.html', TRUE, TRUE, 'Modules/Test');
@@ -453,6 +458,32 @@ class ilTestServiceGUI
 							$result_output = $question_gui->getSolutionOutput($active_id, $pass, $show_solutions, FALSE, $show_question_only, $showFeedback);
 							$template->setVariable('SOLUTION_OUTPUT', $result_output);
 						}
+						// uni-goettingen-patch: begin
+						if($show_print_watermark)
+						{
+							$aid = $this->object->getActiveIdOfUser($ilUser->getId());
+							$watermark = "<p style=\"font-size: 0.2cm;\" class=\"text-center\">";
+
+							$user_id = $this->object->_getUserIdFromActiveId($aid);
+							$uname = $this->object->userLookupRealFullName($user_id, TRUE);
+							$matNo = $this->object->userLookupMatriculation($user_id);
+							$title = $this->object->getTitle();
+
+							$watermark .= "<b>Name:</b> ";
+							$watermark .= $uname;
+							$watermark .= "&nbsp;&nbsp;&nbsp;&nbsp;&middot;&nbsp;&nbsp;&nbsp;&nbsp;<b>Mat#:</b>";
+							$watermark .= $matNo;
+							$watermark .= "&nbsp;&nbsp;&nbsp;&nbsp;&middot;&nbsp;&nbsp;&nbsp;&nbsp;<b>Klausur:</b>";
+							$watermark .= $title;
+							$watermark .= "</p>";
+
+							$template->setVariable('WATERMARK', $watermark);
+						}
+						else
+						{
+							$template->setVariable('WATERMARK', "");
+						}
+						// uni-goettingen-patch: end
 
 						$maintemplate->setCurrentBlock("printview_question");
 						$maintemplate->setVariable("QUESTION_PRINTVIEW", $template->get());
@@ -463,8 +494,10 @@ class ilTestServiceGUI
 			}
 		}
 
-		if($testResultHeaderLabelBuilder !== null)
+		// uni-goettingen-patch: begin
+		if($testResultHeaderLabelBuilder != null)
 		{
+		// uni-goettingen-patch: end
 			if($pass !== null)
 			{
 				$headerText = $testResultHeaderLabelBuilder->getListOfAnswersHeaderLabel($pass + 1);
@@ -482,7 +515,7 @@ class ilTestServiceGUI
 		$maintemplate->setVariable("RESULTS_OVERVIEW", $headerText);
 		return $maintemplate->get();
 	}
-	
+
 	/**
 	 * Returns the list of answers of a users test pass and offers a scoring option
 	 *
@@ -492,18 +525,18 @@ class ilTestServiceGUI
 	 * @param boolean $show_solutions TRUE, if the solution output should be shown in the answers, FALSE otherwise
 	 * @return string HTML code of the list of answers
 	 * @access public
-	 * 
+	 *
 	 * @deprecated
 	 */
 	function getPassListOfAnswersWithScoring(&$result_array, $active_id, $pass, $show_solutions = FALSE)
 	{
 		include_once "./Modules/TestQuestionPool/classes/class.assQuestion.php";
-		
+
 		$maintemplate = new ilTemplate("tpl.il_as_tst_list_of_answers.html", TRUE, TRUE, "Modules/Test");
 
 		include_once "./Modules/Test/classes/class.ilObjAssessmentFolder.php";
 		$scoring = ilObjAssessmentFolder::_getManualScoring();
-		
+
 		$counter = 1;
 		// output of questions with solutions
 		foreach ($result_array as $question_data)
@@ -528,7 +561,7 @@ class ilTestServiceGUI
 					{
 						$template->setVariable("QUESTION_POINTS", $points . " " . $this->lng->txt("points"));
 					}
-					
+
 					$show_question_only = ($this->object->getShowSolutionAnswersOnly()) ? TRUE : FALSE;
 					$result_output = $question_gui->getSolutionOutput($active_id, $pass, $show_solutions, FALSE, $show_question_only, $this->object->getShowSolutionFeedback(), FALSE, TRUE);
 
@@ -540,7 +573,7 @@ class ilTestServiceGUI
 						$scoretemplate->setVariable("VALUE_SUGGESTED_SOLUTION", $solout);
 						$scoretemplate->parseCurrentBlock();
 					}
-					
+
 					$scoretemplate->setCurrentBlock("feedback");
 					$scoretemplate->setVariable("FEEDBACK_NAME_INPUT", $question);
 					$feedback = $this->object->getManualFeedback($active_id, $question, $pass);
@@ -555,7 +588,7 @@ class ilTestServiceGUI
 					$scoretemplate->setVariable("LABEL_INPUT", $this->lng->txt("tst_change_points_for_question"));
 					$scoretemplate->setVariable("VALUE_INPUT", " value=\"" . assQuestion::_getReachedPoints($active_id, $question_data["qid"], $pass) . "\"");
 					$scoretemplate->setVariable("VALUE_SAVE", $this->lng->txt("save"));
-					
+
 					$template->setVariable("SOLUTION_OUTPUT", $result_output);
 					$maintemplate->setCurrentBlock("printview_question");
 					$maintemplate->setVariable("QUESTION_PRINTVIEW", $template->get());
@@ -642,7 +675,9 @@ class ilTestServiceGUI
 	 */
 	function getResultsSignature()
 	{
-		if ($this->object->getShowSolutionSignature() && !$this->object->getAnonymity())
+		// uni-goettingen-patch: begin
+		if ($this->object->getShowSolutionSignature() && !$this->object->isFullyAnonymized())
+		// uni-goettingen-patch: end
 		{
 			$template = new ilTemplate("tpl.il_as_tst_results_userdata_signature.html", TRUE, TRUE, "Modules/Test");
 			$template->setVariable("TXT_DATE", $this->lng->txt("date"));
@@ -659,7 +694,7 @@ class ilTestServiceGUI
 			return "";
 		}
 	}
-	
+
 	/**
 	 * Returns the user data for a test results output
 	 *
@@ -689,7 +724,7 @@ class ilTestServiceGUI
 		{
 			$t = $this->object->_getLastAccess($testSession->getActiveId());
 		}
-		
+
 		if( $this->getObjectiveOrientedContainer()->isObjectiveOrientedPresentationRequired() )
 		{
 			$uname = $this->object->userLookupFullName($user_id, $overwrite_anonymity);
@@ -700,7 +735,9 @@ class ilTestServiceGUI
 		}
 
 		$title_matric = "";
-		if (strlen($user->getMatriculation()) && (($this->object->getAnonymity() == FALSE) || ($overwrite_anonymity)))
+		// uni-goettingen-patch: begin
+		if (strlen($user->getMatriculation()) && (($this->object->isFullyAnonymized()) || ($overwrite_anonymity)))
+		// uni-goettingen-patch: end
 		{
 			$template->setCurrentBlock("matriculation");
 			$template->setVariable("TXT_USR_MATRIC", $this->lng->txt("matriculation"));
@@ -721,11 +758,11 @@ class ilTestServiceGUI
 
 		$template->setVariable("TXT_TEST_TITLE", $this->lng->txt("title"));
 		$template->setVariable("VALUE_TEST_TITLE", $this->object->getTitle());
-		
+
 		// change the pagetitle (tab title or title in title bar of window)
 		$pagetitle = $this->object->getTitle() . $title_matric . $title_client;
 		$this->tpl->setHeaderPageTitle($pagetitle);
-		
+
 		return $template->get();
 	}
 
@@ -821,9 +858,11 @@ class ilTestServiceGUI
 		else
 		{
 			$user_id = $this->object->_getUserIdFromActiveId($active_id);
-			$uname = $this->object->userLookupFullName($user_id, TRUE);
+			// uni-goettingen-patch: begin
+			$uname = $this->object->userLookupRealFullName($user_id, TRUE);
+			// uni-goettingen-patch: end
 		}
-		
+
 		if (((array_key_exists("pass", $_GET)) && (strlen($_GET["pass"]) > 0)) || (!is_null($pass)))
 		{
 			if (is_null($pass))	$pass = $_GET["pass"];
@@ -884,7 +923,7 @@ class ilTestServiceGUI
 
 			$signature = $this->getResultsSignature();
 			$template->setVariable("SIGNATURE", $signature);
-			
+
 			if ($this->object->isShowExamIdInTestResultsEnabled())
 			{
 				$template->setCurrentBlock('exam_id_footer');
@@ -947,7 +986,9 @@ class ilTestServiceGUI
 			$user->setLastname($this->lng->txt("deleted_user"));
 		}
 		$title_matric = "";
-		if (strlen($user->getMatriculation()) && (($this->object->getAnonymity() == FALSE)))
+		// uni-goettingen-patch: begin
+		if (strlen($user->getMatriculation()) && (($this->object->isFullyAnonymized())))
+		// uni-goettingen-patch: end
 		{
 			$template->setCurrentBlock("user_matric");
 			$template->setVariable("TXT_USR_MATRIC", $this->lng->txt("matriculation"));
@@ -1040,7 +1081,7 @@ class ilTestServiceGUI
 		$tableGUI->setIsPdfGenerationRequest($this->isPdfDeliveryRequest());
 		return $tableGUI;
 	}
-	
+
 	protected function isGradingMessageRequired()
 	{
 		if( $this->getObjectiveOrientedContainer()->isObjectiveOrientedPresentationRequired() )
@@ -1062,7 +1103,7 @@ class ilTestServiceGUI
 		{
 			return true;
 		}
-		
+
 		return false;
 	}
 
@@ -1074,19 +1115,19 @@ class ilTestServiceGUI
 	{
 		require_once 'Modules/Test/classes/class.ilTestGradingMessageBuilder.php';
 		$gradingMessageBuilder = new ilTestGradingMessageBuilder($this->lng, $this->object);
-		
+
 		$gradingMessageBuilder->setActiveId($activeId);
-		
+
 		return $gradingMessageBuilder;
 	}
-	
+
 	protected function buildQuestionRelatedObjectivesList(ilLOTestQuestionAdapter $objectivesAdapter, ilTestQuestionSequence $testSequence)
 	{
 		require_once 'Modules/Test/classes/class.ilTestQuestionRelatedObjectivesList.php';
 		$questionRelatedObjectivesList = new ilTestQuestionRelatedObjectivesList();
-			
+
 		$objectivesAdapter->buildQuestionRelatedObjectiveList($testSequence, $questionRelatedObjectivesList);
-		
+
 		return $questionRelatedObjectivesList;
 	}
 
@@ -1183,7 +1224,7 @@ class ilTestServiceGUI
 	{
 		$this->outCorrectSolution(); // cannot be named xxxCmd, because it's also called from context without Cmd in names
 	}
-	
+
 	/**
 	 * Creates an output of the solution of an answer compared to the correct solution
 	 *
@@ -1274,19 +1315,235 @@ class ilTestServiceGUI
 		$tpl->setVariable("PASS_FINISH_DATE_LABEL", $this->lng->txt('tst_pass_finished_on'));
 		$tpl->setVariable("PASS_FINISH_DATE_VALUE", $passFinishDate);
 	}
+	// uni-goettingen-patch: begin
+	public function setHashedOutputFile($active_id, $file_path, $file_hash)
+	{
+		$session = $this->testSessionFactory->getSession($active_id);
+		$session->setSubmittedFile($file_path);
+		$session->setSubmittedFileHash($file_hash);
+		$session->saveToDb();
 }
+	public function processHtmlResultsForArchiving($in_html, $path)
+	{
+		$out_html = "";
+		$img_path = $path . "/img";
+		if(!file_exists($img_path))
+		 	mkdir($img_path, 0775);
+		$css_path = $path . "/css";
+		if(!file_exists($css_path))
+			mkdir($css_path, 0775);
+		$js_path = $path . "/js";
+		if(!file_exists($js_path))
+			mkdir($js_path, 0775);
+
+		$matching_il_util_onload = false;
+		$jsme_functions = array();
+
+		foreach(explode(PHP_EOL, $in_html) as $line)
+		{
+			$out_line = "";
+			$match = array();
+			if(preg_match('/^(.*)(<[iI][mM][gG].*?>)(.*)$/', $line, $match))
+			{
+				$pre_img_tag  = $match[1];
+				$post_img_tag = $match[3];
+				$img_match = array();
+				preg_match('/^(<img.*src=")(.*)"\sw.*(".*>)$/', $match[2], $img_match);
+				$open_tag     = $img_match[1];
+				$img_file     = $img_match[2];
+				$close_tag    = $img_match[3];
+
+				$match_url = array();
+				// $out_line .= "\n<!-- Found img tag: ".$match[2]." -->\n";
+				// $out_line .= "\n<!-- img_file = ".$img_file." -->\n";
+
+				if(preg_match('/^https?:\/\/.*?(\/.*)\/([^\?\/]*)\??.*$/', $img_file, $match_url))
+				//if(preg_match('/^https?:\/\/.*?\/.*?([^\/]*)$/', $img_file, $match_url))
+				{
+					// $match_url[1] nicht nötig
+					$raw_img_path = ILIAS_ABSOLUTE_PATH . $match_url[1] ."/". $match_url[2];
+					$dest         = $img_path."/".$match_url[2];
+					try{
+						copy($raw_img_path, $dest);
+					}
+					catch (Exception $e)
+					{
+						ilUtil::sendInfo("Error: ".$e, TRUE);
+					}
+					$out_line .= $pre_img_tag.$open_tag."img/".$match_url[2].$close_tag.$post_img_tag;
+					// $raw_img_path = ILIAS_ABSOLUTE_PATH ."/". $match_url[1];
+					// $dest         = $img_path."/".$match_url[1];
+					// copy($raw_img_path, $dest);
+					// $out_line .= $pre_img_tag.$open_tag."img/".$match_url[1].$close_tag.$post_img_tag;
+				}
+				else
+				{
+					//$out_line .= $pre_img_tag.$open_tag.$img_file.$close_tag.$post_img_tag;
+					$img_file_path = ILIAS_ABSOLUTE_PATH . substr($img_file, 1);
+					$img_basename = basename($img_file);
+					try
+					{
+						copy($img_file_path, $img_path."/".$img_basename);
+					}
+					catch (Exception $e)
+					{
+						ilUtil::sendInfo("Error: ".$e, TRUE);
+					}
+					$out_line    .= $pre_img_tag.$open_tag."img/".$img_basename.$close_tag;
+				}
+			}
+			else
+			{
+				$out_line = $line;
+			}
+
+			$match = array();
+			if(preg_match('/^\s*il.Util.addOnLoad\(\s*$/', $out_line))
+			{
+				$matching_il_util_onload = true;
+				$out_line = "";
+			}
+			if($matching_il_util_onload)
+			{
+				if(preg_match('/^\s*function\(\){\s*$/', $out_line))
+					$out_line = "";
+				elseif(preg_match('/^(.*?JSME\(")(.*?)(".*)$/', $out_line, $match))
+				{
+					$out_line = "function activate_".$match[2]."(){\n".$match[0];
+					$jsme_functions[] = "activate_".$match[2];
+				}
+				/*elseif(preg_match('/^(.*options\(")("\).*)$/', $out_line, $match))
+				{
+					$out_line = $match[1]."depict".$match[2];
+				}*/
+				elseif(preg_match('/^\s*\);\s*$/', $out_line))
+				{
+					$out_line = "";
+					$matching_il_util_onload = false;
+				}
+			}
+			if(strlen($out_line) > 0)
+				$out_html .= $out_line."\n";
+		}
+
+		$out_html .= "<script>\n";
+		$out_html .= "function jsmeOnLoad(){\n";
+		foreach($jsme_functions as $func) {
+			// $out_html .= "  ".$func['func']."Applet = new JSApplet.JSME(\"".$func['func']."\", \"800px\", \"700px\");\n";
+			// $out_html .= "  ".$func['func']."Applet.readMolecule(\"".$func['mol']."\");\n";
+			$out_html .= "  ".$func."();\n";
+		}
+		$out_html .= "}\n";
+		// $out_html .= "window.onload = onLoadFunction();\n";
+		$out_html .= "</script>\n";
+		// $out_html .= "<!-- ILIAS_ABSOLUTE_PATH = ".ILIAS_ABSOLUTE_PATH."-->";
+
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Modules/Test/templates/default/ta.css", $css_path."/ta.css");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Services/MediaObjects/media_element_2_14_2/mediaelementplayer.min.css", $css_path."/mediaelementplayer.min.css");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/libs/bower/bower_components/yui2/build/container/assets/skins/sam/container.css", $css_path."/container.css");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Services/Accordion/css/accordion.css", $css_path."/accordion.css");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/templates/default/delos.css", $css_path."/delos.css");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/templates/default/delos_cont.css", $css_path."/delos_cont.css");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Services/JavaScript/js/Basic.js", $js_path."/Basic.js");
+//		$this->copy(ILIAS_ABSOLUTE_PATH."/Services/jQuery/templates/default/jquery-ui.css", $css_path."/jquery-ui.css");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/libs/bower/bower_components/jquery/dist/jquery.js", $js_path."/jquery-min.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/libs/bower/bower_components/jquery-migrate/jquery-migrate.min.js", $js_path."/jquery-migrate-min.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/libs/bower/bower_components/jquery-ui/jquery-ui.min.js", $js_path."/jquery-ui.min.js");
+//		$this->copy(ILIAS_ABSOLUTE_PATH."/Services/jQuery/js/ui_1_11_4/jquery-ui.slider.min.js", $js_path."/jquery-ui.slider.min.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/libs/bower/bower_components/maphilight/jquery.maphilight.min.js", $js_path."/maphilight.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/libs/bower/bower_components/bootstrap/dist/js/bootstrap.min.js", $js_path."/bootstrap.min.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/libs/bower/bower_components/yui2/build/yahoo-dom-event/yahoo-dom-event.js", $js_path."/yahoo-dom-event.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/libs/bower/bower_components/yui2/build/animation/animation-min.js", $js_path."/animation-min.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/libs/bower/bower_components/yui2/build/connection/connection-min.js", $js_path."/connection-min.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/libs/bower/bower_components/yui2/build/container/container_core-min.js", $js_path."/container_core-min.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Services/COPage/js/ilCOPagePres.js", $js_path."/ilCOPagePres.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Services/COPage/js/ilCOPageQuestionHandler.js", $js_path."/ilCOPageQuestionHandler.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Services/MediaObjects/media_element_2_14_2/mediaelement-and-player.js", $js_path."/mediaelement-and-player.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Services/UIComponent/Overlay/js/ilOverlay.js", $js_path."/ilOverlay.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Services/UIComponent/AdvancedSelectionList/js/AdvancedSelectionList.js", $js_path."/AdvancedSelectionList.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Services/Accordion/js/accordion.js", $js_path."/accordion.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Services/Contact/BuddySystem/js/buddy_system.js", $js_path."/buddy_system.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Services/Awareness/js/Awareness.js", $js_path."/Awareness.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Services/Notifications/templates/default/notifications.js", $js_path."/notifications.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Modules/TestQuestionPool/js/md5sum.js", $js_path."/md5sum.js");
+//		$this->copy(ILIAS_ABSOLUTE_PATH."", $js_path."/");
+
+//		$this->copy(ILIAS_ABSOLUTE_PATH."/Customizing/global/plugins/Modules/TestQuestionPool/Questions/assJSMEQuestion/templates/jsme/jsme.nocache.js", $js_path."/jsme.nocache.js");
+		$this->copy(ILIAS_ABSOLUTE_PATH."/Customizing/global/plugins/Modules/TestQuestionPool/Questions/AssSourceCode/css/il_web_ide.css", $css_path."/il_web_ide.css");
+		$this->rec_copy(ILIAS_ABSOLUTE_PATH."/Customizing/global/plugins/Modules/TestQuestionPool/Questions/AssSourceCode/lib/ace-builds-1.2.6/src-min-noconflict/", $js_path."/ace-builds-1.2.6/src-min-noconflict/");
+
+		$source = ILIAS_ABSOLUTE_PATH."/Customizing/global/plugins/Modules/TestQuestionPool/Questions/assJSMEQuestion/templates/jsme";
+		$dest   = $path;
+		$this->copyr($source, $dest);
+		return $out_html;
+	}
+
+	private function copy($source, $dest)
+	{
+		// copy only if destination doesn't exist
+		if(!file_exists($dest))
+			copy($source, $dest);
+	}
+
+	private function rec_copy($source, $dest)
+	{
+		if (!file_exists($dest)) {
+			mkdir($dest, 0755, true);
+		}
+		foreach (
+		  $iterator = new RecursiveIteratorIterator(
+		  new RecursiveDirectoryIterator($source, RecursiveDirectoryIterator::SKIP_DOTS),
+		  RecursiveIteratorIterator::SELF_FIRST) as $item) {
+		  if ($item->isDir()) {
+				if (!file_exists($dest . DIRECTORY_SEPARATOR . $iterator->getSubPathName())) {
+		    	mkdir($dest . DIRECTORY_SEPARATOR . $iterator->getSubPathName());
+				}
+		  } else {
+		    copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathName());
+		  }
+		}
+	}
+
+	private function copyr($source, $dest)
+	{
+    // recursive function to copy
+    // all subdirectories and contents, unless the destinatin exists:
+    if(!file_exists($dest."/".basename($source))) {
+	    if(is_dir($source)) {
+	        $dir_handle=opendir($source);
+	        $sourcefolder = basename($source);
+	        mkdir($dest."/".$sourcefolder, 0775);
+	        while($file=readdir($dir_handle)){
+	            if($file!="." && $file!=".."){
+	                if(is_dir($source."/".$file)){
+	                    self::copyr($source."/".$file, $dest."/".$sourcefolder);
+	                } else {
+	                    copy($source."/".$file, $dest."/".$file);
+	                }
+	            }
+	        }
+	        closedir($dir_handle);
+	    } else {
+	        // can also handle simple copy commands
+	        copy($source, $dest);
+	    }
+	  }
+	}
+}
+
+// uni-goettingen-patch: end
 
 // internal sort function to sort the result array
 function sortResults($a, $b)
 {
 	$sort = ($_GET["sort"]) ? ($_GET["sort"]) : "nr";
 	$sortorder = ($_GET["sortorder"]) ? ($_GET["sortorder"]) : "asc";
-	if (strcmp($sortorder, "asc")) 
+	if (strcmp($sortorder, "asc"))
 	{
 		$smaller = 1;
 		$greater = -1;
-	} 
-	else 
+	}
+	else
 	{
 		$smaller = -1;
 		$greater = 1;

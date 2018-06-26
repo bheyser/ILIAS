@@ -1,4 +1,7 @@
 <?php
+
+// TODO: Merge
+
 /* Copyright (c) 1998-2013 ILIAS open source, Extended GPL, see docs/LICENSE */
 
 include_once "./Modules/Test/classes/inc.AssessmentConstants.php";
@@ -41,6 +44,12 @@ abstract class assQuestion
 	* @var integer
 	*/
 	protected $id;
+	// PATCH BEGIN testtransfer
+	/**
+	 * @var integer
+	 */
+	protected $transferId;
+	// PATCH END testtransfer
 
 	/**
 	* Question title
@@ -262,12 +271,34 @@ abstract class assQuestion
 	 */
 	private $obligationsToBeConsidered = false;
 	
+
+	// TODO: Merge
 // fau: testNav - new variable $testQuestionConfig
 	/**
+
 	 * @var ilTestQuestionConfig
 	 */
 	protected $testQuestionConfig;
 // fau.
+
+// auding-patch: start
+	/**
+	 * auding activate
+	 */
+	private $auding_activate;
+	/**
+	 * Number of maximum file-sends
+	 */
+	private $auding_nr_of_sends;
+	/**
+	 * auding mode
+	 */
+	private $auding_mode;
+	/**
+	 * auding filename
+	 */
+	// auding-patch: end
+	private $auding_file;
 	
 	protected static $allowedImageMaterialFileExtensionsByMimeType = array(
 		'image/jpeg' => array('jpg', 'jpeg'), 'image/png' => array('png'), 'image/gif' => array('gif')
@@ -314,6 +345,9 @@ abstract class assQuestion
 			$this->owner = $this->ilias->account->id;
 		}
 		$this->id = -1;
+		// PATCH BEGIN testtransfer
+		$this->transferId = null;
+		// PATCH END testtransfer
 		$this->test_id = -1;
 		$this->suggested_solutions = array();
 		$this->shuffle = 1;
@@ -517,6 +551,12 @@ abstract class assQuestion
 		return $this->processLocker;
 	}
 
+	// uni-goettingen-patch: begin
+	public function getAjaxSolutionSubmitSuccessResponse($active_id, $pass)
+	{
+		return null;
+	}
+	// uni-goettingen-patch: end
 	/**
 	* Receives parameters from a QTI parser and creates a valid ILIAS question object
 	*
@@ -549,7 +589,23 @@ abstract class assQuestion
 		$export = new $classname($this);
 		return $export->toXML($a_include_header, $a_include_binary, $a_shuffle, $test_output, $force_image_references);
 	}
+	// PATCH BEGIN testtransfer
+	/**
+	 * @return int
+	 */
+	public function getTransferId()
+	{
+		return $this->transferId;
+	}
 
+	/**
+	 * @param int $transferId
+	 */
+	public function setTransferId($transferId)
+	{
+		$this->transferId = $transferId;
+	}
+	// PATCH END testtransfer
 	/**
 	* Returns true, if a question is complete for use
 	*
@@ -1019,7 +1075,9 @@ abstract class assQuestion
 						ilUtil::prepareFormOutput($solution['value']['name']),
 						$this->lng->txt('tst_show_solution_suggested')
 					)));
-
+					// TODO: Merge
+					// 5.1.21: 
+					// 					array_push($output, '<a href="' . $this->getSuggestedSolutionPathWeb() . $solution["value"]["name"] . '">' . $possible_texts[0] . '</a>');
 					require_once 'Services/WebAccessChecker/classes/class.ilWACSignedPath.php';
 					ilWACSignedPath::setTokenMaxLifetimeInSeconds(60);
 					array_push($output, '<a href="' . ilWACSignedPath::signFile($this->getSuggestedSolutionPathWeb() . $solution["value"]["name"]) . '">' . $possible_texts[0] . '</a>');
@@ -1205,7 +1263,8 @@ abstract class assQuestion
 		}
 		
 		if( is_null($reached_points) ) $reached_points = 0;
-
+// TODO: Merge
+// 5.1.21: 		$this->getProcessLocker()->requestUserQuestionResultUpdateLock();
 // fau: testNav - check for existing authorized solution to know if a result record should be written
 		$existingSolutions = $this->lookupForExistingSolutions($active_id, $pass);
 
@@ -1233,6 +1292,8 @@ abstract class assQuestion
 			}
 			$ilDB->manipulateF($query, $types, $values);
 
+			// TODO: Merge
+			// 5.1.21: 		$affectedRows = $ilDB->manipulateF($query, $types, $values);
 			if ($existingSolutions['authorized'])
 			{
 				$next_id = $ilDB->nextId("tst_test_result");
@@ -1255,7 +1316,8 @@ abstract class assQuestion
 
 				$ilDB->insert('tst_test_result', $fieldData);
 			}
-
+		// TODO: Merge
+		// 5.1.21: 		$this->getProcessLocker()->releaseUserQuestionResultUpdateLock();
 		});
 // fau.
 
@@ -1304,6 +1366,8 @@ abstract class assQuestion
 			return false;
 		}
 
+		// TODO: Merge
+		// 5.1.21: 		$this->getProcessLocker()->requestPersistWorkingStateLock();
 		$saveStatus = false;
 
 		$this->getProcessLocker()->executePersistWorkingStateLockOperation(function() use ($active_id, $pass, $authorized, $obligationsEnabled, &$saveStatus) {
@@ -1321,6 +1385,8 @@ abstract class assQuestion
 
 			$this->reworkWorkingData($active_id, $pass, $obligationsEnabled, $authorized);
 
+		// TODO: Merge
+		// 5.1.21: 		$this->getProcessLocker()->releasePersistWorkingStateLock();
 		});
 
 		return $saveStatus;
@@ -2034,6 +2100,9 @@ abstract class assQuestion
 			return false;
 		}
 		
+		//auding-patch: start
+		$this->deleteAudingFile();
+		//auding-patch: end
 		$affectedRows = $ilDB->manipulateF("DELETE FROM qpl_questions WHERE question_id = %s",
 			array('integer'),
 			array($question_id)
@@ -2511,6 +2580,13 @@ abstract class assQuestion
 	{
 		global $ilDB;
 
+		// PATCH BEGIN testtransfer
+		$result = $ilDB->queryF(
+			"SELECT external_id, transfer_id FROM qpl_questions WHERE question_id = %s",
+			array("integer"), array($question_id)
+		);
+		if(false) // affects next $ilDB->queryF() - this MUST NOT be triggered
+		// PATCH END testtransfer
 		$result = $ilDB->queryF(
 			"SELECT external_id FROM qpl_questions WHERE question_id = %s",
 			array("integer"),
@@ -2520,6 +2596,9 @@ abstract class assQuestion
 		{
 			$data = $ilDB->fetchAssoc($result);
 			$this->external_id = $data['external_id'];
+			// PATCH BEGIN testtransfer
+			$this->setTransferId($data['transfer_id']);
+			// PATCH END testtransfer
 		}
 		
 		$result = $ilDB->queryF("SELECT * FROM qpl_sol_sug WHERE question_fi = %s",
@@ -2587,7 +2666,17 @@ abstract class assQuestion
 				"original_id" => array("integer", NULL),
 				"tstamp" => array("integer", $tstamp),
 				"external_id" => array("text", $this->getExternalId()),
+				// PATCH BEGIN testtransfer
+				'transfer_id' => array('text', $this->getTransferId()),
+				// PATCH END testtransfer
 				'add_cont_edit_mode' => array('text', $this->getAdditionalContentEditingMode())
+				//auding-patch: start
+				,
+				"auding_nr_of_sends" => array("integer", 0),
+				"auding_file" => array("text", NULL),
+				"auding_activate" => array("integer", 0),
+				"auding_mode" => array("integer", 0),
+				//auding-patch: end
 			));
 			$this->setId($next_id);
 			
@@ -2632,7 +2721,17 @@ abstract class assQuestion
 				"original_id" => array("integer", ($original_id) ? $original_id : NULL),
 				"tstamp" => array("integer", time()),
 				"external_id" => array("text", $this->getExternalId()),
+				// PATCH BEGIN testtransfer
+				'transfer_id' => array('text', $this->getTransferId()),
+				// PATCH END testtransfer
 				'add_cont_edit_mode' => array('text', $this->getAdditionalContentEditingMode())
+				//auding-patch: start
+				,
+				"auding_nr_of_sends" => array("integer", $this->getAudingNrOfSends()),
+				"auding_file" => array("text", $this->getAudingFile()),
+				"auding_activate" => array("integer", $this->getAudingActivate()),
+				"auding_mode" => array("integer", $this->getAudingMode())
+				//auding-patch: end
 			));
 			$this->setId($next_id);
 			// create page object of question
@@ -2648,11 +2747,21 @@ abstract class assQuestion
 				"author" => array("text", $this->getAuthor()),
 				"question_text" => array("clob", ilRTE::_replaceMediaObjectImageSrc($this->getQuestion(), 0)),
 				"points" => array("float", $this->getMaximumPoints()),
+				// PATCH BEGIN testtransfer
+				'transfer_id' => array('text', $this->getTransferId()),
+				// PATCH END testtransfer
 				"nr_of_tries" => array("integer", $this->getNrOfTries()),
 				"working_time" => array("text", $estw_time),
 				"tstamp" => array("integer", time()),
 				'complete' => array('integer', $this->isComplete()),
 				"external_id" => array("text", $this->getExternalId())
+				//auding-patch: start
+				,
+				"auding_nr_of_sends" => array("integer", $this->getAudingNrOfSends()),
+				"auding_file" => array("text", $this->getAudingFile()),
+				"auding_activate" => array("integer", $this->getAudingActivate()),
+				"auding_mode" => array("integer", $this->getAudingMode())
+				//auding-patch: end
 			), array(
 			"question_id" => array("integer", $this->getId())
 			));
@@ -2680,6 +2789,19 @@ abstract class assQuestion
 			$complete = "1";
 		}
 
+		// PATCH BEGIN testtransfer
+		global $ilUser;
+		$ilDB->update('qpl_questions', array(
+				'tstamp' => array('integer', time()),
+				'owner' => array('integer', ($this->getOwner() <= 0) ? $ilUser->getId() : $this->getOwner()),
+				'complete' => array('integer', $complete),
+				'transfer_id' => array('text', $this->getTransferId())
+			), array(
+				'question_id' => array('integer', $this->getId())
+			)
+		);
+		if(false) // affects next $ilDB->manipulateF, this MUST NOT be triggered
+		// PATCH END testtransfer
 			// update the question time stamp and completion status
 		$affectedRows = $ilDB->manipulateF("UPDATE qpl_questions SET tstamp = %s, owner = %s, complete = %s WHERE question_id = %s",
 			array('integer','integer', 'integer','text'),
@@ -5510,4 +5632,260 @@ abstract class assQuestion
 	}
 	// hey.
 // fau.
+
+	// uni-goettingen-patch: begin
+	/**
+	 * Gets the activationstatus of auding for this question
+	 *
+	 * @return integer Boolean to check if this Question is an auding one
+	 * @access public
+	 * @see $auding_activate
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	public function getAudingActivate()
+	{
+		return $this->auding_activate;
+	}
+
+	/**
+	 * Sets the status for auding active/inactive
+	 *
+	 * @param integer The status of auding
+	 * @access public
+	 * @see $auding_activate
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	public function setAudingActivate($auding_activate)
+	{
+		$this->auding_activate = $auding_activate;
+	}
+
+	/**
+	 * Gets the auding mode for the question
+	 *
+	 * @return integer The auding mode
+	 * @access public
+	 * @see $auding_mode
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	public function getAudingMode()
+	{
+		return $this->auding_mode;
+	}
+
+	/**
+	 * Sets the mode for auding
+	 *
+	 * @param integer $auding_mode The mode which is enabled for the auding
+	 * @access public
+	 * @see $auding_mode
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	public function setAudingMode($auding_mode)
+	{
+		$this->auding_mode = $auding_mode;
+	}
+
+	/**
+	 * Gets the number of file sends for auding
+	 *
+	 * @return integer The maximum number of file sends
+	 * @access public
+	 * @see $auding_nr_of_sends
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	public function getAudingNrOfSends()
+	{
+		return $this->auding_nr_of_sends;
+	}
+
+	/**
+	 * Sets the maximum number of file send for auding
+	 *
+	 * @param integer $auding_nr_of_sends A value to define the number of time a user can
+	 * request the auding file
+	 * @access public
+	 * @see $auding_nr_of_sends
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	public function setAudingNrOfSends($auding_nr_of_sends)
+	{
+		$this->auding_nr_of_sends = $auding_nr_of_sends;
+	}
+
+	/**
+	 * Gets the filenameth for auding
+	 *
+	 * @return string The auding file name
+	 * @access public
+	 * @see $auding_file_path
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	public function getAudingFile()
+	{
+		return $this->auding_file;
+	}
+
+	/**
+	 * Sets the name of auding file
+	 *
+	 * @param string $auding_file The auding-file name
+	 * @access public
+	 * @see $auding_file
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	public function setAudingFile($auding_file)
+	{
+		$this->auding_file = $auding_file;
+	}
+
+	/**
+	 * Returns the image path for web accessable flash files of a question.
+	 * The image path is under the ilUtil::getDataDir() in assessment/REFERENCE_ID_OF_QUESTION_POOL/ID_OF_QUESTION/flash
+	 *
+	 * @access public
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	function getAudingFilePath()
+	{
+		include_once "./Services/Utilities/classes/class.ilUtil.php";
+		return ilUtil::getDataDir() . "/assessment_auding/$this->id/auding/";
+	}
+
+	/**
+	 * Returns the web image path for web accessable flash applications of a question.
+	 * The image path is under the web accessable data dir in assessment/REFERENCE_ID_OF_QUESTION_POOL/ID_OF_QUESTION/flash
+	 *
+	 * @access public
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	function getAudingFilePathWeb()
+	{
+		include_once "./Services/Utilities/classes/class.ilUtil.php";
+		$webdir = ilUtil::removeTrailingPathSeparators(CLIENT_WEB_DIR) . "/assessment_auding/$this->id/auding/";
+		return str_replace(ilUtil::removeTrailingPathSeparators(ILIAS_ABSOLUTE_PATH), ilUtil::removeTrailingPathSeparators(ILIAS_HTTP_PATH), $webdir);
+	}
+
+	/**
+	 * Uploads a Auding file
+	 *
+	 * @param string $audingfile Name of the original auding file
+	 * @param string $tmpfile Name of the temporary uploaded auding file
+	 * @return string Name of the file
+	 * @access public
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	function moveUploadedAudingFile($tmpfile, $audingfile)
+	{
+		$result = "";
+		if(!empty($tmpfile))
+		{
+			$audingfile = str_replace(" ", "_", $audingfile);
+			$audingPath = $this->getAudingFilePath();
+			if(!@is_dir($audingPath))
+			{
+				ilUtil::makeDirParents($audingPath);
+			}
+
+			if(ilUtil::moveUploadedFile($tmpfile, $audingfile, $audingPath . $audingfile))
+			{
+				$result = $audingfile;
+			}
+		}
+		return $result;
+	}
+
+	/**
+	 * Removes a Auding file and Dir
+	 *
+	 * @access public
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	function deleteAudingFile()
+	{
+		ilUtil::delDir(dirname($this->getAudingFilePath()));
+		$this->auding_file = "";
+	}
+
+	/**
+	 * Duplicates an Audingfile From original_id to new folder id
+	 * @param integer $original_id
+	 * @param integer $obj_id_new
+	 * @access public
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	function duplicateAudingFile($original_id)
+	{
+		if($this->getAudingFile() != null && $this->getAudingFile() != "")
+		{
+			$from = ilUtil::getDataDir() . "/assessment_auding/$original_id/auding/" . $this->getAudingFile();
+
+			if(@file_exists($from))
+			{
+				$to = ilUtil::getDataDir() . "/assessment_auding/$this->id/auding/";
+
+				if(!@is_dir($to))
+				{
+					ilUtil::makeDirParents($to);
+				}
+
+				$to = $to . $this->getAudingFile();
+
+				copy($from, $to);
+			}
+		}
+	}
+
+	/**
+	 * Gets all logs for a requested pass and active_fi
+	 *
+	 * @param integer $pass
+	 * @param integer $active_fi
+	 * @return integer
+	 * @access public
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	function getAudingRequestLog($pass, $active_fi)
+	{
+		global $ilDB;
+
+		$result = $ilDB->queryF("SELECT COUNT(id) cnt FROM qpl_auding_log WHERE q_id = %s AND pass = %s AND active_fi = %s", array('integer', 'integer', 'integer'), array($this->getId(), $pass, $active_fi)
+		);
+		if($ilDB->numRows($result) == 1)
+		{
+			$row = $ilDB->fetchAssoc($result);
+			return $row["cnt"];
+		}
+		else
+		{
+			return 0;
+		}
+	}
+
+	/**
+	 * @param array $q_ids
+	 * @return array
+	 */
+	public static function getAudingSettingsByQuestionIds(array $q_ids)
+	{
+		/**
+		 * @var $ilDB ilDB
+		 */
+		global $ilDB;
+
+		$data = array();
+
+		$in  = $ilDB->in('question_id', $q_ids, false, 'integer');
+		$res = $ilDB->query(
+			'SELECT question_id, auding_mode, auding_nr_of_sends FROM qpl_questions WHERE ' . $in
+		);
+		while($row = $ilDB->fetchAssoc($res))
+		{
+			$data[$row['question_id']] = $row;
+		}
+
+		return $data;
+	}
+	// auding-patch: end
+	// uni-goettingen-patch: end
 }

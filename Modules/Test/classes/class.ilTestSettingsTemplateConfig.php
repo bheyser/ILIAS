@@ -520,6 +520,9 @@ class ilTestSettingsTemplateConfig extends ilSettingsTemplateConfig
 			array(
 				'0' => $this->lng->txt("tst_anonymity_no_anonymization"),
 				'1' => $this->lng->txt("tst_anonymity_anonymous_test"),
+				// uni-goettingen-patch: begin
+				'2' => $this->lng->txt("tst_anonymity_only_in_man_scoring")
+				// uni-goettingen-patch: end
 			)
 		);
 

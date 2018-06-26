@@ -99,7 +99,12 @@ class ilTestScoringGUI extends ilTestServiceGUI
 	{
 		global $ilAccess;
 		
-		if( !$ilAccess->checkAccess("write", "", $this->ref_id) )
+		// uni-goettingen-patch: begin
+		if(
+			!$ilAccess->checkAccess("write", "", $this->ref_id) &&
+			!$ilAccess->checkAccess("man_scoring_access", "", $this->ref_id)
+		)
+		// uni-goettingen-patch: end
 		{
 			// allow only write access
 			ilUtil::sendFailure($this->lng->txt("cannot_edit_test"), true);

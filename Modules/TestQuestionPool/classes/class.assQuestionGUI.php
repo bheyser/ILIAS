@@ -74,6 +74,7 @@ abstract class assQuestionGUI
 	 */
 	private $presentationContext = null;
 
+	// TODO: Merge
 	const RENDER_PURPOSE_PLAYBACK = 'renderPurposePlayback';
 	const RENDER_PURPOSE_DEMOPLAY = 'renderPurposeDemoplay';
 	const RENDER_PURPOSE_PREVIEW = 'renderPurposePreview';
@@ -83,6 +84,7 @@ abstract class assQuestionGUI
 	/**
 	 * @var string
 	 */
+	// TODO: Merge
 	private $renderPurpose = self::RENDER_PURPOSE_PLAYBACK;
 
 	const EDIT_CONTEXT_AUTHORING = 'authoring';
@@ -1276,6 +1278,50 @@ abstract class assQuestionGUI
 			$ni->setMaxLength(5);			
 			$form->addItem($ni);
 		}
+		//auding-patch: start
+		//Activate auding
+		$auding_activate = new ilCheckBoxInputGui($this->lng->txt("auding_activate"), "auding_activate");
+		$auding_activate->setChecked($this->object->getAudingActivate());
+		$form->addItem($auding_activate);
+
+		//Auding mode
+		$auding_mode = new ilRadioGroupInputGUI($this->lng->txt("auding_mode"), "auding_mode");
+		$auding_mode->setValue($this->object->getAudingMode());
+		$options_array = array("auding_force_play", "auding_with_pause");
+		for($i = 0; $i < count($options_array); $i++)
+		{
+			$optionMode = new ilRadioOption($this->lng->txt($options_array[$i]), $options_array[$i]);
+			$optionMode->setValue($i);
+			$auding_mode->addOption($optionMode);
+		}
+		$auding_activate->addSubItem($auding_mode);
+
+		// Number of auding-file-sends
+		$amount = new ilNumberInputGUI($this->lng->txt("auding_nr_of_sends"), "auding_nr_of_sends");
+		$amount->setMinValue(0);
+		$amount->setSize(5);
+		$amount->setInfo($this->lng->txt('auding_nr_of_sends_info'));
+		$amount->setValue($this->object->getAudingNrOfSends());
+		$amount->setRequired(false);
+		$auding_activate->addSubItem($amount);
+
+		// file upload
+		$auding_file = new ilFileInputGUI();
+		$auding_file->setPostVar('auding_file');
+		$auding_file->setTitle($this->lng->txt('auding_file'));
+		$auding_file->setValue($this->object->getAudingFile());
+		$auding_file->setRequired(false);
+		$auding_activate->addSubItem($auding_file);
+
+		if($this->object->getAudingFile() != null)
+		{
+			$deleteExistingFilesGUI = new ilCheckboxGroupInputGUI($this->lng->txt('delete'), 'del_auding_file');
+			$existingFile = new ilCheckboxInputGUI($this->object->getAudingFile(), 'del_auding_file');
+			$existingFile->setValue(md5($this->object->getAudingFile()));
+			$deleteExistingFilesGUI->addOption($existingFile);
+			$auding_activate->addSubItem($deleteExistingFilesGUI);
+		}
+		// auding-patch: end
 	}
 	
 	protected function saveTaxonomyAssignments()
@@ -2181,6 +2227,22 @@ abstract class assQuestionGUI
 			$_POST["Estimated"]["mm"],
 			$_POST["Estimated"]["ss"]
 		);
+		//auding-patch: start
+		if($_POST['del_auding_file'][0] == md5($this->object->getAudingFile()))
+		{
+			$this->object->deleteAudingFile();
+		}
+
+		if($_FILES["auding_file"]["tmp_name"])
+		{
+			$this->object->deleteAudingFile();
+			$filename = $this->object->moveUploadedAudingFile($_FILES["auding_file"]["tmp_name"], $_FILES["auding_file"]["name"]);
+			$this->object->setAudingFile($filename);
+		}
+		$this->object->setAudingNrOfSends($_POST["auding_nr_of_sends"]);
+		$this->object->setAudingActivate($_POST["auding_activate"]);
+		$this->object->setAudingMode($_POST["auding_mode"]);
+		//auding-patch: end
 	}
 
 	abstract public function getPreview($show_question_only = FALSE, $showInlineFeedback = false);
@@ -2333,6 +2395,68 @@ abstract class assQuestionGUI
 		global $ilCtrl;
 		$ilCtrl->redirectByClass('ilAssQuestionHintsGUI', ilAssQuestionHintsGUI::CMD_SHOW_LIST);
 	}
+	//auding-patch: start
+	/**
+	 * The output for auding. It renders the template and includes it into the delivered question-template
+	 *
+	 * @param ilTemplate $template
+	 * @access protected
+	 */
+	protected function outAuding(ilTemplate $template)
+	{
+		require_once 'Services/Customize/classes/class.ilAudingTestFile.php';
+		require_once 'Services/Customize/classes/class.ilAudingOutputGUI.php';
+
+		$references = ilObject::_getAllReferences($this->object->getObjId());
+
+		$auding_gui = new ilAudingOutputGUI(new ilAudingTestFile($this->object, ilObjectFactory::getInstanceByRefId(current($references))));
+		if($auding_gui->hasHtml())
+		{
+			$cmd_class = $this->ctrl->getCmdClass();
+			$this->ctrl->setParameterByClass($cmd_class, 'q_id', $this->object->getId());
+
+			$auding_gui->addRequestUrl(rtrim(ILIAS_HTTP_PATH, '/') . '/' . $this->ctrl->getLinkTargetByClass($cmd_class, 'getAudingFileForPlay', '', false, false))
+				->withAccessTrackingUrl($this->ctrl->getLinkTargetByClass($cmd_class, 'ajaxTrackAudingFileAccess', '', true, false))
+				->withPlayingEndedUrl($this->ctrl->getLinkTargetByClass($cmd_class, 'ajaxHasAudingFileRequestsLeft', '', true, false));
+
+			$template->setVariable('AUDING', $auding_gui->getHtml());
+		}
+	}
+
+	/**
+	 * The preview output for auding. It renders the template and includes it into the delivered question-template
+	 * @param ilTemplate $template
+	 * @author Thomas Joußen <tjoussen@databay.de> Databay AG
+	 */
+	protected function outAudingPreview(ilTemplate $template)
+	{
+		require_once 'Services/Customize/classes/class.ilAudingPreviewFile.php';
+		require_once 'Services/Customize/classes/class.ilAudingOutputGUI.php';
+		$auding_gui = new ilAudingOutputGUI(new ilAudingPreviewFile($this->object, ilObjectFactory::getInstanceByRefId((int)$_GET['ref_id'])));
+		if($auding_gui->hasHtml())
+		{
+			$auding_gui->addRequestUrl(rtrim(ILIAS_HTTP_PATH, '/') . '/' . $this->ctrl->getLinkTarget($this, 'deliverAudingFile', '', false, false));
+
+			$template->setVariable('AUDING', $auding_gui->getHtml());
+		}
+	}
+
+
+	/**
+	 *
+	 */
+	public function deliverAudingFile()
+	{
+		require_once 'Services/Customize/classes/class.ilAudingFileRequestImpl.php';
+		require_once 'Services/Customize/classes/class.ilAudingPreviewFile.php';
+
+		include_once "./Modules/Test/classes/class.ilObjTest.php";
+		$question = ilObjTest::_instanciateQuestion((int)$_GET['q_id']);
+
+		$request = new ilAudingFileRequestImpl();
+		$request->handleRequest(new ilAudingPreviewFile($question, ilObjectFactory::getInstanceByRefId((int)$_GET['ref_id'])));
+	}
+	//auding-patch: end
 
 	/**
 	 * 

@@ -301,6 +301,12 @@ class ilImageWizardInputGUI extends ilTextInputGUI
 				$tpl->parseCurrentBlock();
 			}
 			$tpl->setCurrentBlock("row");
+			// uni-goettingen-patch: begin
+			$class = ($i % 2 == 0) ? "even" : "odd";
+			if ($i == 0) $class .= " first";
+			if ($i == count($this->values)-1) $class .= " last";
+			$tpl->setVariable("ROW_CLASS", $class);
+			// uni-goettingen-patch: end
 			$tpl->setVariable("POST_VAR", $this->getPostVar());
 			$tpl->setVariable("ROW_NUMBER", $i);
 			$tpl->setVariable("ID", $this->getPostVar() . "[answer][$i]");
@@ -344,6 +350,10 @@ class ilImageWizardInputGUI extends ilTextInputGUI
 		$a_tpl->parseCurrentBlock();
 		
 		global $tpl;
+		// uni-goettingen-patch: begin
+		include_once "./Services/YUI/classes/class.ilYuiUtil.php";
+		ilYuiUtil::initDomEvent();
+		// uni-goettingen-patch: end
 		$tpl->addJavascript("./Services/Form/js/ServiceFormWizardInput.js");
 		$tpl->addJavascript("./Modules/TestQuestionPool/templates/default/imagewizard.js");
 	}

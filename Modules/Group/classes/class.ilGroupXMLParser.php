@@ -190,11 +190,11 @@ class ilGroupXMLParser extends ilSaxParser
 			case "member":
 				if (!isset($a_attribs['action']) || $a_attribs['action'] == "Attach")
 				{
-					$GLOBALS['ilLog']->write(__METHOD__.': new member with id '.$a_attribs['id']);
+					$GLOBALS['DIC']->logger()->grp()->debug('New member with id '.$a_attribs['id']);
 					$this->group_data["member"]["attach"][] = $a_attribs["id"];
 				} elseif (isset($a_attribs['action']) || $a_attribs['action'] == "Detach")
 				{
-					$GLOBALS['ilLog']->write(__METHOD__.': deprecated member with id '.$a_attribs['id']);
+					$GLOBALS['DIC']->logger()->grp()->debug('Deprecated member with id '.$a_attribs['id']);
 					$this->group_data["member"]["detach"][] = $a_attribs["id"];
 				}
 

@@ -487,6 +487,8 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	*/
 	function insert($a_tpl)
 	{
+		//TODO: Check Merge
+
 		$lng = $this->lng;
 
 		$ttpl = new ilTemplate("tpl.prop_textarea.html", true, true, "Services/Form");

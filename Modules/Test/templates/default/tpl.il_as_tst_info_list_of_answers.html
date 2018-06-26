@@ -2,7 +2,36 @@
 <a class="btn btn-default" href="{BACK_URL}">{BACK_TEXT}</a> <a class="btn btn-default" type="submit" href="{PRINT_URL}">{PRINT_TEXT}</a>
 </form>
 <h1>{TEXT_LIST_OF_ANSWERS}</h1>
-{USER_DATA}
+<!-- uni-goettingen-patch: begin -->
+<div style="margin-left:auto;margin-right:auto;" class="text-center">
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<table class="text-left" style="margin-left:auto;margin-right:auto;">
+	<tr><td>Name:&nbsp;&nbsp;&nbsp;&nbsp;</td><td>{USER_NAME}</td></tr>
+	<tr><td>Mat:&nbsp;&nbsp;&nbsp;&nbsp;</td><td>{MAT_NR}</td></tr>
+	<tr><td>Platz:&nbsp;&nbsp;&nbsp;&nbsp;</td><td>{SEAT_NR}</td></tr>
+	<tr><td>Datum:&nbsp;&nbsp;&nbsp;&nbsp;</td><td>{DATE}</td></tr>
+	</table>
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<h1><b>{TITLE}</b></h1>
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<p>
+	<b>Datum:</b> {DATE_SIG} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<b>Unterschrift:</b> __________________________________________________
+	</p>
+	<p>
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	</p>
+</div>
+<!-- uni-goettingen-patch: end -->
 <h2>{TEXT_RESULTS}</h2>
 {PASS_OVERVIEW}
 {PASS_DETAILS}

@@ -97,6 +97,9 @@ class assLongMenuGUI extends assQuestionGUI implements ilGuiQuestionScoringAdjus
 			$this->object->setQuestion($_POST['question']);
 			$this->object->setLongMenuTextValue($_POST["longmenu_text"]);
 			$this->object->setMinAutoComplete((int)$_POST["min_auto_complete"]);
+			// uni-goettingen-patch: begin
+			$this->object->setIdenticalScoring( $_POST["identical_scoring"] );
+			// uni-goettingen-patch: end
 			$this->saveTaxonomyAssignments();
 	}
 
@@ -190,6 +193,14 @@ class assLongMenuGUI extends assQuestionGUI implements ilGuiQuestionScoringAdjus
 		$min_auto_complete->setMaxValue(99);
 		$min_auto_complete->setSize(5);
 		$form->addItem($min_auto_complete);
+		// uni-goettingen-patch: begin
+		// identical scoring
+		$identical_scoring = new ilCheckboxInputGUI($this->lng->txt( "identical_scoring" ), "identical_scoring");
+		$identical_scoring->setValue( 1 );
+		$identical_scoring->setChecked( $this->object->getIdenticalScoring() );
+		$identical_scoring->setInfo( $this->lng->txt( 'identical_scoring_desc' ) );
+		$identical_scoring->setRequired( FALSE );
+		$form->addItem( $identical_scoring );
 		
 		$hidden_text = new ilHiddenInputGUI('hidden_text_files');
 		$form->addItem($hidden_text);
@@ -346,6 +357,9 @@ class assLongMenuGUI extends assQuestionGUI implements ilGuiQuestionScoringAdjus
 		$template->setVariable('AUTOCOMPLETE_LENGTH',$this->object->getMinAutoComplete());
 		$template->setVariable('LONGMENU_TEXT', $this->getLongMenuTextWithInputFieldsInsteadOfGaps($user_solution));
 
+		//auding-patch: start
+		$this->outAudingPreview($template);
+		//auding-patch: end
 		$question_output = $template->get();
 		if (!$show_question_only)
 		{
@@ -390,6 +404,9 @@ class assLongMenuGUI extends assQuestionGUI implements ilGuiQuestionScoringAdjus
 		$template->setVariable("ANSWER_OPTIONS_JSON", json_encode($this->object->getAvailableAnswerOptions()));
 		$template->setVariable('LONGMENU_TEXT', $this->getLongMenuTextWithInputFieldsInsteadOfGaps($user_solution));
 		$template->setVariable('AUTOCOMPLETE_LENGTH',$this->object->getMinAutoComplete());
+		//auding-patch: start
+		$this->outAuding($template);
+		//auding-patch: end
 		$question_output = $template->get();
 		$page_output = $this->outQuestionPage("", $is_postponed, $active_id, $question_output);
 		return $page_output;

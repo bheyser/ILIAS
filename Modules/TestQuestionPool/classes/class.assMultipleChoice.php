@@ -260,6 +260,12 @@ class assMultipleChoice extends assQuestion implements ilObjQuestionScoringAdjus
 			$this->setSelectionLimit((int)$data['selection_limit'] > 0 ? (int)$data['selection_limit'] : null);
 			$this->feedback_setting = $data['feedback_setting'];
 			
+			//auding-patch: start
+			$this->setAudingFile($data['auding_file']);
+			$this->setAudingNrOfSends($data['auding_nr_of_sends']);
+			$this->setAudingActivate($data['auding_activate']);
+			$this->setAudingMode($data['auding_mode']);
+			//auding-patch: end
 			try
 			{
 				$this->setAdditionalContentEditingMode($data['add_cont_edit_mode']);
@@ -348,6 +354,9 @@ class assMultipleChoice extends assQuestion implements ilObjQuestionScoringAdjus
 
 		$clone->onDuplicate($thisObjId, $this_id, $clone->getObjId(), $clone->getId());
 
+		//auding-patch: start
+		$clone->duplicateAudingFile($original_id);
+		//auding-patch: end
 		return $clone->id;
 	}
 
@@ -382,6 +391,9 @@ class assMultipleChoice extends assQuestion implements ilObjQuestionScoringAdjus
 
 		$clone->onCopy($source_questionpool_id, $original_id, $clone->getObjId(), $clone->getId());
 		
+		//auding-patch: start
+		$clone->duplicateAudingFile($original_id);
+		//auding-patch: end
 		return $clone->id;
 	}
 
@@ -419,6 +431,9 @@ class assMultipleChoice extends assQuestion implements ilObjQuestionScoringAdjus
 
 		$clone->onCopy($sourceParentId, $sourceQuestionId, $clone->getObjId(), $clone->getId());
 
+		//auding-patch: start
+		$clone->duplicateAudingFile($sourceQuestionId);
+		//auding-patch: end
 		return $clone->id;
 	}
 

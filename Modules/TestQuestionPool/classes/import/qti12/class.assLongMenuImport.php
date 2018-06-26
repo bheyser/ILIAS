@@ -198,6 +198,9 @@ class assLongMenuImport extends assQuestionImport
 		$this->object->setOwner($ilUser->getId());
 		$this->object->setObjId($questionpool_id);
 		$this->object->setMinAutoComplete($item->getMetadataEntry("minAutoCompleteLength"));
+		// uni-goettingen-patch: begin
+		$this->object->setIdenticalscoring($item->getMetadataEntry("identical_scoring"));
+		// uni-goettingen-patch: end
 		$this->object->setEstimatedWorkingTime($duration["h"], $duration["m"], $duration["s"]);
 		$this->object->setCorrectAnswers($correct_answers);
 		$this->object->setPoints($sum);
@@ -207,6 +210,9 @@ class assLongMenuImport extends assQuestionImport
 		);
 		$this->object->saveToDb();
 
+		//auding-patch: start
+		$this->importAudingData($this->object->getId(), $item);
+		//auding-patch: end
 		if(count($feedbacks) > 0)
 		{
 			foreach($feedbacks as $ident => $material)
@@ -235,17 +241,11 @@ class assLongMenuImport extends assQuestionImport
 			$this->object->saveToDb();
 		}
 
-		if ($tst_id > 0)
-		{
-			$q_1_id = $this->object->getId();
-			$question_id = $this->object->duplicate(true, null, null, null, $tst_id);
-			$tst_object->questions[$question_counter++] = $question_id;
-			$import_mapping[$item->getIdent()] = array("pool" => $q_1_id, "test" => $question_id);
-		}
-		else
-		{
-			$import_mapping[$item->getIdent()] = array("pool" => $this->object->getId(), "test" => 0);
-		}
+		// uni-goettingen-patch: begin
+		$this->handleMappingAndDuplication(
+			$item, $tst_id, $tst_object, $question_counter, $import_mapping
+		);
+		// uni-goettingen-patch: end
 	}
 
 	private function getIdFromGapIdent($ident)

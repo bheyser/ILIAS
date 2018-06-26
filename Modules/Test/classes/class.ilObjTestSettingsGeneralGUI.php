@@ -550,8 +550,13 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 		if ($this->testOBJ->participantDataExist()) $anonymity->setDisabled(true);
 		$rb = new ilRadioOption($this->lng->txt('tst_anonymity_no_anonymization'), 0);
 		$anonymity->addOption($rb);
-		$rb = new ilRadioOption($this->lng->txt('tst_anonymity_anonymous_test'), 1);
+		// uni-goettingen-patch: begin
+		// Removed for data protection reasons
+		// $rb = new ilRadioOption($this->lng->txt('tst_anonymity_anonymous_test'), 1);
+		// $anonymity->addOption($rb);
+		$rb = new ilRadioOption($this->lng->txt('tst_anonymity_only_in_man_scoring'), 2);
 		$anonymity->addOption($rb);
+		// uni-goettingen-patch: end
 		$anonymity->setValue((int)$this->testOBJ->getAnonymity());
 		$form->addItem($anonymity);
 	}
@@ -1408,6 +1413,47 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 		$enable_examview->setValue(1);
 		$enable_examview->setChecked($this->testOBJ->getEnableExamview());
 		$enable_examview->setInfo($this->lng->txt("enable_examview_desc"));
+		$show_examview_html = new ilCheckboxInputGUI('', 'show_examview_html');
+		$show_examview_html->setValue(1);
+		$show_examview_html->setChecked($this->testOBJ->getShowExamviewHtml());
+		$show_examview_html->setOptionTitle($this->lng->txt("show_examview_html"));
+		$enable_examview->addSubItem($show_examview_html);
+		// uni-goettingen-patch: begin
+		$show_hashing_html = new ilCheckboxInputGUI('', 'show_hashing_html');
+		$show_hashing_html->setValue(1);
+		$show_hashing_html->setChecked($this->testOBJ->getShowExamviewHtmlHash());
+		$show_hashing_html->setOptionTitle($this->lng->txt("show_examview_html_hash"));
+		$show_hashing_html->setInfo($this->lng->txt("show_examview_html_hash_desc"));
+		$show_examview_html->addSubItem($show_hashing_html);
+		$signature_list_type = new ilRadioGroupInputGUI(
+					$this->lng->txt("signature_list_type"), "signature_list_type");
+				$signature_list_type_collection = new ilRadioOption(
+					$this->lng->txt("signature_list_type_collection"),
+					ilObjTest::SIGNATURE_LIST_COLLECTION,
+					$this->lng->txt("signature_list_type_collection_desc")
+					);
+				$signature_list_type->addOption($signature_list_type_collection);
+				$signature_list_type_student = new ilRadioOption(
+					$this->lng->txt("signature_list_type_student"),
+					ilObjTest::SIGNATURE_LIST_STUDENTS,
+					$this->lng->txt("signature_list_type_student_desc")
+					);
+				$signature_list_type->addOption($signature_list_type_student);
+				$signature_list_type->setValue($this->testOBJ->getSignatureListType());
+				$show_hashing_html->addSubItem($signature_list_type);
+		$examview_printview = new ilCheckboxInputGUI('', 'examview_printview');
+		$examview_printview->setValue(1);
+		$examview_printview->setChecked($this->testOBJ->getExamviewPrintview());
+		$examview_printview->setOptionTitle($this->lng->txt("examview_printview"));
+		$examview_printview->setInfo($this->lng->txt("examview_printview_desc"));
+		$show_hashing_html->addSubItem($examview_printview);
+		$timeout_autofinish = new ilCheckboxInputGUI('', 'timeout_autofinish');
+		$timeout_autofinish->setValue(1);
+		$timeout_autofinish->setChecked($this->testOBJ->getTimeoutAutofinish());
+		$timeout_autofinish->setOptionTitle($this->lng->txt("timeout_autofinish"));
+		$timeout_autofinish->setInfo($this->lng->txt("timeout_autofinish_desc"));
+		$show_hashing_html->addSubItem($timeout_autofinish);
+		// uni-goettingen-patch: end
 		$show_examview_pdf = new ilCheckboxInputGUI('', 'show_examview_pdf');
 		$show_examview_pdf->setValue(1);
 		$show_examview_pdf->setChecked($this->testOBJ->getShowExamviewPdf());
@@ -1415,6 +1461,14 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 		$enable_examview->addSubItem($show_examview_pdf);
 		$form->addItem($enable_examview);
 
+		// uni-goettingen-patch: begin
+		$enable_screenshots = new ilCheckboxInputGUI($this->lng->txt("enable_screenshots"), 'enable_screenshots');
+		$enable_screenshots->setValue(1);
+		$enable_screenshots->setChecked($this->testOBJ->getScreenshotsClient());
+		$enable_screenshots->setInfo($this->lng->txt("enable_screenshots_desc"));
+
+		$form->addItem($enable_screenshots);
+		// uni-goettingen-patch: end
 		// show final statement
 		$showfinal = new ilCheckboxInputGUI($this->lng->txt("final_statement"), "showfinalstatement");
 		$showfinal->setChecked($this->testOBJ->getShowFinalStatement());
@@ -1486,6 +1540,14 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 		if( $this->formPropertyExists($form, 'enable_examview') )
 		{
 			$this->testOBJ->setEnableExamview($form->getItemByPostVar('enable_examview')->getChecked());
+			$this->testOBJ->setShowExamviewHtml($form->getItemByPostVar('show_examview_html')->getChecked());
+			// uni-goettingen-patch: begin
+			$this->testOBJ->setShowExamviewHtmlHash($form->getItemByPostVar('show_hashing_html')->getChecked());
+			$this->testOBJ->setSignatureListType($form->getItemByPostVar("signature_list_type")->getValue());
+			$this->testOBJ->setExamviewPrintview($form->getItemByPostVar("examview_printview")->getChecked());
+			$this->testOBJ->setTimeoutAutofinish($form->getItemByPostVar("timeout_autofinish")->getChecked());
+			$this->testOBJ->setScreenshotsClient($form->getItemByPostVar("enable_screenshots")->getChecked());
+			// uni-goettingen-patch: end
 			$this->testOBJ->setShowExamviewPdf($form->getItemByPostVar('show_examview_pdf')->getChecked());
 		}
 

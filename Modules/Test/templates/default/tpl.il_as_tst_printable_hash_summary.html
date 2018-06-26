@@ -1,0 +1,99 @@
+<!-- uni-goettingen-patch: begin -->
+<br><br>
+<h1 style="">Klausur: {TITLE}</h1>
+<h3 style="font-style: italic;">Exam: {TITLE}</h3>
+<br><br>
+<table border="0" >
+<tr>
+<td>
+<p>Archivierungszeitpunkt:</p>
+<p style="font-size: 8px; font-style: italic;">Time of archiving</p></td>
+<td>{DATE}</td>
+</tr>
+<tr>
+<td>
+<p>Archiv SHA256:</p>
+<p style="font-size: 8px; font-style: italic;">Archive SHA256</p>
+</td><td>{ARCHIVE_HASH}</td>
+</tr><tr>
+<td>
+<p>Archiv Dateiname:</p>
+<p style="font-size: 8px; font-style: italic;">Archive filename</p>
+</td><td>{ARCHIVE_FILENAME}</td>
+</tr>
+</table>
+&nbsp;<br>
+<table style="border-collapse: collapse" border="0">
+<tr class="std">
+<td class="std" style="border-left: 1px solid black; border-top: 1px solid black; border-right: 1px solid black; font-size: 60%; width: 25%" rowspan="2">
+<p style="font-weight: bold;">Nachname, Vorname</p>
+<p style="font-style: italic;">Surname, First name</p>
+<br/><br/>&nbsp;
+</td>
+<td class="std" style="border-top: 1px solid black; border-right: 1px solid black; font-size: 60%; width: 25%">
+<p style="font-weight: bold;">Nachname, Vorname</p>
+<p style="font-style: italic;">Surname, First name</p>
+<br/>&nbsp;<br/>&nbsp;
+</td>
+<td class="std" style="border-top: 1px solid black; border-right: 1px solid black; font-size: 60%; width: 25%">
+<p style="font-weight: bold;">Nachname, Vorname</p>
+<p style="font-style: italic;">Surname, First name</p>
+<br/>&nbsp;<br/>&nbsp;
+</td>
+<td class="std" style="border-top: 1px solid black; border-right: 1px solid black; font-size: 60%; width: 25%" rowspan="2">
+<p style="font-weight: bold;">Nachname, Vorname</p>
+<p style="font-style: italic;">Surname, First name</p>
+<br/>&nbsp;<br/>&nbsp;
+</td>
+</tr>
+<tr class="std">
+<td class="std" style="border-top: 1px solid black; border-right: 1px solid black; font-size: 60%; width: 25%">
+<p>Matrikelnummer</p>
+<p style="font-style: italic;">Matriculation number</p>
+<br/>&nbsp;<br/>&nbsp;
+</td>
+<td class="std" style="border-top: 1px solid black; border-right: 1px solid black; font-size: 60%; width: 25%">
+<p>Matrikelnummer</p>
+<p style="font-style: italic;">Matriculation number</p>
+<br/>&nbsp;<br/>&nbsp;
+</td>
+</tr>
+<tr>
+<td class="std" style="border-bottom: 1px solid black; border-left: 1px solid black; border-top: 1px solid black; border-right: 1px solid black; font-size: 60%; width: 25%">
+<p style="font-weight: bold;">Unterschrift (Prüfungsverantwortliche*r)</p>
+<p style="font-style: italic;">Signature (Person responsible for the test)</p>
+<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />
+................................................................</td>
+<td class="std" style="border-bottom: 1px solid black; border-top: 1px solid black; border-right: 1px solid black; font-size: 60%; width: 25%">
+<p style="font-weight: bold;">Unterschrift (Stud. Vertreter*in)</p>
+<p style="font-style: italic;">Signature (Student Representative)</p>
+<br />&nbsp;<br />&nbsp;<br />&nbsp;<br /><br/>
+................................................................</td>
+<td class="std" style="border-bottom: 1px solid black; border-top: 1px solid black; border-right: 1px solid black; font-size: 60%; width: 25%">
+<p style="font-weight: bold;">Unterschrift (Stud. Vertreter*in)</p>
+<p style="font-style: italic;">Signature (Student Representative)</p>
+<br />&nbsp;<br />&nbsp;<br />&nbsp;<br /><br/>
+................................................................</td>
+<td class="std" style="border-bottom: 1px solid black; border-top: 1px solid black; border-right: 1px solid black; font-size: 60%; width: 25%">
+<p style="font-weight: bold;">Unterschrift (E-Learning-Service)</p>
+<p style="font-style: italic;">Signature (E-Learning-Service)</p>
+<br />&nbsp;<br />&nbsp;<br />&nbsp;<br /><br/>
+................................................................</td>
+</tr>
+</table>
+&nbsp;<br>
+<table style="border-collapse: collapse" border="0">
+<tr class="std">
+<th style="border-right: 1px solid black; font-size: 80%; width: 40%"><b>{NAME_TXT}</b><br><p style="font-size: 70%; font-weight: bold; font-style: italic;">Surname, First Name</p></th>
+<th style="border-right: 1px solid black; font-size: 80%; width: 20%"><b>{MAT_NUM_TXT}</b><br><p style="font-size: 70%; font-weight: bold; font-style: italic;">Matriculation Number</p></th>
+<th style="font-size: 80%; width: 40%" colspan="2"><b>SHA256 &nbsp;</b></th>
+</tr>
+<!-- BEGIN hash_items -->
+<tr class="std">
+        <td class="std" style="border-top: 1px solid black; border-right: 1px solid black; font-size: 80%; width: 40%">{STUDENT_NAME}</td>
+        <td class="std" style="border-top: 1px solid black; border-right: 1px solid black; font-size: 80%; width: 20%">{STUDENT_MAT_NUM}</td>
+        <td class="std" style="border-top: 1px solid black; font-size: 80%; width: 40%"><tt><b>{STUDENT_SHA256}</b></tt></td>
+</tr>
+<!-- END hash_items -->
+</table>
+<!-- uni-goettingen-patch: end -->

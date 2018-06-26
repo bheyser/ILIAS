@@ -484,9 +484,29 @@ class ilToolbarGUI
 					switch ($item["type"])
 					{
 						case "button":
+						// uni-goettingen-patch: begin
+						# location.href='{BTN_LINK}'
+						// uni-goettingen-patch: end
 							$tpl_items->setCurrentBlock("button");
 							$tpl_items->setVariable("BTN_TXT", $item["txt"]);
-							$tpl_items->setVariable("BTN_LINK", $item["cmd"]);
+							// uni-goettingen-patch: begin
+							if(strpos($item['class'], "testStarter") !== false) 
+							{
+								$tpl_items->setVariable("BTN_ONCLICK", "location.href='".$item["cmd"]."'");
+							}
+							else
+							{
+								$onClick  = "(function () {";
+								$onClick .= "$(this).prop('disabled',true);";
+								$onClick .= "$(this).css('color','gray');";
+								$onClick .= "$(this).text('";
+								$onClick .= $lng->txt('tst_please_wait');
+								$onClick .= "');";
+								$onClick .= "location.href='".$item["cmd"]."';";
+								$onClick .= "})();";
+								$tpl_items->setVariable("BTN_ONCLICK", $onClick);
+							}
+							// uni-goettingen-patch: end
 							if ($item["target"] != "")
 							{
 								$tpl_items->setVariable("BTN_TARGET", 'target="'.$item["target"].'"');

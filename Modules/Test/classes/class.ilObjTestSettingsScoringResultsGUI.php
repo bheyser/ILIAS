@@ -640,7 +640,10 @@ class ilObjTestSettingsScoringResultsGUI extends ilTestSettingsGUI
 		$showSignaturePlaceholder = new ilCheckboxInputGUI($this->lng->txt('tst_show_solution_signature'), 'solution_signature');
 		$showSignaturePlaceholder->setInfo($this->lng->txt('tst_show_solution_signature_desc'));
 		$showSignaturePlaceholder->setChecked($this->testOBJ->getShowSolutionSignature());
-		if( $this->testOBJ->getAnonymity() ) { $showSignaturePlaceholder->setDisabled(true); }
+		// uni-goettingen-patch: begin
+		if( $this->testOBJ->isFullyAnonymized() ) 
+		{ $showSignaturePlaceholder->setDisabled(true); }
+		// uni-goettingen-patch: end
 		$form->addItem($showSignaturePlaceholder);
 
 		// show signature placeholder

@@ -231,6 +231,9 @@ class assImagemapQuestion extends assQuestion implements ilObjQuestionScoringAdj
 		
 		$clone->onDuplicate($thisObjId, $this_id, $clone->getObjId(), $clone->getId());
 		
+		//auding-patch: start
+		$clone->duplicateAudingFile($original_id);
+		//auding-patch: end
 		return $clone->id;
 	}
 
@@ -270,6 +273,9 @@ class assImagemapQuestion extends assQuestion implements ilObjQuestionScoringAdj
 		
 		$clone->onCopy($source_questionpool_id, $original_id, $clone->getObjId(), $clone->getId());
 		
+		//auding-patch: start
+		$clone->duplicateAudingFile($original_id);
+		//auding-patch: end
 		return $clone->id;
 	}
 
@@ -307,6 +313,10 @@ class assImagemapQuestion extends assQuestion implements ilObjQuestionScoringAdj
 
 		$clone->onCopy($sourceParentId, $sourceQuestionId, $clone->getObjId(), $clone->getId());
 
+		//auding-patch: start
+		$clone->duplicateAudingFile($sourceQuestionId);
+		//auding-patch: end
+		return $clone->id;
 		return $clone->id;
 	}
 
@@ -393,6 +403,12 @@ class assImagemapQuestion extends assQuestion implements ilObjQuestionScoringAdj
 			$this->setImageFilename($data["image_file"]);
 			$this->setEstimatedWorkingTime(substr($data["working_time"], 0, 2), substr($data["working_time"], 3, 2), substr($data["working_time"], 6, 2));
 			
+			//auding-patch: start
+			$this->setAudingFile($data['auding_file']);
+			$this->setAudingNrOfSends($data['auding_nr_of_sends']);
+			$this->setAudingActivate($data['auding_activate']);
+			$this->setAudingMode($data['auding_mode']);
+			//auding-patch: end
 			try
 			{
 				$this->setAdditionalContentEditingMode($data['add_cont_edit_mode']);

@@ -765,6 +765,22 @@ class ilObjUser extends ilObject
 			"title" => $user_rec["title"],
 			"login" => $user_rec["login"]);
 	}
+	// uni-goettingen-patch: begin
+	/**
+	* lookup matriculation number
+	 *
+	 * @return int matriculation number
+	*/
+	public static function _lookupMatriculation($a_user_id)
+	{
+		global $ilDB;
+
+		$res = $ilDB->queryF("SELECT matriculation, usr_id FROM usr_data WHERE usr_id = %s",
+			array("integer"), array($a_user_id));
+		$user_rec = $ilDB->fetchAssoc($res);
+		return $user_rec["matriculation"];
+	}
+	// uni-goettingen-patch: end
 
 	/**
 	* lookup fields (deprecated; use more specific methods instead)

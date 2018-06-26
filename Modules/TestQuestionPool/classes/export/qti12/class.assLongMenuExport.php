@@ -64,6 +64,9 @@ class assLongMenuExport extends assQuestionExport
 		}
 		$xml->xmlElement("fieldentry", NULL, json_encode($gap_types));
 		$xml->xmlEndTag("qtimetadatafield");
+		//auding-patch: start
+		$this->addAudingData($xml);
+		//auding-patch: end
 
 		// additional content editing information
 		$this->addAdditionalContentEditingModeInformation($xml);

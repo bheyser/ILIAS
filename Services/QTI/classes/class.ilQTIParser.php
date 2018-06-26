@@ -1965,3 +1965,43 @@ class ilQTIParser extends ilSaxParser
 		return (bool)$vs->scanBuffer($buffer);
 	}
 }
+		}
+		else
+		{
+			$question->setTransferId($transferId);
+		}
+		
+		return null;
+	}
+	
+	protected function isLocalInstallation($importNic)
+	{
+		return $importNic == IL_INST_ID;
+	}
+	
+	protected function isOriginalMarriagePossible($origId)
+	{
+		if(!$origId)
+		{
+			return false;
+		}
+
+		return $this->isExistingOriginalQuestion($origId);
+	}
+	
+	protected function isExistingOriginalQuestion($originalQuestionId)
+	{
+		global $ilDB;
+		
+		$res = $ilDB->queryF(
+			"SELECT COUNT(*) cnt FROM qpl_questions WHERE question_id = %s AND original_id IS NULL",
+			array('integer'), array($originalQuestionId)
+		);
+		
+		$row = $ilDB->fetchAssoc($res);
+		
+		return $row['cnt'] > 0;
+	}
+	// PATCH END testtransfer
+}
+?>

@@ -1,4 +1,6 @@
 <?php
+// TODO: Merge
+
 /* Copyright (c) 1998-2013 ILIAS open source, Extended GPL, see docs/LICENSE */
 
 require_once './Modules/TestQuestionPool/classes/class.assQuestionGUI.php';
@@ -246,6 +248,7 @@ class assOrderingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 				}
 			}
 			
+			// TODO: Merge
 			if( $currentElementList->elementExistByRandomIdentifier($submittedElement->getRandomIdentifier()) )
 			{
 				$storedElement = $currentElementList->getElementByRandomIdentifier(

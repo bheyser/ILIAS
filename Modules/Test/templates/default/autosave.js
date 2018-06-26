@@ -35,7 +35,9 @@ var callback =
 	failure:handleFailure
 };
 
-function autosave(sUrl)
+// uni-goettingen-patch: begin
+var autosave = function(sUrl)
+// uni-goettingen-patch: end
 {
 	if (typeof tinyMCE != 'undefined')
 	{

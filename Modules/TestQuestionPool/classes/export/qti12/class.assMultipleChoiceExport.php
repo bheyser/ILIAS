@@ -60,6 +60,9 @@ class assMultipleChoiceExport extends assQuestionExport
 		$a_xml_writer->xmlElement("fieldentry", NULL, $this->object->getAuthor());
 		$a_xml_writer->xmlEndTag("qtimetadatafield");
 		
+		//auding-patch: start
+		$this->addAudingData($a_xml_writer);
+		//auding-patch: end
 		// additional content editing information
 		$this->addAdditionalContentEditingModeInformation($a_xml_writer);
 		$this->addGeneralMetadata($a_xml_writer);

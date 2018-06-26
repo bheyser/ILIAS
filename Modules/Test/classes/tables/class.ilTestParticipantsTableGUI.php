@@ -16,6 +16,9 @@ class ilTestParticipantsTableGUI extends ilTable2GUI
 {
 	protected $testQuestionSetDepenciesBroken;
 	protected $anonymity;
+	// uni-goettingen-patch: begin
+	protected $enableHashing;
+	// uni-goettingen-patch: end
 	
 	protected $actionsColumnRequired;
 	
@@ -26,7 +29,9 @@ class ilTestParticipantsTableGUI extends ilTable2GUI
 	 * @param
 	 * @return
 	 */
-	public function __construct($a_parent_obj, $a_parent_cmd, $testQuestionSetDepenciesBroken, $anonymity, $nrOfDatasets)
+	// uni-goettingen-patch: begin
+	public function __construct($a_parent_obj, $a_parent_cmd, $testQuestionSetDepenciesBroken, $anonymity, $nrOfDatasets, $enableHashing=false)
+	// uni-goettingen-patch: end
 	{
 		$this->setId('tst_participants_' . $a_parent_obj->object->getRefId());
 		parent::__construct($a_parent_obj, $a_parent_cmd);
@@ -40,6 +45,9 @@ class ilTestParticipantsTableGUI extends ilTable2GUI
 		
 		$this->testQuestionSetDepenciesBroken = $testQuestionSetDepenciesBroken;
 		$this->anonymity = $anonymity;
+		// uni-goettingen-patch: begin
+		$this->enableHashing = $enableHashing;
+		// uni-goettingen-patch: end
 		$this->setFormName('participantsForm');
 		$this->setStyle('table', 'fullwidth');
 

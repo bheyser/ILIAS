@@ -1,0 +1,95 @@
+/* uni-goettingen-patch: begin*/
+.imagepresentation {
+    width:200px;
+    padding:0 1em;
+}
+.iosTextInputField {
+    height:80%;
+    width:55%;
+}
+.iosImageInputField {
+    height:80%;
+    margin:auto;
+}
+.listPresentation {
+    max-width:50%;
+}
+.ui-sortable {
+	margin: auto;
+	-webkit-box-shadow:  0px 0px 10px 1px rgba(0, 0, 0, .1);
+    box-shadow:  0px 0px 10px 1px rgba(0, 0, 0, .1);
+    list-style-type: none; 
+    padding: 0; 
+    background: -webkit-linear-gradient(top, #fafafa 0%, #eee 100%);
+    background: -moz-linear-gradient(top, #fafafa 0%, #eee 100%);
+    background: linear-gradient(top, #fafafa 0%, #eee 100%);
+    background: #fafafa;
+    -webkit-border-radius: 3px;
+    text-align:left;
+}
+.showHighlight {
+    height: 5em; 
+    line-height: 1.2em;
+    border:0.2em dashed lightgray;
+}
+.enlargeImage {
+    position: absolute;
+    top: 22%;
+    right: 1%;
+}
+.ui-state-default:before {
+    content:"☰";
+    color:grey;
+    position: absolute;
+    top: 22%;
+    left: 1%;
+}
+.ui-sortable li.ui-state-default {
+    margin: 0.5em 0em;
+    padding: 0.5em 3em;
+    color: #333;
+    text-decoration: none;
+    font-weight: normal;
+    border: 1px solid #ccc;
+    background: #fafafa;
+    background: -webkit-linear-gradient(top, #fafafa 0%, #eee 100%);
+    background: -moz-linear-gradient(top, #fafafa 0%, #eee 100%);
+    background: linear-gradient(top, #fafafa 0%, #eee 100%);
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    position:relative;
+}
+
+li.ui-state-default:hover {
+    color: #2ea8e5;
+    background: #fff;
+}
+#solution:hover {
+    color: #333;
+    background: #fafafa;
+    background: -webkit-linear-gradient(top, #fafafa 0%, #eee 100%);
+    background: -moz-linear-gradient(top, #fafafa 0%, #eee 100%);
+    background: linear-gradient(top, #fafafa 0%, #eee 100%);
+}
+.ui-sortable li.ui-state-default:first-child {
+	border-top: 0; 
+}
+.ui-sortable li.ui-state-default:last-child {
+	border-bottom: 0;
+}
+.ui-sortable-placeholder {
+
+}
+.clone_fields_add {
+    float:right;
+    cursor: pointer;
+}
+.clone_fields_remove {
+    float:right;
+    cursor: pointer;
+}
+.ImageRight {
+    float:right;
+}

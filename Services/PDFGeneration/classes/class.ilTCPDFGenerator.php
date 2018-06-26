@@ -10,7 +10,9 @@
  */
 class ilTCPDFGenerator
 {
-	public static function generatePDF(ilPDFGenerationJob $job)
+	// uni-goettingen-patch: begin
+	public static function generatePDF(ilPDFGenerationJob $job, $zeroMargin = false)
+	// uni-goettingen-patch: end
 	{
 		require_once 'libs/composer/vendor/autoload.php';
 
@@ -34,6 +36,17 @@ class ilTCPDFGenerator
 		$pdf->SetAutoPageBreak($job->getAutoPageBreak(), $job->getMarginBottom());
 		$pdf->setImageScale($job->getImageScale());
 		$pdf->SetFont('dejavusans', '', 10); // TODO
+		// uni-goettingen-patch: begin
+		if ($zeroMargin)
+		{
+			$no_margins = array(
+			    0 => array('h' => '', 'n' => 0),
+			    1 => array('h' => '', 'n' => 0)
+			);
+			$tagvs = array('p' => $no_margins, 'h1' => $no_margins, 'h3' => $no_margins, 'td' => $no_margins, 'tr' => $no_margins);
+			$pdf->setHtmlVSpace($tagvs);
+		}
+		// uni-goettingen-patch: end
 
 		$pdf->setSpacesRE('/[^\S\xa0]/'); // Fixing unicode/PCRE-mess #17547
 

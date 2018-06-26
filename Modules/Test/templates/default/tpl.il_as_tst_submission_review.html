@@ -1,0 +1,80 @@
+<form name="form_export" action="{FORMACTION}" method="post"<!-- BEGIN prevent_double_form_subm --> class="preventDoubleSubmission"<!-- END prevent_double_form_subm -->>
+<div id="finalstatement">
+	{FINALSTATEMENT}
+</div>
+<!-- uni-goettingen-patch: begin -->
+<script>
+	function doPrint() {
+		if(confirm("Der Test wird nun beendet, Sie können hiernach keine Antworten mehr ändern.\r\nClick ‚Ok‘ to finish your test definitely! After that, you won’t be able to access your answers any longer. [Click ‚Abbrechen‘ to cancel and get back to your test.]")) {
+			$("#prevbutton").hide();
+			{PRINT_CMD}
+			$("#nextbutton").show();
+			$("#nextbutton").click();
+		}
+	}
+</script>
+<!-- uni-goettingen-patch: end -->
+<p>
+	<!-- uni-goettingen-patch: begin -->
+	<input type="submit" class="btn btn-default no-print" name="cmd[{CANCEL_CMD}]" value="{BUTTON_BACK}" id="prevbutton" {BUTTON_BACK_STYLE}/>
+	<input type="submit" class="btn btn-default no-print" name="cmd[finishTest]" value="{BUTTON_CONTINUE}" id="nextbutton" style="display: none;"/>
+	<button class="btn btn-default no-print" onclick="location.href='javascript:doPrint();'" type="button">{BUTTON_FINISH_TEST}</button>
+	<!-- uni-goettingen-patch: begin -->
+	<!-- BEGIN pdf_export -->
+	<a class="btn btn-default" href="{PDF_URL}">{PDF_TEXT}</a>
+	<script type="text/javascript">
+		setTimeout(function () { window.location = '{PDF_FILE_LOCATION}'; }, 5000)
+	</script>
+	<!-- END pdf_export -->
+	<!-- uni-goettingen-patch: begin -->
+	<div style="margin-left:auto;margin-right:auto;" class="text-center">
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<table class="text-left" style="margin-left:auto;margin-right:auto;">
+	<tr><td>Name:&nbsp;&nbsp;&nbsp;&nbsp;</td><td>{USER_NAME}</td></tr>
+	<tr><td>Mat:&nbsp;&nbsp;&nbsp;&nbsp;</td><td>{MAT_NR}</td></tr>
+	<tr><td>Platz:&nbsp;&nbsp;&nbsp;&nbsp;</td><td>{SEAT_NR}</td></tr>
+	<tr><td>Datum:&nbsp;&nbsp;&nbsp;&nbsp;</td><td>{DATE}</td></tr>
+	</table>
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<h1><b>{TITLE}</b></h1>
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	{SIGNATURE}
+	<p>
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	<br />&nbsp;<br />&nbsp;<br />&nbsp;
+	</p>
+	</div>
+	<!-- uni-goettingen-patch: end -->
+	<!-- BEGIN html_review -->
+	{HTML_REVIEW}
+	<!-- END html_review -->
+	<!-- uni-goettingen-patch: begin -->
+	<hr>
+	-----&nbsp;Ende&nbsp;der&nbsp;Klausur&nbsp;---&nbsp;End&nbsp;of&nbsp;Exam&nbsp;-----
+	<hr>
+	<!-- BEGIN hash_review -->
+	<h3>Prüfsummen:</h3>
+	<table border=0>
+	<tr><td>SHA256 Sum:&nbsp;</td><td>{HASH_REVIEW}</td></tr>
+	<tr><td>HumanHash:&nbsp;</td><td>{HUMANHASH_REVIEW}</td></tr>
+	</table>
+	<!-- END hash_review -->
+	<!-- BEGIN bottom_navigation_block -->
+	<input type="submit" class="btn btn-default no-print" name="cmd[{CANCEL_CMD_BOTTOM}]" value="{BUTTON_BACK_BOTTOM}" id="prevbutton" {BUTTON_BACK_STYLE_BOTTOM}/>
+	<input type="submit" class="btn btn-default no-print" name="cmd[finishTest]" value="{BUTTON_CONTINUE_BOTTOM}" id="nextbutton" style="display: none;"/>
+	<button class="btn btn-default no-print" onclick="location.href='javascript:doPrint();'" type="button">{BUTTON_FINISH_TEST}</button>
+	<!-- END bottom_navigation_block -->
+	<!-- uni-goettingen-patch: end -->
+</p>
+</form>

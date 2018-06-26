@@ -270,6 +270,9 @@ class assOrderingQuestionImport extends assQuestionImport
 				$this->fetchAdditionalContentEditingModeInformation($item)
 		);		
 		$this->object->saveToDb();
+		//auding-patch: start
+		$this->importAudingData($this->object->getId(), $item);
+		//auding-patch: end
 		if (count($item->suggested_solutions))
 		{
 			foreach ($item->suggested_solutions as $suggested_solution)
@@ -338,9 +341,10 @@ class assOrderingQuestionImport extends assQuestionImport
 				$media_object =& ilObjMediaObject::_saveTempFileAsMediaObject(basename($importfile), $importfile, FALSE);
 				ilObjMediaObject::_saveUsage($media_object->getId(), "qpl:html", $this->object->getId());
 				$questiontext = str_replace("src=\"" . $mob["mob"] . "\"", "src=\"" . "il_" . IL_INST_ID . "_mob_" . $media_object->getId() . "\"", $questiontext);
-				foreach($this->object->getOrderingElementList() as $element)
+				foreach ($answers as $key => $value)
 				{
-					$element->setContent(str_replace("src=\"" . $mob["mob"] . "\"", "src=\"" . "il_" . IL_INST_ID . "_mob_" . $media_object->getId() . "\"", $element->getContent()));
+					$answer_obj =& $answers[$key];
+					$answer_obj->setAnswertext(str_replace("src=\"" . $mob["mob"] . "\"", "src=\"" . "il_" . IL_INST_ID . "_mob_" . $media_object->getId() . "\"", $answer_obj->getAnswertext()));
 				}
 				foreach ($feedbacksgeneric as $correctness => $material)
 				{
@@ -349,9 +353,10 @@ class assOrderingQuestionImport extends assQuestionImport
 			}
 		}
 		$this->object->setQuestion(ilRTE::_replaceMediaObjectImageSrc($questiontext, 1));
-		foreach($this->object->getOrderingElementList() as $element)
+		foreach ($answers as $key => $value)
 		{
-			$element->setContent(ilRTE::_replaceMediaObjectImageSrc($element->getContent(), 1));
+			$answer_obj =& $answers[$key];
+			$answer_obj->setAnswertext(ilRTE::_replaceMediaObjectImageSrc($answer_obj->getAnswertext(), 1));
 		}
 		foreach ($feedbacksgeneric as $correctness => $material)
 		{
@@ -360,20 +365,11 @@ class assOrderingQuestionImport extends assQuestionImport
 			);
 		}
 		$this->object->saveToDb();
-		if ($tst_id > 0)
-		{
-			$this->object->setObjId($tst_id);
-			$tstQid = $this->object->getId();
-			$qplQid = $this->object->duplicate(true, null, null, null, $questionpool_id);
-			assQuestion::resetOriginalId($qplQid);
-			assQuestion::saveOriginalId($tstQid, $qplQid);
-			$tst_object->questions[$question_counter++] = $tstQid;
-			$import_mapping[$item->getIdent()] = array("pool" => $qplQid, "test" => $tstQid);
-		}
-		else
-		{
-			$import_mapping[$item->getIdent()] = array("pool" => $this->object->getId(), "test" => 0);
-		}
+		// uni-goettingen-patch: begin
+		$this->handleMappingAndDuplication(
+			$item, $tst_id, $tst_object, $question_counter, $import_mapping
+		);
+		// uni-goettingen-patch: end
 	}
 }
 

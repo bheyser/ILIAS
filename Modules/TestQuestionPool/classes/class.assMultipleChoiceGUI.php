@@ -532,6 +532,9 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 		$template->setVariable("QUESTION_ID", $this->object->getId());
 		$questiontext = $this->object->getQuestion();
 		$template->setVariable("QUESTIONTEXT", $this->object->prepareTextareaOutput($questiontext, TRUE));
+		//auding-patch: start
+		$this->outAudingPreview($template);
+		//auding-patch: end
 		$questionoutput = $template->get();
 		if (!$show_question_only)
 		{
@@ -660,6 +663,8 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 			
 		$questiontext = $this->object->getQuestion();
 		$template->setVariable("QUESTIONTEXT", $this->object->prepareTextareaOutput($questiontext, TRUE));
+		//auding-patch: start
+		$this->outAuding($template);
 		$template->setVariable("QUESTION_ID", $this->object->getId());
 		if($this->object->getSelectionLimit())
 		{
@@ -675,6 +680,7 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 		{
 			$template->setVariable('SELECTION_LIMIT_VALUE', 'null');
 		}
+		//auding-patch: end
 		$questionoutput = $template->get();
 		$pageoutput = $this->outQuestionPage("", $is_postponed, $active_id, $questionoutput);
 		return $pageoutput;
@@ -894,6 +900,7 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 		$shuffle->setRequired( FALSE );
 		$form->addItem( $shuffle );
 
+		// uni-goettingen-patch: begin
 		require_once 'Services/Form/classes/class.ilNumberInputGUI.php';
 		$selLim = new ilNumberInputGUI($this->lng->txt('ass_mc_sel_lim_setting'), 'selection_limit');
 		$selLim->setInfo($this->lng->txt('ass_mc_sel_lim_setting_desc'));
@@ -903,9 +910,13 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 		$selLim->setMinvalueShouldBeGreater(false);
 		$selLim->setMaxvalueShouldBeLess(false);
 		$selLim->setMinValue(1);
+		if($this->object->getAnswerCount() > 0)
 		$selLim->setMaxValue($this->object->getAnswerCount());
+		else
+			$selLim->setMaxValue(1);
 		$selLim->setValue($this->object->getSelectionLimit());
 		$form->addItem($selLim);
+		// uni-goettingen-patch: end
 		
 		if ($this->object->getId())
 		{

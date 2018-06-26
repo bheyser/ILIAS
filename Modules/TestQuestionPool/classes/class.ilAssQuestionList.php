@@ -48,7 +48,9 @@ class ilAssQuestionList implements ilTaxAssignedItemInfo
 	 *
 	 * @var integer
 	 */
-	private $parentObjId = null;
+	// uni-goettingen-patch: begin
+	protected $parentObjId = null;
+	// uni-goettingen-patch: end
 
 	/**
 	 * object type of parent question container(s)
@@ -517,7 +519,9 @@ class ilAssQuestionList implements ilTaxAssignedItemInfo
 		return $expressions;
 	}
 	
-	private function getTableJoinExpression()
+	// uni-goettingen-patch: begin
+	protected function getTableJoinExpression()
+	// uni-goettingen-patch: end
 	{
 		$tableJoin = "
 			INNER JOIN	qpl_qst_type
@@ -575,7 +579,9 @@ class ilAssQuestionList implements ilTaxAssignedItemInfo
 		return strlen($CONDITIONS) ? 'AND '.$CONDITIONS : '';
 	}
 	
-	private function getSelectFieldsExpression()
+	// uni-goettingen-patch: begin
+	protected function getSelectFieldsExpression()
+	// uni-goettingen-patch: end
 	{
 		$selectFields = array(
 			'qpl_questions.*',
@@ -608,7 +614,9 @@ class ilAssQuestionList implements ilTaxAssignedItemInfo
 		";
 	}
 	
-	private function buildBasicQuery()
+	// uni-goettingen-patch: begin
+	protected function buildBasicQuery()
+	// uni-goettingen-patch: end
 	{
 		return "
 			{$this->getSelectFieldsExpression()}

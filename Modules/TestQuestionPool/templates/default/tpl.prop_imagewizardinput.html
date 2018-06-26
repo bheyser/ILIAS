@@ -1,7 +1,88 @@
+<!--// uni-goettingen-patch: begin-->
+<script type="text/javascript">
+
+	$(document).ready(function(){
+		reMap();
+		$(function() {
+			$( "#sortable" ).sortable({
+				placeholder: "showHighlight"
+			});
+		});
+		function reMap()
+		{
+			$(".ui-state-default" ).each(function( index ) {
+				$(this).attr('subname', 'row['+index+']');
+			});
+			$( ".imageselection" ).each(function( index ) {
+				$(this).attr('subname', 'categories['+index+']');
+				$(this).attr('id', 'answers[image]['+index+']');
+				$(this).attr('name', 'answers[image]['+index+']');
+			});
+			$( ".BTNsearch" ).each(function( index ) {
+				$(this).attr('id', 'answers[image]['+index+']');
+				$(this).attr('name', 'answers[image]['+index+']');
+			});
+			$( ".BTNsubmit" ).each(function( index ) {
+				$(this).attr('name', 'cmd[uploadanswers]['+index+']');
+			});
+			$( ".hiddenImagePostVarAdd" ).each(function( index ) {
+				$(this).attr('name', 'answers[count]['+index+']');
+			});
+			$( ".hiddenImagePostVarPresent" ).each(function( index ) {
+				$(this).attr('name', 'answers[imagename]['+index+']');
+			});
+			$( ".remove" ).each(function( index ) {
+				$(this).attr('name', 'cmd[removeimageanswers]['+index+']');
+			});
+		}
+		$( ".clone_fields_add" ).live('click', function() {
+			$pos=$(this).closest(".ui-state-default").attr("subname");
+
+			$('[subname="'+$pos+'"]').clone().insertAfter($(this).closest(".ui-state-default").get());
+			reMap();
+			$res = $pos.match(/\[(.*?)\]/);
+			$res = parseInt($res[1])+1;
+			$insert_below_row = "row["+ $res + "]";
+
+			$('[subname="'+$insert_below_row+'"]').children().children().children().children().children().each(function( ) {
+				if($(this).attr("class")=="imagePreview")
+				{
+					$(this).removeAttr( "src" );
+				}
+				if($(this).attr("class")!="BTNsubmit")
+				{
+					$(this).removeAttr( "value" );
+				}
+				$(this).removeAttr( "alt" );
+				if(($(this).attr("class")=="remove"))
+				{
+					$(this).remove();
+				}
+			});
+		});
+		$( ".clone_fields_remove" ).live('click', function() {
+			var n = $(".clone_fields_remove").length;
+			if( n > 1 )
+			{
+				$pos=$(this).closest(".ui-state-default").attr("subname");
+				$('[subname="'+$pos+'"]').remove();
+				reMap();
+			}
+		});
+	});
+</script>
+<link rel="stylesheet" type="text/css" href="./Services/Form/css/tpl.prop_textwizardinput.css">
+<!--// uni-goettingen-patch: end-->
 <div class="form-inlne" id="{ELEMENT_ID}">
-	<table class="imagewizard table table-condensed table-striped">
+	<!--// uni-goettingen-patch: begin-->
+	<ul id="sortable">
+	<!--// uni-goettingen-patch: end-->
 		<tbody class="imgwzd">
 <!-- BEGIN row -->
+<!--// uni-goettingen-patch: begin-->
+<li class="ui-state-default">
+	<table class="imagewizard table table-condensed table-striped">
+		<!--// uni-goettingen-patch: end-->
 			<tr class="imgwzd">
 				<td class="imagecolumn">
 <!-- BEGIN addimage -->
@@ -31,7 +112,9 @@
 <!-- END image -->
 					</div>
 <!-- END addimage -->
-				</td>
+				<!--// uni-goettingen-patch: begin-->
+				<!--</td>	-->
+				<!--// uni-goettingen-patch: end-->
 				<td class="ilValignTop">
 					<button type="button" name="{CMD_ADD}" class="imagewizard_add btn btn-link" id="add_{ID}" onclick="javascript: void(0); return false;">{ADD_BUTTON}</button>
 					<button type="button" name="{CMD_REMOVE}" class="imagewizard_remove btn btn-link" id="remove_{ID}" onclick="javascript: void(0); return false;">{REMOVE_BUTTON}</button>
@@ -41,8 +124,12 @@
 <!-- END move -->
 				</td>
 			</tr>
+		<!--// uni-goettingen-patch: begin-->	
+	</table>
+</li>	<!--// uni-goettingen-patch: end-->
 <!-- END row -->
 		</tbody>
-	</table>
+		<!--// uni-goettingen-patch: begin-->
+</ul>	<!--// uni-goettingen-patch: end-->
 	<div class="ilFormInfo">{TXT_MAX_SIZE}<!-- BEGIN allowed_image_suffixes --> {TXT_ALLOWED_SUFFIXES}<!-- END allowed_image_suffixes --></div>
 </div>

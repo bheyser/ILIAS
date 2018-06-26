@@ -107,7 +107,9 @@ class ilListOfQuestionsTableGUI extends ilTable2GUI
 		if( !$this->areObligationsNotAnswered() && $this->isFinishTestButtonEnabled() )
 		{
 			$button = ilSubmitButton::getInstance();
-			$button->setCaption('finish_test');
+			// uni-goettingen-patch: begin
+			$button->setCaption('finish_test2');
+			// uni-goettingen-patch: end
 			$button->setCommand(ilTestPlayerCommands::FINISH_TEST);
 			$this->addCommandButtonInstance($button);
 		}

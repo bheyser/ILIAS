@@ -632,3 +632,15 @@ div.ilc_Page.readonly textarea[disabled]
 	background-color: rgb(235, 235, 228);
 	min-height: 200px;
 }
+/* uni-goettingen-patch: start */ 
+.modal .ilc_Page img{
+	height:100% !important;
+	width:100% !important;
+}
+.tst_manual_scoring_feedback_finalized{
+	background-color: #ffeb83 !important;
+}
+.tst_manual_scoring_feedback_finalized td{
+	background-color: #ffeb83 !important;
+}
+// uni-goettingen-patch: end

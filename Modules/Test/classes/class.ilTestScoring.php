@@ -155,6 +155,9 @@ class ilTestScoring
 		{
 			/** @var AssQuestionGUI $question_gui */
 			$question_gui = $this->test->createQuestionGUI("", $question['question_id'] );
+			// uni-goettingen-patch: begin
+			$question_gui->setOutputMode(assQuestionGUI::OUTPUT_MODE_PDF);
+			// uni-goettingen-patch: end
 			$solution .= $question_gui->getSolutionOutput(0, null, true, true, false, false, true, false);
 		}
 		

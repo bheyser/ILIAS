@@ -1,0 +1,84 @@
+<h1 class="warning">{TEST_FINISHED_BIG_MESSAGE}</h1>
+&nbsp;<br />&nbsp;<br />
+<!-- BEGIN first_hash_set -->
+<table border=0>
+<tr><td>{SHA256_SUM_TXT}:&nbsp;</td><td>{HASH_REVIEW}</td></tr>
+<!--<tr><td>{HUMAN_HASH_TXT}:&nbsp;</td><td>{HUMANHASH_REVIEW}</td></tr>-->
+</table>
+&nbsp;<br />&nbsp;<br />
+<div id="autologout">
+{AUTOLOGOUT_IN} 
+<span class="minutes">0</span>:<span class="seconds">00</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="javascript:resetTimer();">{RESET_TIMER}</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="logout.php">{LOGOUT_NOW}</a>
+</div>
+<!-- END first_hash_set -->
+<div id="listofanswers">
+&nbsp;<br />
+&nbsp;<br />
+&nbsp;<br />
+{LIST_OF_ANSWERS}
+&nbsp;<br />
+&nbsp;<br />
+&nbsp;<br />
+</div>
+<!-- BEGIN second_hash_set -->
+<table border=0>
+<tr><td>{SHA256_SUM_TXT}:&nbsp;</td><td>{HASH_REVIEW}</td></tr>
+<!--<tr><td>{HUMAN_HASH_TXT}:&nbsp;</td><td>{HUMANHASH_REVIEW}</td></tr>-->
+</table>
+&nbsp;<br />&nbsp;<br />
+<div id="autologout2">
+{AUTOLOGOUT_IN} 
+<span class="minutes2">0</span>:<span class="seconds2">00</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="javascript:resetTimer();">{RESET_TIMER}</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="logout.php">{LOGOUT_NOW}</a>
+</div>
+<!-- END second_hash_set -->
+
+<script>
+var start    = Date.now();
+var duration = 300;
+
+var clock    = document.getElementById("autologout");
+var mSpan    = clock.querySelector('.minutes');
+var sSpan    = clock.querySelector('.seconds');
+<!-- BEGIN mSpan2_def -->
+var clock2   = document.getElementById("autologout2");
+var mSpan2   = clock2.querySelector('.minutes2');
+var sSpan2   = clock2.querySelector('.seconds2');
+// {DUMMY}
+<!-- END mSpan2_def -->
+
+function timerTick() {
+	var diff = duration - (((Date.now() - start) / 1000) | 0);
+
+	var min = (diff / 60) | 0;
+	var sec = (diff % 60) | 0;
+
+	sec = sec < 10 ? "0" + sec : sec;
+
+	mSpan.innerHTML  = min;
+	sSpan.innerHTML  = sec;
+<!-- BEGIN mSpan2_set -->
+	mSpan2.innerHTML = min;
+	sSpan2.innerHTML = sec;
+	// {DUMMY}
+<!-- END mSpan2_set -->
+
+	if(diff <= 0)
+	{
+		$(location).attr('href', 'logout.php');
+	}
+}
+
+function resetTimer() {
+	if(duration - (((Date.now() - start) / 1000) | 0) < 180) {
+		duration = 180;
+		start    = Date.now();
+	}
+}
+
+timerTick();
+var interval = setInterval(timerTick, 1000);
+</script>

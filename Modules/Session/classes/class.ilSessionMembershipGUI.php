@@ -271,6 +271,13 @@ class ilSessionMembershipGUI extends ilMembershipGUI
 	}
 	
 	
+	/**
+	 * Workaround for unavailable gallery
+	 */
+	protected function jump2UsersGallery()
+	{
+		return $this->participants();
+	}
 	
 	
 	

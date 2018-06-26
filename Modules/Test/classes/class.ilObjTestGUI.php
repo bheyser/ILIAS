@@ -41,7 +41,10 @@ require_once './Modules/Test/classes/class.ilTestExpressPage.php';
  * @ilCtrl_Calls ilObjTestGUI: ilTestSkillAdministrationGUI, ilTestSkillEvaluationGUI
  * @ilCtrl_Calls ilObjTestGUI: ilAssQuestionPreviewGUI
  * @ilCtrl_Calls ilObjTestGUI: assKprimChoiceGUI, assLongMenuGUI
- * @ilCtrl_Calls ilObjTestGUI: ilTestQuestionBrowserTableGUI, ilTestInfoScreenToolbarGUI, ilLTIProviderObjectSettingGUI
+ * @ilCtrl_Calls ilObjTestGUI: ilTestQuestionBrowserTableGUI
+ * // auding-patch: begin
+ * @ilCtrl_Calls ilObjTestGUI: ilTestOutputGUI
+ * // auding-patch: end
  *
  * @ingroup ModulesTest
  */
@@ -2513,7 +2516,9 @@ class ilObjTestGUI extends ilObjectGUI
 			}
 			$user = ilObjUser::_lookupName($user_id);
 		
-			if ($this->object->getAnonymity())
+			// uni-goettingen-patch: begin
+			if ($this->object->isFullyAnonymized())
+			// uni-goettingen-patch: end
 			{
 				$name = $this->lng->txt("anonymous");
 			}
@@ -2687,7 +2692,9 @@ class ilObjTestGUI extends ilObjectGUI
 					{
 						$fullname = $lng->txt("deleted_user");
 					}
-					else if($this->object->getAnonymity())
+					// uni-goettingen-patch: begin
+					else if($this->object->isFullyAnonymized())
+					// uni-goettingen-patch: end
 					{
 					 	$fullname = $lng->txt('anonymous');	
 					}
@@ -2725,10 +2732,14 @@ class ilObjTestGUI extends ilObjectGUI
 				));
 			}
 			include_once "./Modules/Test/classes/tables/class.ilTestFixedParticipantsTableGUI.php";
+			// uni-goettingen-patch: begin
 			$table_gui = new ilTestFixedParticipantsTableGUI( $this, 'participants',
 					$this->testQuestionSetConfigFactory->getQuestionSetConfig()->areDepenciesBroken(),
-					$this->object->getAnonymity(), count($rows)
+					$this->object->getAnonymity(), count($rows),
+					// $this->object->isFullyAnonymized(), count($rows),
+					$this->object->getShowExamviewHtmlHash()
 			);
+			// uni-goettingen-patch: end
 			$table_gui->setFilterCommand('fpSetFilter');
 			$table_gui->setResetCommand('fpResetFiler');
 			$rows = $this->applyFilterCriteria($rows);
@@ -2741,7 +2752,19 @@ class ilObjTestGUI extends ilObjectGUI
 				$delete_all_results_btn = ilLinkButton::getInstance();
 				$delete_all_results_btn->setCaption('delete_all_user_data');
 				$delete_all_results_btn->setUrl($this->ctrl->getLinkTarget($this, 'deleteAllUserResults'));
+				// uni-goettingen-patch: begin
+				$partial_archive = ilLinkButton::getInstance();
+				$partial_archive->setCaptions('partial_archive');
+				$partial_archive->setURL($this->ctrl->getLinkTarget($this, 'printPartialHashList'));
+				$full_archive = ilLinkButton::getInstance();
+				$full_archive->setCaptions('full_archive');
+				$full_archive->setURL($this->ctrl->getLinkTarget($this, 'printFullHashList'));
+				// uni-goettingen-patch: end
 				$ilToolbar->addButtonInstance($delete_all_results_btn);
+				// uni-goettingen-patch: begin
+				$ilToolbar->addButtonInstance($partial_archive);
+				$ilToolbar->addButtonInstance($full_archive);
+				// uni-goettingen-patch: end
 			}
 			$this->addFinishAllPassesButton($unfinished_passes, $ilToolbar);
 		}
@@ -2792,10 +2815,14 @@ class ilObjTestGUI extends ilObjectGUI
 				));
 			}
 			include_once "./Modules/Test/classes/tables/class.ilTestParticipantsTableGUI.php";
+			// uni-goettingen-patch: begin
 			$table_gui = new ilTestParticipantsTableGUI( $this, 'participants',
 					$this->testQuestionSetConfigFactory->getQuestionSetConfig()->areDepenciesBroken(),
-					$this->object->getAnonymity(), count($rows)
+					$this->object->getAnonymity(), count($rows),
+					$this->object->getShowExamviewHtmlHash()
+					// $this->object->isFullyAnonymized(), count($rows)
 			);
+			// uni-goettingen-patch: end
 
 			if(count($rows) > 0)
 			{
@@ -2803,7 +2830,27 @@ class ilObjTestGUI extends ilObjectGUI
 				$delete_all_results_btn = ilLinkButton::getInstance();
 				$delete_all_results_btn->setCaption('delete_all_user_data');
 				$delete_all_results_btn->setUrl($this->ctrl->getLinkTarget($this, 'deleteAllUserResults'));
+				// uni-goettingen-patch: begin
+				$partial_archive = ilLinkButton::getInstance();
+				$partial_archive->setCaption('partial_archive');
+				$partial_archive->setURL($this->ctrl->getLinkTarget($this, 'printPartialHashList'));
+				$reset_client_ips = ilLinkButton::getInstance();
+				$reset_client_ips->setCaption('reset_client_ips');
+				$reset_client_ips->setURL($this->ctrl->getLinkTarget($this, 'resetClientIPs'));
+
+				if(!$this->object->isOnline()) {
+					$full_archive = ilLinkButton::getInstance();
+					$full_archive->setCaption('full_archive');
+					$full_archive->setURL($this->ctrl->getLinkTarget($this, 'printFullHashList'));
+				}
+				// uni-goettingen-patch: end
 				$ilToolbar->addStickyItem($delete_all_results_btn);
+				// uni-goettingen-patch: begin
+				$ilToolbar->addButtonInstance($partial_archive);
+				$ilToolbar->addButtonInstance($reset_client_ips);
+				if(!$this->object->isOnline())
+					$ilToolbar->addButtonInstance($full_archive);
+				// uni-goettingen-patch: end
 			}
 
 			$this->addFinishAllPassesButton($unfinished_passes, $ilToolbar);
@@ -2866,7 +2913,9 @@ class ilObjTestGUI extends ilObjectGUI
 
 			$tblRow['login'] = $participant['login'];
 
-			if ($this->object->getAnonymity())
+			// uni-goettingen-patch: begin
+			if ($this->object->isFullyAnonymized())
+			// uni-goettingen-patch: end
 			{
 				$tblRow['name'] = $this->lng->txt("anonymous");
 			}
@@ -2939,7 +2988,9 @@ class ilObjTestGUI extends ilObjectGUI
 		{
 			$started = "";
 
-			if ($this->object->getAnonymity())
+			// uni-goettingen-patch: begin
+				if ($this->object->isFullyAnonymized())
+			// uni-goettingen-patch: end
 			{
 				$name = $this->lng->txt("anonymous");
 			}
@@ -3029,7 +3080,9 @@ class ilObjTestGUI extends ilObjectGUI
 	function fpSetFilterObject()
 	{
 		include_once("./Modules/Test/classes/tables/class.ilTestFixedParticipantsTableGUI.php");
-		$table_gui = new ilTestFixedParticipantsTableGUI($this, "participants", false, $this->object->getAnonymity(), 0);
+		// uni-goettingen-patch: begin
+		$table_gui = new ilTestFixedParticipantsTableGUI($this, "participants", false, $this->object->isFullyAnonymized(), 0);
+		// uni-goettingen-patch: end
 		$table_gui->writeFilterToSession();        // writes filter to session
 		$table_gui->resetOffset();                // sets record offest to 0 (first page)
 		$this->participantsObject();
@@ -3038,9 +3091,11 @@ class ilObjTestGUI extends ilObjectGUI
 	function fpResetFilterObject()
 	{
 		include_once("./Modules/Test/classes/tables/class.ilTestFixedParticipantsTableGUI.php");
+		// uni-goettingen-patch: begin
 		$table_gui = new ilTestFixedParticipantsTableGUI(
-			$this, "participants", false, $this->object->getAnonymity(), 0
+			$this, "participants", false, $this->object->isFullyAnonymized(), 0
 		);
+		// uni-goettingen-patch: end
 		$table_gui->resetFilter();        // writes filter to session
 		$table_gui->resetOffset();                // sets record offest to 0 (first page)
 		$this->participantsObject();
@@ -3049,9 +3104,11 @@ class ilObjTestGUI extends ilObjectGUI
 	function npSetFilterObject()
 	{
 		include_once("./Modules/Test/classes/tables/class.ilTestParticipantsTableGUI.php");
+		// uni-goettingen-patch: begin
 		$table_gui = new ilTestParticipantsTableGUI(
-			$this, "participants", false, $this->object->getAnonymity(), 0
+			$this, "participants", false, $this->object->isFullyAnonymized(), 0
 		);
+		// uni-goettingen-patch: end
 		$table_gui->writeFilterToSession();        // writes filter to session
 		$table_gui->resetOffset();                // sets record offest to 0 (first page)
 		$this->participantsObject();
@@ -3061,9 +3118,11 @@ class ilObjTestGUI extends ilObjectGUI
 	function npResetFilterObject()
 	{
 		include_once("./Modules/Test/classes/tables/class.ilTestParticipantsTableGUI.php");
+		// uni-goettingen-patch: begin
 		$table_gui = new ilTestParticipantsTableGUI(
-			$this, "participants", false, $this->object->getAnonymity(), 0
+			$this, "participants", false, $this->object->isFullyAnonymized(), 0
 		);
+		// uni-goettingen-patch: end
 		$table_gui->resetFilter();        // writes filter to session
 		$table_gui->resetOffset();                // sets record offest to 0 (first page)
 		$this->participantsObject();
@@ -3141,6 +3200,412 @@ class ilObjTestGUI extends ilObjectGUI
 		}
 	}
 
+	// uni-goettingen-patch: begin
+	/**
+	* Generates a PDF with a list of Student names and Matriculation-#s,
+	* with the hash of their exam results for signature
+	*
+	* @access public
+	*/
+	public function printHashList($selected_users, $date, $archive_hash = FALSE, $archive_filename = FALSE)
+	{
+		require_once "./Services/Hashing/classes/class.Hashing.php";
+		require_once './Services/PDFGeneration/classes/class.ilPDFGeneration.php';
+		require_once './Services/PDFGeneration/classes/class.ilPDFGenerationJob.php';
+
+		$list_type = $this->object->getSignatureListType();
+		$template_file = "tpl.il_as_tst_printable_hash_list.html";
+		if($list_type == ilObjTest::SIGNATURE_LIST_COLLECTION)
+		{
+			$template_file = "tpl.il_as_tst_printable_hash_summary.html";
+		}
+
+		$participants = $this->object->getTestParticipants();
+		$template       = new ilTemplate($template_file, TRUE, TRUE, "Modules/Test");
+		$hasher         = new Hashing();
+		$pdf_generator  = new ilPDFGenerationJob();
+		$pdf_generator->setCreator("ILIAS e-Prüfungssystem")
+		              ->setTitle("Unterschriftenliste")
+		              ->setAutoPageBreak(FALSE)
+           			  ->setMarginLeft('10')
+					  			->setMarginRight('10')
+					  			->setMarginTop('20')
+					  			->setMarginBottom('20')
+		              ->setOutputMode("I")
+					  			->setAuthor("Georg-August Universität Göttingen");
+
+		if($list_type == ilObjTest::SIGNATURE_LIST_COLLECTION)
+		{
+			$template->setVariable("NAME_TXT", $this->lng->txt("name"));
+			$template->setVariable("MAT_NUM_TXT", $this->lng->txt("matriculation"));
+			$template->setVariable("SIGNATURE_TXT1", $this->lng->txt("signature1"));
+			$template->setVariable("SIGNATURE_TXT2", $this->lng->txt("signature3"));
+			$template->setVariable("SIGNATURE_TXT3", $this->lng->txt("signature2"));
+		}
+		$n = 0;
+
+		if($list_type == ilObjTest::SIGNATURE_LIST_COLLECTION)
+			$max_n = 22;
+		else
+			$max_n = 6;
+
+		$title = $this->object->getTitle();
+		$template->setVariable("TITLE", $title);
+		$template->setVariable("DATE",  $date->format("d.m.Y H:i:s"));
+
+		if($archive_hash !== FALSE)
+			$template->setVariable("ARCHIVE_HASH", "<i style=\"font-family: monospace\">".
+				implode("&nbsp; ", str_split($archive_hash, 16))
+				."</i>");
+		else
+			$template->setVariable("ARCHIVE_HASH", "<i>Partielle Liste, Hash ist auf der Finalen Liste.</i>");
+
+		if($archive_filename !== FALSE)
+			$template->setVariable("ARCHIVE_FILENAME", $archive_filename);
+		else
+			$template->setVariable("ARCHIVE_FILENAME",
+				"<i>Partielle Liste, Dateiname auf der Finalen Liste.</i>");
+
+		foreach($selected_users as $key => $active_id)
+		{
+			if ($this->object->getFixedParticipants())
+			{
+				$active_id = $this->object->getActiveIdOfUser( $active_id );
+			}
+
+			$student    = $participants[$active_id];
+			$hash       = $this->object->getHashFromActiveID($active_id);
+			$human_hash = $hasher->humanize($hash, 8, true);
+			$template->setCurrentBlock("hash_items");
+			if($list_type == ilObjTest::SIGNATURE_LIST_STUDENTS)
+			{
+				$template->setVariable("STUDENT_HUMANHASH", $human_hash);
+				$template->setVariable("STUDENT_SHA256", implode("<br/>", str_split($hash, 16)));
+			}
+			else
+			{
+				$template->setVariable("STUDENT_SHA256", implode(" &nbsp; ", str_split($hash, 16)));
+			}
+			$user_id = ilObjTest::_getUserIdFromActiveId($active_id);
+			$template->setVariable("STUDENT_NAME", $this->object->userLookupRealFullName($user_id, TRUE));
+			$template->setVariable("STUDENT_MAT_NUM", $student['matriculation']);
+			$template->parseCurrentBlock();
+			$n++;
+			if($n >= $max_n)
+			{
+				$n = 0;
+				$max_n = 36;
+				$pdf_generator->addPage($template->get());
+				$template_file = "tpl.il_as_tst_printable_hash_summary_without_header_and_footer.html";
+				$template = new ilTemplate($template_file, TRUE, TRUE, "Modules/Test");
+				if($list_type == ilObjTest::SIGNATURE_LIST_COLLECTION)
+				{
+					$template->setVariable("NAME_TXT", $this->lng->txt("name"));
+					$template->setVariable("MAT_NUM_TXT", $this->lng->txt("matriculation"));
+				}
+				$template->setVariable("TITLE", $title);
+				$template->setVariable("DATE",  $date->format("d.m.Y H:i:s"));
+				if($archive_hash !== FALSE)
+					$template->setVariable("ARCHIVE_HASH", "<i style=\"font-family: monospace\">".
+						implode("&nbsp; ", str_split($archive_hash, 16))
+						."</i>");
+				else
+					$template->setVariable("ARCHIVE_HASH", "<i>Partielle Liste, Hash ist auf der Finalen Liste.</i>");
+
+				if($archive_filename !== FALSE)
+					$template->setVariable("ARCHIVE_FILENAME", $archive_filename);
+				else
+					$template->setVariable("ARCHIVE_FILENAME",
+						"<i>Partielle Liste, Dateiname auf der Finalen Liste.</i>");
+			}
+		}
+		if($n)
+		{
+			$pdf_generator->addPage($template->get());
+		}
+		ilPDFGeneration::doJob($pdf_generator, true);
+	}
+
+	public function printFullHashListObject()
+	{
+		// display confirmation message
+		require_once("./Services/Utilities/classes/class.ilConfirmationGUI.php");
+		$cgui = new ilConfirmationGUI();
+
+		$cgui->setFormAction($this->ctrl->getFormAction($this, "participants"));
+		$cgui->setHeaderText($this->lng->txt("full_hash_list_confirmation"));
+		$cgui->setCancel($this->lng->txt("cancel"), "participants");
+		$cgui->setConfirm($this->lng->txt("proceed"), "confirmPrintFullHashList");
+
+		$this->tpl->setContent($cgui->getHTML());
+	}
+
+	private function recurse_copy($src, $dst) {
+		$dir = opendir($src);
+		@mkdir($dst);
+		while(false !== ( $file = readdir($dir) )) {
+			if(( $file[0] != '.') && ( $file != '..' )) {
+				if( is_dir($src . '/' . $file) ) {
+					$this->recurse_copy($src . '/'. $file, $dst . '/' . $file);
+				}
+				else {
+					copy($src . '/'. $file, $dst . '/' . $file);
+				}
+			}
+		}
+		closedir($dir);
+	}
+
+	private function doParticipantArchiving($ilTestServiceGUI, $active_id, $participants)
+	{
+		global $ilDB;
+
+		$pass = $this->object->_getPass($active_id);
+
+		$result_array = $this->object->getTestResult($active_id, $pass, false);
+
+		$list_of_answers = $ilTestServiceGUI->getPassListOfAnswers($result_array, $active_id, $pass, false, false, false, false, true);
+
+		$user_id = ilObjTest::_getUserIdFromActiveId($active_id);
+		$path =  ilUtil::getWebspaceDir() . '/assessment/' . $this->object->getID() . '/exam_archive';
+       	if (!is_dir($path))     {
+        	ilUtil::makeDirParents($path);
+    	}
+
+        $filename = $path . '/exam_N' . $inst_id . '-' . $this->object->getID() . '-' . $active . '-' . $pass . ".html";
+
+        $student = $participants[$active_id];
+        $out_template = new ilTemplate("tpl.il_as_tst_finished_test_export.html", TRUE, TRUE, "Modules/Test");
+        $out_template->setVariable("TITLE", $this->lng->txt("export_finished_html_title"));
+        $out_template->setVariable("NAME_TXT", $this->lng->txt("name"));
+				$out_template->setVariable("STUDENT_NAME", $this->object->userLookupRealFullName($user_id, TRUE));
+				$out_template->setVariable("MAT_NUM_TXT", $this->lng->txt("matriculation"));
+				$out_template->setVariable("STUDENT_MAT_NUM", $this->object->userLookupMatriculation($user_id));
+        $out_template->setVariable("ILIAS_URL", ILIAS_HTTP_PATH);
+        $modified_results = $ilTestServiceGUI->processHtmlResultsForArchiving($list_of_answers, $path);
+        $out_template->setVariable("EXAM_DATA", $modified_results);
+
+        $out_file  = fopen($filename, "w");
+        fwrite($out_file, $out_template->get());
+        fclose($out_file);
+        require_once "./Services/Hashing/classes/class.Hashing.php";
+        $hasher = new Hashing();
+        $algo = "sha256";
+        if(!$hasher->checkAlgorithm($algo))
+                $algo = "md5";
+        $hashes = $hasher->humanHashFile($filename, "sha256", 16);
+        $ilTestServiceGUI->setHashedOutputFile($active_id, $filename, $hashes[0]);
+
+	}
+
+
+	public function confirmPrintFullHashListObject()
+	{
+		include_once "./Modules/Test/classes/class.ilTestServiceGUI.php";
+		$ilTestServiceGUI = new ilTestServiceGUI($this->object);
+
+		$participants = $this->object->getTestParticipants();
+		$active_ids   = array();
+		foreach($participants as $p) {
+			$active_id = $p["active_id"];
+			array_push($active_ids, $active_id);
+			$hash = $this->object->getHashFromActiveID($active_id);
+			if(strlen($hash) < 32) // Will work for both SHA256 and the MD5 backup
+			{
+				$this->doParticipantArchiving(
+					$ilTestServiceGUI, $active_id, $participants);
+			}
+		}
+
+		list($usec, $sec)	= explode(" ", microtime());
+		$date_now			= new DateTime(date("Y-m-d\TH:i:s", $sec) . substr($usec, 1, 8));
+		$date_string		= $date_now->format("YmdHis-u");
+		$screenShotDir		= "/data/screenShots/".$this->object->getId();
+
+		$path    = ilUtil::getWebspaceDir() . '/assessment';
+		$aPath   = ilUtil::getWebspaceDir() . '/assessment';
+		$ssPath  = ilUtil::getWebspaceDir() . '/assessment';
+		$path   .= '/'.$this->object->getId().'/exam_archive';
+		$ssPath .= '/'.$this->object->getId().'/exam_archive';
+		$ssPath .= '/screenshots';
+		if(file_exists($screenShotDir) && is_dir($screenShotDir)) {
+			@mkdir(ssPath);
+			@$this->recurse_copy($screenShotDir, $ssPath);
+		}
+		$archive = $aPath.'/'.$date_string.'-'.$this->object->getId().".tar";
+
+		try
+		{
+			if(file_exists($archive.".gz"))
+				unlink($archive.".gz");
+			if(file_exists($archive))
+				unlink($archive);
+
+			$a = new PharData($archive);
+			$a->buildFromDirectory($path);
+			$a->compress(Phar::GZ);
+		}
+		catch (Exception $e)
+		{
+			ilUtil::sendInfo("Error: ".$e, TRUE);
+		}
+		$archive_unpacked = $archive;
+		$archive_packed   = $archive + ".gz";
+		unlink($archive_unpacked); // Delete .tar file, while keeping .tar.gz
+
+		sleep(1);
+
+		require_once "./Services/Hashing/classes/class.Hashing.php";
+		$hasher = new Hashing();
+		$filename = $date_string.'-'.$this->object->getId().".tar.gz";
+		$hash   = $hasher->hashFile(
+			$aPath.'/' . $filename,
+			"sha256", true);
+
+		global $ilDB;
+		$test_id = $this->object->getTestId();
+		$ilDB->insert("tst_tests_files", array(
+				"test_fi"	=> array("integer", $test_id),
+				"file_path" => array("text", $archive),
+				"file_hash" => array("text", $hash)
+			));
+
+		$this->printHashList($active_ids, $date_now, $hash, $filename);
+	}
+
+	public function printPartialHashListObject()
+	{
+		include_once "./Modules/Test/classes/class.ilTestServiceGUI.php";
+		$ilTestServiceGUI = new ilTestServiceGUI($this->object);
+
+		$participants = $this->object->getTestParticipants();
+		$active_ids   = array();
+		foreach($participants as $p) {
+			$active_id = $p["active_id"];
+			array_push($active_ids, $active_id);
+
+			$hash = $this->object->getHashFromActiveID($active_id);
+			if(strlen($hash) < 32) // Will work for both SHA256 and the MD5 backup
+			{
+				$this->doParticipantArchiving(
+					$ilTestServiceGUI, $active_id, $participants);
+			}
+		}
+
+		$this->printHashList($active_ids, new DateTime('NOW'));
+	}
+
+	public function printHashListObject()
+	{
+		$selected_users = FALSE;
+		if(count($_POST))
+		{
+			$selected_users = $_POST["chbUser"];
+		}
+		if(count($selected_users) == 0)
+		{
+			ilUtil::sendInfo($this->lng->txt("select_one_user"), TRUE);
+			$this->ctrl->redirect($this, "participants");
+		}
+		if($selected_users != FALSE)
+		{
+			$this->printHashList($selected_users, new DateTime('NOW'));
+		}
+	}
+
+	// uni-goettingen-patch: begin
+	public function resetClientIPsObject()
+	{
+		try {
+			include_once "./Modules/Test/classes/class.ilTestServiceGUI.php";
+			$ilTestServiceGUI = new ilTestServiceGUI($this->object);
+
+			$participants = $this->object->getTestParticipants();
+			foreach($participants as $p) {
+				$user = new ilObjUser($p["usr_id"]);
+				$cip = $user->setClientIP("134.76.185.1??");
+				$user->update();
+			}
+		}	catch (ilException $e) {
+			ilUtil::sendFailure($e->getMessage());
+			$this->ctrl->redirect($this, "participants");
+		}
+
+		ilUtil::sendSuccess($this->lng->txt('succuess_reset_client_ips'), true);
+		$this->ctrl->redirect($this, "participants");
+	}
+	// uni-goettingen-patch: end
+
+	/**
+	* Generates archive of all selected results and hash the archive
+	*
+	* @access public
+	*/
+	public function timeSignedArchiveObject()
+	{
+		// display confirmation message
+		require_once("./Services/Utilities/classes/class.ilConfirmationGUI.php");
+		$cgui = new ilConfirmationGUI();
+
+		$cgui->setFormAction($this->ctrl->getFormAction($this, "participants"));
+		$cgui->setHeaderText($this->lng->txt("time_signed_archive_confirmation"));
+		$cgui->setCancel($this->lng->txt("cancel"), "participants");
+		$cgui->setConfirm($this->lng->txt("proceed"), "confirmTimeSignedArchive");
+
+		$this->tpl->setContent($cgui->getHTML());
+	}
+
+	public function confirmTimeSignedArchiveObject()
+	{
+		$date_string = date("Ymd");
+
+		$path    = ilUtil::getWebspaceDir() . '/assessment';
+		$path   .= '/'.$this->object->getId().'/exam_archive';
+		$archive = $path.'/'.$date_string.'-'.$this->object->getId().".tar";
+
+		try
+		{
+			if(file_exists($archive.".gz"))
+				unlink($archive.".gz");
+			if(file_exists($archive))
+				unlink($archive);
+			$a = new PharData($archive);
+			$a->buildFromDirectory($path);
+			$a->compress(Phar::GZ);
+		}
+		catch (Exception $e)
+		{
+			ilUtil::sendInfo("Error: ".$e, TRUE);
+		}
+		$archive_unpacked = $archive;
+		$archive += ".gz";
+		unlink($archive_unpacked); // Delete .tar file, while keeping .tar.gz
+
+		require_once "./Services/Hashing/classes/class.Hashing.php";
+		$hasher = new Hashing();
+		$hash   = $hasher->hashFile($archive, "sha256", true);
+
+		global $ilDB;
+		$test_id = $this->object->getTestId();
+		$ilDB->insert("tst_tests_files", array(
+				"test_fi"	=> array("integer", $test_id),
+				"file_path" => array("text", $archive),
+				"file_hash" => array("text", $hash)
+			));
+		$ilDB->update("tst_tests",
+			array(
+				"is_timesigned" => array("integer", 1),
+				"online_status" => array("integer", 0)
+			),
+			array(
+				"test_id" => array("integer", $test_id)
+			));
+
+		// ilUtil::sendInfo($this->lng->txt("unimplemented_function"), TRUE);
+		$this->ctrl->redirect($this, "participants");
+	}
+
+	// uni-goettingen-patch: end
 	function removeParticipantObject()
 	{
 		if (is_array($_POST["chbUser"])) 
@@ -4072,6 +4537,22 @@ class ilObjTestGUI extends ilObjectGUI
 				);
 			}
 		}
+		// auding-patch: start
+		/**
+		 * @var $ilAccess ilAccessHandler
+		 * @var $ilTabs   ilTabsGUI
+		 */
+		global $ilAccess;
+
+		if($ilAccess->checkAccess('write', '', $this->ref_id))
+		{
+			$ilTabs->addSubTabTarget(
+				'auding_settings',
+				$this->ctrl->getLinkTarget($this, 'showAudingStatistics'),
+				array('showAudingSettings', 'saveAudingSettings', 'showAudingStatistics', 'applyAudingStatisticsFilter', 'resetAudingStatisticsFilter'), '', ''
+			);
+		}
+		// auding-patch: end
 	}
 	
 	/**
@@ -4332,6 +4813,9 @@ class ilObjTestGUI extends ilObjectGUI
 							"showPassOverview", "showUserAnswers", "participantsAction",
 							"showDetailedResults", 
 							'timing', 'timingOverview', 'npResetFilter', 'npSetFilter', 'showTimingForm'
+							// auding-patch: begin
+							, 'showAudingSettings', 'saveAudingSettings', 'showAudingStatistics', 'applyAudingStatisticsFilter', 'resetAudingStatisticsFilter'
+							// auding-patch: end
 						),
 						""
 					);
@@ -4347,7 +4831,15 @@ class ilObjTestGUI extends ilObjectGUI
 									 array('illplistofobjectsgui','illplistofsettingsgui','illearningprogressgui','illplistofprogressgui'));
 			}
 
-			if ($ilAccess->checkAccess("write", "", $this->ref_id)  && !in_array('manscoring', $hidden_tabs))
+			// uni-goettingen-patch: begin
+			if(
+				(
+					$ilAccess->checkAccess("write", "", $this->ref_id) ||
+					$ilAccess->checkAccess("man_scoring_access", "", $this->ref_id)
+				) &&
+				!in_array('manscoring', $hidden_tabs)
+			)
+			// uni-goettingen-patch: end
 			{
 				include_once "./Modules/Test/classes/class.ilObjAssessmentFolder.php";
 				$scoring = ilObjAssessmentFolder::_getManualScoring();

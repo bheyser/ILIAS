@@ -15,14 +15,18 @@ require_once 'class.ilPDFGenerationJob.php';
  */
 class ilPDFGeneration 
 {
-	public static function doJob(ilPDFGenerationJob $job)
+	// uni-goettingen-patch: begin
+	public static function doJob(ilPDFGenerationJob $job, $zeroMargin = false)
+	// uni-goettingen-patch: end
 	{
 		/*
 		 * This place currently supports online the TCPDF-Generator. In future versions/iterations, this place
 		 * may serve to initialize other mechanisms and route jobs to them.
 		 */
 		require_once 'class.ilTCPDFGenerator.php';
-		ilTCPDFGenerator::generatePDF($job);
+		// uni-goettingen-patch: begin
+		ilTCPDFGenerator::generatePDF($job, $zeroMargin);
+		// uni-goettingen-patch: end
 	}
 
 	/**

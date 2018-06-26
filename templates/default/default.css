@@ -5,6 +5,16 @@ body {
 	font-size: 13px;
 	margin: 10px;
 }
+/* uni-goettingen-patch: begin */
+@media all {
+	.page-break	{ display: none; }
+}
+
+@media print {
+	.page-break	{ display: block; page-break-before: always; }
+	.no-print   { display: block; }
+}
+/* uni-goettingen-patch: end */
 
 td {
 	font-size:13px;

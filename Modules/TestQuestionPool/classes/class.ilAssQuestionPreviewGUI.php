@@ -103,8 +103,11 @@ class ilAssQuestionPreviewGUI
 		$this->questionGUI->setQuestionTabs();
 		$this->questionGUI->outAdditionalOutput();
 		
+		$this->questionGUI->setOutputMode(OUTPUT_JAVASCRIPT);
+		// uni-goettingen-patch: begin
 		$this->questionGUI->populateJavascriptFilesRequiredForWorkForm($this->tpl);
-		$this->questionOBJ->setOutputType(OUTPUT_JAVASCRIPT); // TODO: remove including depending stuff
+		// uni-goettingen-patch: end
+		$this->questionOBJ->setOutputType(OUTPUT_JAVASCRIPT);
 			
 		$this->questionGUI->setTargetGui($this);
 		$this->questionGUI->setQuestionActionCmd(self::CMD_HANDLE_QUESTION_ACTION);
@@ -186,6 +189,9 @@ class ilAssQuestionPreviewGUI
 		$tpl = new ilTemplate('tpl.qpl_question_preview.html', true, true, 'Modules/TestQuestionPool');
 
 		$tpl->setVariable('PREVIEW_FORMACTION', $this->ctrl->getFormAction($this, self::CMD_SHOW));
+		// uni-goettingen-patch: begin
+		$tpl->setVariable('PREVIEW_FORMENCTYPE', $this->questionGUI->getFormEncodingType());
+		// uni-goettingen-patch: end
 
 		$this->populatePreviewToolbar($tpl);
 		

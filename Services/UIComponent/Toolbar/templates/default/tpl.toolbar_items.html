@@ -1,6 +1,8 @@
 <!-- BEGIN item -->
 <!-- BEGIN button -->
-<div class="navbar-form"><button {BID} class="btn btn-default" type="button" onclick="location.href='{BTN_LINK}'" {BTN_ADD_ARG}>{BTN_TXT}</button></div>
+<!-- // uni-goettingen-patch: begin -->
+<div class="navbar-form"><button {BID} class="btn btn-default" type="button" onclick="{BTN_ONCLICK}" {BTN_ADD_ARG}>{BTN_TXT}</button></div>
+<!-- // uni-goettingen-patch: end -->
 <!-- END button -->
 <!-- BEGIN dropdown -->
 <a href="#" class="dropdown-toggle" data-toggle="dropdown">{TXT_DROPDOWN} <span class="caret"></span></a>{DROP_DOWN}

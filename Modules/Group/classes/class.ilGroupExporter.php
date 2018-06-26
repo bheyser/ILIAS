@@ -94,7 +94,7 @@ class ilGroupExporter extends ilXmlExporter
 		
 		if(!$group instanceof ilObjGroup)
 		{
-			$GLOBALS['ilLog']->write(__METHOD__. $a_id . ' is not instance of type group');
+			$GLOBALS['DIC']->logger()->grp()->warning($a_id . ' is not instance of type group');
 			return ''; 
 		}
 		
