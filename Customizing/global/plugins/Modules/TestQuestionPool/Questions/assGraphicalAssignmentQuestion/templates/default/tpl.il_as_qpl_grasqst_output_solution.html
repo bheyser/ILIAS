@@ -1,0 +1,76 @@
+<!-- BEGIN js_qst_files -->
+<script type="text/javascript" src="{SRC}"></script>
+<!-- END js_qst_files -->
+<p>{QUESTIONTEXT}</p>
+
+
+<style type="text/css">
+    @media print {
+        #canvas_wrapper{ID_COUNTER} {
+        position: relative;
+    }
+        #canvas_background_img{ID_COUNTER} {
+        position: absolute;
+        left: {IMAGE_POSITION_LEFT}px;
+        top: {IMAGE_POSITION_TOP}px;
+        width: {IMAGE_WIDTH}px;
+        height: {IMAGE_HEIGHT}px;
+    }
+    }
+    @media screen {
+        #canvas_background_img{ID_COUNTER} {
+        display: none;
+    }
+    }
+
+</style>
+
+<div id="canvas_wrapper{ID_COUNTER}" style="position: relative;border: 1px solid #000000; width: {CANVAS_WIDTH}px; height: {CANVAS_HEIGHT}px;">
+    <div id="canvas_background_img{ID_COUNTER}"><img src="{SRC_IMAGE}"></div>
+    <canvas id="container{ID_COUNTER}" width="{CANVAS_WIDTH}" height="{CANVAS_HEIGHT}"></canvas>
+    <div id="input_wrapper{ID_COUNTER}">
+        <!-- BEGIN input_coords -->
+        <input type="hidden" name="answer[{ANSWER_INDEX}][target_x]" value="{TARGET_X}" />
+        <input type="hidden" name="answer[{ANSWER_INDEX}][target_y]" value="{TARGET_Y}" />
+        <input type="hidden" name="answer[{ANSWER_INDEX}][destination_x]" value="{DESTINATION_X}" />
+        <input type="hidden" name="answer[{ANSWER_INDEX}][destination_y]" value="{DESTINATION_Y}" />
+        <!-- END input_coords -->
+        <!-- BEGIN input_text -->
+        <input type="text" class="input_element" name="answer[{ANSWER_INDEX}][input]" placeholder="Bitte Eintragen..." value="{VALUE}" />
+        <!-- END input_text -->
+        <!-- BEGIN input_select -->
+        <select class="input_element" name="answer[{ANSWER_INDEX}][input]">
+            <option value="-1">Bitte Eintragen...</option>
+            <!-- BEGIN input_option -->
+            <option {SELECTED} value="{OPTION_VALUE}">{OPTION_TEXT}</option>
+            <!-- END input_option -->
+        </select>
+        <!-- END input_select -->
+    </div>
+</div>
+
+<!-- BEGIN icon_ok -->
+<img src="{ICON_OK}" alt="{TEXT_OK}" title="{TEXT_OK}" />
+<!-- END icon_ok -->
+<!-- BEGIN icon_not_ok -->
+<img src="{ICON_NOT_OK}" alt="{TEXT_NOT_OK}" title="{TEXT_NOT_OK}" />
+<!-- END icon_not_ok -->
+
+<script type="text/javascript">
+    $(document).ready(function(){
+        var container = initCanvas("{ID_COUNTER}", "{CANVAS_COLOR}");
+        initBackground("{SRC_IMAGE}", '#canvas_wrapper{ID_COUNTER}');
+
+        $('#input_wrapper{ID_COUNTER}').find('.input_element').each(function(){
+            addInput.call($(this), container, true);
+        });
+
+        $('input[type="text"].input_element').autoGrowInput({
+            comfortZone: 10,
+            minWidth: 170,
+            maxWidth: 2000
+        });
+        
+        $('#canvas_wrapper{ID_COUNTER}').closest(".modal-dialog").css('width', $('#canvas_wrapper{ID_COUNTER}').width() + 50);
+    });
+</script>

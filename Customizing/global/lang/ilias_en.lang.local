@@ -1,0 +1,51 @@
+<!-- language file start -->
+assessment#:#auding_nr_of_sends#:#Auding Number of File Requests
+assessment#:#auding_nr_of_sends_info#:#Maximum number of request for the uploaded auding file
+assessment#:#auding_file#:#Auding file
+assessment#:#auding_activate#:#Activate Auding
+assessment#:#auding_mode#:#Auding Mode
+assessment#:#auding_force_play#:#Play Without Interrupts
+assessment#:#auding_with_pause#:#Allow Pause
+assessment#:#auding_no_more_replays#:#There aren't any replays left for this pass
+assessment#:#tst_results_final_name#:#Name
+assessment#:#tst_results_final_matrikel#:#Matriculaition Number
+assessment#:#tst_results_final_platznummer#:#Platznummer
+assessment#:#tst_results_final_test_date#:#Test Date
+assessment#:#tst_results_final_print_date#:#Print Date
+assessment#:#tst_results_final_exam#:#Test
+assessment#:#info_about_editing_questions#:#The question you changed is a copy which has been created for use with the active test. The changes will not affect the Question Pool.
+assessment#:#auding_settings#:#Change Auding Settings
+assessment#:#auding_settings_form_title#:#Settings for the Auding Patch
+assessment#:#auding_settings_current_label#:#Current Settings of the Question
+assessment#:#auding_settings_repetitions#:#Repetitions
+assessment#:#auding_settings_pausing_allowed#:#Allow Pausing
+assessment#:#auding_settings_allow_pausing#:#Allow Pausing
+assessment#:#auding_settings_allow_pausing_info#:#Please define whether or not the selected user(s) should be able to pause the play of the auding file in the context of the selected question(s) and the chosen test pass. This setting overrides the setting of the question itself.
+assessment#:#auding_settings_nr_rpts#:#Repetitions
+assessment#:#auding_settings_nr_rpts_info#:#This value defines the additional number of requests the selected participant(s) can perform in context of the selected question(s) and the respective test pass.
+assessment#:#auding_all_participants#:#All Participants
+assessment#:#auding_all_questions#:#All Questions
+assessment#:#tst_participant_fullname_pattern#:#%2$s, %1$s
+assessment#:#auding_statistics#:#Auding Statistics
+assessment#:#add_additional_auding_settings#:#Add Changes
+assessment#:#auding_nr_requests#:#Already Used
+assessment#:#auding_nr_available#:#Still Available
+assessment#:#auding_pausing_allowed_y#:#Yes
+assessment#:#auding_pausing_allowed_n#:#No
+assessment#:#auding_total_nr_of_requests#:#Number of File Requests
+assessment#:#auding_total_nr_of_requests_qst#:#Default
+assessment#:#auding_total_nr_of_requests_tst#:#Additional
+assessment#:#auding_statistics_no_entries_text#:#Either there are no test participants for the selected test pass, or there a no question with enabled auding.
+rbac#:#man_scoring_access#:#Manual Scoring
+rbac#:#tst_man_scoring_access#:#User is able to score test results manually
+assessment#:#tst_anonymity_only_in_man_scoring#:#Only in Manual Scoring
+assessment#:#finalized_evaluation#:#Finalized Evaluation
+assessment#:#evaluated_users#:#Evaluated Users
+assessment#:#not_evaluated_users#:#Not Yet Evaluated User
+assessment#:#finalized_by#:#Finalized by
+assessment#:#finalized_on#:#Finalized on
+assessment#:#not_enough_unique_answers#:#You have not selected "Identical Scoring", but you are using the same answer in at least to gaps.
+assessment#:#exp_type_flexnow_graded#:#FlexNow - graded
+assessment#:#exp_type_flexnow_ungraded#:#FlexNow - ungraded
+assessment#:#reset_client_ips#:#Restrict Client-IPs to EP room
+assessment#:#succuess_reset_client_ips#:#The Client-IPs have been successfully adjusted.

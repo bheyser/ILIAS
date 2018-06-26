@@ -1,0 +1,12 @@
+// German Language File for assInfotext Plugin
+<!-- language file start -->
+assSourceCode#:#Quellcode Frage
+source_code_lang_java#:#Java
+source_code_lang_c#:#C
+source_code_lang_python#:#Python
+source_code_lang_haskell#:#Haskell
+source_code_lang_plaintext#:#Klartext
+form_prop_code_lang#:#Programmiersprache
+form_prop_code_lang_info#:#Definiert die Programmiersprache für den Quellcode, der als Lösung zur Frage erwartet wird.
+file_upload_modal#:#Als Lösung eine Datei einreichen
+file_upload_modal_warning#:#Der vorhandene Bearbeitungsstand im Editor Feld wird durch die Einreichung einer Datei ersetzt!

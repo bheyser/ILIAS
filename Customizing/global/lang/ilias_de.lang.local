@@ -1,0 +1,71 @@
+<!-- language file start -->
+assessment#:#auding_nr_of_sends#:#Hörverstehen Anzahl Dateianfragen
+assessment#:#auding_nr_of_sends_info#:#Maximale Anzahl der Dateianfragen für Horverstehen
+assessment#:#auding_file#:#Hörverstehen Datei
+assessment#:#auding_activate#:#Aktiviere Hörverstehen
+assessment#:#auding_mode#:#Hörverstehen Modus
+assessment#:#auding_force_play#:#Ohne Unterbrechung Abspielen
+assessment#:#auding_with_pause#:#Pausieren erlauben
+assessment#:#auding_no_more_replays#:#Sie haben keine weiteren Versuche, um die Datei in diesem Durchlauf, abzuspielen.
+assessment#:#tst_regrade_questions#:#Fragen neu bewerten
+assessment#:#regraded_all_saved_everywhere#:#Die Frage wurde im Test und im Fragenpool gespeichert und alle Testteilnehmer wurden neu bewertet.
+assessment#:#regraded_all_saved_only_in_test#:#Die Frage wurde im Test gespeichert und alle Testteilnehmer wurden neu bewertet.
+assessment#:#regrading_add_answer#:#Antwort hinzufügen
+assessment#:#regrading_correct_answers_and_points#:#Richtige Antworten und Punkte
+assessment#:#regrading_deletion_hint#:#Um die Punkte zu aktualisieren, klicken Sie auf 'Frage und Punkte speichern'.
+assessment#:#regrading_export_to_jogustine#:#Benutzer-Noten nach Jogustine exportieren
+assessment#:#regrading_hint#:#Testersteller können die Punkte für die richtigen Antworten korrigieren und danach die Testergebnisse neu bewerten lassen. Bei Lückentext- (nur mit Textlücken) und Textteilmenge-Fragen kann man einige der von den Testteilnehmern eingegebenen Antworten zu den richtigen hinzufügen oder entfernen. Die Originalfrage im Fragenpool wird nach Ihrer Auswahl ebenfalls verändert, falls Sie über Schreibrechte verfügen.
+assessment#:#regrading_list_of_questions#:#Liste der Fragen
+assessment#:#regrading_maxpoints_error#:#MaxPoints m&uuml;ssen der Summe der ItemPoints gleich sein.
+assessment#:#regrading_newstyle_help#:#Diese Frage wurde nach dem neuen Verfahren bewertet. Testteilnehmer erhalten nur dann die maximale Punktzahl, wenn sie die gesamte Reihenfolge richtig gelöst haben. Es ist möglich, dass die Frage nach dem alten Verfahren bewertet wird, indem Sie Punkte für jedes einzelne Anordnungspaar (die Summe muss gleich der maximalen Punktzahl sein) angeben und auf 'Frage und Punkte speichern' klicken.
+assessment#:#regrading_new_answers_hint#:#Geben Sie Punkte für die neuen Antworten an und klicken Sie auf 'Frage und Punkte speichern'.
+assessment#:#regrading_number#:#Nr.
+assessment#:#regrading_oldstyle_help#:#Diese Frage wurde nach dem alten Verfahren bewertet. Testteilnehmer erhalten Punkte für jedes richtig gelöste Anordnungspaar. Wenn alle Felder mit Ausnahme der maximalen Punktzahl leer sind, wird die Frage nach dem neuen Verfahren bewertet, das heißt, Testteilnehmer erhalten nur dann die maximale Punktzahl, wenn sie die gesamte Reihenfolge richtig gelöst haben.
+assessment#:#regrading_question_preview#:#Fragenvorschau
+assessment#:#regrading_question_title#:#Fragentitel
+assessment#:#regrading_question_type#:#Fragentyp
+assessment#:#regrading_remove_answer#:#Antwort entfernen
+assessment#:#regrading_save#:#Frage und Punkte speichern
+assessment#:#regrading_show_question_stats#:#Fragen-Statistik anzeigen
+assessment#:#tst_results_final_name#:#Name
+assessment#:#tst_results_final_matrikel#:#Matrikelnr.
+assessment#:#tst_results_final_platznummer#:#Platznummer
+assessment#:#tst_results_final_test_date#:#Test Datum
+assessment#:#tst_results_final_print_date#:#Druck Datum
+assessment#:#tst_results_final_exam#:#Klausur
+assessment#:#info_about_editing_questions#:#Die Frage, die Sie geändert haben, wurde mit dem Einfügen in den Test als Kopie eines Originals angelegt. Die Änderungen werden keine Auswirkungen auf die Frage Pool.
+assessment#:#auding_settings#:#Veränderung Einstellungen Hörverstehen
+assessment#:#auding_settings_form_title#:#Einstellungen für den Hörverstehen-Patch für den aktuellen Kurs ändern
+assessment#:#auding_settings_current_label#:#Aktuelle Einstellungen bei einer Frage
+assessment#:#auding_settings_repetitions#:#Wiederholungen
+assessment#:#auding_settings_pausing_allowed#:#Pausieren erlauben
+assessment#:#auding_settings_allow_pausing#:#Pausieren erlauben
+assessment#:#auding_settings_allow_pausing_info#:#Falls aktiviert, ist das Pausieren des Abspielvorgangs der Datei für das Hörverstehen im Kontext des gewählten Testdurchlaufs erlaubt. Der hier definierte Zustand überschreibt für den/die gewählten Teilnehmer und die gewählte(n) Frage(n) den an der Frage selber konfigurierten Zustand.
+assessment#:#auding_settings_nr_rpts#:#Wiederholungen
+assessment#:#auding_settings_nr_rpts_info#:#Dieser Wert bestimmt, wie viele zusätzliche Dateianfragen für das Hörverstehen der/die gewählte(n) Teilnehmer im Kontext der gewählten Frage(n) und des entsprechenden Testdurchlaufs erhalten soll(en).
+assessment#:#auding_all_participants#:#Alle Teilnehmer
+assessment#:#auding_all_questions#:#Alle Fragen
+assessment#:#tst_participant_fullname_pattern#:#%2$s, %1$s
+assessment#:#auding_statistics#:#Hörverstehen Statistik
+assessment#:#add_additional_auding_settings#:#Änderungen hinzufügen
+assessment#:#auding_nr_requests#:#Bereits in Anspruch genommen
+assessment#:#auding_nr_available#:#Noch Verfügbar
+assessment#:#auding_pausing_allowed_y#:#Ja
+assessment#:#auding_pausing_allowed_n#:#Nein
+assessment#:#auding_total_nr_of_requests#:#Anzahl Dateianfragen
+assessment#:#auding_total_nr_of_requests_qst#:#Standard
+assessment#:#auding_total_nr_of_requests_tst#:#Zusätzlich
+assessment#:#auding_statistics_no_entries_text#:#Für den gewählten Testdurchlauf liegen entweder noch keine Teilnehmerdaten vor, oder in Ihrem Test existieren keinerlei Fragen mit aktiviertem Hörverstehen.
+rbac#:#man_scoring_access#:#Manuelle Bewertung
+rbac#:#tst_man_scoring_access#:#Benutzer darf manuelle Bewertungen vornehmen
+assessment#:#tst_anonymity_only_in_man_scoring#:#Nur in manueller Bewertung
+assessment#:#finalized_evaluation#:#Endgültig bewertet
+assessment#:#evaluated_users#:#Bewertete Benutzer
+assessment#:#not_evaluated_users#:#Noch nicht bewertete Benutzer
+assessment#:#finalized_by#:#Bewertung abgeschlossen von
+assessment#:#finalized_on#:#Bewertung abgeschlossen am
+assessment#:#not_enough_unique_answers#:#Sie haben "Identische Bewertung" deaktiviert, benutzten aber in mindestens zwei Lücken eine identische Antwort.
+assessment#:#exp_type_flexnow_graded#:#FlexNow - benotet
+assessment#:#exp_type_flexnow_ungraded#:#FlexNow - unbenotet
+assessment#:#reset_client_ips#:#Client-IPs auf EP-Raum beschränken
+assessment#:#succuess_reset_client_ips#:#Die Client-IPs wurden erfolgreich angepasst.

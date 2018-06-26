@@ -1,0 +1,254 @@
+<!-- BEGIN html -->
+<div id="{INSTANCE_ID}_Container" class="ilWebIde_Container" style="visibility: hidden;">
+	<div id="{INSTANCE_ID}_ToolBar" class="ilWebIde_ToolBar">
+		<div class="buttonsRight">
+			<!-- BEGIN html_hotkeys_help_btn -->
+			<button class="ilWebIde_HotkeysHelp">{HOTKEYS_BTN}</button>
+			<!-- END html_hotkeys_help_btn -->
+			<!-- BEGIN html_upload_btn -->
+			<button class="ilWebIde_Upload">{UPLOAD_BTN}</button>
+			<!-- END html_upload_btn -->
+			<!-- BEGIN html_save_btn -->
+			<button class="ilWebIde_Save">{SAVE_BTN}</button>
+			<!-- END html_save_btn -->
+		</div>
+	</div>
+	<div id="{INSTANCE_ID}" class="ilWebIde_Instance">
+		<!-- BEGIN html_editor_content -->{CONTENT}<!-- END html_editor_content -->
+	</div>
+	<div id="{INSTANCE_ID}_StatusBar" class="ilWebIde_StatusBar"></div>
+	<div id="{INSTANCE_ID}_Overlay" class="ilWebIde_Overlay"></div>
+	<input type="hidden" class="ilWebIde_HiddenInput" name="{POSTVAR}" value="<!-- BEGIN html_editor_value -->{VALUE}<!-- END html_editor_value -->" />
+</div>
+<!-- END html -->
+<!-- BEGIN js -->
+<script type="text/javascript">
+
+(function($){
+	
+	$(document).ready(
+		function()
+		{
+			var webIde, webIdeSession, webIdeStatusBar, StatusBar, updateSubmitValue;
+			
+			webIde = ace.edit('{INSTANCE_ID}');
+			webIde.setTheme('ace/theme/eclipse');
+			
+			StatusBar = ace.require('ace/ext/statusbar').StatusBar;
+			webIdeStatusBar = new StatusBar(webIde, $('#{INSTANCE_ID}_StatusBar').get(0));
+			
+			webIdeSession = webIde.getSession();
+			webIdeSession.setMode('ace/mode/{LANG_MODE}');
+			console.log('asdf');
+			ace.require('ace/ext/language_tools');
+			webIde.setOptions({
+				<!-- BEGIN js_readonly_ace -->
+				readOnly: true,
+				highlightActiveLine: false,
+    			highlightGutterLine: false,
+				<!-- END js_readonly_ace -->
+				enableSnippets: true /*,
+				enableBasicAutocompletion: true,
+				enableLiveAutocompletion: true,
+				enableEmmet: true*/
+			});
+			
+			webIde.commands.removeCommand({name: 'showSettingsMenu'});
+			
+			webIde.commands.addCommand({
+				name: 'showKeyboardShortcuts',
+				bindKey: {win: 'Ctrl-Alt-h', mac: 'Command-Alt-h'},
+				exec: function(aceInstance) {
+					ace.config.loadModule('ace/ext/keybinding_menu', function(module) {
+						module.init(aceInstance);
+						aceInstance.showKeyboardShortcuts();
+					})
+				}
+			});
+			
+			$(webIde.container).parents('.ilWebIde_Container').find('.ilWebIde_Upload').click(
+				function(e)
+				{
+					if( webIde.getValue().length > 0 )
+					{
+						$('#{UPLOAD_MODAL_ID}_Modal').find('.warningContainer').show();
+						$('#{UPLOAD_MODAL_ID}_Modal').find('.uploadInputContainer').hide();
+					}
+					else
+					{
+						$('#{UPLOAD_MODAL_ID}_Modal').find('.warningContainer').hide();
+						$('#{UPLOAD_MODAL_ID}_Modal').find('.uploadInputContainer').show();
+					}
+					
+					$('#{UPLOAD_MODAL_ID}_Modal').modal('show');
+					e.stopPropagation();
+					e.preventDefault();
+					return false;
+				}
+			);
+			
+			$('#{UPLOAD_MODAL_ID}_BtnConfirm').click(
+				function(e)
+				{
+					$('#{UPLOAD_MODAL_ID}_Modal').find('.warningContainer').hide();
+					$('#{UPLOAD_MODAL_ID}_Modal').find('.uploadInputContainer').show();
+				}
+			);
+			
+			$(webIde.container).parents('.ilWebIde_Container').find('.ilWebIde_HotkeysHelp').click(
+				function(e)
+				{
+					webIde.execCommand('showKeyboardShortcuts');
+					e.stopPropagation();
+					e.preventDefault();
+					return false;
+				}
+			);
+			
+			var isCloseTriggeringElement = function(e)
+			{
+				if( e.srcElement.id == '{UPLOAD_MODAL_ID}_Modal' )
+				{
+					return true;
+				}
+				
+				if( e.srcElement.id == '{UPLOAD_MODAL_ID}_BtnCancel' )
+				{
+					return true;
+				}
+				
+				if( e.srcElement.id == '{UPLOAD_MODAL_ID}_BtnBack' )
+				{
+					return true;
+				}
+				
+				if( $(e.srcElement).parents('button').hasClass('close') )
+				{
+					return true;
+				}
+				
+				return false;
+			}
+			
+			var resetFileInput = function(e)
+			{
+				if( isCloseTriggeringElement(e) )
+				{
+					$('#{UPLOAD_MODAL_ID}').val('');
+					
+					e.stopPropagation();
+					e.preventDefault();
+					
+					return false;
+				}
+				
+				return true;
+			};
+			
+			$('#{UPLOAD_MODAL_ID}_Modal').click(resetFileInput);
+			$('#{UPLOAD_MODAL_ID}_BtnCancel, #{UPLOAD_MODAL_ID}_BtnBack').click(
+				function(e)
+				{
+					$('#{UPLOAD_MODAL_ID}_Modal').modal('hide');
+				}
+			);
+			
+			updateSubmitValue = function(e)
+			{
+				$(webIde.container).parents('.ilWebIde_Container').find('input.ilWebIde_HiddenInput').val(
+					encodeURIComponent( webIde.getValue() )
+				);
+			};
+			
+			$(webIde).blur(updateSubmitValue);
+			$(webIde.container).parents('form').submit(updateSubmitValue);
+			
+			webIde.setValue(decodeURIComponent(
+				$(webIde.container).parents('.ilWebIde_Container').find('input.ilWebIde_HiddenInput').val()
+			));
+			
+			<!-- BEGIN js_autosave -->
+			var autosaveActive = false;
+			var autosaveRejected = false;
+			autosave = function(url)
+			{
+				if(autosaveActive)
+				{
+					autosaveRejected = true;
+				}
+				else
+				{
+					autosaveActive = true;
+					myAutosave(url);
+				}
+			};
+			
+			$(webIde.container).parents('.ilWebIde_Container').find('.ilWebIde_Save').click(
+				function(e)
+				{
+					e.stopPropagation();
+					e.preventDefault();
+					
+					autosave('{AUTOSAVE_URL}');
+					
+					return false;
+				}
+			);
+			
+			var myHandleSuccess = function(o)
+			{
+				if(typeof o == 'object' && o.solution)
+				{
+					var fileInput = $('#{UPLOAD_MODAL_ID}');
+					
+					if( fileInput.val() != '' )
+					{
+						fileInput.val('');
+						$('#{UPLOAD_MODAL_ID}_Modal').modal('hide');
+						webIde.setValue(decodeURIComponent(
+							o.solution
+						));
+						webIde.blur();
+						webIde.focus();
+					}
+				}
+				
+				handleSuccess(o);
+				
+				autosaveActive = false;
+				
+				if(autosaveRejected)
+				{
+					autosaveRejected = false;
+					autosave('{AUTOSAVE_URL}');
+				}
+			};
+			
+			myAutosave = function(sUrl)
+			{
+				$.ajax({
+					url: sUrl,
+					data: new FormData($('form#taForm')[0]),
+					cache: false,
+					contentType: false,
+					processData: false,
+					type: 'POST',
+					success: myHandleSuccess,
+					failure: handleFailure,
+				});
+			};
+			<!-- END js_autosave -->
+			
+			webIde.resize(true);
+			webIde.scrollToLine(1, true, true, function(){});
+			webIde.gotoLine(1);
+			webIde.focus();
+			
+			
+			$('#{INSTANCE_ID}_Container').css('visibility','visible').hide().fadeIn();
+		}
+	);
+	
+})(jQuery);
+</script>
+<!-- END js -->

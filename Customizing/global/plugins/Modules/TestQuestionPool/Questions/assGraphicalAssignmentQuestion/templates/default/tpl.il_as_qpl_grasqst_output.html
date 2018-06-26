@@ -1,0 +1,51 @@
+<p>{QUESTIONTEXT}</p>
+
+<!-- auding-patch: begin -->
+{AUDING}
+<!-- auding-patch: end -->
+<br />
+
+<div id="canvas_wrapper{ID_COUNTER}" style="position: relative; border: 1px solid #000000; width: {CANVAS_WIDTH}px; height: {CANVAS_HEIGHT}px;">
+    <canvas id="container{ID_COUNTER}" width="{CANVAS_WIDTH}" height="{CANVAS_HEIGHT}"></canvas>
+    <div id="input_wrapper{ID_COUNTER}">
+        <!-- BEGIN input_coords -->
+        <input type="hidden" name="answer[{ANSWER_INDEX}][target_x]" value="{TARGET_X}" />
+        <input type="hidden" name="answer[{ANSWER_INDEX}][target_y]" value="{TARGET_Y}" />
+        <input type="hidden" name="answer[{ANSWER_INDEX}][destination_x]" value="{DESTINATION_X}" />
+        <input type="hidden" name="answer[{ANSWER_INDEX}][destination_y]" value="{DESTINATION_Y}" />
+        <!-- END input_coords -->
+        <!-- BEGIN input_text -->
+        <input type="text" style="background-color:#e2e2e2;" class="input_element" name="answer[{ANSWER_INDEX}][input]" placeholder="Bitte Eintragen..." value="{VALUE}"/>
+        <!-- END input_text -->
+        <!-- BEGIN input_select -->
+        <select class="input_element" name="answer[{ANSWER_INDEX}][input]">
+            <option value="-1">Bitte Eintragen...</option>
+            <!-- BEGIN input_option -->
+            <option {SELECTED} value="{OPTION_VALUE}">{OPTION_TEXT}</option>
+            <!-- END input_option -->
+        </select>
+        <!-- END input_select -->
+    </div>
+</div>
+
+<!-- BEGIN feedback -->
+<p><span class="feedback">{FEDDBACK}</span></p>
+<!-- END feedback -->
+
+
+<script type="text/javascript">
+    $(document).ready(function(){
+        var container = initCanvas("{ID_COUNTER}", "{CANVAS_COLOR}");
+        initBackground("{SRC_IMAGE}", '#canvas_wrapper{ID_COUNTER}');
+
+        $('#input_wrapper{ID_COUNTER}').find('.input_element').each(function(){
+            addInput.call($(this), container);
+        });
+
+        $('input[type="text"].input_element').autoGrowInput({
+            comfortZone: 10,
+            minWidth: 170,
+            maxWidth: 2000
+        });
+    });
+</script>

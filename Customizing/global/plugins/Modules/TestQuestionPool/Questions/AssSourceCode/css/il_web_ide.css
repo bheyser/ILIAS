@@ -1,0 +1,107 @@
+.ilWebIde_Container,
+.ilWebIde_Instance,
+.ilWebIde_ToolBar,
+.ilWebIde_StatusBar
+{
+	margin: 0;
+	padding: 0;
+}
+.ilWebIde_Instance
+{
+	border-color: rgb(136, 136, 136);
+	border-style: solid;
+	border-width: 0 1px;
+}
+
+.ilWebIde_ToolBar,
+.ilWebIde_StatusBar
+{
+	border: 1px solid rgb(136, 136, 136);
+}
+.ilWebIde_Container
+{
+	position: relative;
+	height: 660px;
+}
+.ilWebIde_Instance
+{
+	height: 600px;
+	width: 100%;
+}
+.ilWebIde_ToolBar,
+.ilWebIde_StatusBar
+{
+	vertical-align: middle;
+	background-color: rgb(245, 245, 245);
+	color: gray;
+}
+.ilWebIde_ToolBar
+{
+	height: 35px;
+}
+.ilWebIde_StatusBar
+{
+	height: 25px;
+}
+.ilWebIde_ToolBar .buttonsRight
+{
+	float: right;
+	clear: both;
+	width: 40%;
+	height: 28px;
+	padding-top: 2px;
+	padding-right: 4px;
+}
+.ilWebIde_ToolBar .buttonsRight *
+{
+	line-height: 22px;
+	float: right;
+}
+.ilWebIde_StatusBar .ace_status-indicator
+{
+	line-height: 23px;
+	color: gray;
+	float: right;
+	clear: right;
+	border-left: 1px solid rgb(136, 136, 136);
+	padding: 0 15px;
+}
+.ilWebIde_Overlay > div > div > div:last-child
+{
+	margin: 5px !important;
+	padding: 0 20px !important;
+	border: 2px solid rgb(255, 255, 255) !important;
+	background-color: rgb(225, 225, 225) !important;
+}
+.ace_closeButton:hover
+{
+	color: red !important;
+	background-color: #656565 !important;
+	background-position: 50% 100% !important;
+}
+
+.ace_closeButton
+{
+	right: 30px !important;
+	top: 15px !important;
+	z-index: 9999 !important;
+	background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAcCAYAAABRVo5BAAAAZ0lEQVR42u2SUQrAMAhDvazn8OjZBilCkYVVxiis8H4CT0VrAJb4WHT3C5xU2a2IQZXJjiQIRMdkEoJ5Q2yMqpfDIo+XY4k6h+YXOyKqTIj5REaxloNAd0xiKmAtsTHqW8sR2W5f7gCu5nWFUpVjZwAAAABJRU5ErkJggg==') no-repeat 50% 0 !important;
+	color: #656565 !important;
+	background-color: rgb(225, 225, 225) !important;
+	border: none !important;
+}
+
+.ilWebIde_ToolBar .buttonsRight button
+{
+	margin-left: 8px;
+}
+.ilWebIde_ToolBar .buttonsRight button
+{
+	margin-left: 8px;
+}
+
+.modal-body .btn.btn-default
+{
+	margin-top: 20px;
+	margin-right: 15px;
+}

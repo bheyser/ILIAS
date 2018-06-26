@@ -1,0 +1,12 @@
+// English Language File for assInfotext Plugin
+<!-- language file start -->
+assSourceCode#:#Source Code Question
+sourcecode_lang_java#:#Java
+sourcecode_lang_c#:#C
+sourcecode_lang_py#:#Python
+sourcecode_lang_hs#:#Haskell
+sourcecode_lang_txt#:#Plaintext
+form_prop_code_lang#:#Programing Language
+form_prop_code_lang_info#:#Defines the programing language for the source code, that is expected as solution.
+file_upload_modal#:#Upload File as Solution
+file_upload_modal_warning#:#Any file submission will replace the current working state!

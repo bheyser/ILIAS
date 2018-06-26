@@ -1,0 +1,32 @@
+<input type="file" id="{ID}" name="{POST_VAR}" size="30" /><input class="btn btn-default" type="submit" value="{UPLOAD}" name="cmd[save]" />
+<div class="ilFormInfo">{TXT_MAX_SIZE}</div>
+<!-- BEGIN allowed_image_suffixes -->
+<div class="ilFormInfo">{TXT_ALLOWED_SUFFIXES}</div>
+<!-- END allowed_image_suffixes -->
+<!-- BEGIN image -->
+<!-- BEGIN has_value -->
+<input type="hidden" name="{POST_VAR_D}_name" value="{TEXT_IMAGE_NAME}" />
+<input type="checkbox" name="{POST_VAR_D}_delete" id="{POST_VAR_D}_delete" value="1" /><label for="{POST_VAR_D}_delete">{TXT_DELETE_EXISTING}</label><br /><br />
+<!-- BEGIN canvas_wrapper -->
+<div id="canvas_wrapper" style="border: 1px solid #000000; width: {CANVAS_WIDTH}px; height: {CANVAS_HEIGHT}px; <!-- BEGIN correction_block -->pointer-events: none;<!-- END correction_block -->">
+    <canvas id="container" width="{CANVAS_WIDTH}" height="{CANVAS_HEIGHT}"></canvas>
+</div>
+<div style="text-align: right;">
+	<input class="btn btn-default" type="submit" name="cmd[addElement]" value="{ADD_ELEMENT}" />
+</div>
+<!-- END canvas_wrapper -->
+<!-- END has_value -->
+<!-- END image -->
+
+
+<script type="text/javascript">
+    $(document).ready(function(){
+        var container = initCanvas("container", "{CANVAS_COLOR}");
+        initBackground("{SRC_IMAGE}");
+
+        $('input[name^="answers"]').each(function(){
+            addElement($(this).val(), container);
+        });
+    });
+//    $(".ilContentFixed").css("position","inherit");
+</script>

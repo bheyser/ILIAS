@@ -1,0 +1,12 @@
+assGraphicalAssignmentQuestion#:#Benennung von Bildelementen Frage
+add_element#:#Element hinzufügen
+upload#:#Hochladen
+remove_answer#:#Element entfernen
+type#:#Elementtyp
+answer_type_text#:#Freitext
+answer_type_selection#:#Liste
+shuffle_answer#:#Antwortmöglichkeiten mischen
+element#:#Element
+canvas_size#:#Größe Bildcontainer
+color#:#Farbe
+duplicated_answer_item#:#Für eine Antwort dürfen nur eindeutige Antwortmöglichkeiten eingetragen werden
