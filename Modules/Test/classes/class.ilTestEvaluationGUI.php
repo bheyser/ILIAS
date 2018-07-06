@@ -1809,13 +1809,6 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 	
 	public function confirmDeletePass()
 	{
-		if( !$this->object->isPassDeletionAllowed() )
-		{
-			$this->ctrl->redirect($this, 'outUserResultsOverview');
-		}
-
-		require_once 'Modules/Test/classes/confirmations/class.ilTestPassDeletionConfirmationGUI.php';
-
 		if( isset($_GET['context']) && strlen($_GET['context']) )
 		{
 			$context = $_GET['context'];
@@ -1824,6 +1817,13 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 		{
 			$context = ilTestPassDeletionConfirmationGUI::CONTEXT_PASS_OVERVIEW;
 		}
+		
+		if( !$this->object->isPassDeletionAllowed() && !$this->object->isDynamicTest() )
+		{
+			$this->redirectToPassDeletionContext($context);
+		}
+
+		require_once 'Modules/Test/classes/confirmations/class.ilTestPassDeletionConfirmationGUI.php';
 
 		$confirm = new ilTestPassDeletionConfirmationGUI($this->ctrl, $this->lng, $this);
 		$confirm->build((int)$_GET['active_id'], (int)$_GET['pass'], $context);
@@ -1859,9 +1859,18 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 	
 	public function performDeletePass()
 	{
-		if( !$this->object->isPassDeletionAllowed() )
+		if( isset($_POST['context']) && strlen($_POST['context']) )
 		{
-			$this->ctrl->redirect($this, 'outUserResultsOverview');
+			$context = $_POST['context'];
+		}
+		else
+		{
+			$context = ilTestPassDeletionConfirmationGUI::CONTEXT_PASS_OVERVIEW;
+		}
+		
+		if( !$this->object->isPassDeletionAllowed() && !$this->object->isDynamicTest() )
+		{
+			$this->redirectToPassDeletionContext($context);
 		}
 			/** @var ilDBInterface $ilDB */
 			global $ilDB;
@@ -2127,7 +2136,7 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 			unset($_SESSION['form_'.ilTestDynamicQuestionSetStatisticTableGUI::FILTERED_TABLE_ID]);
 		}
 
-		$this->redirectToPassDeletionContext($_POST['context']);
+		$this->redirectToPassDeletionContext($context);
 	}
 
 	protected function getFilteredTestResult($active_id, $pass, $considerHiddenQuestions, $considerOptionalQuestions)
