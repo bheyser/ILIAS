@@ -25,12 +25,12 @@ class ilAssQuestionPreviewGUI
 	const CMD_GATEWAY_SHOW_HINT_LIST = 'gatewayShowHintList';
 
 	const TAB_ID_QUESTION_PREVIEW = 'preview';
-	
+
 	/**
 	 * @var ilCtrl
 	 */
 	protected $ctrl;
-	
+
 	/**
 	 * @var ilTabsGUI
 	 */
@@ -80,7 +80,7 @@ class ilAssQuestionPreviewGUI
 	 * @var ilAssQuestionPreviewHintTracking
 	 */
 	protected $hintTracking;
-	
+
 	public function __construct(ilCtrl $ctrl, ilTabsGUI $tabs, ilTemplate $tpl, ilLanguage $lng, ilDBInterface $db, ilObjUser $user)
 	{
 		$this->ctrl = $ctrl;
@@ -94,7 +94,7 @@ class ilAssQuestionPreviewGUI
 	public function initQuestion($questionId, $parentObjId)
 	{
 		require_once 'Modules/TestQuestionPool/classes/class.assQuestion.php';
-		
+
 		$this->questionGUI = assQuestion::instantiateQuestionGUI($questionId);
 		$this->questionOBJ = $this->questionGUI->object;
 
@@ -102,16 +102,15 @@ class ilAssQuestionPreviewGUI
 
 		$this->questionGUI->setQuestionTabs();
 		$this->questionGUI->outAdditionalOutput();
-		
-		$this->questionGUI->setOutputMode(OUTPUT_JAVASCRIPT);
+	
 		// uni-goettingen-patch: begin
 		$this->questionGUI->populateJavascriptFilesRequiredForWorkForm($this->tpl);
 		// uni-goettingen-patch: end
 		$this->questionOBJ->setOutputType(OUTPUT_JAVASCRIPT);
-			
+
 		$this->questionGUI->setTargetGui($this);
 		$this->questionGUI->setQuestionActionCmd(self::CMD_HANDLE_QUESTION_ACTION);
-		
+
 		$this->questionGUI->setRenderPurpose(assQuestionGUI::RENDER_PURPOSE_DEMOPLAY);
 	}
 
@@ -119,7 +118,7 @@ class ilAssQuestionPreviewGUI
 	{
 		require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionPreviewSettings.php';
 		$this->previewSettings = new ilAssQuestionPreviewSettings($parentRefId);
-		
+
 		$this->previewSettings->init();
 	}
 
@@ -130,17 +129,17 @@ class ilAssQuestionPreviewGUI
 
 		$this->previewSession->init();
 	}
-	
+
 	public function initHintTracking()
 	{
 		require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionPreviewHintTracking.php';
 		$this->hintTracking = new ilAssQuestionPreviewHintTracking($this->db, $this->previewSession);
 	}
-	
+
 	public function initStyleSheets()
 	{
 		include_once("./Services/Style/Content/classes/class.ilObjStyleSheet.php");
-		
+
 		$this->tpl->setCurrentBlock("ContentStyle");
 		$this->tpl->setVariable("LOCATION_CONTENT_STYLESHEET", ilObjStyleSheet::getContentStylePath(0));
 		$this->tpl->parseCurrentBlock();
@@ -149,19 +148,19 @@ class ilAssQuestionPreviewGUI
 		$this->tpl->setVariable("LOCATION_SYNTAX_STYLESHEET", ilObjStyleSheet::getSyntaxStylePath());
 		$this->tpl->parseCurrentBlock();
 	}
-	
+
 	public function executeCommand()
 	{
 		$this->tabs->setTabActive(self::TAB_ID_QUESTION_PREVIEW);
-		
+
 		$this->lng->loadLanguageModule('content');
-		
+
 		$nextClass = $this->ctrl->getNextClass($this);
-		
+
 		switch($nextClass)
 		{
 			case 'ilassquestionhintrequestgui':
-				
+
 				require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionHintRequestGUI.php';
 				$gui = new ilAssQuestionHintRequestGUI($this, self::CMD_SHOW, $this->questionGUI, $this->hintTracking);
 
@@ -175,15 +174,15 @@ class ilAssQuestionPreviewGUI
 				$forwarder = new ilAssQuestionFeedbackPageObjectCommandForwarder($this->questionOBJ, $this->ctrl, $this->tabs, $this->lng);
 				$forwarder->forward();
 				break;
-			
+
 			default:
 
 				$cmd = $this->ctrl->getCmd(self::CMD_SHOW).'Cmd';
-				
+
 				$this->$cmd();
 		}
 	}
-	
+
 	private function showCmd()
 	{
 		$tpl = new ilTemplate('tpl.qpl_question_preview.html', true, true, 'Modules/TestQuestionPool');
@@ -194,9 +193,9 @@ class ilAssQuestionPreviewGUI
 		// uni-goettingen-patch: end
 
 		$this->populatePreviewToolbar($tpl);
-		
+
 		$this->populateQuestionOutput($tpl);
-		
+
 		$this->populateQuestionNavigation($tpl);
 
 		if( $this->isShowGenericQuestionFeedbackRequired() )
@@ -208,15 +207,15 @@ class ilAssQuestionPreviewGUI
 		{
 			$this->populateSpecificQuestionFeedback($tpl);
 		}
-		
+
 		if( $this->isShowBestSolutionRequired() )
 		{
 			$this->populateSolutionOutput($tpl);
 		}
-		
+
 		$this->tpl->setContent($tpl->get());
 	}
-	
+
 	private function resetCmd()
 	{
 		$this->previewSession->setRandomizerSeed(null);
@@ -225,23 +224,23 @@ class ilAssQuestionPreviewGUI
 		$this->previewSession->setInstantResponseActive(false);
 
 		ilUtil::sendInfo($this->lng->txt('qst_preview_reset_msg'), true);
-		
+
 		$this->ctrl->redirect($this, self::CMD_SHOW);
 	}
-	
+
 	private function instantResponseCmd()
 	{
 		$this->questionOBJ->persistPreviewState($this->previewSession);
 		$this->previewSession->setInstantResponseActive(true);
 		$this->ctrl->redirect($this, self::CMD_SHOW);
 	}
-	
+
 	private function handleQuestionActionCmd()
 	{
 		$this->questionOBJ->persistPreviewState($this->previewSession);
 		$this->ctrl->redirect($this, self::CMD_SHOW);
 	}
-	
+
 	private function populatePreviewToolbar(ilTemplate $tpl)
 	{
 		require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionPreviewToolbarGUI.php';
@@ -251,7 +250,7 @@ class ilAssQuestionPreviewGUI
 		$toolbarGUI->setResetPreviewCmd(self::CMD_RESET);
 
 		$toolbarGUI->build();
-		
+
 		$tpl->setVariable('PREVIEW_TOOLBAR', $this->ctrl->getHTML($toolbarGUI));
 	}
 
@@ -276,10 +275,10 @@ class ilAssQuestionPreviewGUI
 
 		$this->questionGUI->setPreviewSession($this->previewSession);
 		$this->questionGUI->object->setShuffler($this->getQuestionAnswerShuffler());
-		
+
 		$questionHtml = $this->questionGUI->getPreview(true, $this->isShowSpecificQuestionFeedbackRequired());
 		$this->questionGUI->magicAfterTestOutput();
-		
+
 		$pageGUI->setQuestionHTML(array($this->questionOBJ->getId() => $questionHtml));
 
 		//$pageGUI->setHeader($this->questionOBJ->getTitle()); // NO ADDITIONAL HEADER
@@ -335,16 +334,16 @@ class ilAssQuestionPreviewGUI
 		$navGUI->setInstantResponseCmd(self::CMD_INSTANT_RESPONSE);
 		$navGUI->setHintRequestCmd(self::CMD_GATEWAY_CONFIRM_HINT_REQUEST);
 		$navGUI->setHintListCmd(self::CMD_GATEWAY_SHOW_HINT_LIST);
-		
+
 		$navGUI->setInstantResponseEnabled($this->previewSettings->isInstantFeedbackNavigationRequired());
 		$navGUI->setHintProvidingEnabled($this->previewSettings->isHintProvidingEnabled());
 
 		$navGUI->setHintRequestsPossible($this->hintTracking->requestsPossible());
 		$navGUI->setHintRequestsExist($this->hintTracking->requestsExist());
-		
+
 		$tpl->setVariable('QUESTION_NAVIGATION', $this->ctrl->getHTML($navGUI));
 	}
-	
+
 	private function populateGenericQuestionFeedback(ilTemplate $tpl)
 	{
 		if( $this->questionOBJ->isPreviewSolutionCorrect($this->previewSession) )
@@ -357,7 +356,7 @@ class ilAssQuestionPreviewGUI
 			$feedback = $this->questionGUI->getGenericFeedbackOutputForIncorrectSolution();
 			$cssClass = ilAssQuestionFeedback::CSS_CLASS_FEEDBACK_WRONG;
 		}
-		
+
 		if( strlen($feedback) )
 		{
 			$tpl->setCurrentBlock('instant_feedback_generic');
@@ -403,7 +402,7 @@ class ilAssQuestionPreviewGUI
 
 		return $this->previewSession->isInstantResponseActive();
 	}
-	
+
 	public function saveQuestionSolution()
 	{
 		$this->questionOBJ->persistPreviewState($this->previewSession);
@@ -412,9 +411,9 @@ class ilAssQuestionPreviewGUI
 	public function gatewayConfirmHintRequestCmd()
 	{
 		$this->saveQuestionSolution();
-		
+
 		require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionHintRequestGUI.php';
-		
+
 		$this->ctrl->redirectByClass(
 			'ilAssQuestionHintRequestGUI', ilAssQuestionHintRequestGUI::CMD_CONFIRM_REQUEST
 		);
@@ -425,7 +424,7 @@ class ilAssQuestionPreviewGUI
 		$this->saveQuestionSolution();
 
 		require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionHintRequestGUI.php';
-		
+
 		$this->ctrl->redirectByClass(
 			'ilAssQuestionHintRequestGUI', ilAssQuestionHintRequestGUI::CMD_SHOW_LIST
 		);
@@ -438,14 +437,14 @@ class ilAssQuestionPreviewGUI
 	{
 		require_once 'Services/Randomization/classes/class.ilArrayElementShuffler.php';
 		$shuffler = new ilArrayElementShuffler();
-		
+
 		if( !$this->previewSession->randomizerSeedExists() )
 		{
 			$this->previewSession->setRandomizerSeed($shuffler->buildRandomSeed());
 		}
-		
-		$shuffler->setSeed($this->previewSession->getRandomizerSeed());		
-		
+
+		$shuffler->setSeed($this->previewSession->getRandomizerSeed());
+
 		return $shuffler;
 	}
 }
