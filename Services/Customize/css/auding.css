@@ -1,0 +1,6 @@
+/* auding-patch: begin */
+#ilAudingPlayerContainer {
+  width: 50%;
+  max-width: 640px;
+}
+/* auding-patch: end */

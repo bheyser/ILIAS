@@ -50,12 +50,12 @@ class ilQTIParser extends ilSaxParser
 	var $render_type;
 	var $response_label;
 	var $material;
-	
+
 	/**
 	 * @var ilQTIMatimage
 	 */
 	var $matimage;
-	
+
 	var $response;
 	var $resprocessing;
 	var $outcomes;
@@ -132,9 +132,9 @@ class ilQTIParser extends ilSaxParser
 	{
 		$this->ignoreItemsEnabled = $ignoreItemsEnabled;
 	}
-	
+
 	protected $questionSetType = null;
-	
+
 	/**
 	* Constructor
 	*
@@ -157,7 +157,7 @@ class ilQTIParser extends ilSaxParser
 		{
 			$this->import_idents =& $a_import_idents;
 		}
-		
+
 		$this->lng =& $lng;
 		$this->hasRootElement = FALSE;
 		$this->import_mapping = array();
@@ -216,7 +216,7 @@ class ilQTIParser extends ilSaxParser
 	{
 		$this->questionSetType = $questionSetType;
 	}
-	
+
 	function setTestObject(&$a_tst_object)
 	{
 		$this->tst_object =& $a_tst_object;
@@ -239,7 +239,7 @@ class ilQTIParser extends ilSaxParser
 		$this->verifyfieldentrytext = "";
 		$this->question_counter = 1;
 	}
-	
+
 	/**
 	* set event handler
 	* should be overwritten by inherited class
@@ -270,7 +270,7 @@ class ilQTIParser extends ilSaxParser
 			return "";
 		}
 	}
-	
+
 	/**
 	* handler for begin of element
 	*/
@@ -298,7 +298,7 @@ class ilQTIParser extends ilSaxParser
 		$this->depth[$a_xml_parser]++;
 		$this->path[$this->depth[$a_xml_parser]] = strtolower($a_name);
 		$this->qti_element = $a_name;
-		
+
 		switch (strtolower($a_name))
 		{
 			case "assessment":
@@ -1081,7 +1081,7 @@ class ilQTIParser extends ilSaxParser
 				break;
 		}
 	}
-	
+
 	/**
 	* handler for end of element parser
 	*/
@@ -1323,17 +1323,17 @@ class ilQTIParser extends ilSaxParser
 				// save the item directly to save memory
 				// the database id's of the created items are exported. if the import fails
 				// ILIAS can delete the already imported items
-				
+
 				// problems: the object id of the parent questionpool is not yet known. must be set later
 				//           the complete flag must be calculated?
 				$qt = $this->item->determineQuestionType();
-				$presentation = $this->item->getPresentation(); 
-				
+				$presentation = $this->item->getPresentation();
+
 				if( !ilAssQuestionTypeList::isImportable($qt) )
 				{
 					return;
 				}
-				
+
 				include_once "./Modules/TestQuestionPool/classes/class.assQuestion.php";
 				assQuestion::_includeClass($qt);
 				$question = new $qt();
@@ -1408,25 +1408,25 @@ class ilQTIParser extends ilSaxParser
 				{
 					break;
 				}
-				
+
 				if( $this->virusDetected($this->matimage->getRawContent()) )
 				{
 					break;
 				}
-				
+
 				require_once 'Services/QTI/classes/class.ilQtiMatImageSecurity.php';
 				$matImageSecurity = new ilQtiMatImageSecurity($this->matimage);
 				$matImageSecurity->sanitizeLabel();
-				
+
 				if( !$matImageSecurity->validate() )
 				{
 					break;
 				}
-				
+
 				$this->material->addMatimage($this->matimage);
 				$this->matimage = NULL;
 				break;
-			
+
 			// add support for matbreak element
 			case "matbreak":
 				$this->mattext = new ilQTIMattext();
@@ -1586,7 +1586,7 @@ class ilQTIParser extends ilSaxParser
 	function handlerVerifyBeginTag($a_xml_parser,$a_name,$a_attribs)
 	{
 		$this->qti_element = $a_name;
-		
+
 		switch (strtolower($a_name))
 		{
 			case "assessment":
@@ -1802,7 +1802,7 @@ class ilQTIParser extends ilSaxParser
 		{
 			$this->verifyfieldentrytext = $a_data;
 		}
-		
+
 		switch($this->qti_element)
 		{
 			case "fieldlabel":
@@ -1813,7 +1813,7 @@ class ilQTIParser extends ilSaxParser
 				break;
 		}
 	}
-	
+
 	function &getFoundItems()
 	{
 		return $this->founditems;
@@ -1856,31 +1856,31 @@ class ilQTIParser extends ilSaxParser
 	function setXMLContent($a_xml_content)
 	{
 		$a_xml_content = $this->cleanInvalidXmlChars($a_xml_content);
-		
+
 		return parent::setXMLContent($a_xml_content);
 	}
-	
+
 	function openXMLFile()
 	{
 		$xmlContent = file_get_contents($this->xml_file);
 		$xmlContent = $this->cleanInvalidXmlChars($xmlContent);
 		file_put_contents($this->xml_file, $xmlContent);
-		
+
 		return parent::openXMLFile();
 	}
-	
+
 	protected function fetchNumericVersionFromVersionDateString($versionDateString)
 	{
 		$matches = null;
-		
+
 		if( preg_match('/^(\d+\.\d+\.\d+) .*$/', $versionDateString, $matches) )
 		{
 			return $matches[1];
 		}
-		
+
 		return null;
 	}
-	
+
 	protected function fetchSourceNicFromItemIdent($itemIdent)
 	{
 		$matches = null;
@@ -1892,15 +1892,15 @@ class ilQTIParser extends ilSaxParser
 
 		return null;
 	}
-	
+
 	protected function cleanInvalidXmlChars($xmlContent)
 	{
 		// http://www.w3.org/TR/xml/#charsets
-		
+
 		// DOES ACTUALLY KILL CONTENT, SHOULD CLEAN NON ESCAPED ILLEGAL CHARS, DON'T KNOW
 		//$reg = '/[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]/';
 		//$xmlContent = preg_replace($reg, '', $xmlContent);
-		
+
 		// remove illegal chars escaped to html entities
 		$needles = array();
 		for($i = 0x00, $max = 0x08; $i <= $max; $i += 0x01)
@@ -1925,7 +1925,7 @@ class ilQTIParser extends ilSaxParser
 		}
 		$reg = '/('.implode('|', $needles).')/';
 		$xmlContent = preg_replace($reg, '', $xmlContent);
-		
+
 		return $xmlContent;
 	}
 
@@ -1936,49 +1936,64 @@ class ilQTIParser extends ilSaxParser
 	{
 		return $this->numImportedItems;
 	}
-	
+
 	protected function isMatImageAvailable()
 	{
 		if( !$this->material )
 		{
 			return false;
 		}
-		
+
 		if( !$this->matimage )
 		{
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	protected function virusDetected($buffer)
 	{
 		require_once 'Services/VirusScanner/classes/class.ilVirusScannerFactory.php';
 		$vs = ilVirusScannerFactory::_getInstance();
-		
+
 		if( $vs === null )
 		{
 			return false; // no virus scan, no virus detected
 		}
-		
+
 		return (bool)$vs->scanBuffer($buffer);
 	}
-}
+
+	// PATCH BEGIN testtransfer
+	protected function handleQuestionTransfer(assQuestion $question, $transferId)
+	{
+		$params = explode('_', $transferId);
+		$importNic = substr($params[0], 1);
+		//$importQuestId = substr($params[1], 1);
+		$importOrigId = substr($params[2], 1);
+
+		if( $this->isLocalInstallation($importNic) )
+		{
+			if( $this->isOriginalMarriagePossible($importOrigId) )
+			{
+				$question->setTransferId(null);
+				return $importOrigId;
+			}
 		}
 		else
 		{
 			$question->setTransferId($transferId);
 		}
-		
+
 		return null;
 	}
-	
+
 	protected function isLocalInstallation($importNic)
 	{
 		return $importNic == IL_INST_ID;
 	}
-	
+
 	protected function isOriginalMarriagePossible($origId)
 	{
 		if(!$origId)
@@ -1988,18 +2003,18 @@ class ilQTIParser extends ilSaxParser
 
 		return $this->isExistingOriginalQuestion($origId);
 	}
-	
+
 	protected function isExistingOriginalQuestion($originalQuestionId)
 	{
 		global $ilDB;
-		
+
 		$res = $ilDB->queryF(
 			"SELECT COUNT(*) cnt FROM qpl_questions WHERE question_id = %s AND original_id IS NULL",
 			array('integer'), array($originalQuestionId)
 		);
-		
+
 		$row = $ilDB->fetchAssoc($res);
-		
+
 		return $row['cnt'] > 0;
 	}
 	// PATCH END testtransfer

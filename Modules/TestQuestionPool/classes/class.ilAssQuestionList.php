@@ -580,7 +580,7 @@ class ilAssQuestionList implements ilTaxAssignedItemInfo
 	}
 	
 	// uni-goettingen-patch: begin
-	protected function getSelectFieldsExpression()
+	private function getSelectFieldsExpression()
 	// uni-goettingen-patch: end
 	{
 		$selectFields = array(

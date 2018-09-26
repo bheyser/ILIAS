@@ -375,6 +375,7 @@ class assTextQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 		
 		$questiontext = $this->object->getQuestion();
 		$template->setVariable("QUESTIONTEXT", $this->object->prepareTextareaOutput($questiontext, TRUE));
+		$template->setVariable("QID", $this->object->getId());
 		//auding-patch: start
 		$this->outAudingPreview($template);
 		//auding-patch: end

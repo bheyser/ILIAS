@@ -1600,6 +1600,9 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 			{
 				if ($gap_index == $solutionvalue["value1"])
 				{
+					$string_escaping_org_value = $worksheet->getStringEscaping();
+					try {
+						$worksheet->setStringEscaping(false);
 					switch ($gap->getType())
 					{
 						case CLOZE_SELECT:
@@ -1609,6 +1612,10 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
 						case CLOZE_TEXT:
 							$worksheet->setCell($startrow + $i, 1, $solutionvalue["value2"]);
 							break;
+						}
+
+					} finally {
+						$worksheet->setStringEscaping($string_escaping_org_value);
 					}
 				}
 			}
