@@ -37,6 +37,7 @@ require_once './Modules/Test/classes/class.ilTestExpressPage.php';
  * @ilCtrl_Calls ilObjTestGUI: ilAssQuestionHintsGUI, ilAssQuestionFeedbackEditingGUI, ilLocalUnitConfigurationGUI, assFormulaQuestionGUI
  * @ilCtrl_Calls ilObjTestGUI: ilTestPassDetailsOverviewTableGUI
  * @ilCtrl_Calls ilObjTestGUI: ilTestResultsToolbarGUI
+ * @ilCtrl_Calls ilObjTestGUI: ilTestCorrectionsGUI
  * @ilCtrl_Calls ilObjTestGUI: ilTestSettingsChangeConfirmationGUI
  * @ilCtrl_Calls ilObjTestGUI: ilTestSkillAdministrationGUI, ilTestSkillEvaluationGUI
  * @ilCtrl_Calls ilObjTestGUI: ilAssQuestionPreviewGUI
@@ -56,7 +57,7 @@ class ilObjTestGUI extends ilObjectGUI
 	
 	/** @var ilObjTest $object */
 	public $object = null;
-
+	
 	/** @var ilTestQuestionSetConfigFactory $testQuestionSetConfigFactory Factory for question set config. */
 	private $testQuestionSetConfigFactory = null;
 	
@@ -679,6 +680,13 @@ class ilObjTestGUI extends ilObjectGUI
 				$this->prepareOutput();
 				require_once './Modules/Test/classes/class.ilScoringAdjustmentGUI.php';
 				$gui = new ilScoringAdjustmentGUI($this->object);
+				$this->ctrl->forwardCommand($gui);
+				break;
+
+			case 'iltestcorrectionsgui':
+				$this->prepareOutput();
+				require_once './Modules/Test/classes/class.ilTestCorrectionsGUI.php';
+				$gui = new ilTestCorrectionsGUI($DIC, $this->object);
 				$this->ctrl->forwardCommand($gui);
 				break;
 			
@@ -4872,6 +4880,13 @@ class ilObjTestGUI extends ilObjectGUI
 					), ''
 				);
 			}
+			
+			global $DIC; /* @var ILIAS\DI\Container $DIC */
+			
+			// NEW CORRECTIONS TAB
+			$this->tabs->addTab('scoringadjust'."2", 'scoringadjust'."2",
+				$DIC->ctrl()->getLinkTargetByClass('ilTestCorrectionsGUI')
+			);
 
 			if ((($ilAccess->checkAccess("tst_statistics", "", $this->ref_id)) || ($ilAccess->checkAccess("write", "", $this->ref_id)))  && !in_array('statistics', $hidden_tabs))
 			{
