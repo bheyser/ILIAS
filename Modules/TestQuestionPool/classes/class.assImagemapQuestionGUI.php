@@ -1045,4 +1045,21 @@ class assImagemapQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 		
 		return $tpl->get();
 	}
+	
+	public function getAnswersFrequency($relevantAnswers, $questionIndex)
+	{
+		$agg = $this->aggregateAnswers($relevantAnswers, $this->object->getAnswers());
+		
+		$answers = array();
+		
+		foreach($this->object->getAnswers() as $answerIndex => $ans)
+		{
+			$answers[] = array(
+				'answer' => $ans->getAnswerText(),
+				'frequency' => $agg[$answerIndex]
+			);
+		}
+		
+		return $answers;
+	}
 }

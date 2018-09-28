@@ -774,4 +774,9 @@ class assTextQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 	{
 		return ''; //print_r($relevant_answers,true);
 	}
+	
+	public function isAnswerFreuqencyStatisticSupported()
+	{
+		return false;
+	}
 }
