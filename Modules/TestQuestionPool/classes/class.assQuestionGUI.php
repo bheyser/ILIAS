@@ -2497,4 +2497,12 @@ abstract class assQuestionGUI
 		
 		return $table;
 	}
+	
+	/**
+	 * @param ilPropertyFormGUI $form
+	 */
+	public function populateCorrectionsFormProperties(ilPropertyFormGUI $form)
+	{
+		
+	}
 }
