@@ -4869,7 +4869,7 @@ class ilObjTestGUI extends ilObjectGUI
 			$setting = new ilSetting('assessment');
 			$scoring_adjust_active = (bool) $setting->get('assessment_adjustments_enabled', false);
 			if ($ilAccess->checkAccess("write", "", $this->ref_id) && $scoring_adjust_active && !in_array('scoringadjust', $hidden_tabs))
-			{
+			{if(false)
 				// scoring tab
 				$this->tabs_gui->addTarget(
 					"scoringadjust", $this->ctrl->getLinkTargetByClass('ilScoringAdjustmentGUI', 'showquestionlist'),
@@ -4884,7 +4884,7 @@ class ilObjTestGUI extends ilObjectGUI
 			global $DIC; /* @var ILIAS\DI\Container $DIC */
 			
 			// NEW CORRECTIONS TAB
-			$this->tabs->addTab('scoringadjust'."2", 'scoringadjust'."2",
+			$this->tabs_gui->addTab('scoringadjust', 'scoringadjust',
 				$DIC->ctrl()->getLinkTargetByClass('ilTestCorrectionsGUI')
 			);
 
