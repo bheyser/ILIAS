@@ -2350,14 +2350,30 @@ class ilObjTestGUI extends ilObjectGUI
 			}
 		}
 
+		$table_gui = new ilTestQuestionsTableGUI(
+			$this, 'questions', $this->object->getRefId()
+		);
+		
+		$table_gui->setPositionInsertCommandsEnabled(
+			is_array($_SESSION['tst_qst_move_' . $this->object->getTestId()])
+			&& count($_SESSION['tst_qst_move_' . $this->object->getTestId()])
+		);
+		
+		$table_gui->setQuestionTitleLinksEnabled( !$total );
+		$table_gui->setQuestionPositioningEnabled( !$total );
+		$table_gui->setQuestionManagingEnabled( !$total );
+		$table_gui->setObligatoryQuestionsHandlingEnabled($this->object->areObligationsEnabled());
+
+		$table_gui->setTotalPoints($this->object->getFixedQuestionSetTotalPoints());
+		$table_gui->setTotalWorkingTime($this->object->getFixedQuestionSetTotalWorkingTime());
+		
+		$table_gui->init();
+		
+		$table_gui->setData($this->object->getTestQuestions());
+		
 		$this->tpl->setCurrentBlock("adm_content");
-		include_once "./Modules/Test/classes/tables/class.ilTestQuestionsTableGUI.php";
-		$checked_move = is_array($_SESSION['tst_qst_move_' . $this->object->getTestId()]) && (count($_SESSION['tst_qst_move_' . $this->object->getTestId()]));
-		$table_gui = new ilTestQuestionsTableGUI($this, 'questions', (($ilAccess->checkAccess("write", "", $this->ref_id) ? true : false)), $checked_move, $total);
-		$data = $this->object->getTestQuestions();
-		$table_gui->setData($data);
-		$this->tpl->setVariable('QUESTIONBROWSER', $table_gui->getHTML());	
 		$this->tpl->setVariable("ACTION_QUESTION_FORM", $this->ctrl->getFormAction($this));
+		$this->tpl->setVariable('QUESTIONBROWSER', $table_gui->getHTML());	
 		$this->tpl->parseCurrentBlock();
 	}
 	
@@ -4884,9 +4900,12 @@ class ilObjTestGUI extends ilObjectGUI
 			global $DIC; /* @var ILIAS\DI\Container $DIC */
 			
 			// NEW CORRECTIONS TAB
-			$this->tabs_gui->addTab('scoringadjust', 'scoringadjust',
-				$DIC->ctrl()->getLinkTargetByClass('ilTestCorrectionsGUI')
-			);
+			if ($ilAccess->checkAccess("write", "", $this->ref_id) && $scoring_adjust_active && !in_array('scoringadjust', $hidden_tabs))
+			{
+				$this->tabs_gui->addTab('scoringadjust', 'scoringadjust',
+					$DIC->ctrl()->getLinkTargetByClass('ilTestCorrectionsGUI')
+				);
+			}
 
 			if ((($ilAccess->checkAccess("tst_statistics", "", $this->ref_id)) || ($ilAccess->checkAccess("write", "", $this->ref_id)))  && !in_array('statistics', $hidden_tabs))
 			{

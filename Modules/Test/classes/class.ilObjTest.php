@@ -8813,6 +8813,38 @@ function getAnswerFeedbackPoints()
 
 		return $questions;
 	}
+	
+	/**
+	 * @return float
+	 */
+	public function getFixedQuestionSetTotalPoints()
+	{
+		$points = 0;
+		
+		foreach($this->getTestQuestions() as $questionData)
+		{
+			$points += $questionData['points'];
+		}
+		
+		return $points;
+	}
+	
+	/**
+	 * @return string
+	 */
+	public function getFixedQuestionSetTotalWorkingTime()
+	{
+		$totalWorkingTime = '00:00:00';
+		
+		foreach($this->getTestQuestions() as $questionData)
+		{
+			$totalWorkingTime = assQuestion::sumTimesInISO8601FormatH_i_s_Extended(
+				$totalWorkingTime, $questionData['working_time']
+			);
+		}
+
+		return $totalWorkingTime;
+	}
 
 	/**
 	 * @return array
