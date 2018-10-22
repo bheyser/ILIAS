@@ -65,7 +65,6 @@ assessment#:#not_evaluated_users#:#Noch nicht bewertete Benutzer
 assessment#:#finalized_by#:#Bewertung abgeschlossen von
 assessment#:#finalized_on#:#Bewertung abgeschlossen am
 assessment#:#not_enough_unique_answers#:#Sie haben "Identische Bewertung" deaktiviert, benutzten aber in mindestens zwei Lücken eine identische Antwort.
-// Anpassungen ugoe
 assessment#:#exp_type_flexnow_graded#:#FlexNow - benotet
 assessment#:#exp_type_flexnow_ungraded#:#FlexNow - unbenotet
 assessment#:#reset_client_ips#:#Client-IPs auf EP-Raum beschränken
