@@ -45,6 +45,10 @@ assessment#:#not_evaluated_users#:#Not Yet Evaluated User
 assessment#:#finalized_by#:#Finalized by
 assessment#:#finalized_on#:#Finalized on
 assessment#:#not_enough_unique_answers#:#You have not selected "Identical Scoring", but you are using the same answer in at least to gaps.
+<<<<<<< HEAD
+=======
+// Anpassungen ugoe
+>>>>>>> parent of ad387e433e... - Comment annotation
 assessment#:#exp_type_flexnow_graded#:#FlexNow - graded
 assessment#:#exp_type_flexnow_ungraded#:#FlexNow - ungraded
 assessment#:#reset_client_ips#:#Restrict Client-IPs to EP room
