@@ -45,7 +45,35 @@ assessment#:#not_evaluated_users#:#Not Yet Evaluated User
 assessment#:#finalized_by#:#Finalized by
 assessment#:#finalized_on#:#Finalized on
 assessment#:#not_enough_unique_answers#:#You have not selected "Identical Scoring", but you are using the same answer in at least to gaps.
+// Anpassungen ugoe
 assessment#:#exp_type_flexnow_graded#:#FlexNow - graded
 assessment#:#exp_type_flexnow_ungraded#:#FlexNow - ungraded
 assessment#:#reset_client_ips#:#Restrict Client-IPs to EP room
 assessment#:#succuess_reset_client_ips#:#The Client-IPs have been successfully adjusted.
+assessment#:#show_examview_html#:#On screen
+assessment#:#show_examview_html_hash#:#Show Hash for on screen Exam View
+assessment#:#show_examview_html_hash_desc#:#This will show a SHA256 sum of the HTML representation of the finished exam with all answers, which is used for archiving purposes. A list of these hashes can be generated as a legal proof.
+assessment#:#signature_list_type#:#Signature List Type
+assessment#:#signature_list_type_student#:#Student signature list
+assessment#:#signature_list_type_student_desc#:#Every student is supposed to sign next to his SHA256 Hash
+assessment#:#signature_list_type_collection#:#Hash Collection Signature List
+assessment#:#signature_list_type_collection_desc#:#A collection of SHA256 Hashes is signed by representatives
+assessment#:#examview_printview#:#Print the exam
+assessment#:#examview_printview_desc#:#Automatically trigger printing on finishing the exam, and show a review of all answers on the page displaying the hashes
+assessment#:#show_examview_pdf#:#PDF Download
+assessment#:#enable_screenshots#:#Enable Screenshots using ScreenShotTool
+assessment#:#enable_screenshots_desc#:#The ScreenShotTool (running on client) will be used to make a screenshot whenever the left mouse button is clicked. These screenshots will be included in the archive
+assessment#:#scoringadjust#:#Corrections
+assessment#:#ass_mc_sel_lim_hint#:#Please select %s of %s answers!
+assessment#:#ass_mc_sel_lim_exhausted_hint#:#Please do not select more than %s of %s answers!
+assessment#:#ass_mc_sel_lim_setting#:#Answering Limitation
+assessment#:#ass_mc_sel_lim_setting_desc#:#With this setting the number of answers choosable by the participants can be limited.
+assessment#:#finish_test#:#Finish the Test (1/3)
+assessment#:#finish_test2#:#Finish the Test (2/3)
+assessment#:#finish_test3#:#Finish the Test (3/3)
+assessment#:#finish_test_print#:#Finish the Test (3/3) and Print
+assessment#:#test_finished_big_message#:#You have finished the Test.
+assessment#:#autologout_in#:#Autologout in:
+assessment#:#sha256_sum_txt#:#SHA256 Checksum
+assessment#:#reset_timer#:#Reset timer to 3:00
+assessment#:#logout_now#:#LogOut now

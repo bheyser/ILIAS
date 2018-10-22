@@ -65,7 +65,35 @@ assessment#:#not_evaluated_users#:#Noch nicht bewertete Benutzer
 assessment#:#finalized_by#:#Bewertung abgeschlossen von
 assessment#:#finalized_on#:#Bewertung abgeschlossen am
 assessment#:#not_enough_unique_answers#:#Sie haben "Identische Bewertung" deaktiviert, benutzten aber in mindestens zwei Lücken eine identische Antwort.
+// Anpassungen ugoe
 assessment#:#exp_type_flexnow_graded#:#FlexNow - benotet
 assessment#:#exp_type_flexnow_ungraded#:#FlexNow - unbenotet
 assessment#:#reset_client_ips#:#Client-IPs auf EP-Raum beschränken
-assessment#:#succuess_reset_client_ips#:#Die Client-IPs wurden erfolgreich angepasst.
+assessment#:#succuess_reset_client_ips#:#Die Client-IPs wurden erfolgreich zurückgesetzt.
+assessment#:#show_examview_html#:#Am Bildschirm
+assessment#:#show_examview_html_hash#:#Zeige Hash für Antwortenübersicht
+assessment#:#show_examview_html_hash_desc#:#Dies zeigt eine SHA256 Summe der HTML Repräsentation der ausgefüllten Klausur inklusive der gegebenen Antworten. Dies wird für die legal sichere Archivierung benötigt, eine Liste der Hashes kann ausgedruckt werden.
+assessment#:#signature_list_type#:#Art der Signaturliste
+assessment#:#signature_list_type_student#:#Studierenden Signaturliste
+assessment#:#signature_list_type_student_desc#:#Die Studierenden unterschreiben neben dem SHA256 Hash ihrer Klausur
+assessment#:#signature_list_type_collection#:#Hashsammlung Signaturliste
+assessment#:#signature_list_type_collection_desc#:#A Liste von SHA256 Hashes wird von Repräsentanten unterschrieben
+assessment#:#examview_printview#:#Klausur ausdrucken
+assessment#:#examview_printview_desc#:#Automatically trigger printing on finishing the exam, and show a review of all answers on the page displaying the hashes
+assessment#:#show_examview_pdf#:#PDF-Download
+assessment#:#enable_screenshots#:#Aktivierung des ScreenShotTools für Bildschirmfotos
+assessment#:#enable_screenshots_desc#:#Das ScreenShotTool erstellt bei jedem Mausklick und im festgelegten Zeitinterval Screenshots. Diese Bildschirmfotos werden im Archiv eingebunden.
+assessment#:#scoringadjust#:#Nachkorrektur
+assessment#:#ass_mc_sel_lim_hint#:#Bitte wählen Sie %s von %s Antworten!
+assessment#:#ass_mc_sel_lim_exhausted_hint#:#Bitte wählen Sie nicht mehr als %s von %s Antworten!
+assessment#:#ass_mc_sel_lim_setting#:#Antwortbeschränkung
+assessment#:#ass_mc_sel_lim_setting_desc#:#Mit dieser Einstellung lässt sich die Anzahl durch den Teilnehmer wählbarer Antworten einschränken.
+assessment#:#finish_test#:#Test beenden (1/3)
+assessment#:#finish_test2#:#Test beenden (2/3)
+assessment#:#finish_test3#:#Test beenden (3/3)
+assessment#:#finish_test_print#:#Test beenden (3/3) und drucken
+assessment#:#test_finished_big_message#:#Sie haben den Test beendet.
+assessment#:#autologout_in#:#Automatischen ausloggen in:
+assessment#:#sha256_sum_txt#:#SHA256 Prüfsumme
+assessment#:#reset_timer#:#Timer auf 3:00 zurücksetzen
+assessment#:#logout_now#:#Jetzt ausloggen
