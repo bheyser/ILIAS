@@ -11772,6 +11772,13 @@ area {
 .highlight .vm { color: #19177C } /* Name.Variable.Magic */
 .highlight .il { color: #666666 } /* Literal.Number.Integer.Long */
 
+div.ilc_answers.answer-table div.ilc_qanswer_Answer {
+  display: table-row;
+}
+div.ilc_answers.answer-table div.ilc_qanswer_Answer > div {
+  display: table-cell;
+}
+
 @media print and (color) {
    * {
       -webkit-print-color-adjust: exact;
