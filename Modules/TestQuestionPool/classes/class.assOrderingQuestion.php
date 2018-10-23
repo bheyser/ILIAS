@@ -747,6 +747,44 @@ class assOrderingQuestion extends assQuestion implements ilObjQuestionScoringAdj
 		return $this->calculateReachedPointsForSolution($solutionOrderingElementList);
 	}
 
+	protected function calculateReachedPointsForSolution($user_order, $nested_solution)
+	{
+		if($this->getOrderingType() != OQ_NESTED_PICTURES && $this->getOrderingType() != OQ_NESTED_TERMS)
+		{
+			ksort($user_order);
+			$user_order = array_values($user_order);
+		}
+
+		$points = 0;
+		$correctcount = 0;
+
+		foreach($this->answers as $index => $answer)
+		{
+			if($nested_solution == true)
+			{
+				$random_id = $answer->getRandomID();
+
+				if($random_id == $user_order[$random_id]['random_id'] && $answer->getOrderingDepth() == $user_order[$random_id]['depth'] && $index == $user_order[$random_id]['index'])
+				{
+					$correctcount++;
+				}
+			} else
+			{
+				if($index == $user_order[$index])
+				{
+					$correctcount++;
+				}
+			}
+		}
+
+		if($correctcount == count($this->answers))
+		{
+			$points = $this->getPoints();
+			return $points;
+		}
+		return $points;
+	}
+
 	/**
 	* Returns the maximum points, a learner can reach answering the question
 	*
