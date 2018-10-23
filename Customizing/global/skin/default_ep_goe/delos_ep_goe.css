@@ -11779,6 +11779,11 @@ div.ilc_answers.answer-table div.ilc_qanswer_Answer > div {
   display: table-cell;
 }
 
+div.ilc_question_SingleChoice .ilc_qanswer_Answer > div:first-child,
+div.ilc_question_MultipleChoice .ilc_qanswer_Answer > div:first-child {
+  padding-right: 10px;
+}
+
 @media print and (color) {
    * {
       -webkit-print-color-adjust: exact;
