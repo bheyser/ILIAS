@@ -747,42 +747,22 @@ class assOrderingQuestion extends assQuestion implements ilObjQuestionScoringAdj
 		return $this->calculateReachedPointsForSolution($solutionOrderingElementList);
 	}
 
-	protected function calculateReachedPointsForSolution($user_order, $nested_solution)
+	protected function calculateReachedPointsForSolution(ilAssOrderingElementList $solutionOrderingElementList)
 	{
-		if($this->getOrderingType() != OQ_NESTED_PICTURES && $this->getOrderingType() != OQ_NESTED_TERMS)
+		$reachedPoints = $this->getPoints();
+
+		foreach($this->getOrderingElementList() as $correctElement)
 		{
-			ksort($user_order);
-			$user_order = array_values($user_order);
-		}
+			$userElement = $solutionOrderingElementList->getElementByPosition( $correctElement->getPosition() );
 
-		$points = 0;
-		$correctcount = 0;
-
-		foreach($this->answers as $index => $answer)
-		{
-			if($nested_solution == true)
+			if( !$correctElement->isSameElement($userElement) )
 			{
-				$random_id = $answer->getRandomID();
-
-				if($random_id == $user_order[$random_id]['random_id'] && $answer->getOrderingDepth() == $user_order[$random_id]['depth'] && $index == $user_order[$random_id]['index'])
-				{
-					$correctcount++;
-				}
-			} else
-			{
-				if($index == $user_order[$index])
-				{
-					$correctcount++;
-				}
+				$reachedPoints = 0;
+				break;
 			}
 		}
 
-		if($correctcount == count($this->answers))
-		{
-			$points = $this->getPoints();
-			return $points;
-		}
-		return $points;
+		return $reachedPoints;
 	}
 
 	/**
