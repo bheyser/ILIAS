@@ -2506,4 +2506,12 @@ abstract class assQuestionGUI
 	{
 		
 	}
+	
+	/**
+	 * @param ilPropertyFormGUI $form
+	 */
+	public function saveCorrectionsFormProperties(ilPropertyFormGUI $form)
+	{
+		
+	}
 }
