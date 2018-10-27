@@ -2502,6 +2502,14 @@ abstract class assQuestionGUI
 	/**
 	 * @param ilPropertyFormGUI $form
 	 */
+	public function prepareReprintableCorrectionsForm(ilPropertyFormGUI $form)
+	{
+		
+	}
+	
+	/**
+	 * @param ilPropertyFormGUI $form
+	 */
 	public function populateCorrectionsFormProperties(ilPropertyFormGUI $form)
 	{
 		
