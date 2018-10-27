@@ -23,7 +23,7 @@ require_once './Modules/Test/classes/class.ilTestExpressPage.php';
  * @ilCtrl_Calls ilObjTestGUI: ilTestEvaluationGUI, ilTestEvalObjectiveOrientedGUI
  * @ilCtrl_Calls ilObjTestGUI: ilAssGenFeedbackPageGUI, ilAssSpecFeedbackPageGUI
  * @ilCtrl_Calls ilObjTestGUI: ilInfoScreenGUI, ilObjectCopyGUI, ilTestScoringGUI
- * @ilCtrl_Calls ilObjTestGUI: ilRepositorySearchGUI, ilScoringAdjustmentGUI, ilTestExportGUI
+ * @ilCtrl_Calls ilObjTestGUI: ilRepositorySearchGUI, ilTestExportGUI
  * @ilCtrl_Calls ilObjTestGUI: assMultipleChoiceGUI, assClozeTestGUI, assMatchingQuestionGUI
  * @ilCtrl_Calls ilObjTestGUI: assOrderingQuestionGUI, assImagemapQuestionGUI, assJavaAppletGUI
  * @ilCtrl_Calls ilObjTestGUI: assNumericGUI, assErrorTextGUI, ilTestScoringByQuestionsGUI
@@ -676,14 +676,8 @@ class ilObjTestGUI extends ilObjectGUI
 				$this->ctrl->forwardCommand($gui);
 				break;
 
-			case 'ilscoringadjustmentgui':
-				$this->prepareOutput();
-				require_once './Modules/Test/classes/class.ilScoringAdjustmentGUI.php';
-				$gui = new ilScoringAdjustmentGUI($this->object);
-				$this->ctrl->forwardCommand($gui);
-				break;
-
 			case 'iltestcorrectionsgui':
+				global $DIC; /* @var ILIAS\DI\Container $DIC */
 				$this->prepareOutput();
 				require_once './Modules/Test/classes/class.ilTestCorrectionsGUI.php';
 				$gui = new ilTestCorrectionsGUI($DIC, $this->object);
@@ -4881,25 +4875,10 @@ class ilObjTestGUI extends ilObjectGUI
 				}
 			}
 
-			// Scoring Adjustment
+			// NEW CORRECTIONS TAB
+			global $DIC; /* @var ILIAS\DI\Container $DIC */
 			$setting = new ilSetting('assessment');
 			$scoring_adjust_active = (bool) $setting->get('assessment_adjustments_enabled', false);
-			if ($ilAccess->checkAccess("write", "", $this->ref_id) && $scoring_adjust_active && !in_array('scoringadjust', $hidden_tabs))
-			{if(false)
-				// scoring tab
-				$this->tabs_gui->addTarget(
-					"scoringadjust", $this->ctrl->getLinkTargetByClass('ilScoringAdjustmentGUI', 'showquestionlist'),
-					array(
-						'showquestionlist',
-						'savescoringfortest',
-						'adjustscoringfortest'
-					), ''
-				);
-			}
-			
-			global $DIC; /* @var ILIAS\DI\Container $DIC */
-			
-			// NEW CORRECTIONS TAB
 			if ($ilAccess->checkAccess("write", "", $this->ref_id) && $scoring_adjust_active && !in_array('scoringadjust', $hidden_tabs))
 			{
 				$this->tabs_gui->addTab('scoringadjust', 'scoringadjust',
