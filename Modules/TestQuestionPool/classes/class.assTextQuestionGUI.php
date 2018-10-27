@@ -792,4 +792,13 @@ class assTextQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 		
 		$form->removeItemByPostVar('maxchars');
 	}
+	
+	/**
+	 * @param ilPropertyFormGUI $form
+	 */
+	public function saveCorrectionsFormProperties(ilPropertyFormGUI $form)
+	{
+		$this->writeQuestionSpecificPostData($form);
+		$this->writeAnswerSpecificPostData($form);
+	}
 }
