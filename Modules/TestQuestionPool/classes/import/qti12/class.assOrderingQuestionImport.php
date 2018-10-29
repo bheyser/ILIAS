@@ -18,7 +18,7 @@ class assOrderingQuestionImport extends assQuestionImport
 	 * @var assOrderingQuestion
 	 */
 	public $object;
-	
+
 	/**
 	* Creates a question from a QTI file
 	*
@@ -38,7 +38,7 @@ class assOrderingQuestionImport extends assQuestionImport
 
 		// empty session variable for imported xhtml mobs
 		unset($_SESSION["import_mob_xhtml"]);
-		$presentation = $item->getPresentation(); 
+		$presentation = $item->getPresentation();
 		$duration = $item->getDuration();
 		$shuffle = 0;
 		$now = getdate();
@@ -46,7 +46,7 @@ class assOrderingQuestionImport extends assQuestionImport
 		$created = sprintf("%04d%02d%02d%02d%02d%02d", $now['year'], $now['mon'], $now['mday'], $now['hours'], $now['minutes'], $now['seconds']);
 		$answers = array();
 		$type = OQ_TERMS;
-		
+
 		foreach ($presentation->order as $entry)
 		{
 			switch ($entry["type"])
@@ -63,7 +63,7 @@ class assOrderingQuestionImport extends assQuestionImport
 					else if($response->getIdent() == 'OQT')
 						$type = OQ_TERMS;
 
-					$rendertype = $response->getRenderType(); 
+					$rendertype = $response->getRenderType();
 					switch (strtolower(get_class($rendertype)))
 					{
 						case "ilqtirenderchoice":
@@ -179,7 +179,7 @@ class assOrderingQuestionImport extends assQuestionImport
 											}
 										}
 									}
-								} 
+								}
 								else if (strcmp($ifb->getIdent(), "response_onenotcorrect") == 0)
 								{
 									// found a feedback for the identifier
@@ -202,7 +202,7 @@ class assOrderingQuestionImport extends assQuestionImport
 												}
 											}
 										}
-									} 
+									}
 								}
 							}
 						}
@@ -226,7 +226,7 @@ class assOrderingQuestionImport extends assQuestionImport
 		$this->object->setShuffle($shuffle);
 		$points = 0;
 		$solanswers = array();
-		
+
 		foreach ($answers as $answer)
 		{
 			$solanswers[$answer["solutionorder"]] = $answer;
@@ -236,9 +236,9 @@ class assOrderingQuestionImport extends assQuestionImport
 		foreach ($solanswers as $answer)
 		{
 			$points += $answer["points"];
-			
+
 			$element = new ilAssOrderingElement();
-			
+
 			if( $element->isExportIdent($answer['ident']) )
 			{
 				$element->setExportIdent($answer['ident']);
@@ -251,7 +251,7 @@ class assOrderingQuestionImport extends assQuestionImport
 					$element->setIndentation($answer['answerdepth']);
 				}
 			}
-			
+
 			if( $this->object->isImageOrderingType() )
 			{
 				$element->setContent($answer["answerimage"]["label"]);
@@ -260,7 +260,7 @@ class assOrderingQuestionImport extends assQuestionImport
 			{
 				$element->setContent($answer["answertext"]);
 			}
-			
+
 			$this->object->getOrderingElementList()->addElement($element);
 		}
 		$points = ($item->getMetadataEntry("points") > 0) ? $item->getMetadataEntry("points") : $points;
@@ -268,7 +268,7 @@ class assOrderingQuestionImport extends assQuestionImport
 		// additional content editing mode information
 		$this->object->setAdditionalContentEditingMode(
 				$this->fetchAdditionalContentEditingModeInformation($item)
-		);		
+		);
 		$this->object->saveToDb();
 		//auding-patch: start
 		$this->importAudingData($this->object->getId(), $item);
@@ -335,16 +335,15 @@ class assOrderingQuestionImport extends assQuestionImport
 				{
 					$importfile = $this->getQplImportArchivDirectory() . '/' . $mob["uri"];
 				}
-				
+
 				$GLOBALS['ilLog']->write(__METHOD__.': import mob from dir: '. $importfile);
-				
+
 				$media_object =& ilObjMediaObject::_saveTempFileAsMediaObject(basename($importfile), $importfile, FALSE);
 				ilObjMediaObject::_saveUsage($media_object->getId(), "qpl:html", $this->object->getId());
 				$questiontext = str_replace("src=\"" . $mob["mob"] . "\"", "src=\"" . "il_" . IL_INST_ID . "_mob_" . $media_object->getId() . "\"", $questiontext);
-				foreach ($answers as $key => $value)
+				foreach($this->object->getOrderingElementList() as $element)
 				{
-					$answer_obj =& $answers[$key];
-					$answer_obj->setAnswertext(str_replace("src=\"" . $mob["mob"] . "\"", "src=\"" . "il_" . IL_INST_ID . "_mob_" . $media_object->getId() . "\"", $answer_obj->getAnswertext()));
+					$element->setContent(str_replace("src=\"" . $mob["mob"] . "\"", "src=\"" . "il_" . IL_INST_ID . "_mob_" . $media_object->getId() . "\"", $element->getContent()));
 				}
 				foreach ($feedbacksgeneric as $correctness => $material)
 				{
@@ -353,10 +352,9 @@ class assOrderingQuestionImport extends assQuestionImport
 			}
 		}
 		$this->object->setQuestion(ilRTE::_replaceMediaObjectImageSrc($questiontext, 1));
-		foreach ($answers as $key => $value)
+		foreach($this->object->getOrderingElementList() as $element)
 		{
-			$answer_obj =& $answers[$key];
-			$answer_obj->setAnswertext(ilRTE::_replaceMediaObjectImageSrc($answer_obj->getAnswertext(), 1));
+			$element->setContent(ilRTE::_replaceMediaObjectImageSrc($element->getContent(), 1));
 		}
 		foreach ($feedbacksgeneric as $correctness => $material)
 		{
@@ -365,11 +363,20 @@ class assOrderingQuestionImport extends assQuestionImport
 			);
 		}
 		$this->object->saveToDb();
-		// uni-goettingen-patch: begin
-		$this->handleMappingAndDuplication(
-			$item, $tst_id, $tst_object, $question_counter, $import_mapping
-		);
-		// uni-goettingen-patch: end
+		if ($tst_id > 0)
+		{
+			$this->object->setObjId($tst_id);
+			$tstQid = $this->object->getId();
+			$qplQid = $this->object->duplicate(true, null, null, null, $questionpool_id);
+			assQuestion::resetOriginalId($qplQid);
+			assQuestion::saveOriginalId($tstQid, $qplQid);
+			$tst_object->questions[$question_counter++] = $tstQid;
+			$import_mapping[$item->getIdent()] = array("pool" => $qplQid, "test" => $tstQid);
+		}
+		else
+		{
+			$import_mapping[$item->getIdent()] = array("pool" => $this->object->getId(), "test" => 0);
+		}
 	}
 }
 
