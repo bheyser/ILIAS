@@ -225,6 +225,14 @@ class ilTestSession
 		}
 	}
 
+	/**
+	 * @return int
+	 */
+	public function getLastStartedPass()
+	{
+		return $this->lastStartedPass;
+	}
+
 	function saveToDb()
 	{
 		global $ilDB, $ilLog;
@@ -526,7 +534,7 @@ class ilTestSession
 	{
 		return $this->objectiveOrientedContainerId;
 	}
-	
+
 	// uni-goettingen-patch: begin
 	public function setSubmittedFile($file)
 	{

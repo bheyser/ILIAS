@@ -27,7 +27,7 @@ include_once "./Services/RTE/classes/class.ilRTE.php";
 /**
 * This class represents a text area property in a property form.
 *
-* @author Alex Killing <alex.killing@gmx.de> 
+* @author Alex Killing <alex.killing@gmx.de>
 * @version $Id$
 * @ingroup	ServicesForm
 */
@@ -40,7 +40,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	protected $rtetags;
 	protected $plugins;
 	protected $removeplugins;
-	protected $buttons;	
+	protected $buttons;
 	protected $rtesupport;
 	protected $use_tags_for_rte_only = true;
 	protected $max_num_chars;
@@ -50,37 +50,37 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	 * @var int
 	 */
 	protected $initial_rte_width = 795;
-	
-	/** 
+
+	/**
 	* Array of tinymce buttons which should be disabled
-	* 
+	*
 	* @var		Array
 	* @type		Array
 	* @access	protected
-	* 
+	*
 	*/
 	protected $disabled_buttons = array();
-	
-	/** 
+
+	/**
 	* Use purifier or not
-	* 
+	*
 	* @var		boolean
 	* @type		boolean
 	* @access	protected
-	* 
+	*
 	*/
-	protected $usePurifier = false;	
-	
-	/** 
+	protected $usePurifier = false;
+
+	/**
 	* Instance of ilHtmlPurifierInterface
-	* 
+	*
 	* @var		ilHtmlPurifierInterface
 	* @type		ilHtmlPurifierInterface
 	* @access	protected
-	* 
+	*
 	*/
 	protected $Purifier = null;
-	
+
 	/**
 	* TinyMCE root block element which surrounds the generated html
 	*
@@ -89,7 +89,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	* @access	protected
 	*/
 	protected $root_block_element = null;
-	
+
 	protected $rte_tag_set = array(
 		"mini" => array("strong", "em", "u", "ol", "li", "ul", "blockquote", "a", "p", "span", "br"), // #13286/#17981
 		"standard" => array ("strong", "em", "u", "ol", "li", "ul", "p", "div",
@@ -119,8 +119,8 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 			"h4","h5","h6","hr","img","li","ol","p",
 			"pre","span","strike","strong","sub","sup","table","td",
 			"tr","u","ul","ruby","rbc","rtc","rb","rt","rp", "i", "b", "gap"));
-		
-	
+
+
 	/**
 	* Constructor
 	*
@@ -264,7 +264,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	{
 		return $this->usert;
 	}
-	
+
 	/**
 	* Add RTE plugin.
 	*
@@ -274,7 +274,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	{
 		$this->plugins[$a_plugin] = $a_plugin;
 	}
-	
+
 	/**
 	* Remove RTE plugin.
 	*
@@ -294,7 +294,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	{
 		$this->buttons[$a_button] = $a_button;
 	}
-	
+
 	/**
 	* Remove RTE button.
 	*
@@ -316,7 +316,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	{
 		$this->rteSupport = array("obj_id" => $obj_id, "obj_type" => $obj_type, "module" => $module, 'cfg_template' => $cfg_template, 'hide_switch' => $hide_switch, 'version' => $version);
 	}
-	
+
 	/**
 	* Remove RTE support for a special module
 	*/
@@ -344,7 +344,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	{
 		return $this->rtetags;
 	}
-	
+
 	/**
 	* Set Set of Valid RTE Tags
 	*
@@ -367,7 +367,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 		return $this->rte_tag_set[$a_set_name];
 	}
 
-	
+
 	/**
 	* RTE Tag string
 	*/
@@ -384,13 +384,13 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	/**
 	 * Set use tags for RTE only (default is true)
 	 *
-	 * @param boolean $a_val use tags for RTE only	
+	 * @param boolean $a_val use tags for RTE only
 	 */
 	function setUseTagsForRteOnly($a_val)
 	{
 		$this->use_tags_for_rte_only = $a_val;
 	}
-	
+
 	/**
 	 * Get use tags for RTE only (default is true)
 	 *
@@ -400,7 +400,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	{
 		return $this->use_tags_for_rte_only;
 	}
-	
+
 	/**
 	* Set value by array
 	*
@@ -409,7 +409,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	function setValueByArray($a_values)
 	{
 		$this->setValue($a_values[$this->getPostVar()]);
-		
+
 		foreach($this->getSubItems() as $item)
 		{
 			$item->setValueByArray($a_values);
@@ -420,12 +420,12 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	* Check input, strip slashes etc. set alert, if input is not ok.
 	*
 	* @return	boolean		Input ok, true/false
-	*/	
+	*/
 	function checkInput()
 	{
 		$lng = $this->lng;
 		include_once("./Services/AdvancedEditing/classes/class.ilObjAdvancedEditing.php");
-		
+
 		if($this->usePurifier() && $this->getPurifier())
 		{
 			$_POST[$this->getPostVar()] = ilUtil::stripOnlySlashes($_POST[$this->getPostVar()]);
@@ -492,7 +492,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 		$lng = $this->lng;
 
 		$ttpl = new ilTemplate("tpl.prop_textarea.html", true, true, "Services/Form");
-		
+
 		// disabled rte
 		if ($this->getUseRte() && $this->getDisabled())
 		{
@@ -509,7 +509,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 				$rte = new $rtestring($this->rteSupport['version']);
 
 				$rte->setInitialWidth($this->getInitialRteWidth());
-				
+
 				// @todo: Check this.
 				$rte->addPlugin("emotions");
 				foreach ($this->plugins as $plugin)
@@ -526,7 +526,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 						$rte->removePlugin($plugin);
 					}
 				}
-	
+
 				foreach ($this->buttons as $button)
 				{
 					if (strlen($button))
@@ -534,37 +534,37 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 						$rte->addButton($button);
 					}
 				}
-				
+
 				$rte->disableButtons($this->getDisabledButtons());
-				
+
 				if($this->getRTERootBlockElement() !== null)
 				{
 					$rte->setRTERootBlockElement($this->getRTERootBlockElement());
 				}
-				
+
 				if (count($this->rteSupport) >= 3)
 				{
 					$rte->addRTESupport($this->rteSupport["obj_id"], $this->rteSupport["obj_type"], $this->rteSupport["module"], false, $this->rteSupport['cfg_template'], $this->rteSupport['hide_switch']);
 				}
 				else
-				{					
+				{
 					// disable all plugins for mini-tagset
 					if(!array_diff($this->getRteTags(), $this->getRteTagSet("mini")))
 					{
 						$rte->removeAllPlugins();
-						
+
 						// #13603 - "paste from word" is essential
-						$rte->addPlugin("paste"); 
-						
+						$rte->addPlugin("paste");
+
 						// #11980 - p-tag is mandatory but we do not want the icons it comes with
-						$rte->disableButtons(array("anchor", "justifyleft", "justifycenter", 
+						$rte->disableButtons(array("anchor", "justifyleft", "justifycenter",
 							"justifyright", "justifyfull", "formatselect", "removeformat",
 							"cut", "copy", "paste", "pastetext")); // JF, 2013-12-09
 					}
-					
-					$rte->addCustomRTESupport(0, "", $this->getRteTags());					
-				}			
-				
+
+					$rte->addCustomRTESupport(0, "", $this->getRteTags());
+				}
+
 				$ttpl->touchBlock("prop_ta_w");
 				$ttpl->setCurrentBlock("prop_textarea");
 				$ttpl->setVariable("ROWS", $this->getRows());
@@ -572,7 +572,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 			else
 			{
 				$ttpl->touchBlock("no_rteditor");
-	
+
 				if ($this->getCols() > 5)
 				{
 					$ttpl->setCurrentBlock("prop_ta_c");
@@ -583,7 +583,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 				{
 					$ttpl->touchBlock("prop_ta_w");
 				}
-				
+
 				$ttpl->setCurrentBlock("prop_textarea");
 				$ttpl->setVariable("ROWS", $this->getRows());
 			}
@@ -597,8 +597,8 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 			{
 				$ttpl->setVariable('DISABLED','disabled="disabled" ');
 			}
-			$ttpl->setVariable("PROPERTY_VALUE", ilUtil::prepareFormOutput($this->getValue()));						
-		
+			$ttpl->setVariable("PROPERTY_VALUE", ilUtil::prepareFormOutput($this->getValue()));
+
 			if($this->getRequired())
 			{
 				$ttpl->setVariable("REQUIRED", "required=\"required\"");
@@ -632,7 +632,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 		$a_tpl->parseCurrentBlock();
 
 	}
-	
+
 	/**
 	* Setter/Getter for the html purifier usage
 	*
@@ -646,15 +646,15 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 		{
 			return $this->usePurifier;
 		}
-		
+
 		$this->usePurifier = $a_flag;
 		return $this;
 	}
-	
+
 	/**
 	* Setter for the html purifier
 	*
-	* @param	ilHtmlPurifierInterface	Instance of ilHtmlPurifierInterface 
+	* @param	ilHtmlPurifierInterface	Instance of ilHtmlPurifierInterface
 	* @return	ilTextAreaInputGUI		Instance of ilTextAreaInputGUI
 	* @access	public
 	*/
@@ -663,7 +663,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 		$this->Purifier = $Purifier;
 		return $this;
 	}
-	
+
 	/**
 	* Getter for the html purifier
 	*
@@ -674,7 +674,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	{
 		return $this->Purifier;
 	}
-	
+
 	/**
 	* Setter for the TinyMCE root block element
 	*
@@ -687,7 +687,7 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 		$this->root_block_element = $a_root_block_element;
 		return $this;
 	}
-	
+
 	/**
 	* Getter for the TinyMCE root block element
 	*
@@ -698,14 +698,14 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 	{
 		return $this->root_block_element;
 	}
-	
-	/** 
+
+	/**
 	* Sets buttons which should be disabled in TinyMCE
-	* 
+	*
 	* @param	mixed	$a_button	Either a button string or an array of button strings
 	* @return	ilTextAreaInputGUI	Instance of ilTextAreaInputGUI
 	* @access	public
-	* 
+	*
 	*/
 	public function disableButtons($a_button)
 	{
@@ -717,17 +717,17 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 		{
 			$this->disabled_buttons = array_unique(array_merge($this->disabled_buttons, array($a_button)));
 		}
-		
+
 		return $this;
 	}
-	
-	/** 
+
+	/**
 	* Returns the disabled TinyMCE buttons
-	* 
+	*
 	* @param	boolean	$as_array	Should the disabled buttons be returned as a string or as an array
 	* @return	Array	Array of disabled buttons
 	* @access	public
-	* 
+	*
 	*/
 	public function getDisabledButtons($as_array = true)
 	{
@@ -767,4 +767,127 @@ class ilTextAreaInputGUI extends ilSubEnabledFormPropertyGUI
 		return false;
 
 	}
+
+	// uni-goettingen-patch: begin
+	public function render()
+	{
+		$ttpl = new ilTemplate("tpl.prop_textarea.html", true, true, "Services/Form");
+
+		// disabled rte
+		if ($this->getUseRte() && $this->getDisabled())
+		{
+			$ttpl->setCurrentBlock("disabled_rte");
+			$ttpl->setVariable("DR_VAL", $this->getValue());
+			$ttpl->parseCurrentBlock();
+		}
+		else
+		{
+			if ($this->getUseRte())
+			{
+				$rtestring = ilRTE::_getRTEClassname();
+				include_once "./Services/RTE/classes/class.$rtestring.php";
+				$rte = new $rtestring($this->rteSupport['version']);
+
+				$rte->setInitialWidth($this->getInitialRteWidth());
+
+				// @todo: Check this.
+				$rte->addPlugin("emotions");
+				foreach ($this->plugins as $plugin)
+				{
+					if (strlen($plugin))
+					{
+						$rte->addPlugin($plugin);
+					}
+				}
+				foreach ($this->removeplugins as $plugin)
+				{
+					if (strlen($plugin))
+					{
+						$rte->removePlugin($plugin);
+					}
+				}
+
+				foreach ($this->buttons as $button)
+				{
+					if (strlen($button))
+					{
+						$rte->addButton($button);
+					}
+				}
+
+				$rte->disableButtons($this->getDisabledButtons());
+
+				if($this->getRTERootBlockElement() !== null)
+				{
+					$rte->setRTERootBlockElement($this->getRTERootBlockElement());
+				}
+
+				if (count($this->rteSupport) >= 3)
+				{
+					$rte->addRTESupport($this->rteSupport["obj_id"], $this->rteSupport["obj_type"], $this->rteSupport["module"], false, $this->rteSupport['cfg_template'], $this->rteSupport['hide_switch']);
+				}
+				else
+				{
+					// disable all plugins for mini-tagset
+					if(!array_diff($this->getRteTags(), $this->getRteTagSet("mini")))
+					{
+						$rte->removeAllPlugins();
+
+						// #13603 - "paste from word" is essential
+						$rte->addPlugin("paste");
+
+						// #11980 - p-tag is mandatory but we do not want the icons it comes with
+						$rte->disableButtons(array("anchor", "justifyleft", "justifycenter",
+							"justifyright", "justifyfull", "formatselect", "removeformat",
+							"cut", "copy", "paste", "pastetext")); // JF, 2013-12-09
+					}
+
+					$rte->addCustomRTESupport(0, "", $this->getRteTags());
+				}
+
+				$ttpl->touchBlock("prop_ta_w");
+				$ttpl->setCurrentBlock("prop_textarea");
+				$ttpl->setVariable("ROWS", $this->getRows());
+			}
+			else
+			{
+				$ttpl->touchBlock("no_rteditor");
+
+				if ($this->getCols() > 5)
+				{
+					$ttpl->setCurrentBlock("prop_ta_c");
+					$ttpl->setVariable("COLS", $this->getCols());
+					$ttpl->parseCurrentBlock();
+				}
+				else
+				{
+					$ttpl->touchBlock("prop_ta_w");
+				}
+
+				$ttpl->setCurrentBlock("prop_textarea");
+				$ttpl->setVariable("ROWS", $this->getRows());
+			}
+			if (!$this->getDisabled())
+			{
+				$ttpl->setVariable("POST_VAR",
+					$this->getPostVar());
+			}
+			$ttpl->setVariable("ID", $this->getFieldId());
+			if ($this->getDisabled())
+			{
+				$ttpl->setVariable('DISABLED','disabled="disabled" ');
+			}
+			$ttpl->setVariable("PROPERTY_VALUE", ilUtil::prepareFormOutput($this->getValue()));
+			$ttpl->parseCurrentBlock();
+		}
+
+		if ($this->getDisabled())
+		{
+			$ttpl->setVariable("HIDDEN_INPUT",
+				$this->getHiddenTag($this->getPostVar(), $this->getValue()));
+		}
+
+		return $ttpl->get();
+	}
+	// uni-goettingen-patch: end
 }
