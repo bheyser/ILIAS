@@ -11795,3 +11795,23 @@ div.ilc_question_MultipleChoice .ilc_qanswer_Answer > div:first-child {
 		border: 1px #666 solid !important;
 	}
 }
+
+.ilAssKprimChoiceTable .ilc_qanswer_Answer .optionLabel{
+  width: 15% !important;
+}
+
+.ilAssKprimChoiceTable .ilc_qanswer_Answer:first-child{
+    padding-left: 0 !important;
+    text-align: center;
+}
+
+.ilAssKprimChoiceTable .ilc_qanswer_Answer:not(:first-child) {
+  padding-left: 0 !important;
+  display: flex;
+  align-items: center;
+}
+
+.kprimInput {
+  text-align: center;
+  width: 15% !important;
+}
