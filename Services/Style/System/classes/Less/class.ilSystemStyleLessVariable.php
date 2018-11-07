@@ -108,7 +108,8 @@ class ilSystemStyleLessVariable extends ilSystemStyleLessItem
             }
         }
 
-        $this->value =  str_replace(PHP_EOL, '', $value);;
+        $value =  str_replace(PHP_EOL, '', $value);
+        $this->value  = str_replace("\n", '', $value);
 
     }
 
@@ -125,7 +126,8 @@ class ilSystemStyleLessVariable extends ilSystemStyleLessItem
 	 */
 	public function setComment($comment)
 	{
-		$this->comment =  str_replace(PHP_EOL, '', $comment);
+        $comment = str_replace(PHP_EOL, '', $comment);
+        $this->comment  = str_replace("\n", '', $comment);
 	}
 
 	/**

@@ -164,8 +164,6 @@ class ilDclRecordListGUI {
 			$ilToolbar->addButtonInstance($import);
 		}
 
-		// requested not to implement this way...
-		//$tpl->addJavaScript("Modules/DataCollection/js/fastTableSwitcher.js");
 
 		if (count($this->table_obj->getRecordFields()) == 0) {
 			ilUtil::sendInfo($this->lng->txt("dcl_no_fields_yet") . " "
@@ -176,7 +174,7 @@ class ilDclRecordListGUI {
 
 		if ($desc = $this->table_obj->getDescription()) {
 			$ilSetting = new ilSetting('advanced_editing');
-			if($ilSetting->get('advanced_editing_javascript_editor') === "1") {
+			if ((bool)$ilSetting->get('advanced_editing_javascript_editor')) {
 				$desc = "<div class='ilDclTableDescription'>".$desc."</div>";
 			} else {
 				$desc = "<div class='ilDclTableDescription'>".nl2br(ilUtil::stripSlashes($desc))."</div>";

@@ -2491,9 +2491,8 @@ abstract class ilPageObject
 
 	/**
 	 * Handle repository links on copy process
-	 *
-	 * @param
-	 * @return
+	 * @param array $a_mapping
+	 * @param int $a_source_ref_id
 	 */
 	function handleRepositoryLinksOnCopy($a_mapping, $a_source_ref_id)
 	{
@@ -5541,6 +5540,16 @@ abstract class ilPageObject
 		}
 		unset($xpc);
 		return $file_obj_ids;
+	}
+
+	/**
+	 * Resolve resources
+	 * @todo: move this into proper "afterImport" routine that calls all PC components
+	 */
+	public function resolveResources($ref_mapping)
+	{
+		include_once("./Services/COPage/classes/class.ilPCResources.php");
+		return ilPCResources::resolveResources($this, $ref_mapping);
 	}
 
 }

@@ -127,9 +127,6 @@ class ilSamlSettingsGUI
 		$this->lng->loadLanguageModule('auth');
 		$this->ref_id = $ref_id;
 
-		require_once 'Services/Saml/classes/class.ilSamlAuthFactory.php';
-		$factory = new ilSamlAuthFactory();
-		$this->samlAuth = $factory->auth();
 	}
 
 	/**
@@ -198,6 +195,14 @@ class ilSamlSettingsGUI
 	public function executeCommand()
 	{
 		$this->ensureReadAccess();
+		try {
+			$factory = new ilSamlAuthFactory();
+			$this->samlAuth = $factory->auth();
+		} catch (\Throwable $e) {
+			\ilUtil::sendFailure($e->getMessage());
+		} catch (\Exception $e) {
+			\ilUtil::sendFailure($e->getMessage());
+		}
 
 		$this->help->setScreenIdComponent('auth');
 
@@ -248,15 +253,16 @@ class ilSamlSettingsGUI
 	 */
 	protected function listIdps()
 	{
-		require_once 'Services/UIComponent/Button/classes/class.ilLinkButton.php';
+		if ($this->samlAuth) {
 		$addIdpButton = ilLinkButton::getInstance();
 		$addIdpButton->setCaption('auth_saml_add_idp_btn');
 		$addIdpButton->setUrl($this->ctrl->getLinkTarget($this, 'showNewIdpForm'));
 
 		$this->toolbar->addStickyItem($addIdpButton);
+		}
 
 		require_once 'Services/Saml/classes/class.ilSamlIdpTableGUI.php';
-		$table = new ilSamlIdpTableGUI($this, self::DEFAULT_CMD);
+		$table = new ilSamlIdpTableGUI($this, self::DEFAULT_CMD, $this->samlAuth);
 		$this->tpl->setContent($table->getHTML());
 		return;
 	}

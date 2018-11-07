@@ -1855,6 +1855,15 @@ if (!$a_wysiwyg)
 						// if term found
 						while (is_int($pos))
 						{
+							// check if we are in a tex tag, see #22261
+							$tex_bpos = ilStr::strrPos(ilStr::subStr($node_val, 0, $pos), "[tex]");
+							$tex_epos = ilStr::strPos($node_val, "[/tex]", $tex_bpos);
+							if ($tex_bpos > 0 && $tex_epos > 0 && $tex_bpos < $pos && $tex_epos > $pos)
+							{
+								$pos+= ilStr::strLen($t["term"]);
+							}
+							else
+							{
 							// check if the string is not included in another word
 							// note that []
 							$valid_limiters = array("", " ","&nbsp;", ".", ",", ":", ";", "!", "?", "\"", "'", "(", ")");
@@ -1870,14 +1879,13 @@ if (!$a_wysiwyg)
 
 								$node_val = ilStr::subStr($node_val, 0, $pos).
 									$mid.
-									ilStr::subStr($node_val, $pos + ilStr::strLen($t["term"]))
-									;
+										ilStr::subStr($node_val, $pos + ilStr::strLen($t["term"]));
 
 								$pos+= ilStr::strLen($mid);
-							}
-							else
+								} else
 							{
 								$pos+= ilStr::strLen($t["term"]);
+								}
 							}
 							$pos = ilStr::strIPos($node_val, $t["term"], $pos);
 						}

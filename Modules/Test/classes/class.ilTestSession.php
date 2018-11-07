@@ -97,6 +97,8 @@ class ilTestSession
 
 	private $lastFinishedPass;
 
+	private $lastStartedPass;
+
 	private $objectiveOrientedContainerId;
 
 	/**
@@ -225,14 +227,6 @@ class ilTestSession
 		}
 	}
 
-	/**
-	 * @return int
-	 */
-	public function getLastStartedPass()
-	{
-		return $this->lastStartedPass;
-	}
-
 	function saveToDb()
 	{
 		global $ilDB, $ilLog;
@@ -258,6 +252,9 @@ class ilTestSession
 			// uni-goettingen-patch: begin
 			if(strlen($this->submitted_file) > 0)
 			{
+				$locks = array(
+					0 => array( 'name' => 'tst_active_files', 'type' => ilDBConstants::LOCK_WRITE ));
+				$ilDB->lockTables($locks);
 				$result = $ilDB->query(
 					"SELECT * FROM tst_active_files WHERE active_id = ".$ilDB->quote($this->getActiveId(), "integer"));
 				$n = $ilDB->numRows($result);
@@ -279,14 +276,16 @@ class ilTestSession
 							"file_hash" => array("text", $this->submitted_file_hash)
 						));
 				}
+				$ilDB->unlockTables();
 			}
-			// uni-goettingen-patch: end
+
 
 			// update learning progress
 			include_once("./Modules/Test/classes/class.ilObjTestAccess.php");
 			include_once("./Services/Tracking/classes/class.ilLPStatusWrapper.php");
 			ilLPStatusWrapper::_updateStatus(ilObjTestAccess::_lookupObjIdForTestId($this->getTestId()),
-				ilObjTestAccess::_getParticipantId($this->getActiveId()));
+			ilObjTestAccess::_getParticipantId($this->getActiveId()));
+			// uni-goettingen-patch: end
 		}
 		else
 		{
@@ -556,6 +555,14 @@ class ilTestSession
 		return $this->submitted_file_hash;
 	}
 	// uni-goettingen-patch: end
+
+	/**
+	 * @return int
+	 */
+	public function getLastStartedPass()
+	{
+		return $this->lastStartedPass;
+	}
 
 	/**
 	 * @param int $lastStartedPass

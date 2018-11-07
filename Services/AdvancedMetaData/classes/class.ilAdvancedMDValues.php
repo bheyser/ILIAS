@@ -352,6 +352,7 @@ class ilAdvancedMDValues
 		
 		// clone local records
 		
+		// new records are created automatically, only if source and target id differs.
 		include_once "Services/AdvancedMetaData/classes/class.ilAdvancedMDRecord.php";	
 		$new_records = $fields_map = array();		
 		foreach(ilAdvancedMDRecord::_getRecords() as $record)
@@ -359,7 +360,14 @@ class ilAdvancedMDValues
 			if($record->getParentObject() == $a_source_id)
 			{
 				$tmp = array();
+				if($a_source_id != $a_target_id)
+				{
 				$new_records[$record->getRecordId()] = $record->_clone($tmp, $a_target_id);				
+				}
+				else
+				{
+					$new_records[$record->getRecordId()] = $record->getRecordId();
+				}
 				$fields_map[$record->getRecordId()] = $tmp;
 			}
 		}
@@ -507,7 +515,7 @@ class ilAdvancedMDValues
 	 * @param
 	 * @return
 	 */
-	static public function queryForRecords($a_obj_id, $a_subtype, $a_records, $a_obj_id_key, $a_obj_subid_key, array $a_amet_filter = null)
+	static public function queryForRecords($adv_rec_obj_ref_id, $adv_rec_obj_type, $adv_rec_obj_subtype, $a_obj_id, $a_subtype, $a_records, $a_obj_id_key, $a_obj_subid_key, array $a_amet_filter = null)
 	{	
 		$results = array();
 		
@@ -539,7 +547,7 @@ class ilAdvancedMDValues
 			$sub_id = $rec[$a_obj_subid_key];
 						
 			// only active amet records for glossary 
-			foreach(ilAdvancedMDRecord::_getSelectedRecordsByObject(ilObject::_lookupType($obj_id), $obj_id, $a_subtype) as $adv_record)
+			foreach(ilAdvancedMDRecord::_getSelectedRecordsByObject($adv_rec_obj_type, $adv_rec_obj_ref_id, $adv_rec_obj_subtype) as $adv_record)
 			{									
 				$record_id = $adv_record->getRecordId();
 				

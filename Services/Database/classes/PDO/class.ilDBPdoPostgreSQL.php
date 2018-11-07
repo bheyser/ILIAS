@@ -186,9 +186,8 @@ class ilDBPdoPostgreSQL extends ilDBPdo implements ilDBInterface {
 
 		$counter = 0;
 		foreach ($a_tables as $table) {
-			$lock = 'LOCK TABLE ';
-
-			$lock .= ($table['name'] . ' ');
+			if (!isset($table['sequence']) && $table['sequence']) {
+				$lock = 'LOCK TABLE ' . $table['name'];
 
 			switch ($table['type']) {
 				case ilDBConstants::LOCK_READ:
@@ -201,6 +200,7 @@ class ilDBPdoPostgreSQL extends ilDBPdo implements ilDBInterface {
 			}
 
 			$locks[] = $lock;
+			}
 		}
 
 		// @TODO use and store a unique identifier to allow nested lock/unlocks

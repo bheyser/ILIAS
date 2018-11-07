@@ -294,7 +294,7 @@ class ilTestScoringByQuestionsGUI extends ilTestScoringGUI
 				{
 					// uni-goettingen-patch: begin
 					$this->saveFeedback($active_id, $qst_id, $pass);
-					// uni-goettingen-patch: emd
+					// uni-goettingen-patch: end
 					$update_participant = assQuestion::_setReachedPoints(
 						$active_id, $qst_id, $reached_points, $maxPointsByQuestionId[$qst_id], $pass, 1, $this->object->areObligationsEnabled()
 					);

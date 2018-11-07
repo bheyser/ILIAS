@@ -1413,12 +1413,12 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 		$enable_examview->setValue(1);
 		$enable_examview->setChecked($this->testOBJ->getEnableExamview());
 		$enable_examview->setInfo($this->lng->txt("enable_examview_desc"));
+		// uni-goettingen-patch: begin		// uni-goettingen-patch: begin
 		$show_examview_html = new ilCheckboxInputGUI('', 'show_examview_html');
 		$show_examview_html->setValue(1);
 		$show_examview_html->setChecked($this->testOBJ->getShowExamviewHtml());
 		$show_examview_html->setOptionTitle($this->lng->txt("show_examview_html"));
 		$enable_examview->addSubItem($show_examview_html);
-		// uni-goettingen-patch: begin
 		$show_hashing_html = new ilCheckboxInputGUI('', 'show_hashing_html');
 		$show_hashing_html->setValue(1);
 		$show_hashing_html->setChecked($this->testOBJ->getShowExamviewHtmlHash());
@@ -1540,8 +1540,8 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 		if( $this->formPropertyExists($form, 'enable_examview') )
 		{
 			$this->testOBJ->setEnableExamview($form->getItemByPostVar('enable_examview')->getChecked());
-			$this->testOBJ->setShowExamviewHtml($form->getItemByPostVar('show_examview_html')->getChecked());
 			// uni-goettingen-patch: begin
+			$this->testOBJ->setShowExamviewHtml($form->getItemByPostVar('show_examview_html')->getChecked());
 			$this->testOBJ->setShowExamviewHtmlHash($form->getItemByPostVar('show_hashing_html')->getChecked());
 			$this->testOBJ->setSignatureListType($form->getItemByPostVar("signature_list_type")->getValue());
 			$this->testOBJ->setExamviewPrintview($form->getItemByPostVar("examview_printview")->getChecked());

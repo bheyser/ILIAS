@@ -305,6 +305,8 @@ class ilAdvancedMDRecord
 	{		
 		$records = array();
 		
+//		ilUtil::printBacktrace(10);
+//		var_dump($a_obj_type."-".$a_ref_id."-".$a_sub_type); exit;
 		if ($a_sub_type == "")
 		{
 			$a_sub_type = "-";

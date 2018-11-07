@@ -22,9 +22,11 @@ interface FilesystemFactory {
 	 *
 	 * @param LocalConfig $config   The local configuration which should be used to create the local filesystem.
 	 *
+	 * @param bool        $read_only
+	 *
 	 * @return Filesystem
 	 * @since 5.3
 	 * @version 1.0
 	 */
-	public function getLocal(LocalConfig $config);
+	public function getLocal(LocalConfig $config, $read_only = false);
 }

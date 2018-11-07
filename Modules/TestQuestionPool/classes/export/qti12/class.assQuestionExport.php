@@ -33,7 +33,7 @@ class assQuestionExport
 	{
 		$this->object = $a_object;
 	}
-	
+
 	/**
 	 * @param ilXmlWriter $a_xml_writer
 	 */
@@ -57,7 +57,7 @@ class assQuestionExport
 			$a_xml_writer->xmlEndTag("itemfeedback");
 		}
 	}
-	
+
 	/**
 	 * @param ilXmlWriter $a_xml_writer
 	 */
@@ -65,7 +65,7 @@ class assQuestionExport
 	{
 		$this->exportFeedbackOnly($a_xml_writer);
 	}
-	
+
 	function exportFeedbackOnly($a_xml_writer)
 	{
 		$feedback_allcorrect = $this->object->feedbackOBJ->getGenericFeedbackExportPresentation(
@@ -170,11 +170,11 @@ class assQuestionExport
 	function toXML($a_include_header = true, $a_include_binary = true, $a_shuffle = false, $test_output = false, $force_image_references = false)
 	{
 	}
-	
+
 	/**
 	 * adds a qti meta data field with given name and value to the passed xml writer
 	 * (xml writer must be in context of opened "qtimetadata" tag)
-	 * 
+	 *
 	 * @final
 	 * @access protected
 	 * @param ilXmlWriter $a_xml_writer
@@ -188,11 +188,11 @@ class assQuestionExport
 		$a_xml_writer->xmlElement("fieldentry", NULL, $fieldValue);
 		$a_xml_writer->xmlEndTag("qtimetadatafield");
 	}
-	
+
 	/**
 	 * adds a qti meta data field for ilias specific information of "additional content editing mode"
 	 * (xml writer must be in context of opened "qtimetadata" tag)
-	 * 
+	 *
 	 * @final
 	 * @access protected
 	 * @param ilXmlWriter $a_xml_writer
@@ -210,7 +210,82 @@ class assQuestionExport
 	protected function addGeneralMetadata(ilXmlWriter $xmlwriter)
 	{
 		$this->addQtiMetaDataField($xmlwriter, 'externalId', $this->object->getExternalId());
+		// PATCH BEGIN testtransfer
+		$this->populateTransferId($xmlwriter);
+		// PATCH END testtransfer
 	}
+	//auding-patch: start
+	protected function addAudingData(ilXmlWriter $a_xml_writer)
+	{
+		$auding_path =  $this->object->getAudingFilePath()."/".$this->object->getAudingFile();
+		$fh = @fopen($auding_path, "rb");
+		if($fh == false)
+		{
+			return;
+		}
+
+		$a_xml_writer->xmlStartTag("qtimetadatafield");
+		$a_xml_writer->xmlElement("fieldlabel", NULL, "AUDINGOLDID");
+		$a_xml_writer->xmlElement("fieldentry", NULL, $this->object->getId());
+		$a_xml_writer->xmlEndTag("qtimetadatafield");
+		$a_xml_writer->xmlStartTag("qtimetadatafield");
+		$a_xml_writer->xmlElement("fieldlabel", NULL, "AUDININSTID");
+		$a_xml_writer->xmlElement("fieldentry", NULL, IL_INST_ID);
+		$a_xml_writer->xmlEndTag("qtimetadatafield");
+		$a_xml_writer->xmlStartTag("qtimetadatafield");
+		$a_xml_writer->xmlElement("fieldlabel", NULL, "AUDINGFILE");
+		$a_xml_writer->xmlElement("fieldentry", NULL, $this->object->getAudingFile());
+		$a_xml_writer->xmlEndTag("qtimetadatafield");
+		$a_xml_writer->xmlStartTag("qtimetadatafield");
+		$a_xml_writer->xmlElement("fieldlabel", NULL, "AUDINGACTIVATE");
+		$a_xml_writer->xmlElement("fieldentry", NULL, $this->object->getAudingActivate());
+		$a_xml_writer->xmlEndTag("qtimetadatafield");
+		$a_xml_writer->xmlStartTag("qtimetadatafield");
+		$a_xml_writer->xmlElement("fieldlabel", NULL, "AUDINGMODE");
+		$a_xml_writer->xmlElement("fieldentry", NULL, $this->object->getAudingMode());
+		$a_xml_writer->xmlEndTag("qtimetadatafield");
+		$a_xml_writer->xmlStartTag("qtimetadatafield");
+		$a_xml_writer->xmlElement("fieldlabel", NULL, "AUDINGNROFSENDS");
+		$a_xml_writer->xmlElement("fieldentry", NULL, $this->object->getAudingNrOfSends());
+		$a_xml_writer->xmlEndTag("qtimetadatafield");
+	}
+	//auding-patch: end
+
+	// PATCH BEGIN testtransfer
+	protected function buildTransferId()
+	{
+		require_once 'Modules/TestQuestionPool/exceptions/class.ilTestQuestionPoolException.php';
+		if( !($this->object->getId() > 0) )
+		{
+			throw new ilTestQuestionPoolException('could not build transfer id for question without id');
+		}
+
+		if( !(IL_INST_ID > 0) )
+		{
+			throw new ilTestQuestionPoolException(
+				'could not build transfer id for question with id "'.$this->object->getId().'" '.
+				'because of missing installation registration (no nic id available)'
+			);
+		}
+
+		$originalQuestionId = (
+			$this->object->getOriginalId() ? $this->object->getOriginalId() : 0
+		);
+
+		return 'i'.IL_INST_ID.'_q'.$this->object->getId().'_o'.$originalQuestionId;
+	}
+	protected function populateTransferId(ilXmlWriter $xmlWriter)
+	{
+		$transferId = $this->object->getTransferId();
+
+		if( $transferId === null )
+		{
+			$transferId = $this->buildTransferId();
+		}
+
+		$this->addQtiMetaDataField($xmlWriter, 'TransferId', $transferId);
+	}
+	// PATCH END testtransfer
 }
 
 ?>

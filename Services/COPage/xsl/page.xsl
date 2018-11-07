@@ -2127,44 +2127,16 @@
 <xsl:template name="MOBTable">
 	<xsl:variable name="cmobid" select="@OriginId"/>
 
-	<figure>
-		<xsl:if test="@Class">
-			<xsl:attribute name="class">ilc_media_cont_<xsl:value-of select="@Class"/></xsl:attribute>
-		</xsl:if>
-		<xsl:if test="not(@Class)">
-			<xsl:attribute name="class">ilc_media_cont_MediaContainer</xsl:attribute>
-		</xsl:if>
-
-		<xsl:attribute name="style">display:table;</xsl:attribute>
-
-		<!-- Alignment Part 2 (LeftFloat, RightFloat) -->
-		<xsl:if test="../MediaAliasItem[@Purpose='Standard']/Layout[1]/@HorizontalAlign = 'LeftFloat'
-			and $mode != 'fullscreen' and $mode != 'media'">
-			<xsl:attribute name="style">display:table;<xsl:if test="$mode != 'edit'">float:left; clear:both; </xsl:if><xsl:if test="$disable_auto_margins != 'y'">margin-left: 0px;</xsl:if></xsl:attribute>
-		</xsl:if>
-		<xsl:if test="../MediaAliasItem[@Purpose='Standard']/Layout[1]/@HorizontalAlign = 'RightFloat'
-			and $mode != 'fullscreen' and $mode != 'media'">
-			<xsl:attribute name="style">display:table;<xsl:if test="$mode != 'edit'">float:right; clear:both; </xsl:if><xsl:if test="$disable_auto_margins != 'y'">margin-right: 0px;</xsl:if></xsl:attribute>
-		</xsl:if>
-
-		<!-- make object fit to left/right border -->
-		<xsl:if test="../MediaAliasItem[@Purpose='Standard']/Layout[1]/@HorizontalAlign = 'Left'
-			and $mode != 'fullscreen' and $mode != 'media' and $disable_auto_margins != 'y'">
-			<xsl:attribute name="style">display:table; margin-left: 0px;</xsl:attribute>
-		</xsl:if>
-		<xsl:if test="../MediaAliasItem[@Purpose='Standard']/Layout[1]/@HorizontalAlign = 'Right'
-			and $mode != 'fullscreen' and $mode != 'media' and $disable_auto_margins != 'y'">
-			<xsl:attribute name="style">display:table; margin-right: 0px;</xsl:attribute>
-		</xsl:if>
-
 		<!-- determine purpose -->
 		<xsl:variable name="curPurpose"><xsl:choose>
 			<xsl:when test="$mode = 'fullscreen'">Fullscreen</xsl:when>
 			<xsl:otherwise>Standard</xsl:otherwise>
 		</xsl:choose></xsl:variable>
 
-		<!-- build object tag -->
-		<div class="ilc_Mob">
+	<xsl:variable name="figureclass">
+	<xsl:if test="@Class">ilc_media_cont_<xsl:value-of select="@Class"/></xsl:if>
+	<xsl:if test="not(@Class)">ilc_media_cont_MediaContainer</xsl:if>
+	</xsl:variable>
 			<xsl:for-each select="../MediaAliasItem[@Purpose = $curPurpose]">
 
 				<!-- data / Location -->
@@ -2256,11 +2228,6 @@
 					</xsl:choose>
 				</xsl:variable>
 				
-				<!-- set width of td, see bug #10911 and #19464 -->
-				<xsl:if test="$width != ''">
-					<xsl:attribute name="style">width:<xsl:value-of select="$width" />px;</xsl:attribute>
-				</xsl:if>
-
 				<!-- determine height -->
 				<xsl:variable name="height">
 					<xsl:choose>
@@ -2269,6 +2236,58 @@
 						<xsl:otherwise></xsl:otherwise>
 					</xsl:choose>
 				</xsl:variable>
+		<xsl:variable name="figuredisplay">
+			<xsl:choose>
+				<!-- all images use table as container since they expand the table even without width/height -->
+				<xsl:when test="substring($type, 1, 5) = 'image' and not(substring($type, 1, 9) = 'image/svg')">display:table;</xsl:when>
+				<!-- if we have width/height, we also use table as container, since we will expand it -->
+				<xsl:when test="$width != '' and $height != ''">display:table;</xsl:when>
+				<xsl:otherwise>
+				</xsl:otherwise>
+			</xsl:choose>
+		</xsl:variable>
+		<xsl:variable name="captiondisplay">
+			<xsl:choose>
+				<xsl:when test="$figuredisplay = 'display:table;'">
+					display: table-caption; caption-side: bottom;
+				</xsl:when>
+				<xsl:otherwise>
+				</xsl:otherwise>
+			</xsl:choose>
+		</xsl:variable>
+
+		<figure>
+
+			<xsl:attribute name="class"><xsl:value-of select="$figureclass"/></xsl:attribute>
+			<xsl:attribute name="style"><xsl:value-of select="$figuredisplay"/></xsl:attribute>
+
+			<!-- Alignment Part 2 (LeftFloat, RightFloat) -->
+			<xsl:if test="../MediaAliasItem[@Purpose='Standard']/Layout[1]/@HorizontalAlign = 'LeftFloat'
+				and $mode != 'fullscreen' and $mode != 'media'">
+				<xsl:attribute name="style"><xsl:value-of select="$figuredisplay"/><xsl:if test="$mode != 'edit'">float:left; clear:both; </xsl:if><xsl:if test="$disable_auto_margins != 'y'">margin-left: 0px;</xsl:if></xsl:attribute>
+			</xsl:if>
+			<xsl:if test="../MediaAliasItem[@Purpose='Standard']/Layout[1]/@HorizontalAlign = 'RightFloat'
+				and $mode != 'fullscreen' and $mode != 'media'">
+				<xsl:attribute name="style"><xsl:value-of select="$figuredisplay"/><xsl:if test="$mode != 'edit'">float:right; clear:both; </xsl:if><xsl:if test="$disable_auto_margins != 'y'">margin-right: 0px;</xsl:if></xsl:attribute>
+			</xsl:if>
+
+			<!-- make object fit to left/right border -->
+			<xsl:if test="../MediaAliasItem[@Purpose='Standard']/Layout[1]/@HorizontalAlign = 'Left'
+				and $mode != 'fullscreen' and $mode != 'media' and $disable_auto_margins != 'y'">
+				<xsl:attribute name="style"><xsl:value-of select="$figuredisplay"/> margin-left: 0px;</xsl:attribute>
+			</xsl:if>
+			<xsl:if test="../MediaAliasItem[@Purpose='Standard']/Layout[1]/@HorizontalAlign = 'Right'
+				and $mode != 'fullscreen' and $mode != 'media' and $disable_auto_margins != 'y'">
+				<xsl:attribute name="style"><xsl:value-of select="$figuredisplay"/> margin-right: 0px;</xsl:attribute>
+			</xsl:if>
+
+			<!-- build object tag -->
+			<div class="ilc_Mob">
+
+				<!-- set width of td, see bug #10911 and #19464 -->
+				<xsl:if test="$width != ''">
+					<xsl:attribute name="style">width:<xsl:value-of select="$width" />px;</xsl:attribute>
+				</xsl:if>
 
 				<xsl:call-template name="MOBTag">
 					<xsl:with-param name="data" select="$data" />
@@ -2291,12 +2310,11 @@
 					</param>
 				</xsl:for-each>-->
 
-			</xsl:for-each>
 		</div>
 		<!-- mob caption -->
 		<xsl:choose>			<!-- derive -->
 			<xsl:when test="count(../MediaAliasItem[@Purpose=$curPurpose]/Caption[1]) != 0">
-				<figcaption style="display: table-caption; caption-side: bottom;"><div class="ilc_media_caption_MediaCaption">
+					<figcaption><xsl:attribute name="style"><xsl:value-of select="$captiondisplay"/></xsl:attribute><div class="ilc_media_caption_MediaCaption">
 				<xsl:call-template name="FullscreenLink">
 					<xsl:with-param name="cmobid" select="$cmobid"/>
 				</xsl:call-template>
@@ -2304,7 +2322,7 @@
 				</div></figcaption>
 			</xsl:when>
 			<xsl:when test="count(//MediaObject[@Id=$cmobid]/MediaItem[@Purpose=$curPurpose]/Caption[1]) != 0">
-				<figcaption style="display: table-caption; caption-side: bottom;"><div class="ilc_media_caption_MediaCaption">
+					<figcaption><xsl:attribute name="style"><xsl:value-of select="$captiondisplay"/></xsl:attribute><div class="ilc_media_caption_MediaCaption">
 				<xsl:call-template name="FullscreenLink">
 					<xsl:with-param name="cmobid" select="$cmobid"/>
 				</xsl:call-template>
@@ -2313,7 +2331,7 @@
 			</xsl:when>
 			<xsl:otherwise>
 				<xsl:if test="count(../MediaAliasItem[@Purpose='Fullscreen']) = 1">
-					<figcaption style="display: table-caption; caption-side: bottom;"><div class="ilc_media_caption_MediaCaption">
+						<figcaption><xsl:attribute name="style"><xsl:value-of select="$captiondisplay"/></xsl:attribute><div class="ilc_media_caption_MediaCaption">
 					<xsl:call-template name="FullscreenLink">
 						<xsl:with-param name="cmobid" select="$cmobid"/>
 					</xsl:call-template>
@@ -2344,6 +2362,7 @@
 			</div>
 		</xsl:if>
 	</figure>
+	</xsl:for-each>
 	<!-- menu -->
 	<xsl:if test="$mode = 'edit' and $javascript='enable'">
 		<div class="ilOverlay il_editmenu ilNoDisplay">
@@ -2411,8 +2430,11 @@
 	<xsl:param name="inline"/>
 	<img border="0">
 		<!-- see 0020796 -->
-		<xsl:if test = "name(..) != 'Paragraph'">
+		<xsl:if test = "count(ancestor-or-self::Paragraph) = 0 and name(..) != 'InteractiveImage'">
 			<xsl:attribute name="style">width:100%</xsl:attribute>
+		</xsl:if>
+		<xsl:if test = "name(..) = 'InteractiveImage'">
+			<xsl:attribute name="style">max-width:none</xsl:attribute>
 		</xsl:if>
 		<xsl:if test = "$map_item = '' or $cmobid != concat('il__mob_',$map_mob_id)">
 			<xsl:attribute name="src"><xsl:value-of select="$data"/></xsl:attribute>
@@ -2757,7 +2779,10 @@
 		<!-- mp4 -->
 
 		<!-- YouTube -->
-		<xsl:when test = "substring-after($data,'youtube.com') != ''">
+		<xsl:when test = "substring-after($data,'youtube.com') != '' or substring-after($data,'youtu.be') != ''">
+			<xsl:if test="$width = '' and $height = ''">
+				<xsl:attribute name="class">embed-responsive embed-responsive-16by9</xsl:attribute>
+			</xsl:if>
 			<!-- iframe instead of object tag, see bug #21657 -->
 			<iframe frameborder="0" allowfullscreen="1">
 				<xsl:if test="$width != ''">
@@ -2765,6 +2790,9 @@
 				</xsl:if>
 				<xsl:if test="$height != ''">
 					<xsl:attribute name="height"><xsl:value-of select="$height"/></xsl:attribute>
+				</xsl:if>
+				<xsl:if test="$width = '' and $height = ''">
+					<xsl:attribute name="class">embed-responsive-item</xsl:attribute>
 				</xsl:if>
 				<xsl:attribute name="src">
 					<xsl:value-of select="$httpprefix"/>//www.youtube.com/embed/<xsl:value-of select="//MediaObject[@Id=$cmobid]/MediaItem[@Purpose=$curPurpose]/Parameter[@Name='v']/@Value" />
@@ -2871,6 +2899,12 @@
 				<xsl:if test="$height != ''">
 					<xsl:attribute name="height"><xsl:value-of select="$height"/></xsl:attribute>
 				</xsl:if>
+				<!-- see #bug22632 -->
+				<xsl:if test="$width = '' and $height = ''">
+					<xsl:attribute name="width">100%</xsl:attribute>
+					<xsl:attribute name="height">100%</xsl:attribute>
+					<xsl:attribute name="style">width:100%;height:100%;</xsl:attribute>
+				</xsl:if>
 				<xsl:if test="$mode != 'edit' and
 					(../MediaAliasItem[@Purpose = $curPurpose]/Parameter[@Name = 'autostart']/@Value = 'true' or
 					( not(../MediaAliasItem[@Purpose = $curPurpose]/Parameter) and
@@ -2910,6 +2944,11 @@
 					</xsl:if>
 					<xsl:if test="$height != ''">
 						<xsl:attribute name="height"><xsl:value-of select="$height"/></xsl:attribute>
+					</xsl:if>
+					<xsl:if test="$width = '' and $height = ''">
+						<xsl:attribute name="width">100%</xsl:attribute>
+						<xsl:attribute name="height">100%</xsl:attribute>
+						<xsl:attribute name="style">width:100%;height:100%;</xsl:attribute>
 					</xsl:if>
 					<xsl:attribute name="data"><xsl:value-of select="$flv_video_player"/></xsl:attribute>
 					<param name="movie">
@@ -3398,25 +3437,26 @@
 				<xsl:attribute name="style">clear:both; float:right;</xsl:attribute>
 			</xsl:if>
 		</xsl:if>
-		<table class="ilc_media_cont_MediaContainer" width="1">
+		<div class="ilc_media_cont_MediaContainer">
 			<xsl:if test="(./Layout[1]/@HorizontalAlign = 'LeftFloat')">
 				<xsl:attribute name="style">margin-left: 0px; style="float:left;"</xsl:attribute>
 			</xsl:if>
 			<xsl:if test="./Layout[1]/@HorizontalAlign = 'RightFloat'">
 				<xsl:attribute name="style">margin-right: 0px; style="float:right;</xsl:attribute>
 			</xsl:if>
-			<tr><td class="ilc_Mob">
-				<div>
+			<figure>
+				<xsl:attribute name="style">width: <xsl:value-of select="./Layout[1]/@Width"/>px</xsl:attribute>
+				<div class="ilc_Mob">
 					[[[[[Map;<xsl:value-of select="@Latitude"/>;<xsl:value-of select="@Longitude"/>;<xsl:value-of select="@Zoom"/>;<xsl:value-of select="./Layout[1]/@Width"/>;<xsl:value-of select="./Layout[1]/@Height"/>]]]]]
 					<xsl:call-template name="EditReturnAnchors"/>
 				</div>
-			</td></tr>
 			<xsl:if test="count(./MapCaption[1]) != 0">
-				<tr><td><div class="ilc_media_caption_MediaCaption">
+				<figcaption class="ilc_media_caption_MediaCaption">
 				<xsl:value-of select="./MapCaption[1]"/>
-				</div></td></tr>
+				</figcaption>
 			</xsl:if>
-		</table>
+			</figure>
+		</div>
 		<xsl:if test="$mode = 'edit'">
 			<!-- <xsl:value-of select="../@HierId"/> -->
 			<xsl:if test="$javascript='disable'">

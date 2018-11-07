@@ -109,18 +109,16 @@ final class Delivery {
 	 */
 	public function __construct($path_to_file, GlobalHttpState $httpState) {
 		assert(is_string($path_to_file));
+		$this->httpService = $httpState;
 		if ($path_to_file == self::DIRECT_PHP_OUTPUT) {
 			$this->setPathToFile(self::DIRECT_PHP_OUTPUT);
 		} else {
-			$path_to_file = explode("?", $path_to_file); // removing everything behind ?
-			$path_to_file = rawurldecode($path_to_file[0]);
 			$this->setPathToFile($path_to_file);
 			$this->detemineDeliveryType();
 			$this->determineMimeType();
 			$this->determineDownloadFileName();
 		}
 		$this->setHasContext(\ilContext::getType() !== null);
-		$this->httpService = $httpState;
 		$this->fileDeliveryTypeFactory = new FileDeliveryTypeFactory($httpState);
 	}
 
@@ -141,9 +139,14 @@ final class Delivery {
 	public function deliver() {
 
 		$response = $this->httpService->response()->withHeader('X-ILIAS-FileDelivery-Method', $this->getDeliveryType());
+		if (!$this->delivery()->doesFileExists($this->path_to_file)) {
+			$response = $this->httpService->response()->withStatus(404);
+			$this->httpService->saveResponse($response);
+			$this->httpService->sendResponse();
+			$this->close();
+		}
 		$this->httpService->saveResponse($response);
 
-		$this->cleanDownloadFileName();
 		$this->clearBuffer();
 		$this->checkCache();
 		$this->setGeneralHeaders();
@@ -500,8 +503,10 @@ final class Delivery {
 
 	private function sendLastModified() {
 		if ($this->getShowLastModified()) {
-			$response = $this->httpService->response()->withHeader('Last-Modified', date("D, j M Y H:i:s", filemtime($this->getPathToFile()))
-			                                                                        . " GMT");
+			$response = $this->httpService->response()->withHeader(
+				'Last-Modified', date("D, j M Y H:i:s", filemtime($this->getPathToFile()))
+				               . " GMT"
+			);
 			$this->httpService->saveResponse($response);
 		}
 	}
@@ -670,10 +675,12 @@ final class Delivery {
 
 	private function setDispositionHeaders() {
 		$response = $this->httpService->response();
-		$response = $response->withHeader(ResponseHeader::CONTENT_DISPOSITION, $this->getDisposition()
+		$response = $response->withHeader(
+			ResponseHeader::CONTENT_DISPOSITION, $this->getDisposition()
 		                                                                       . '; filename="'
 		                                                                       . $this->getDownloadFileName()
-		                                                                       . '"');
+			                                   . '"'
+		);
 		$response = $response->withHeader('Content-Description', $this->getDownloadFileName());
 		$this->httpService->saveResponse($response);
 	}

@@ -579,9 +579,7 @@ class ilAssQuestionList implements ilTaxAssignedItemInfo
 		return strlen($CONDITIONS) ? 'AND '.$CONDITIONS : '';
 	}
 	
-	// uni-goettingen-patch: begin
 	private function getSelectFieldsExpression()
-	// uni-goettingen-patch: end
 	{
 		$selectFields = array(
 			'qpl_questions.*',

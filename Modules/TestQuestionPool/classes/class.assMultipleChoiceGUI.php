@@ -665,6 +665,7 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 		$template->setVariable("QUESTIONTEXT", $this->object->prepareTextareaOutput($questiontext, TRUE));
 		//auding-patch: start
 		$this->outAuding($template);
+		//auding-patch: end
 		$template->setVariable("QUESTION_ID", $this->object->getId());
 		if($this->object->getSelectionLimit())
 		{
@@ -680,7 +681,6 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 		{
 			$template->setVariable('SELECTION_LIMIT_VALUE', 'null');
 		}
-		//auding-patch: end
 		$questionoutput = $template->get();
 		$pageoutput = $this->outQuestionPage("", $is_postponed, $active_id, $questionoutput);
 		return $pageoutput;
@@ -900,7 +900,6 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 		$shuffle->setRequired( FALSE );
 		$form->addItem( $shuffle );
 
-		// uni-goettingen-patch: begin
 		require_once 'Services/Form/classes/class.ilNumberInputGUI.php';
 		$selLim = new ilNumberInputGUI($this->lng->txt('ass_mc_sel_lim_setting'), 'selection_limit');
 		$selLim->setInfo($this->lng->txt('ass_mc_sel_lim_setting_desc'));
@@ -910,13 +909,16 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 		$selLim->setMinvalueShouldBeGreater(false);
 		$selLim->setMaxvalueShouldBeLess(false);
 		$selLim->setMinValue(1);
-		if($this->object->getAnswerCount() > 0)
-		$selLim->setMaxValue($this->object->getAnswerCount());
-		else
+		// uni-goettingen-patch: begin
+		if($this->object->getAnswerCount() > 0) {
+			$selLim->setMaxValue($this->object->getAnswerCount());
+		} else {
 			$selLim->setMaxValue(1);
+		}
+		// uni-goettingen-patch: end
 		$selLim->setValue($this->object->getSelectionLimit());
 		$form->addItem($selLim);
-		// uni-goettingen-patch: end
+
 		
 		if ($this->object->getId())
 		{
@@ -1054,6 +1056,13 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 	public function renderAggregateView($aggregate)
 	{
 		$tpl = new ilTemplate('tpl.il_as_aggregated_answers_table.html', true, true, "Modules/TestQuestionPool");
+		$tpl->setCurrentBlock('headercell');
+		$tpl->setVariable('HEADER', $this->lng->txt('tst_answer_aggr_answer_header'));
+		$tpl->parseCurrentBlock();
+		
+		$tpl->setCurrentBlock('headercell');
+		$tpl->setVariable('HEADER', $this->lng->txt('tst_answer_aggr_frequency_header'));
+		$tpl->parseCurrentBlock();
 
 		foreach ($aggregate as $line_data)
 		{

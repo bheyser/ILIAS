@@ -609,7 +609,7 @@ class ilGroupXMLParser extends ilSaxParser
 							 'usr_id' => $fields[3]);
 			}
 		}
-		$GLOBALS['ilLog']->write(__METHOD__.' Parsing id failed: '.$a_id);
+		$GLOBALS['DIC']->logger()->grp()->warning('Parsing id failed: '.$a_id);
 		return false;
 	}
 

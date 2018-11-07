@@ -1,7 +1,5 @@
 <?php
 
-// TODO: Merge
-
 /* Copyright (c) 1998-2013 ILIAS open source, Extended GPL, see docs/LICENSE */
 
 include_once "./Modules/Test/classes/inc.AssessmentConstants.php";
@@ -272,7 +270,6 @@ abstract class assQuestion
 	private $obligationsToBeConsidered = false;
 	
 
-	// TODO: Merge
 // fau: testNav - new variable $testQuestionConfig
 	/**
 
@@ -297,9 +294,9 @@ abstract class assQuestion
 	/**
 	 * auding filename
 	 */
-	// auding-patch: end
 	private $auding_file;
-	
+	// auding-patch: end
+
 	protected static $allowedImageMaterialFileExtensionsByMimeType = array(
 		'image/jpeg' => array('jpg', 'jpeg'), 'image/png' => array('png'), 'image/gif' => array('gif')
 	);
@@ -364,6 +361,17 @@ abstract class assQuestion
 		$this->shuffler = new ilArrayElementOrderKeeper();
 	}
 
+	protected static $forcePassResultsUpdateEnabled = false;
+	
+	public static function setForcePassResultUpdateEnabled($forcePassResultsUpdateEnabled)
+	{
+		self::$forcePassResultsUpdateEnabled = $forcePassResultsUpdateEnabled;
+	}
+	
+	public static function isForcePassResultUpdateEnabled()
+	{
+		return self::$forcePassResultsUpdateEnabled;
+	}
 	public static function isAllowedImageMimeType($mimeType)
 	{
 		return (bool)count(self::getAllowedFileExtensionsForMimeType($mimeType));
@@ -1075,9 +1083,6 @@ abstract class assQuestion
 						ilUtil::prepareFormOutput($solution['value']['name']),
 						$this->lng->txt('tst_show_solution_suggested')
 					)));
-					// TODO: Merge
-					// 5.1.21: 
-					// 					array_push($output, '<a href="' . $this->getSuggestedSolutionPathWeb() . $solution["value"]["name"] . '">' . $possible_texts[0] . '</a>');
 					require_once 'Services/WebAccessChecker/classes/class.ilWACSignedPath.php';
 					ilWACSignedPath::setTokenMaxLifetimeInSeconds(60);
 					array_push($output, '<a href="' . ilWACSignedPath::signFile($this->getSuggestedSolutionPathWeb() . $solution["value"]["name"]) . '">' . $possible_texts[0] . '</a>');
@@ -1263,8 +1268,6 @@ abstract class assQuestion
 		}
 		
 		if( is_null($reached_points) ) $reached_points = 0;
-// TODO: Merge
-// 5.1.21: 		$this->getProcessLocker()->requestUserQuestionResultUpdateLock();
 // fau: testNav - check for existing authorized solution to know if a result record should be written
 		$existingSolutions = $this->lookupForExistingSolutions($active_id, $pass);
 
@@ -1292,8 +1295,6 @@ abstract class assQuestion
 			}
 			$ilDB->manipulateF($query, $types, $values);
 
-			// TODO: Merge
-			// 5.1.21: 		$affectedRows = $ilDB->manipulateF($query, $types, $values);
 			if ($existingSolutions['authorized'])
 			{
 				$next_id = $ilDB->nextId("tst_test_result");
@@ -1316,8 +1317,6 @@ abstract class assQuestion
 
 				$ilDB->insert('tst_test_result', $fieldData);
 			}
-		// TODO: Merge
-		// 5.1.21: 		$this->getProcessLocker()->releaseUserQuestionResultUpdateLock();
 		});
 // fau.
 
@@ -1366,8 +1365,6 @@ abstract class assQuestion
 			return false;
 		}
 
-		// TODO: Merge
-		// 5.1.21: 		$this->getProcessLocker()->requestPersistWorkingStateLock();
 		$saveStatus = false;
 
 		$this->getProcessLocker()->executePersistWorkingStateLockOperation(function() use ($active_id, $pass, $authorized, $obligationsEnabled, &$saveStatus) {
@@ -1385,8 +1382,6 @@ abstract class assQuestion
 
 			$this->reworkWorkingData($active_id, $pass, $obligationsEnabled, $authorized);
 
-		// TODO: Merge
-		// 5.1.21: 		$this->getProcessLocker()->releasePersistWorkingStateLock();
 		});
 
 		return $saveStatus;
@@ -3880,7 +3875,7 @@ abstract class assQuestion
 				);
 			}
 
-			if($old_points != $points || !$rowsnum)
+			if(self::isForcePassResultUpdateEnabled() || $old_points != $points || !$rowsnum)
 			{
 				assQuestion::_updateTestPassResults($active_id, $pass, $obligationsEnabled);
 				// finally update objective result

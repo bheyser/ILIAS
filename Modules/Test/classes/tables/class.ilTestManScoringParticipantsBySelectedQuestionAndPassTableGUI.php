@@ -50,6 +50,7 @@ class ilTestManScoringParticipantsBySelectedQuestionAndPassTableGUI extends ilTa
 		// uni-goettingen-patch: begin
 		global $ilCtrl, $tpl;
 		$tpl->addJavaScript('./Services/RTE/tiny_mce_3_5_11/tiny_mce.js');
+		// uni-goettingen-patch: end
 
 		$this->setId('man_scor_by_qst_' . $parentObj->object->getId());
 
@@ -169,6 +170,7 @@ class ilTestManScoringParticipantsBySelectedQuestionAndPassTableGUI extends ilTa
 		}
 		return $columns;
 	}
+	// uni-goettingen-patch: begin
 
 	/**
 	 * @global    ilCtrl     $ilCtrl
@@ -180,8 +182,8 @@ class ilTestManScoringParticipantsBySelectedQuestionAndPassTableGUI extends ilTa
 		/**
 		 * @var $ilCtrl ilCtrl
 		 */
-		global $ilCtrl, $ilAccess;
 		// uni-goettingen-patch: begin
+		global $ilCtrl, $ilAccess;
 		if ( $this->getParentObject()->object->isFullyAnonymized()  ||
 			( $this->getParentObject()->object->getAnonymity() == 2 && !$ilAccess->checkAccess('write','',$this->getParentObject()->object->getRefId())))
 		{

@@ -936,12 +936,10 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
 		// uni-goettingen-patch: begin
 		$this->doArchivingAndHashing();
 		// uni-goettingen-patch: end
-		if( !$this->testSession->isSubmitted() )
-		{
-			$this->testSession->setSubmitted(1);
-			$this->testSession->setSubmittedTimestamp(date('Y-m-d H:i:s'));
-			$this->testSession->saveToDb();
-		}
+		require_once 'Modules/Test/classes/class.ilTestPassFinishTasks.php';
+
+		$finishTasks = new ilTestPassFinishTasks($this->testSession->getActiveId(), $this->object->getId());
+		$finishTasks->performFinishTasks($this->processLocker);
 	}
 
 	protected function afterTestPassFinishedCmd()
@@ -1390,7 +1388,7 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
 			$questionGui->getQuestionHeaderBlockBuilder()->setQuestionAnswered(true);
 // fau.
 		}
-		else
+		elseif( $this->object->isPostponingEnabled() )
 		{
 			$questionNavigationGUI->setSkipQuestionLinkTarget(
 				$this->ctrl->getLinkTarget($this, ilTestPlayerCommands::SKIP_QUESTION)
@@ -2538,6 +2536,11 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
 		return $this->testSession->getLastSequence();
 	}
 
+	protected function resetSequenceElementParameter()
+	{
+		unset($_GET['sequence']);
+		$this->ctrl->setParameter($this, 'sequence', null);
+	}
 	protected function getSequenceElementParameter()
 	{
 		if( isset($_GET['sequence']) )
@@ -3030,5 +3033,43 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
 		}
 
 		return $fixedSeed;
+	}
+	
+	protected function registerForcedFeedbackNavUrl($forcedFeedbackNavUrl)
+	{
+		if( !isset($_SESSION['forced_feedback_navigation_url']) )
+		{
+			$_SESSION['forced_feedback_navigation_url'] = array();
+		}
+		
+		$_SESSION['forced_feedback_navigation_url'][$this->testSession->getActiveId()] = $forcedFeedbackNavUrl;
+	}
+	
+	protected function getRegisteredForcedFeedbackNavUrl()
+	{
+		if( !isset($_SESSION['forced_feedback_navigation_url']) )
+		{
+			return null;
+		}
+		
+		if( !isset($_SESSION['forced_feedback_navigation_url'][$this->testSession->getActiveId()]) )
+		{
+			return null;
+		}
+		
+		return $_SESSION['forced_feedback_navigation_url'][$this->testSession->getActiveId()];
+	}
+	
+	protected function isForcedFeedbackNavUrlRegistered()
+	{
+		return !empty($this->getRegisteredForcedFeedbackNavUrl());
+	}
+	
+	protected function unregisterForcedFeedbackNavUrl()
+	{
+		if( isset($_SESSION['forced_feedback_navigation_url'][$this->testSession->getActiveId()]) )
+		{
+			unset($_SESSION['forced_feedback_navigation_url'][$this->testSession->getActiveId()]);
+		}
 	}
 }

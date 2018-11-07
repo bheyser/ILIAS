@@ -214,6 +214,10 @@ class ilECSMappingUtils
 	 */
 	public static function getAuthModeSelection()
 	{
+		global $DIC;
+		global $ilSetting;
+
+		$lng = $DIC->language();
 		$options[0] = $GLOBALS['lng']->txt('select_one');
 		$options['local'] = $GLOBALS['lng']->txt('auth_local');
 		
@@ -222,6 +226,11 @@ class ilECSMappingUtils
 		{
 			$server = ilLDAPServer::getInstanceByServerId($sid);
 			$options['ldap_'.$server->getServerId()] = 'LDAP (' . $server->getName().')';
+		}
+		if($ilSetting->get('shib_active', 0))
+		{
+			$options[ilAuthUtils::_getAuthModeName(AUTH_SHIBBOLETH)] =
+				$lng->txt('auth_shibboleth');
 		}
 		return $options;
 	}

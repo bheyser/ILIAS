@@ -136,6 +136,11 @@ class ilForumCronNotificationDataProvider implements ilForumNotificationMailData
 	public $pos_author_id = 0;
 
 	/**
+	 * @var string
+	 */
+	public $deleted_by = '';
+
+	/**
 	 * @var \ilForumAuthorInformation[]
 	 */
 	protected static $authorInformationCache = array();
@@ -171,6 +176,17 @@ class ilForumCronNotificationDataProvider implements ilForumNotificationMailData
 
 		$this->import_name = strlen($row['import_name']) ? $row['import_name'] : '';
 
+		if(isset($row['deleted_by']))
+		{
+			//cron context
+			$this->deleted_by = $row['deleted_by'];
+		}
+		else
+		{
+			//  fallback
+			global $DIC;
+			$this->deleted_by = $DIC->user()->getLogin();
+		}
 		$this->read();
 	}
 
@@ -393,6 +409,22 @@ class ilForumCronNotificationDataProvider implements ilForumNotificationMailData
 	public function isAnonymized()
 	{
 		return $this->is_anonymized;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getDeletedBy()
+	{
+		return $this->deleted_by;
+	}
+
+	/**
+	 * @param int $deleted_by
+	 */
+	public function setDeletedBy($deleted_by)
+	{
+		$this->deleted_by = $deleted_by;
 	}
 	
 	/**

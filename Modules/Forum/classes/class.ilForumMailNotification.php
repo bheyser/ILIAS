@@ -103,7 +103,6 @@ class ilForumMailNotification extends ilMailNotification
 		global $DIC; 
 		$ilSetting = $DIC->settings();
 		$lng = $DIC->language();
-		$ilUser = $DIC->user();
 
 		if(!$ilSetting->get('forum_notification', 0))
 		{
@@ -140,7 +139,7 @@ class ilForumMailNotification extends ilMailNotification
 
 					$this->setBody(ilMail::getSalutation($rcp, $this->getLanguage()));
 					$this->appendBody("\n\n");
-					$this->appendBody(sprintf($this->getLanguageText('thread_deleted_by'), $ilUser->getLogin(),  $this->provider->getForumTitle()));
+					$this->appendBody(sprintf($this->getLanguageText('thread_deleted_by'), $this->provider->getDeletedBy(),  $this->provider->getForumTitle()));
 					$this->appendBody("\n\n");
 					$this->appendBody($this->getLanguageText('forum') . ": " . $this->provider->getForumTitle());
 					$this->appendBody("\n\n");
@@ -509,7 +508,7 @@ class ilForumMailNotification extends ilMailNotification
 
 					$this->setBody(ilMail::getSalutation($rcp, $this->getLanguage()));
 					$this->appendBody("\n\n");
-					$this->appendBody(sprintf($this->getLanguageText('post_deleted_by'), $ilUser->getLogin(),  $this->provider->getForumTitle()));
+					$this->appendBody(sprintf($this->getLanguageText('post_deleted_by'), $this->provider->getDeletedBy(),  $this->provider->getForumTitle()));
 					$this->appendBody("\n\n");
 					$this->appendBody($this->getLanguageText('forum') . ": " . $this->provider->getForumTitle());
 					$this->appendBody("\n\n");

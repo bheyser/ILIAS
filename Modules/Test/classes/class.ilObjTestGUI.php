@@ -41,7 +41,7 @@ require_once './Modules/Test/classes/class.ilTestExpressPage.php';
  * @ilCtrl_Calls ilObjTestGUI: ilTestSkillAdministrationGUI, ilTestSkillEvaluationGUI
  * @ilCtrl_Calls ilObjTestGUI: ilAssQuestionPreviewGUI
  * @ilCtrl_Calls ilObjTestGUI: assKprimChoiceGUI, assLongMenuGUI
- * @ilCtrl_Calls ilObjTestGUI: ilTestQuestionBrowserTableGUI
+ * @ilCtrl_Calls ilObjTestGUI: ilTestQuestionBrowserTableGUI, ilTestInfoScreenToolbarGUI, ilLTIProviderObjectSettingGUI
  * // auding-patch: begin
  * @ilCtrl_Calls ilObjTestGUI: ilTestOutputGUI
  * // auding-patch: end

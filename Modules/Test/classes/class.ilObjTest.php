@@ -10512,6 +10512,8 @@ function getAnswerFeedbackPoints()
 		}
 		return $feedback;
 	}
+	// uni-goettingen-patch: end
+
 
 	/**
 	* Saves the manual feedback for a question in a test
@@ -12706,6 +12708,100 @@ function getAnswerFeedbackPoints()
 	public function setTestFinalBroken($testFinalBroken)
 	{
 		$this->testFinalBroken = $testFinalBroken;
+	}
+
+	public function adjustTestSequence()
+	{
+		/**
+		 * @var $ilDB ilDB
+		 */
+		global $ilDB;
+		
+		$query = "
+			SELECT COUNT(test_question_id) cnt
+			FROM tst_test_question
+			WHERE test_fi = %s
+			ORDER BY sequence
+		";
+		
+		$questRes = $ilDB->queryF($query, array('integer'), array($this->getTestId()));
+		
+		$row = $ilDB->fetchAssoc($questRes);
+		$questCount = $row['cnt'];
+		
+		if( $this->getShuffleQuestions() )
+		{
+			$query = "
+				SELECT tseq.*
+				FROM tst_active tac
+				INNER JOIN tst_sequence tseq
+					ON tseq.active_fi = tac.active_id
+				WHERE tac.test_fi = %s
+			";
+			
+			$partRes = $ilDB->queryF(
+				$query, array('integer'), array($this->getTestId())
+			);
+			
+			while($row = $ilDB->fetchAssoc($partRes))
+			{
+				$sequence = @unserialize($row['sequence']);
+				
+				if(!$sequence)
+				{
+					$sequence = array();
+				}
+				
+				$sequence = array_filter($sequence, function($value) use ($questCount) {
+					return $value <= $questCount;
+				});
+				
+				$num_seq = count($sequence);
+				if($questCount > $num_seq)
+				{
+					$diff = $questCount - $num_seq;
+					for($i = 1; $i <= $diff; $i++)
+					{
+						$sequence[$num_seq + $i - 1] = $num_seq + $i;
+					}
+				}
+				
+				$new_sequence = serialize($sequence);
+				
+				$ilDB->update('tst_sequence', array(
+					'sequence' => array('clob', $new_sequence)
+				), array(
+					'active_fi' => array('integer', $row['active_fi']),
+					'pass'      => array('integer', $row['pass'])
+				));
+			}
+		}
+		else
+		{
+			$new_sequence = serialize($questCount > 0 ? range(1, $questCount) : array());
+			
+			$query = "
+				SELECT tseq.*
+				FROM tst_active tac
+				INNER JOIN tst_sequence tseq
+					ON tseq.active_fi = tac.active_id
+				WHERE tac.test_fi = %s
+			";			
+			
+			$part_rest = $ilDB->queryF(
+				$query, array('integer'), array($this->getTestId())
+			);
+			
+			while($row = $ilDB->fetchAssoc($part_rest))
+			{
+				$ilDB->update('tst_sequence', array(
+					'sequence' => array('clob', $new_sequence)
+				), array(
+					'active_fi' => array('integer', $row['active_fi']),
+					'pass'      => array('integer', $row['pass'])
+				));
+			}
+		}
 	}
 
 	// auding-patch: begin

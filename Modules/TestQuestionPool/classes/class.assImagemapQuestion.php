@@ -316,7 +316,7 @@ class assImagemapQuestion extends assQuestion implements ilObjQuestionScoringAdj
 		//auding-patch: start
 		$clone->duplicateAudingFile($sourceQuestionId);
 		//auding-patch: end
-		return $clone->id;
+
 		return $clone->id;
 	}
 

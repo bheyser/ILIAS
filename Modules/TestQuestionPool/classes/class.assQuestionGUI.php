@@ -74,7 +74,6 @@ abstract class assQuestionGUI
 	 */
 	private $presentationContext = null;
 
-	// TODO: Merge
 	const RENDER_PURPOSE_PLAYBACK = 'renderPurposePlayback';
 	const RENDER_PURPOSE_DEMOPLAY = 'renderPurposeDemoplay';
 	const RENDER_PURPOSE_PREVIEW = 'renderPurposePreview';
@@ -84,7 +83,6 @@ abstract class assQuestionGUI
 	/**
 	 * @var string
 	 */
-	// TODO: Merge
 	private $renderPurpose = self::RENDER_PURPOSE_PLAYBACK;
 
 	const EDIT_CONTEXT_AUTHORING = 'authoring';

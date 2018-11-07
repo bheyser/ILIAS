@@ -233,7 +233,8 @@ class assLongMenu extends assQuestion implements ilObjQuestionScoringAdjustable
 		}
 		return true;
 	}
-	
+	// uni-goettingen-patch: end	
+
 	private function correctAnswerDoesNotExistInAnswerOptions($answers, $answer_options)
 	{
 		foreach($answers[0] as $key => $answer)
@@ -365,7 +366,7 @@ class assLongMenu extends assQuestion implements ilObjQuestionScoringAdjustable
 		foreach( $files as $file)
 		{
 			$gap					= str_replace('.txt', '', basename($file));
-			$answers[(int) $gap] 	= explode('\n', file_get_contents($file));
+			$answers[(int) $gap] 	= explode("\n", file_get_contents($file));
 		}
 		$this->setAnswers($answers);
 		return $answers;

@@ -201,6 +201,7 @@ class assLongMenuGUI extends assQuestionGUI implements ilGuiQuestionScoringAdjus
 		$identical_scoring->setInfo( $this->lng->txt( 'identical_scoring_desc' ) );
 		$identical_scoring->setRequired( FALSE );
 		$form->addItem( $identical_scoring );
+		// uni-goettingen-patch: end
 		
 		$hidden_text = new ilHiddenInputGUI('hidden_text_files');
 		$form->addItem($hidden_text);

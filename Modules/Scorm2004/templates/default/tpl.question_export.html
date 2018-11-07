@@ -25,16 +25,18 @@
 <!-- BEGIN multiplechoice -->
 <div id="container{VAL_ID}" class="ilc_question_MultipleChoice">
 	<div class="ilc_qtitle_Title question id@id">qtitle</div>
-	<!-- uni-goettingen-patch: begin -->
 	<!-- BEGIN selection_limit_hint -->
 	<p class="ilAdditionalAssQuestionInstruction">{SELECTION_LIMIT_HINT}</p>
 	<!-- END selection_limit_hint -->
-	<!-- uni-goettingen-patch: end -->
-	<span class="ilc_answers answers">
-		<!-- uni-goettingen-patch: begin -->
-		<div class="ilc_qanswer_Answer"><input type="checkbox" class="order@value order@data-ans-id ilAssMultipleChoiceOption" value="(ans-id)" name="answers{VAL_ID}" data-qst-id="{VAL_ID}" data-ans-id="{VAL_ID}" /> <span class="answertext" /></span></div>
-		<!-- uni-goettingen-patch: end -->
-		</span>	
+		<!-- uni-goettingen-merge: begin -->
+	<div class="ilc_answers answers answer-table">
+		<div class="ilc_qanswer_Answer">
+			<div><input type="checkbox" class="html_id@id order@value order@data-ans-id ilAssMultipleChoiceOption" value="(ans-id)" name="answers{VAL_ID}" data-qst-id="{VAL_ID}" data-ans-id="{VAL_ID}" /></div>
+			<div><label class="answertext html_id@for"></label></div>
+		</div>
+		<div class="clearfix"></div>
+	</div>
+	<!-- uni-goettingen-merge: end -->
 	<div id="feedback{VAL_ID}" style="display:none"></div>
 	<input type="button" class="ilc_qsubmit_Submit" id="button{VAL_ID}" {VAL_NO_DISPLAY} onclick="ilias.questions.checkAnswers({VAL_ID})" value="TXT_SUBMIT_ANSWERS" />
 </div>

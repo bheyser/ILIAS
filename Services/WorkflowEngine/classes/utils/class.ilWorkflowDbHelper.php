@@ -59,8 +59,8 @@ class ilWorkflowDbHelper
 				array(
 					'workflow_type'		=> array ('text', $wf_data['type'] ),
 					'workflow_content'	=> array ('text', $wf_data['content']),
-					'workflow_class'	=> array ('test', $workflow->getWorkflowClass()),
-					'workflow_location' => array ('test', $workflow->getWorkflowLocation()),
+					'workflow_class'		=> array ('text', $workflow->getWorkflowClass()),
+					'workflow_location' 	=> array ('text', $workflow->getWorkflowLocation()),
 					'subject_type'		=> array ('text', $wf_subject['type']),
 					'subject_id'		=> array ('integer', $wf_subject['identifier']),
 					'context_type'		=> array ('text', $wf_context['type']),
@@ -80,8 +80,8 @@ class ilWorkflowDbHelper
 				array(
 					'workflow_id'		=> array ('integer', $wf_id),
 					'workflow_type'		=> array ('text', $wf_data['type'] ),
-					'workflow_class'	=> array ('test', $workflow->getWorkflowClass()),
-					'workflow_location' => array ('test', $workflow->getWorkflowLocation()),
+					'workflow_class'		=> array ('text', $workflow->getWorkflowClass()),
+					'workflow_location'	=> array ('text', $workflow->getWorkflowLocation()),
 					'workflow_content'	=> array ('text', $wf_data['content']),
 					'subject_type'		=> array ('text', $wf_subject['type']),
 					'subject_id'		=> array ('integer', $wf_subject['identifier']),
@@ -377,10 +377,17 @@ class ilWorkflowDbHelper
 		require_once './Services/WorkflowEngine/classes/workflows/class.ilBaseWorkflow.php';
 		$path = rtrim($workflow['workflow_location'], '/') . '/' . $workflow['workflow_class'];
 
+		if(file_exists($path) && $path != '/')
+		{
 		require_once $path;
 
 		$instance = unserialize($workflow['workflow_instance']);
 
+		}
+		else
+		{
+			$instance = null;
+		}
 		return $instance;
 	}
 
@@ -443,15 +450,8 @@ class ilWorkflowDbHelper
 		type = '".$component."' AND content = '".$event."' AND subject_type = '".$params->getSubjectType()."'
 		AND context_type = '".$params->getContextType()."' ";
 
-		if($params->getSubjectId() != 0)
-		{
-			$query .= "AND subject_id = '".$params->getSubjectId()."' ";
-		}
-
-		if($params->getContextId() != 0)
-		{
-			$query .= "AND context_id = '".$params->getContextId()."'";
-		}
+		$query .= "AND ( subject_id = '".$params->getSubjectId()."' OR subject_id ='0' ) ";
+		$query .= "AND ( context_id = '".$params->getContextId()."' OR context_id ='0' ) ";
 
 		global $DIC;
 		/** @var ilDB $ilDB */
@@ -494,7 +494,7 @@ class ilWorkflowDbHelper
 
 		$result = $ilDB->query(
 			'SELECT event_id FROM wfe_startup_events 
-				  WHERE workflow_id = ' . $ilDB->quote($event_id, 'text')
+				  WHERE workflow_id = ' . $ilDB->quote($event_id, 'integer')
 		);
 
 		$events = array();
@@ -506,7 +506,7 @@ class ilWorkflowDbHelper
 		$ilDB->manipulate(
 			'DELETE
 				FROM wfe_startup_events
-				WHERE workflow_id = ' . $ilDB->quote($event_id, 'text')
+				WHERE workflow_id = ' . $ilDB->quote($event_id, 'integer')
 		);
 
 		if(count($events))

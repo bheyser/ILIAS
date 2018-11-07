@@ -37,6 +37,14 @@ final class XSendfile implements ilFileDeliveryType {
 
 
 	/**
+	 * @inheritDoc
+	 */
+	public function doesFileExists($path_to_file) {
+		return is_readable($path_to_file);
+	}
+
+
+	/**
 	 * @inheritdoc
 	 */
 	public function prepare($path_to_file) {

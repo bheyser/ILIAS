@@ -742,6 +742,9 @@ class ilSystemStyleOverviewGUI
 
 				$container = ilSystemStyleSkinContainer::generateFromId($parent_skin_id);
 
+                if(array_key_exists($_POST['sub_style_id'],$container->getSkin()->getSubstylesOfStyle($parent_style_id))){
+                    throw new ilSystemStyleException(ilSystemStyleException::SUBSTYLE_ASSIGNMENT_EXISTS,$_POST['sub_style_id']);
+                }
 				$sub_style_id = $_POST['sub_style_id'];
 
 				$style = new ilSkinStyleXML($_POST['sub_style_id'], $_POST['sub_style_name']);

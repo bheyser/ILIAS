@@ -379,11 +379,18 @@ class ilObjectServiceSettingsGUI
 		// extended user access
 		if(in_array(self::ORGU_POSITION_ACCESS, $services))
 		{
+			$position_settings = ilOrgUnitGlobalSettings::getInstance()->getObjectPositionSettingsByType(
+				ilObject::_lookupType($a_obj_id)
+			);
+			
+			if( $position_settings->isActive() && $position_settings->isChangeableForObject() )
+			{
 			$orgu_object_settings = new ilOrgUnitObjectPositionSetting($a_obj_id);
 			$orgu_object_settings->setActive(
 				(int) $form->getInput(self::ORGU_POSITION_ACCESS)	
 			);
 			$orgu_object_settings->update();
+			}	
 		}
 
 		// skills

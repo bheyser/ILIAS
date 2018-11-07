@@ -727,6 +727,10 @@ class assOrderingQuestion extends assQuestion implements ilObjQuestionScoringAdj
 		}
 
 		$solutionValuePairs = $this->getSolutionValues($active_id, $pass, $authorizedSolution);
+		if( !count($solutionValuePairs) )
+		{
+			return 0;
+		}
 		$indexedSolutionValues = $this->fetchIndexedValuesFromValuePairs($solutionValuePairs);
 		$solutionOrderingElementList = $this->getSolutionOrderingElementList($indexedSolutionValues);
 
@@ -745,24 +749,6 @@ class assOrderingQuestion extends assQuestion implements ilObjQuestionScoringAdj
 		);
 
 		return $this->calculateReachedPointsForSolution($solutionOrderingElementList);
-	}
-
-	protected function calculateReachedPointsForSolution(ilAssOrderingElementList $solutionOrderingElementList)
-	{
-		$reachedPoints = $this->getPoints();
-
-		foreach($this->getOrderingElementList() as $correctElement)
-		{
-			$userElement = $solutionOrderingElementList->getElementByPosition( $correctElement->getPosition() );
-
-			if( !$correctElement->isSameElement($userElement) )
-			{
-				$reachedPoints = 0;
-				break;
-			}
-		}
-
-		return $reachedPoints;
 	}
 
 	/**
@@ -1471,56 +1457,29 @@ class assOrderingQuestion extends assQuestion implements ilObjQuestionScoringAdj
 	{
 		return $this->fetchSolutionSubmit($_POST);
 	}
-// uni-goettingen-patch: begin
 
-	/***
-	 * @param array $new_hierarchy
-	 * @param bool 	$with_random_id
+	/**
+	 * @param $user_order
+	 * @param $nested_solution
+	 * @return int
 	 */
-	/*
-		public function setLeveledOrdering($new_hierarchy, $with_random_id = false)
+	protected function calculateReachedPointsForSolution(ilAssOrderingElementList $solutionOrderingElementList)
 	{
-			if($with_random_id == true)
+		$reachedPoints = $this->getPoints();
+
+		foreach($this->getOrderingElementList() as $correctElement)
 		{
-				//for test output
-				if(is_array($new_hierarchy))
-				{
-					foreach($new_hierarchy as $id)
-					{
-						$ordering_depth                  = 0;
-						$this->leveled_ordering[$id->id] = $ordering_depth;
+			$userElement = $solutionOrderingElementList->getElementByPosition( $correctElement->getPosition() );
 
-						if(is_array($id->children))
+			if( !$correctElement->isSameElement($userElement) )
 			{
-							foreach($id->children as $child)
-							{
-								$this->getDepthRecursive($child, $ordering_depth, true);
+				$reachedPoints = 0;
+				break;
 			}
 		}
-					}
-				}
-			}
-			else
-			{
-				if(is_array($new_hierarchy))
-				{
-					foreach($new_hierarchy as $id)
-					{
-						$ordering_depth           = 0;
-						$this->leveled_ordering[] = $ordering_depth;
 
-						if(is_array($id->children))
-						{
-							foreach($id->children as $child)
-							{
-								$this->getDepthRecursive($child, $ordering_depth, $with_random_id);
+		return $reachedPoints;
 	}
-						}
-					}
-				}
-			}
-		}
-	*/ // uni-goettingen-patch: end
 
 	/***
 	 * @param object 	$child

@@ -49,7 +49,14 @@ class ilPCIIMTriggerEditorGUI extends ilPCImageMapEditorGUI
 		$this->ctrl = $DIC->ctrl();
 		$tpl = $DIC["tpl"];
 		
+		include_once("./Services/jQuery/classes/class.iljQueryUtil.php");
+		iljQueryUtil::initjQueryUI();
 		$tpl->addJavascript("./Services/COPage/js/ilCOPagePres.js");
+		$tpl->addJavascript("./Services/COPage/js/ilCOPagePCInteractiveImage.js");
+
+		include_once("./Services/Accordion/classes/class.ilAccordionGUI.php");
+		ilAccordionGUI::addJavaScript();
+		ilAccordionGUI::addCss();
 				
 		parent::__construct($a_content_obj, $a_page);
 	}
@@ -85,17 +92,7 @@ class ilPCIIMTriggerEditorGUI extends ilPCImageMapEditorGUI
 		$ilToolbar = $this->toolbar;
 		$lng = $this->lng;
 		$ilCtrl = $this->ctrl;
-		
-		include_once("./Services/jQuery/classes/class.iljQueryUtil.php");
-		iljQueryUtil::initjQueryUI();
-		
-		$tpl->addJavascript("./Services/COPage/js/ilCOPagePres.js");
-		$tpl->addJavascript("./Services/COPage/js/ilCOPagePCInteractiveImage.js");
-		
-		include_once("./Services/Accordion/classes/class.ilAccordionGUI.php");
-		ilAccordionGUI::addJavaScript();
-		ilAccordionGUI::addCss();
-		
+	
 		$ilToolbar->addText($lng->txt("cont_drag_element_click_save"));
 		$ilToolbar->setId("drag_toolbar");
 		$ilToolbar->setHidden(true);

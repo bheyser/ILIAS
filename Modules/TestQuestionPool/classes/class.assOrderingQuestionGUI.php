@@ -1,5 +1,4 @@
 <?php
-// TODO: Merge
 
 /* Copyright (c) 1998-2013 ILIAS open source, Extended GPL, see docs/LICENSE */
 
@@ -248,7 +247,6 @@ class assOrderingQuestionGUI extends assQuestionGUI implements ilGuiQuestionScor
 				}
 			}
 			
-			// TODO: Merge
 			if( $currentElementList->elementExistByRandomIdentifier($submittedElement->getRandomIdentifier()) )
 			{
 				$storedElement = $currentElementList->getElementByRandomIdentifier(

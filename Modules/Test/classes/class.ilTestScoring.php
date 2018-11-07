@@ -133,6 +133,7 @@ class ilTestScoring
 			}
 			else
 			{
+				assQuestion::setForcePassResultUpdateEnabled(true);
 				assQuestion::_setReachedPoints( $active_id,
 												$questiondata['id'],
 												$actual_reached,
@@ -141,6 +142,7 @@ class ilTestScoring
 												false,
 												true
 				);
+				assQuestion::setForcePassResultUpdateEnabled(false);
 			}
 		}
 	}

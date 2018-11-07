@@ -85,6 +85,10 @@ class ilAuthProviderFactory
 				include_once './Services/AuthApache/classes/class.ilAuthProviderApache.php';
 				return new ilAuthProviderApache($credentials);
 				
+			case AUTH_CAS:
+				$this->getLogger()->debug('Using CAS authentication');
+				include_once './Services/CAS/classes/class.ilAuthProviderCAS.php';
+				return new ilAuthProviderCAS($credentials);
 			case AUTH_RADIUS:
 				$this->getLogger()->debug('Using radius authentication.');
 				include_once './Services/Radius/classes/class.ilAuthProviderRadius.php';

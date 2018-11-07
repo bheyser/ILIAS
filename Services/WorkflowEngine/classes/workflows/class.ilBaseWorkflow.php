@@ -650,6 +650,31 @@ abstract class ilBaseWorkflow implements ilWorkflow
 	}
 
 	/**
+	 * Sets the given instance var with the given content.
+	 * *only during startup to write event params*
+	 * @param string $role    Role of the variable
+	 * @param mixed  $value
+	 */
+	public function setInstanceVarByRole($role, $value)
+	{
+		foreach($this->instance_vars as &$instance_var)
+		{
+			if($instance_var['role'] == $role)
+			{
+				if($instance_var['reference'] === true)
+				{
+					$this->setInstanceVarById($instance_var['target'], $value);
+				}
+				else
+				{
+					$instance_var['value'] = $value;
+					return;
+				}
+			}
+		}
+	}
+
+	/**
 	 * Returns an array with all set instance variables.
 	 * 
 	 * @return array Associative array of mixed.

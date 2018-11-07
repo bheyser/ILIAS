@@ -1,6 +1,7 @@
 <?php
 /* Copyright (c) 1998-2010 ILIAS open source, Extended GPL, see docs/LICENSE */
 
+use ILIAS\Filesystem\Security\Sanitizing\FilenameSanitizer;
 require_once "./Services/Object/classes/class.ilObjectGUI.php";
 require_once "./Services/Container/classes/class.ilContainer.php";
 include_once './Services/PersonalDesktop/interfaces/interface.ilDesktopItemHandling.php';
@@ -696,8 +697,10 @@ class ilContainerGUI extends ilObjectGUI implements ilDesktopItemHandling
 						}
 						else
 						{
+							$url =  $this->ctrl->getLinkTargetByClass(array("ilrepositorygui", "ilobjfoldergui", "ilbackgroundtaskhub"), "", "", true, false);
 							$GLOBALS['tpl']->addJavaScript("Services/BackgroundTask/js/BgTask.js");		
 							$GLOBALS['tpl']->addOnLoadCode("il.BgTask.initMultiForm('ilFolderDownloadBackgroundTaskHandler');");
+							$GLOBALS['tpl']->addOnLoadCode('il.BgTask.setAjax("'.$url.'");');
 							
 							include_once "Services/UIComponent/Button/classes/class.ilSubmitButton.php";
 							$button = ilSubmitButton::getInstance();
@@ -785,6 +788,12 @@ class ilContainerGUI extends ilObjectGUI implements ilDesktopItemHandling
 			}
 			else if ($this->isMultiDownloadEnabled())
 			{
+				// bugfix mantis 0021272
+				$children_of_type_file = $this->getAllNestedFiles($_GET['ref_id']);
+				// Check if there are any files and therefore downloadable objects.
+				// In case that there are no downloadable objects the download button mustn't be displayed (see mantis 0021272)
+				if(count($children_of_type_file) != 0)
+				{
 				// #11843
 				$GLOBALS['tpl']->setPageFormAction($this->ctrl->getFormAction($this));						
 
@@ -804,7 +813,73 @@ class ilContainerGUI extends ilObjectGUI implements ilDesktopItemHandling
 					$this->object->gotItems() ? true : false
 				);
 			}		
+				else
+				{
+					ilUtil::sendInfo($this->lng->txt('msg_no_downloadable_objects'), true);
 		}
+	}
+		}
+	}
+
+	/**
+	 * Get all files that are nested in the category whose ref_id is passed to this function or are nested in its subcategories
+	 * Required for fixing mantis bug 0021272
+	 * @param   int     $ref_id
+	 * @return  array
+	 */
+	private function getAllNestedFiles($ref_id) {
+		$files = array();
+		// get sibling files
+		$sibling_files = $this->tree->getChildsByType($ref_id, "file");
+		// add sibling files to file array
+		foreach ($sibling_files as $sibling_course)
+		{
+			array_push($files, $sibling_course);
+		}
+		// get child files (nested inside directories)
+		$categories = $this->getAllNestedCategories($ref_id);
+		foreach ($categories as $category)
+		{
+			$category_ref_id = $category["ref_id"];
+			$nested_files = $this->tree->getChildsByType($category_ref_id, "file");
+			// add nested files to file array
+			foreach ($nested_files as $nested_course)
+			{
+				array_push($files, $nested_course);
+			}
+		}
+		return $files;
+	}
+
+	/*
+	 * Get all categories that are nested in the category whose ref_id is passed to this function or are nested in its subcategories
+	 * Required for fixing mantis bug 0021272
+	 * @param   int     $ref_id
+	 * @return  array
+	 */
+	function getAllNestedCategories($ref_id)
+	{
+		$categories = $this->tree->getChildsByType($ref_id, "cat");
+		// outsourcing to a variable to enable increasing the value when elements are added during iteration
+		$num_categories = count($categories);
+		// using a for loop instead of a foreach loop to enable adding elements during iteration by increasing the comparison value (num_categories)
+		for ($i = 0; $i < $num_categories; $i ++)
+		{
+			$category_ref_id = $categories[$i]["ref_id"];
+			// determining if there are categories directly nested within the current category
+			$new_categories = $this->tree->getChildsByType($category_ref_id, "cat");
+			if ($new_categories != NULL)
+			{
+				foreach ($new_categories as $new_category)
+				{
+					// adding the newly found categories to the end of the array so that they may be searched for directly nested categories too
+					array_push($categories, $new_category);
+					// recounting the amount of elements in the category array so that the iteration can continue despite elements being added
+					$num_categories = count($categories);
+				}
+			}
+		}
+		return $categories;
 	}
 
 	function __showTimingsButton(&$tpl)

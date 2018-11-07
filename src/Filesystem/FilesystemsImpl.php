@@ -12,8 +12,12 @@ namespace ILIAS\Filesystem;
  * @version 1.0.0
  *
  */
-class FilesystemsImpl implements Filesystems {
+final class FilesystemsImpl implements Filesystems {
 
+	/**
+	 * @var Filesystem
+	 */
+	private $libs;
 	/**
 	 * @var Filesystem $storage
 	 */
@@ -39,12 +43,14 @@ class FilesystemsImpl implements Filesystems {
 	 * @param Filesystem $web
 	 * @param Filesystem $temp
 	 * @param Filesystem $customizing
+	 * @param FileSystem $libs
 	 */
-	public function __construct(Filesystem $storage, Filesystem $web, Filesystem $temp, Filesystem $customizing) {
+	public function __construct(Filesystem $storage, Filesystem $web, Filesystem $temp, Filesystem $customizing, FileSystem $libs) {
 		$this->storage = $storage;
 		$this->web = $web;
 		$this->temp = $temp;
 		$this->customizing = $customizing;
+		$this->libs = $libs;
 	}
 
 
@@ -77,5 +83,13 @@ class FilesystemsImpl implements Filesystems {
 	 */
 	public function customizing() {
 		return $this->customizing;
+	}
+
+
+	/**
+	 * @inheritDoc
+	 */
+	public function libs() {
+		return $this->libs;
 	}
 }

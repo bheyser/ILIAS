@@ -45,7 +45,6 @@ class ilFolderImporter extends ilXmlImporter
 		}
 
 		include_once './Modules/Folder/classes/class.ilFolderXmlParser.php';
-		#$GLOBALS['ilLog']->write($a_xml);
 
 		try 
 		{

@@ -103,10 +103,8 @@ class ilAssQuestionPreviewGUI
 		$this->questionGUI->setQuestionTabs();
 		$this->questionGUI->outAdditionalOutput();
 	
-		// uni-goettingen-patch: begin
 		$this->questionGUI->populateJavascriptFilesRequiredForWorkForm($this->tpl);
-		// uni-goettingen-patch: end
-		$this->questionOBJ->setOutputType(OUTPUT_JAVASCRIPT);
+		$this->questionOBJ->setOutputType(OUTPUT_JAVASCRIPT); // TODO: remove including depending stuff
 
 		$this->questionGUI->setTargetGui($this);
 		$this->questionGUI->setQuestionActionCmd(self::CMD_HANDLE_QUESTION_ACTION);

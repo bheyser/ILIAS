@@ -26,6 +26,11 @@ require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionHintTracking.p
 class ilTestEvaluationGUI extends ilTestServiceGUI
 {
 	/**
+	 * @var ilTestProcessLockerFactory
+	 */
+	protected $processLockerFactory;
+	
+	/**
 	 * ilTestEvaluationGUI constructor
 	 *
 	 * The constructor takes possible arguments an creates an instance of the 
@@ -36,6 +41,12 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 	public function __construct(ilObjTest $a_object)
 	{
 		parent::__construct($a_object);
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		
+		require_once 'Modules/Test/classes/class.ilTestProcessLockerFactory.php';
+		$this->processLockerFactory = new ilTestProcessLockerFactory(
+			new ilSetting('assessment'), $DIC->database()
+		);
 	}
 
 	/**
@@ -642,6 +653,7 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 			$average_passed_max = $total_passed ? $total_passed_max / $total_passed : 0;
 			$average_passed_time = $total_passed ? $total_passed_time / $total_passed : 0;
 			// uni-goettingen-patch: begin
+			// TODO: Plugin
 			if (count($foundParticipants)>0) {
 				$total_passed .= " (".round($total_passed/count($foundParticipants) * 100.0,2). "%)";
 			}
@@ -772,6 +784,7 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 				$this->ctrl->redirect($this, "exportCertificate");
 				break;
 			// uni-goettingen-patch: begin
+			// TODO: Plugin
 			case "flexnowgraded":
 				require_once './Modules/Test/classes/class.ilTestExport.php';
 				$exportObj = new ilTestExport($this->object, "results");
@@ -1047,6 +1060,7 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 		}
 	}
 	// uni-goettingen-patch: begin
+	// TODO: Plugin
 	function addSummary($data)
 	{
 		global $ilUser;
@@ -1134,7 +1148,7 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 		$testPassesSelector->setActiveId($testSession->getActiveId());
 		$testPassesSelector->setLastFinishedPass($testSession->getLastFinishedPass());
 
-		$passOverViewTableGUI = $this->buildPassOverviewTableGUI($this);
+		$passOverViewTableGUI = $this->buildPassOverviewTableGUI($this, 'outParticipantsResultsOverview');
 		$passOverViewTableGUI->setActiveId($testSession->getActiveId());
 		$passOverViewTableGUI->setResultPresentationEnabled(true);
 		$passOverViewTableGUI->setPassDetailsCommand('outParticipantsPassDetails');
@@ -1482,7 +1496,7 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 		$testPassesSelector->setActiveId($testSession->getActiveId());
 		$testPassesSelector->setLastFinishedPass($testSession->getLastFinishedPass());
 
-		$passOverViewTableGUI = $this->buildPassOverviewTableGUI($this);
+		$passOverViewTableGUI = $this->buildPassOverviewTableGUI($this, 'outUserResultsOverview');
 		$passOverViewTableGUI->setActiveId($testSession->getActiveId());
 		$passOverViewTableGUI->setResultPresentationEnabled(true);
 		if($passDetailsEnabled)
@@ -1600,7 +1614,7 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 			$testPassesSelector->setActiveId($testSession->getActiveId());
 			$testPassesSelector->setLastFinishedPass($testSession->getLastFinishedPass());
 			
-			$passOverViewTableGUI = $this->buildPassOverviewTableGUI($this);
+			$passOverViewTableGUI = $this->buildPassOverviewTableGUI($this, 'outUserListOfAnswerPasses');
 			$passOverViewTableGUI->setActiveId($testSession->getActiveId());
 			$passOverViewTableGUI->setResultPresentationEnabled(false);
 			$passOverViewTableGUI->setPassDetailsCommand('outUserListOfAnswerPasses');
@@ -2267,10 +2281,14 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 
 	protected function finishTestPass($active_id, $obj_id)
 	{
+		$this->processLockerFactory->setActiveId($active_id);
+		$processLocker = $this->processLockerFactory->getLocker();
 		$test_pass_finisher = new ilTestPassFinishTasks($active_id, $obj_id);
+		$test_pass_finisher->performFinishTasks($processLocker);
+		// uni-goettingen-merge: begin
 		$test_pass_finisher->performFinishTasksBeforeArchiving();
-		//Todo Archiving?
 		$test_pass_finisher->performFinishTasksAfterArchiving();
+		// uni-goettingen-merge: end
 	}
 	
 	protected function redirectBackToParticipantsScreen()

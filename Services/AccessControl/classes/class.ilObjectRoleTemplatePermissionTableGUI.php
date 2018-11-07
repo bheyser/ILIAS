@@ -23,6 +23,7 @@ class ilObjectRoleTemplatePermissionTableGUI extends ilTable2GUI
 	private $tpl_type = '';
 	
 	private $show_admin_permissions = false;
+	private $show_change_existing_objects = true;
 	
 	private static $template_permissions = NULL;
 	
@@ -67,6 +68,22 @@ class ilObjectRoleTemplatePermissionTableGUI extends ilTable2GUI
 		
 	}
 	
+	/**
+	 * @param bool $a_status
+	 */
+	public function setShowChangeExistingObjects($a_status)
+	{
+		$this->show_change_existing_objects = $a_status;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function getShowChangeExistingObjects()
+	{
+		return $this->show_change_existing_objects;
+	}
+
 	/**
 	 * 
 	 * @return 
@@ -293,7 +310,10 @@ class ilObjectRoleTemplatePermissionTableGUI extends ilTable2GUI
 			$rows[] = $perm;
 		}
 
-		if(!$this->show_admin_permissions)
+		if(
+			!$this->show_admin_permissions &&
+			$this->getShowChangeExistingObjects()
+		)
 		{
 			$rows[] = array('show_ce' => 1);
 		}
