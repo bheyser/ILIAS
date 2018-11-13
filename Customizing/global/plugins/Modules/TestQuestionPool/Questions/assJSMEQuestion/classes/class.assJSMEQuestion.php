@@ -7,18 +7,21 @@ include_once "./Modules/Test/classes/inc.AssessmentConstants.php";
  * Class for JSMEQuestion Question
  *
  * @author Yves Annanias <yves.annanias@llz.uni-halle.de>
+ * @author Christoph Jobst <cjobst@wifa.uni-leipzig.de>
  * @version	$Id:  $
  * @ingroup ModulesTestQuestionPool
  */
 class assJSMEQuestion extends assQuestion
 {
-	private $plugin;	
+	var $plugin = null;
+	
 	// options for jsme-applet
-	var $optionString = "";
-	// for manuel correction
+	var $optionString = "nosearchinchiKey nopaste ";
 	var $sampleSolution = "";
-	// for automatic correction we can use conanical smiles
+	// for manual correction
 	var $smilesSolution = "";
+	//SVG
+	var $svg = "";
 	
 	/**
 	* assJSMEQuestion constructor
@@ -41,18 +44,23 @@ class assJSMEQuestion extends assQuestion
 		$question = ""	
 	)
 	{
-		parent::__construct($title, $comment, $author, $owner, $question);		
-		$this->plugin = null;
+		// needed for excel export
+		$this->getPlugin()->loadLanguageModule();
+
+		parent::__construct($title, $comment, $author, $owner, $question);
 	}
 	
 	/**
+	 * Get the plugin object
+	 *
 	 * @return object The plugin object
 	 */
 	public function getPlugin() {
 		if ($this->plugin == null)
 		{
 			include_once "./Services/Component/classes/class.ilPlugin.php";
-			$this->plugin = ilPlugin::getPluginObject(IL_COMP_MODULE, "TestQuestionPool", "qst", "assJSMEQuestion");			
+			$this->plugin = ilPlugin::getPluginObject(IL_COMP_MODULE, "TestQuestionPool", "qst", "assJSMEQuestion");
+				
 		}
 		return $this->plugin;
 	}
@@ -65,7 +73,8 @@ class assJSMEQuestion extends assQuestion
 	*/
 	function isComplete()
 	{
-		if ( (strlen($this->getTitle())) and ($this->author) and ($this->question) and ($this->getMaximumPoints() >= 0) )		
+		//Add SMILES-String as requirement
+		if ( (strlen($this->getTitle())) and ($this->author) and ($this->question) and ($this->getMaximumPoints() > 0) )		
 		{
 			return true;
 		}
@@ -83,8 +92,12 @@ class assJSMEQuestion extends assQuestion
 		$this->sampleSolution = $solution;
 	}
 
-	function setSmilesSolution($smiles){
-		$this->smilesSolution = $smiles;
+	function setSmilesSolution($smilesSolution){
+		$this->smilesSolution = $smilesSolution;
+	}
+
+	function setSvg($svg){
+		$this->svg = $svg;
 	}
 	
 	function getOptionString()
@@ -95,122 +108,121 @@ class assJSMEQuestion extends assQuestion
 	function getSampleSolution(){
 		return $this->sampleSolution;
 	}
-	
+
 	function getSmilesSolution(){
 		return $this->smilesSolution;
 	}
 
-	/**
-	* Load a assJSMEQuestion object from a database
-	*
-	* @param object $db A pear DB object
-	* @param integer $question_id A unique key which defines the TemplateQuestion test in the database
-	* @access public
-	*/
-	function loadFromDb($question_id)
-	{
-		global $ilDB;					
-
-		$result = $ilDB->queryF("SELECT qpl_questions.* FROM qpl_questions WHERE question_id = %s",
-			array('integer'),
-			array($question_id)
-		);
-		if($ilDB->numRows($result) == 1)
-		{
-			$data = $ilDB->fetchAssoc($result);
-			$this->setId($question_id);
-			$this->setObjId($data["obj_fi"]);
-			$this->setTitle($data["title"]);
-			$this->setComment($data["description"]);
-			//$this->setSuggestedSolution($data["solution_hint"]);
-			$this->setOriginalId($data["original_id"]);			
-			$this->setAuthor($data["author"]);
-			$this->setOwner($data["owner"]);
-			$this->setPoints($data["points"]);			
-
-			include_once("./Services/RTE/classes/class.ilRTE.php");
-			$this->setQuestion(ilRTE::_replaceMediaObjectImageSrc($data["question_text"], 1));
-			$this->setEstimatedWorkingTime(substr($data["working_time"], 0, 2), substr($data["working_time"], 3, 2), substr($data["working_time"], 6, 2));			
-		}
-		
-		$resultCheck= $ilDB->queryF("SELECT option_string, solution, smiles FROM il_qpl_qst_jsme_data WHERE question_fi = %s", array('integer'), array($question_id));
-		if($ilDB->numRows($resultCheck) == 1)
-		{
-			$data = $ilDB->fetchAssoc($resultCheck);
-			$this->setOptionString($data["option_string"]);
-			$this->setSampleSolution($data["solution"]);
-			$this->setSmilesSolution($data["smiles"]);
-		}
-					
-		parent::loadFromDb($question_id);
-	}	
+	function getSvg(){
+		return $this->svg;
+	}
 
 	/**
-	* Saves a assJSMEQuestion object to a database
-	*
-	* @access public
-	*/
+	 * Saves a question object to a database
+	 * 
+	 * @param	string		original id
+	 * @access 	public
+	 * @see assQuestion::saveToDb()
+	 */
 	function saveToDb($original_id = "")
 	{
 		global $ilDB, $ilLog;
 		$this->saveQuestionDataToDb($original_id);			
 		
+		//Maybe use $ilDB->replace() instead?
 		$affectedRows = $ilDB->manipulateF("DELETE FROM il_qpl_qst_jsme_data WHERE question_fi = %s", 
 			array("integer"),
 			array($this->getId())
 		);
-		$affectedRows = $ilDB->manipulateF("INSERT INTO il_qpl_qst_jsme_data (question_fi, option_string, solution, smiles) VALUES (%s, %s, %s, %s)", 
-				array("integer", "text", "text", "text"),
+		$affectedRows = $ilDB->manipulateF("INSERT INTO il_qpl_qst_jsme_data (question_fi, option_string, solution, smiles, svg) VALUES (%s, %s, %s, %s, %s)", 
+				array("integer", "text", "text", "text", "clob"),
 				array(
 					$this->getId(),
 					$this->optionString,
 					$this->sampleSolution,
-					$this->smilesSolution
+					$this->smilesSolution,
+					$this->svg
 				)
 		);
 			
 		parent::saveToDb($original_id);
 	}
 
+	
 	/**
-	* Returns the maximum points, a learner can reach answering the question
-	* @access public
-	* @see $points
+	* Load a assJSMEQuestion object from a database
+	*
+	* @param integer $question_id A unique key which defines the question in the database
+	* @see assQuestion::loadFromDb()
 	*/
-	function getMaximumPoints()
-	{		
-		return $this->points;
-	}
+	public function loadFromDb($question_id)
+	{
+		global $ilDB;					
+
+		$result = $ilDB->query("SELECT qpl_questions.* FROM qpl_questions WHERE question_id = "
+				. $ilDB->quote($question_id, 'integer'));
+
+		$data = $ilDB->fetchAssoc($result);
+		$this->setId($question_id);
+		$this->setTitle($data["title"]);
+		$this->setComment($data["description"]);
+		$this->setSuggestedSolution($data["solution_hint"]);
+		$this->setOriginalId($data["original_id"]);
+		$this->setObjId($data["obj_fi"]);
+		$this->setAuthor($data["author"]);
+		$this->setOwner($data["owner"]);
+		$this->setPoints($data["points"]);
+
+		include_once("./Services/RTE/classes/class.ilRTE.php");
+		$this->setQuestion(ilRTE::_replaceMediaObjectImageSrc($data["question_text"], 1));
+		$this->setEstimatedWorkingTime(substr($data["working_time"], 0, 2), substr($data["working_time"], 3, 2), substr($data["working_time"], 6, 2));
+		
+		$resultCheck= $ilDB->queryF("SELECT option_string, solution, smiles, svg FROM il_qpl_qst_jsme_data WHERE question_fi = %s", array('integer'), array($question_id));
+		if($ilDB->numRows($resultCheck) == 1)
+		{
+			$data = $ilDB->fetchAssoc($resultCheck);
+			$this->setOptionString($data["option_string"]);
+			$this->setSampleSolution($data["solution"]);
+			$this->setSmilesSolution($data["smiles"]);	
+			$this->setSvg($data["svg"]);
+		}
+		
+		try
+		{
+			$this->setAdditionalContentEditingMode($data['add_cont_edit_mode']);
+		}
+		catch(ilTestQuestionPoolException $e)
+		{
+		}
+		
+		parent::loadFromDb($question_id);
+	}	
 
 	/**
-	* Duplicates an assJSMEQuestion	
-	* @access public
-	*/
+	 * Duplicates a question
+	 * This is used for copying a question to a test
+	 *
+	 * @access public
+	 */
 	function duplicate($for_test = true, $title = "", $author = "", $owner = "", $testObjId = null)
 	{
-		if ($this->id <= 0)
+		if ($this->getId() <= 0)
 		{
 			// The question has not been saved. It cannot be duplicated
 			return;
 		}
-		// duplicate the question in database
-		$this_id = $this->getId();
-		
-		if( (int)$testObjId > 0 )
-		{
-			$thisObjId = $this->getObjId();
-		}
-		
-		$clone = $this;
-		include_once ("./Modules/TestQuestionPool/classes/class.assQuestion.php");
-		$original_id = assQuestion::_getOriginalId($this->id);
-		$clone->id = -1;
-		
-		if( (int)$testObjId > 0 )
+
+		// make a real clone to keep the object unchanged
+		$clone = clone $this;
+							
+		$original_id = assQuestion::_getOriginalId($this->getId());
+		$clone->setId(-1);
+
+		if( (int) $testObjId > 0 )
 		{
 			$clone->setObjId($testObjId);
 		}
-		
+
 		if ($title)
 		{
 			$clone->setTitle($title);
@@ -222,102 +234,131 @@ class assJSMEQuestion extends assQuestion
 		if ($owner)
 		{
 			$clone->setOwner($owner);
-		}
+		}		
+		
 		if ($for_test)
 		{
-			$clone->saveToDb($original_id);
+			$clone->saveToDb($original_id, false);
 		}
 		else
 		{
-			$clone->saveToDb();
-		}
+			$clone->saveToDb('', false);
+		}		
 
 		// copy question page content
-		$clone->copyPageOfQuestion($this_id);
+		$clone->copyPageOfQuestion($this->getId());
 		// copy XHTML media objects
-		$clone->copyXHTMLMediaObjectsOfQuestion($this_id);
-		// duplicate the generic feedback
-		//$clone->duplicateGenericFeedback($this_id);		
+		$clone->copyXHTMLMediaObjectsOfQuestion($this->getId());
 
-		$clone->onDuplicate($thisObjId, $this_id, $clone->getObjId(), $clone->getId());
+		// call the event handler for duplication
+		$clone->onDuplicate($this->getObjId(), $this->getId(), $clone->getObjId(), $clone->getId());
 
 		return $clone->getId();
 	}
 
 	/**
-	* Copies an assJSMEQuestion object
-	*
-	* @access public
-	*/
-	function copyObject($target_questionpool, $title = "")
+	 * Copies a question
+	 * This is used when a question is copied on a question pool
+	 *
+	 * @access public
+	 */
+	function copyObject($target_questionpool_id, $title = "")
 	{
 		if ($this->getId() <= 0)
 		{
 			// The question has not been saved. It cannot be duplicated
 			return;
 		}
-		$clone = $this;
-		include_once ("./Modules/TestQuestionPool/classes/class.assQuestion.php");
+
+		// make a real clone to keep the object unchanged
+		$clone = clone $this;
+				
 		$original_id = assQuestion::_getOriginalId($this->getId());
-		$clone->id = -1;
-		$source_questionpool = $this->getObjId();
-		$clone->setObjId($target_questionpool);
+		$source_questionpool_id = $this->getObjId();
+		$clone->setId(-1);
+		$clone->setObjId($target_questionpool_id);
 		if ($title)
 		{
 			$clone->setTitle($title);
 		}
-		$clone->saveToDb();
+				
+		// save the clone data
+		$clone->saveToDb('', false);
 
 		// copy question page content
 		$clone->copyPageOfQuestion($original_id);
 		// copy XHTML media objects
 		$clone->copyXHTMLMediaObjectsOfQuestion($original_id);
-		// duplicate the generic feedback
-		//$clone->duplicateGenericFeedback($original_id);
 
-		$clone->onCopy($this->getObjId(), $this->getId());
+		// call the event handler for copy
+		$clone->onCopy($source_questionpool_id, $original_id, $clone->getObjId(), $clone->getId());
+
 		return $clone->getId();
-	}	
+	}
+
+	/**
+	 * Synchronize a question with its original
+	 * You need to extend this function if a question has additional data that needs to be synchronized
+	 * 
+	 * @access public
+	 */
+	function syncWithOriginal()
+	{
+		parent::syncWithOriginal();
+	}
 
 	/**
 	 * Returns the points, a learner has reached answering the question
-	 * The points are calculated from the given answers including checks
-	 * for all special scoring options in the test container.
+	 * The points are calculated from the given answers.
 	 *
-	 * @param integer $user_id The database ID of the learner
-	 * @param integer $test_id The database Id of the test containing the question
+	 * @param integer $active 	The Id of the active learner
+	 * @param integer $pass 	The Id of the test pass
 	 * @param boolean $returndetails (deprecated !!)
+	 * @return integer/array $points/$details (array $details is deprecated !!)
 	 * @access public
+	 * @see  assQuestion::calculateReachedPoints()
 	 */
-	function calculateReachedPoints($active_id, $pass = NULL, $authorizedSolution = true, $returndetails = FALSE)
+	function calculateReachedPoints($active_id, $pass = NULL, $authorizedSolution = true, $returndetails = false)
 	{
+        if( $returndetails )
+        {
+            throw new ilTestException('return details not implemented for '.__METHOD__);
+        }
+		
 		global $ilDB;
 		
 		if (is_null($pass))
 		{
 			$pass = $this->getSolutionMaxPass($active_id);
 		}
-		
-		$result = $ilDB->queryF("SELECT * FROM tst_solutions WHERE active_fi = %s AND question_fi = %s AND pass = %s",
-			array(
-				"integer", 
-				"integer",
-				"integer"
-			),
-			array(
-				$active_id,
-				$this->getId(),
-				$pass
-			)
-		);
-		
-		$data = $ilDB->fetchAssoc($result);
-		$value1 = $data['value1'];
-		$value2 = $data['value2'];		
-		if($value2 == $this->smilesSolution)
-			return $this->getMaximumPoints();
-		return 0;
+
+		$query = "SELECT value2 FROM tst_solutions "
+            . " WHERE active_fi = %s AND question_fi = %s AND pass = %s ";
+			
+        $result = $ilDB->queryF($query,
+            array('integer','integer','integer'),
+            array($active_id, $this->getId(), $pass)
+        );
+		$resultrow = $ilDB->fetchAssoc($result);
+
+		//Apply patch to prevent doublegrading see Mantis 110%Testresult-Bugs
+		if( $this->smilesSolution == $resultrow["value2"] )
+			{
+			$points = $this->getMaximumPoints();
+			}	
+			
+		return $points;
 	}	
+
+	/**
+	* Returns the maximum points, a learner can reach answering the question
+	* @access public
+	* @see $points
+	*/
+	function getMaximumPoints()
+	{		
+		return $this->points;
+	}
 	
 	/**
 	* Saves the learners input of the question to the database
@@ -337,47 +378,24 @@ class assJSMEQuestion extends assQuestion
 			$pass = ilObjTest::_getPass($active_id);
 		}
 
-		$affectedRows = $ilDB->manipulateF("DELETE FROM tst_solutions WHERE active_fi = %s AND question_fi = %s AND pass = %s",
+		$ilDB->manipulateF("DELETE FROM tst_solutions WHERE active_fi = %s AND question_fi = %s AND pass = %s",
 			array(
-				"integer", 
-				"integer",
-				"integer"
-			),
+				"integer", "integer", "integer"),
 			array(
-				$active_id,
-				$this->getId(),
-				$pass
-			)
+				$active_id,	$this->getId(),	$pass)
 		);
 
 		$entered_values = false;		
-		$jme_value = $_POST['sampleSolution'];
-		$smiles_value = $_POST['canonicalMolecule'];	
+		$value1_solution = $_POST['sampleSolution'];
+		$value2_smiles = $_POST['smilesSolution'];
+		$value3_svg = base64_encode($_POST['svgSolution']);
+        $value4_InChI = null;        
 		
-		$result = $ilDB->queryF("SELECT test_fi FROM tst_active WHERE active_id = %s",
-			array('integer'),
-			array($active_id)
-		);
-		$test_id = 0;
-		if ($result->numRows() == 1)
-		{
-			$row = $ilDB->fetchAssoc($result);
-			$test_id = $row["test_fi"];
-		}
-		
-		if (strlen($jme_value) > 0)
-		{			
-			$entered_values = true;
-			$next_id = $ilDB->nextId("tst_solutions");
-			$affectedRows = $ilDB->insert("tst_solutions", array(
-				"solution_id" => array("integer", $next_id),
-				"active_fi" => array("integer", $active_id),
-				"question_fi" => array("integer", $this->getId()),
-				"value1" => array("clob", $jme_value),
-				"value2" => array("clob", $smiles_value),
-				"pass" => array("integer", $pass),
-				"tstamp" => array("integer", time())
-			));					
+        if (strlen($value1_solution) > 0)
+		{	
+		    $entered_values = true;
+		    $this->saveCurrentSolution($active_id, $pass, $value1_solution, $value2_smiles, $authorized);
+		    $this->saveCurrentSolution($active_id, $pass, $value3_svg, $value4_InChI, $authorized); 
 		}
 		
 		if ($entered_values)
@@ -408,7 +426,7 @@ class assJSMEQuestion extends assQuestion
 	 * @param integer $pass
 	 * @param boolean $obligationsAnswered
 	 */
-	protected function reworkWorkingData($active_id, $pass, $obligationsAnswered)
+	protected function reworkWorkingData($active_id, $pass, $obligationsAnswered, $authorized)
 	{
 		// nothing to rework!		
 	}
@@ -432,20 +450,9 @@ class assJSMEQuestion extends assQuestion
 	*/
 	function getAdditionalTableName()
 	{
-		return "";
+		return "il_qpl_qst_jsme_data";
 	}
 	
-	/**
-	* Returns the name of the answer table in the database
-	*
-	* @return string The answer table name
-	* @access public
-	*/
-	function getAnswerTableName()
-	{
-		return "";
-	}
-
 	/**
 	* Collects all text in the question which could contain media objects
 	* which were created with the Rich Text Editor
@@ -457,31 +464,31 @@ class assJSMEQuestion extends assQuestion
 	}
 	
 	/**
-	* Creates an Excel worksheet for the detailed cumulated results of this question
-	*
-	* @param object $worksheet Reference to the parent excel worksheet
-	* @param object $startrow Startrow of the output in the excel worksheet
-	* @param object $active_id Active id of the participant
-	* @param object $pass Test pass
-	* @param object $format_title Excel title format
-	* @param object $format_bold Excel bold format
-	* @param array $eval_data Cumulated evaluation data
-	* @access public
-	*/
-	public function setExportDetailsXLS(&$worksheet, $startrow, $active_id, $pass, &$format_title, &$format_bold)
-	{	
-		include_once ("./Services/Excel/classes/class.ilExcelUtils.php");
-		$solution = $this->getSolutionValues($active_id, $pass);
-		$worksheet->writeString($startrow, 0, ilExcelUtils::_convert_text($this->lng->txt($this->getQuestionType())), $format_title);
-		$worksheet->writeString($startrow, 1, ilExcelUtils::_convert_text($this->getTitle()), $format_title);
+	 * Creates an Excel worksheet for the detailed cumulated results of this question
+	 *
+	 * @access public
+	 * @see assQuestion::setExportDetailsXLS()
+	 */
+	public function setExportDetailsXLS($worksheet, $startrow, $active_id, $pass)
+	{
+		
+		global $lng;
+		parent::setExportDetailsXLS($worksheet, $startrow, $active_id, $pass);
+
+		$solutions = $this->getSolutionValues($active_id, $pass);
+		
 		$i = 1;
-		/*
-		$worksheet->writeString($startrow + $i, 0, $solutionvalue["value1"], $format_bold);
-		$worksheet->writeString($startrow + $i, 1, $solutionvalue["value2"]);		
-		$i++;					
-		*/
+		$worksheet->setCell($startrow + $i, 0, $this->lng->txt($this->plugin->txt("label_value2")));
+		$worksheet->setBold($worksheet->getColumnCoord(0) . ($startrow + $i));
+		
+		if (strlen($solutions[0]["value2"]))
+		{
+			$worksheet->setCell($startrow + $i, 1, $solutions[0]["value2"]);		
+		}
+		$i++;
+		
 		return $startrow + $i + 1;
-	}	
+	}
 		
 	/**
 	* Creates a question from a QTI file
