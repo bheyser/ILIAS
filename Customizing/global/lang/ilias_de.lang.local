@@ -96,3 +96,6 @@ assessment#:#autologout_in#:#Automatischen ausloggen in:
 assessment#:#sha256_sum_txt#:#SHA256 Prüfsumme
 assessment#:#reset_timer#:#Timer auf 3:00 zurücksetzen
 assessment#:#logout_now#:#Jetzt ausloggen
+assessment#:#partial_archive#:#Test für Kohorte archivieren
+assessment#:#full_archive#:#Kompletten Test archivieren
+assessment#:#full_hash_list_confirmation#:#Wollen sie den Test wirklich archivieren? Dies wird eine permanente Archivdatei generieren. Dies sollte nicht gemacht werden wenn heute noch weitere Studenten den Test machen sollen.

@@ -76,3 +76,6 @@ assessment#:#autologout_in#:#Autologout in:
 assessment#:#sha256_sum_txt#:#SHA256 Checksum
 assessment#:#reset_timer#:#Reset timer to 3:00
 assessment#:#logout_now#:#LogOut now
+assessment#:#partial_archive#:#Archive partial test
+assessment#:#full_archive#:#Completely archive test
+assessment#:#full_hash_list_confirmation#:#Do you want to archive this test? This will generate a permanent archive. Only do this if there won't be more students taking this test today.
