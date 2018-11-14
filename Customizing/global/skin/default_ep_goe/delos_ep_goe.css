@@ -11803,12 +11803,20 @@ div.ilc_question_MultipleChoice .ilc_qanswer_Answer > div:first-child {
 .ilAssKprimChoiceTable .ilc_qanswer_Answer:first-child{
     padding-left: 0 !important;
     text-align: center;
+    background-color: lightgrey;
 }
 
 .ilAssKprimChoiceTable .ilc_qanswer_Answer:not(:first-child) {
   padding-left: 0 !important;
   display: flex;
   align-items: center;
+  border-bottom: lightgrey 1px solid;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.ilAssKprimChoiceTable .ilc_qanswer_Answer:not(:first-child) > .col-sm-4 {
+  width: 70% !important;
 }
 
 .kprimInput {
