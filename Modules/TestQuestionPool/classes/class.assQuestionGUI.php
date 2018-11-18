@@ -482,6 +482,20 @@ abstract class assQuestionGUI
 			$usage_table->getHTML()
 		)));
 	}
+	
+	
+	public function version()
+	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		
+		$previewGUI = new ilAssQuestionPreviewGUI(
+			$DIC->ctrl(), $DIC->tabs(), $DIC->ui()->mainTemplate(),
+			$DIC->language(), $DIC->database(), $DIC->user()
+		);
+		
+		$DIC->ctrl()->setCmd('');
+		$DIC->ctrl()->forwardCommand($previewGUI);
+	}
 
 	/**
 	 * Creates a question gui representation and returns the alias to the question gui

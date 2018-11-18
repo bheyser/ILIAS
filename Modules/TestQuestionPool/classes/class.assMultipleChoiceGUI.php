@@ -19,6 +19,7 @@ require_once './Modules/Test/classes/inc.AssessmentConstants.php';
  *          
  * @ingroup ModulesTestQuestionPool
  * @ilCtrl_Calls assMultipleChoiceGUI: ilFormPropertyDispatchGUI
+ * @ilCtrl_Calls assMultipleChoiceGUI: ilAssQuestionPreviewGUI
  */
 class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringAdjustable, ilGuiAnswerScoringAdjustable
 {
@@ -802,6 +803,13 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 				$classname, "");
 		}
 
+        $ilTabs->addTarget(
+            "versions",
+            $this->ctrl->getLinkTargetByClass($classname, "versions"),
+            array("versions"),
+            $classname, ""
+        );
+		
 		$this->addBackTab($ilTabs);
 	}
 	

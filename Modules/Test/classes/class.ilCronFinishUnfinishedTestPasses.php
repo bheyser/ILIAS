@@ -61,6 +61,7 @@ class ilCronFinishUnfinishedTestPasses extends ilCronJob
 		 */
 
 		global $DIC;
+		if(isset($DIC['ilObjDataCache']))
 		$ilObjDataCache = $DIC['ilObjDataCache'];
 		$lng = $DIC['lng'];
 		$ilDB = $DIC['ilDB'];
