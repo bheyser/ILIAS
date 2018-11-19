@@ -256,6 +256,9 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 	
 	protected function showQuestionCmd()
 	{
+		global $DIC; /* @var ILIAS\DI\Container */
+		$DIC->logger()->root()->info('called');
+		
 		$_SESSION['tst_pass_finish'] = 0;
 
 		$_SESSION["active_time_id"]= $this->object->startWorkingTime(
@@ -263,11 +266,14 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 		);
 
 		$sequenceElement = $this->getCurrentSequenceElement();
+		$DIC->logger()->root()->info('cur-sequence: '.$sequenceElement);
 
 		if( !$this->isValidSequenceElement($sequenceElement) )
 		{
 			$sequenceElement = $this->testSequence->getFirstSequence();
 		}
+		
+		$DIC->logger()->root()->info('fixed-sequence: '.$sequenceElement);
 
 		$this->testSession->setLastSequence($sequenceElement);
 		$this->testSession->saveToDb();
@@ -388,8 +394,10 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 // fau: testNav - add feedback modal
 		if ($this->isForcedFeedbackNavUrlRegistered())
 		{
+			$DIC->logger()->root()->info('populate feedback modal: '.$this->getRegisteredForcedFeedbackNavUrl());
 			$this->populateInstantResponseModal($questionGui, $this->getRegisteredForcedFeedbackNavUrl());
 			$this->unregisterForcedFeedbackNavUrl();
+			$DIC->logger()->root()->info('fb_nav_url in SESSION: '.serialize($_SESSION['forced_feedback_navigation_url']));
 		}
 // fau.
 
@@ -437,6 +445,10 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 
 	protected function submitSolutionCmd()
 	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		
+		$DIC->logger()->root()->info('called');
+		
 		if( $this->saveQuestionSolution(true, false) )
 		{
 			$questionId = $this->testSequence->getQuestionForSequence(
@@ -476,6 +488,7 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 // fau: testNav - handle navigation after saving
 		if ($this->getNavigationUrlParameter())
 		{
+			$DIC->logger()->root()->info('redirect to nav url param: '.$this->getNavigationUrlParameter());
 			ilUtil::redirect($this->getNavigationUrlParameter());
 		}
 		else
@@ -483,6 +496,7 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 			$this->ctrl->saveParameter($this, 'sequence');
 		}
 // fau.
+		$DIC->logger()->root()->info('redirect to showQuestion without nav url param');
 		$this->ctrl->redirect($this, ilTestPlayerCommands::SHOW_QUESTION);
 	}
 
@@ -544,8 +558,12 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 
 	protected function nextQuestionCmd()
 	{
+		global $DIC; /* @var ILIAS\DI\Container */
+		$DIC->logger()->root()->info('called');
+		
 		$lastSequenceElement = $this->getCurrentSequenceElement();
 		$nextSequenceElement = $this->testSequence->getNextSequence($lastSequenceElement);
+		$DIC->logger()->root()->info('last-seq='.$lastSequenceElement.' / next-seq='.$nextSequenceElement);
 		
 		if( $this->object->isPostponingEnabled() )
 		{
@@ -559,7 +577,8 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 
 		$this->ctrl->setParameter($this, 'sequence', $nextSequenceElement);
 		$this->ctrl->setParameter($this, 'pmode', '');
-
+		
+		$DIC->logger()->root()->info('redirect to showQuestion');
 		$this->ctrl->redirect($this, ilTestPlayerCommands::SHOW_QUESTION);
 	}
 
@@ -671,6 +690,10 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 
 	protected function showInstantResponseCmd()
 	{
+		global $DIC; /* @var ILIAS\DI\Container */
+		$DIC->logger()->root()->info('called');
+		$DIC->logger()->root()->info('cur-sequence: '.$this->getCurrentSequenceElement());
+		
 		$questionId = $this->testSequence->getQuestionForSequence(
 			$this->getCurrentSequenceElement()
 		);
@@ -702,8 +725,14 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 		{
 			$this->saveNavigationPreventConfirmation();
 			$this->registerForcedFeedbackNavUrl($this->getNavigationUrlParameter());
+			$DIC->logger()->root()->info('register nav url param: '.$this->getNavigationUrlParameter());
+		}
+		else
+		{
+			$DIC->logger()->root()->info('no nav url param registered');
 		}
 // fau.
+		$DIC->logger()->root()->info('redirect to showQuestion');
 		$this->ctrl->redirect($this, ilTestPlayerCommands::SHOW_QUESTION);
 	}
 

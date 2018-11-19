@@ -366,10 +366,13 @@ il.TestPlayerQuestionEditControl = new function() {
         // check explictly again at navigation
        detectFormChange();
 
+        console.log('link '+id+' clicked: '+href);
+
         if (id == 'tst_mark_question_action')           // marking the question is always possible
         {
             navUrl = href;
             toggleQuestionMark();
+            console.log('called toggleQuestionMark() and prevent default for clicked link');
             return false;
         }
         else if (answerChanged                          // answer has been changed
@@ -384,17 +387,21 @@ il.TestPlayerQuestionEditControl = new function() {
             navUrl = href;
 
             if ($('#tst_save_on_navigation_modal').length > 0) {
+                console.log('call to showNavigationModal()');
                 showNavigationModal();
             }
             else {
+                console.log('call to saveWithNavigation()');
                 saveWithNavigation();
             }
-
+            console.log('prevent default of clicked link');
             // prevent the default event handler
             return false;
         }
         else
         {
+            console.log('perform default for clicked link');
+            alert('leave page by default action for clicked link');
             // apply the default event handler (go to href)
             return true;
         }
@@ -465,6 +472,8 @@ il.TestPlayerQuestionEditControl = new function() {
             command = 'cmd[submitSolution]';
         }
 
+        alert(navUrl);
+
         // add the navigation href as POST parameter
         // this will be used for the redirect after saving
         $('<input>').attr({
@@ -479,6 +488,8 @@ il.TestPlayerQuestionEditControl = new function() {
             value: 'Save'
         }).appendTo(FORM_SELECTOR);
 
+        alert('leave page from saveWithNavigation()');
+
         // submit the solution
         // the answering status will be appended by handleFormSubmit()
         $(FORM_SELECTOR).submit();
@@ -490,7 +501,7 @@ il.TestPlayerQuestionEditControl = new function() {
      * It saves an intermediate solution if the question is edited
      */
     function toggleQuestionMark() {
-
+        alert('leave page from toggleQuestionMark()');
         // set the mark link target as form action and submit
         /// the answering status will be appended by handleFormSubmit()
         $(FORM_SELECTOR).attr('action', navUrl).submit();
