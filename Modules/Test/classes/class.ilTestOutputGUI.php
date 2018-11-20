@@ -451,6 +451,8 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 		
 		if( $this->saveQuestionSolution(true, false) )
 		{
+			$DIC->logger()->root()->info('saveQuestionSolution OK, remove intermediate solution');
+			
 			$questionId = $this->testSequence->getQuestionForSequence(
 				$this->getCurrentSequenceElement()
 			);
@@ -479,6 +481,10 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 			}
 			
 			$this->ctrl->setParameter($this, 'pmode', ilTestPlayerAbstractGUI::PRESENTATION_MODE_VIEW);
+		}
+		else
+		{
+			$DIC->logger()->root()->info('saveQuestionSolution failed, possible intermediate solution left');
 		}
 
 // fau: testNav - remember to prevent the navigation confirmation

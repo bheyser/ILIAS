@@ -2758,6 +2758,7 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
 	 */
 	protected function populateQuestionEditControl($questionGUI)
 	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
 		// configuration for ilTestPlayerQuestionEditControl.js
 		$config = array();
 
@@ -2765,6 +2766,7 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
 		$state = $questionGUI->object->lookupForExistingSolutions($this->testSession->getActiveId(), $this->testSession->getPass());
 		$config['isAnswered'] = $state['authorized'];
 		$config['isAnswerChanged'] = $state['intermediate'] || $this->getAnswerChangedParameter();
+		$DIC->logger()->root()->info('existing solutions: '.serialize($state));
 
 		// set  url to which the for should be submitted when the working time is over
 		// don't use asynch url because the form is submitted directly
