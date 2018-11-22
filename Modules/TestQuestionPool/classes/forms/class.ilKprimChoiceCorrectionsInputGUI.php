@@ -93,7 +93,7 @@ class ilKprimChoiceCorrectionsInputGUI extends ilKprimChoiceWizardInputGUI
 			
 			$tpl->setCurrentBlock("row");
 
-			$tpl->setVariable("ANSWER", ilUtil::prepareFormOutput($value->getAnswertext()));
+			$tpl->setVariable("ANSWER", $value->getAnswertext());
 			
 			$tpl->setVariable("POST_VAR", $this->getPostVar());
 			$tpl->setVariable("ROW_NUMBER", $value->getPosition());
