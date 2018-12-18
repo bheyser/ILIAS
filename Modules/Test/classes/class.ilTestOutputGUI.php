@@ -386,10 +386,10 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 		}
 
 // fau: testNav - add feedback modal
-		if (!empty($_SESSION['forced_feedback_navigation_url']))
+		if ($this->isForcedFeedbackNavUrlRegistered())
 		{
-			$this->populateInstantResponseModal($questionGui, $_SESSION['forced_feedback_navigation_url']);
-			unset($_SESSION['forced_feedback_navigation_url']);
+			$this->populateInstantResponseModal($questionGui, $this->getRegisteredForcedFeedbackNavUrl());
+			$this->unregisterForcedFeedbackNavUrl();
 		}
 // fau.
 
@@ -467,6 +467,10 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 			}
 			
 			$this->ctrl->setParameter($this, 'pmode', ilTestPlayerAbstractGUI::PRESENTATION_MODE_VIEW);
+		}
+		else
+		{
+			$this->ctrl->redirect($this, ilTestPlayerCommands::SHOW_QUESTION);
 		}
 
 // fau: testNav - remember to prevent the navigation confirmation
@@ -677,20 +681,15 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 		
 		if( !$this->isParticipantsAnswerFixed($questionId) )
 		{
-// fau: testNav - handle answer fixation and intermediate submit
-			// always save the question when feedback is requested
-			// if( $this->object->isInstantFeedbackAnswerFixationEnabled() )
-			if (true)
+			if( $this->saveQuestionSolution(true) )
 			{
-				$this->saveQuestionSolution(true);
 				$this->removeIntermediateSolution();
 				$this->setAnswerChangedParameter(false);
 			}
 			else
 			{
-				$this->handleIntermediateSubmit();
+				$this->ctrl->redirect($this, ilTestPlayerCommands::SHOW_QUESTION);
 			}
-// fau.
 			$this->testSequence->setQuestionChecked($questionId);
 			$this->testSequence->saveToDb();
 		}
@@ -701,7 +700,7 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 		if ($this->getNavigationUrlParameter())
 		{
 			$this->saveNavigationPreventConfirmation();
-			$_SESSION['forced_feedback_navigation_url'] = $this->getNavigationUrlParameter();
+			$this->registerForcedFeedbackNavUrl($this->getNavigationUrlParameter());
 		}
 // fau.
 		$this->ctrl->redirect($this, ilTestPlayerCommands::SHOW_QUESTION);

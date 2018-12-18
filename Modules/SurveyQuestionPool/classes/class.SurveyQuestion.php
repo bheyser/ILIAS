@@ -1842,6 +1842,9 @@ class SurveyQuestion
 	*/
 	function QTIMaterialToString($a_material)
 	{
+		$svy_log = ilLoggerFactory::getLogger("svy");
+		$svy_log->debug("material count: ".$a_material->getMaterialCount());
+
 		$result = "";
 		for ($i = 0; $i < $a_material->getMaterialCount(); $i++)
 		{
@@ -2185,6 +2188,24 @@ class SurveyQuestion
 		$rec = $ilDB->fetchAssoc($set);
 		return $rec["obj_fi"];
 	}
+
+	/**
+	 * Strip slashes with add space fallback, see https://mantis.ilias.de/view.php?id=19727
+	 *                                        and https://mantis.ilias.de/view.php?id=24200
+	 *
+	 * @param string $a_str string
+	 * @return string
+	 */
+	function stripSlashesAddSpaceFallback($a_str)
+	{
+		$str = ilUtil::stripSlashes($a_str);
+		if ($str != $a_str)
+		{
+			$str = ilUtil::stripSlashes(str_replace("<", "< ", $a_str));
+		}
+		return $str;
+	}
+
 
 }
 ?>

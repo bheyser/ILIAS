@@ -291,7 +291,13 @@ class assNumericGUI extends assQuestionGUI implements ilGuiQuestionScoringAdjust
 	{
 		$solutions = NULL;
 		// get the solution of the user for the active pass or from the last pass if allowed
-		if ($active_id)
+		if($use_post_solutions !== false)
+		{
+			$solutions = array(
+				array('value1' => $use_post_solutions['numeric_result'])
+			);
+		}
+		elseif ($active_id)
 		{
 			
 			// hey: prevPassSolutions - obsolete due to central check
@@ -544,6 +550,14 @@ class assNumericGUI extends assQuestionGUI implements ilGuiQuestionScoringAdjust
 	{
 		$tpl = new ilTemplate('tpl.il_as_aggregated_answers_table.html', true, true, "Modules/TestQuestionPool");
 
+		$tpl->setCurrentBlock('headercell');
+		$tpl->setVariable('HEADER', $this->lng->txt('tst_answer_aggr_answer_header'));
+		$tpl->parseCurrentBlock();
+		
+		$tpl->setCurrentBlock('headercell');
+		$tpl->setVariable('HEADER', $this->lng->txt('tst_answer_aggr_frequency_header'));
+		$tpl->parseCurrentBlock();
+		
 		foreach ($aggregate as $key => $value)
 		{
 			$tpl->setCurrentBlock( 'aggregaterow' );
