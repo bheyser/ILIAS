@@ -110,7 +110,7 @@ class ilTestDynamicQuestionSetFilterSelection
 	 */
 	public function hasSelectedTaxonomy($taxonomyId)
 	{
-		return isset($this->taxonomySelection[$taxonomyId]);
+		return isset($this->taxonomySelection[$taxonomyId]) && count($this->taxonomySelection[$taxonomyId]);
 	}
 	
 	/**

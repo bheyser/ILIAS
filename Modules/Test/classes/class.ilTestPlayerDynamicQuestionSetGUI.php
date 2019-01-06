@@ -25,6 +25,7 @@ require_once 'Modules/Test/classes/class.ilTestPlayerAbstractGUI.php';
  * @ilCtrl_Calls ilTestPlayerDynamicQuestionSetGUI: ilToolbarGUI
  * @ilCtrl_Calls ilTestPlayerDynamicQuestionSetGUI: ilTestSubmissionReviewGUI
  * @ilCtrl_Calls ilTestPlayerDynamicQuestionSetGUI: ilTestPasswordProtectionGUI
+ * @ilCtrl_Calls ilTestPlayerDynamicQuestionSetGUI: ilFormPropertyDispatchGUI
  */
 class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 {
@@ -98,6 +99,14 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		
 		switch($nextClass)
 		{
+			case 'ilformpropertydispatchgui':
+				include_once './Services/Form/classes/class.ilFormPropertyDispatchGUI.php';
+				$form_prop_dispatch = new ilFormPropertyDispatchGUI();
+				$form = $this->buildQuestionSelectionForm();
+				$item = $form->getItemByPostVar($_GET["postvar"]);
+				$form_prop_dispatch->setItem($item);
+				return $this->ctrl->forwardCommand($form_prop_dispatch);
+
 			case 'ilassquestionpagegui':
 
 				$questionId = $this->testSession->getCurrentQuestionId();
@@ -206,6 +215,73 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		$this->ctrl->redirect($this, ilTestPlayerCommands::SHOW_QUESTION);
 	}
 	
+	protected function buildQuestionSelectionForm()
+	{
+		$form = new ilPropertyFormGUI();
+		
+		$form->setTitle('Question Selection');
+		
+		$form->setFormAction($this->ctrl->getFormAction($this));
+		
+		if( $this->dynamicQuestionSetConfig->isTaxonomyFilterEnabled() )
+		{
+			require_once 'Services/Taxonomy/classes/class.ilTaxSelectInputGUI.php';
+			
+			foreach($this->dynamicQuestionSetConfig->getFilterTaxonomyIds() as $taxId)
+			{
+				$postvar = "tax_$taxId";
+				
+				$inp = new ilTaxSelectInputGUI($taxId, $postvar, true);
+				
+				$form->addItem($inp);
+				
+				if( $this->testSession->getQuestionSetFilterSelection()->hasSelectedTaxonomy($taxId) )
+				{
+					$inp->setValue($this->testSession->getQuestionSetFilterSelection()->getSelectedTaxonomy($taxId));
+				}
+			}
+		}
+		
+		if( $this->dynamicQuestionSetConfig->isAnswerStatusFilterEnabled() )
+		{
+			require_once 'Services/Form/classes/class.ilSelectInputGUI.php';
+			require_once 'Services/Form/classes/class.ilRadioOption.php';
+			
+			$inp = new ilRadioGroupInputGUI($this->lng->txt('tst_question_answer_status'), 'question_answer_status');
+			$inp->addOption(new ilRadioOption(
+				$this->lng->txt('tst_question_answer_status_all_non_correct'), ilAssQuestionList::ANSWER_STATUS_FILTER_ALL_NON_CORRECT
+			));
+			$inp->addOption(new ilRadioOption(
+				$this->lng->txt('tst_question_answer_status_non_answered'), ilAssQuestionList::ANSWER_STATUS_FILTER_NON_ANSWERED_ONLY
+			));
+			$inp->addOption(new ilRadioOption(
+				$this->lng->txt('tst_question_answer_status_wrong_answered'), ilAssQuestionList::ANSWER_STATUS_FILTER_WRONG_ANSWERED_ONLY
+			));
+			$form->addItem($inp);
+			
+			if( $this->testSession->getQuestionSetFilterSelection()->hasAnswerStatusSelection() )
+			{
+				$inp->setValue($this->testSession->getQuestionSetFilterSelection()->getAnswerStatusSelection());
+			}
+			else
+			{
+				$inp->setValue(ilAssQuestionList::ANSWER_STATUS_FILTER_ALL_NON_CORRECT);
+			}
+		}
+		
+		$form->addCommandButton('filterQuestionSelection', 'Save');
+		$form->addCommandButton('showQuestionSelection', 'Cancel');
+		
+		return $form;
+	}
+	
+	protected function changeQuestionSelectionCmd()
+	{
+		$form = $this->buildQuestionSelectionForm();
+		
+		$this->tpl->setContent($form->getHTML());
+	}
+	
 	protected function showQuestionSelectionCmd()
 	{
 		$this->prepareSummaryPage();
@@ -227,6 +303,19 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		$button->setCaption($this->getEnterTestButtonLangVar());
 		$button->setPrimary(true);
 		$toolbarGUI->addButtonInstance($button);
+		
+		if( true )
+		{
+			$button = ilLinkButton::getInstance();
+			$button->setUrl($this->ctrl->getLinkTarget($this, 'changeQuestionSelection'));
+			$button->setCaption('Change Question Selection', false);
+			$toolbarGUI->addButtonInstance($button);
+
+			$button = ilLinkButton::getInstance();
+			$button->setUrl($this->ctrl->getLinkTarget($this, 'resetQuestionSelection'));
+			$button->setCaption('Reset Question Selection', false);
+			$toolbarGUI->addButtonInstance($button);
+		}
 
 		if( $this->object->getShowCancel() )
 		{
@@ -261,8 +350,16 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		$completeTableGUI->setData($completeData);
 
 		$content = $this->ctrl->getHTML($toolbarGUI);
-		$content .= $this->ctrl->getHTML($filteredTableGUI);
-		$content .= $this->ctrl->getHTML($completeTableGUI);
+		if( true )
+		{
+			$content .= $this->getSelectedQuestionsStatisticsHTML($filteredData[0]);
+			$content .= $this->getCompleteQuestionPoolStatisticsHTML($completeData[0]);
+		}
+		else
+		{
+			$content .= $this->ctrl->getHTML($filteredTableGUI);
+			$content .= $this->ctrl->getHTML($completeTableGUI);
+		}
 
 		$this->tpl->setVariable('TABLE_LIST_OF_QUESTIONS', $content);	
 
@@ -270,6 +367,125 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		{
 			$this->outProcessingTime($this->testSession->getActiveId());
 		}
+	}
+
+	protected function getSelectedQuestionsStatisticsHTML($data)
+	{
+		global $DIC;
+		
+		$panel = $DIC->ui()->factory()->panel()->data('Currently Selected Questions');
+		#var_dump($data); exit;
+		
+		foreach($this->dynamicQuestionSetConfig->getFilterTaxonomyIds() as $taxId)
+		{
+			if( $this->testSession->getQuestionSetFilterSelection()->hasSelectedTaxonomy($taxId) )
+			{
+				$selection = $this->testSession->getQuestionSetFilterSelection()->getSelectedTaxonomy($taxId);
+				
+				foreach($selection as $k => $v)
+				{
+					$selection[$k] = ilTaxonomyNode::_lookupTitle($v);
+				}
+				
+				$selection = implode(', ', $selection);
+				
+				$panel->withAdditionalEntry(
+					$DIC->ui()->factory()->legacy(ilObject::_lookupTitle($taxId)),
+					$DIC->ui()->factory()->legacy($selection)
+				);
+			}
+		}
+
+		switch( $this->testSession->getQuestionSetFilterSelection()->getAnswerStatusSelection() )
+		{
+			case ilAssQuestionList::ANSWER_STATUS_FILTER_NON_ANSWERED_ONLY:
+				$answerStatusFilterLabel = $this->lng->txt('tst_question_answer_status_non_answered');
+				break;
+				
+			case ilAssQuestionList::ANSWER_STATUS_FILTER_WRONG_ANSWERED_ONLY:
+				$answerStatusFilterLabel = $this->lng->txt('tst_question_answer_status_wrong_answered');
+				break;
+			
+			case ilAssQuestionList::ANSWER_STATUS_FILTER_ALL_NON_CORRECT:
+			default:
+				$answerStatusFilterLabel = $this->lng->txt('tst_question_answer_status_all_non_correct');
+		}
+
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Questions to be Presented'),
+			$DIC->ui()->factory()->legacy($answerStatusFilterLabel)
+		);
+		
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Total Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['total_all'])
+		);
+
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Open Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['total_open'])
+		);
+
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Never Seen Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['non_answered_notseen'])
+		);
+
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Skipped Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['non_answered_skipped'])
+		);
+
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Wrong Answered Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['wrong_answered'])
+		);
+
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Correct Answered Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['correct_answered'])
+		);
+		
+		return $DIC->ui()->renderer()->render($panel);
+	}
+
+	protected function getCompleteQuestionPoolStatisticsHTML($data)
+	{
+		global $DIC;
+		
+		$panel = $DIC->ui()->factory()->panel()->data('Complete Question Pool');
+		
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Total Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['total_all'])
+		);
+		
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Open Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['total_open'])
+		);
+		
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Never Seen Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['non_answered_notseen'])
+		);
+		
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Skipped Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['non_answered_skipped'])
+		);
+		
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Wrong Answered Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['wrong_answered'])
+		);
+		
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Correct Answered Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['correct_answered'])
+		);
+		
+		return $DIC->ui()->renderer()->render($panel);
 	}
 	
 	protected function filterQuestionSelectionCmd()

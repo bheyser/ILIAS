@@ -551,4 +551,9 @@ class ilObjTestDynamicQuestionSetConfig extends ilTestQuestionSetConfig
 		
 		return "<a href=\"$href\" alt=\"$title\">$title</a>";
 	}
+	
+	public function getFilterTaxonomyIds()
+	{
+		return ilObjTaxonomy::getUsageOfObject($this->getSourceQuestionPoolId());
+	}
 }
