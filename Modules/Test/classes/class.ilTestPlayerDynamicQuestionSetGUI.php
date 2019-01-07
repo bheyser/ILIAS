@@ -338,7 +338,7 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		}
 		
 		$filteredData = array($this->buildQuestionSetAnswerStatisticRowArray(
-			$this->testSequence->getFilteredQuestionsData(), $this->testSequence->getTrackedQuestionList()
+			$this->testSequence->getSelectedQuestionsData(), $this->testSequence->getTrackedQuestionList()
 		)); #vd($filteredData);
 		$filteredTableGUI = $this->buildQuestionSetFilteredStatisticTableGUI();
 		$filteredTableGUI->setData($filteredData);

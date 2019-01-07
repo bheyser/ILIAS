@@ -50,6 +50,11 @@ class ilTestDynamicQuestionSet
 	private $filteredQuestionList = null;
 	
 	/**
+	 * @var ilAssQuestionList
+	 */
+	private $selectedQuestionStatisticsList = null;
+	
+	/**
 	 * @var array 
 	 */
 	private $actualQuestionSequence = array();
@@ -83,6 +88,10 @@ class ilTestDynamicQuestionSet
 					$dynamicQuestionSetConfig, $filterSelection
 		);
 		
+		$this->selectedQuestionStatisticsList = $this->initSelectedQuestionStatisticsList(
+					$dynamicQuestionSetConfig, $filterSelection
+		);
+		
 		$this->actualQuestionSequence = $this->initActualQuestionSequence(
 					$dynamicQuestionSetConfig, $this->filteredQuestionList
 		);
@@ -111,6 +120,41 @@ class ilTestDynamicQuestionSet
 		{
 			$questionList->setAnswerStatusFilter($filterSelection->getAnswerStatusSelection());
 		}
+
+		if( $dynamicQuestionSetConfig->isTaxonomyFilterEnabled() )
+		{
+			require_once 'Services/Taxonomy/classes/class.ilObjTaxonomy.php';
+			
+			$questionList->setAvailableTaxonomyIds( ilObjTaxonomy::getUsageOfObject(
+					$dynamicQuestionSetConfig->getSourceQuestionPoolId()
+			));
+			
+			foreach($filterSelection->getTaxonomySelection() as $taxId => $taxNodes)
+			{
+				$questionList->addTaxonomyFilter(
+					$taxId, $taxNodes, $this->testOBJ->getId(), $this->testOBJ->getType()
+				);
+			}
+		}
+		elseif( $dynamicQuestionSetConfig->getOrderingTaxonomyId() )
+		{
+			$questionList->setAvailableTaxonomyIds( array(
+				$dynamicQuestionSetConfig->getOrderingTaxonomyId()
+			));
+		}
+		
+		$questionList->setForcedQuestionIds($filterSelection->getForcedQuestionIds());
+		
+		$questionList->load();
+		
+		return $questionList;
+	}
+	
+	private function initSelectedQuestionStatisticsList(ilObjTestDynamicQuestionSetConfig $dynamicQuestionSetConfig, ilTestDynamicQuestionSetFilterSelection $filterSelection)
+	{
+		$questionList = $this->buildQuestionList(
+			$dynamicQuestionSetConfig->getSourceQuestionPoolId(), $filterSelection->getAnswerStatusActiveId()
+		);
 
 		if( $dynamicQuestionSetConfig->isTaxonomyFilterEnabled() )
 		{
@@ -314,6 +358,14 @@ class ilTestDynamicQuestionSet
 	public function getFilteredQuestionList()
 	{
 		return $this->filteredQuestionList;
+	}
+	
+	/**
+	 * @return ilAssQuestionList
+	 */
+	public function getSelectedQuestionStatisticsList()
+	{
+		return $this->selectedQuestionStatisticsList;
 	}
 	
 	/**
