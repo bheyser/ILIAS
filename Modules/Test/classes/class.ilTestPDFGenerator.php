@@ -123,6 +123,7 @@ class ilTestPDFGenerator
 		}
 
 		//uzk-patch: begin
+		$filename = ilUtil::getASCIIFilename($filename);
 		$start_time = microtime(TRUE);
 		$pdf_factory = new ilHtmlToPdfTransformerFactory();
 		$pdf_factory->deliverPDFFromHTMLString($pdf_output, $filename, $output_mode);

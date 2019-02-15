@@ -628,6 +628,13 @@ class ilObjTestGUI extends ilObjectGUI
 				// forward to ilAssQuestionHintsGUI
 				require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionHintsGUI.php';
 				$gui = new ilAssQuestionHintsGUI($questionGUI);
+				
+				global $DIC; /* @var ILIAS\DI\Container $DIC */
+				
+				$gui->setEditingEnabled(
+					$DIC->access()->checkAccess('write', '', $this->object->getRefId())
+				);
+				
 				$ilCtrl->forwardCommand($gui);
 
 				break;
@@ -1116,18 +1123,6 @@ class ilObjTestGUI extends ilObjectGUI
 		$result = $qtiParser->startParsing();
 		$founditems =& $qtiParser->getFoundItems();
 		
-		if (count($founditems) == 0)
-		{
-			// nothing found
-
-			// delete import directory
-			ilUtil::delDir($basedir);
-
-			ilUtil::sendInfo($this->lng->txt("tst_import_no_items"));
-			$this->createObject();
-			return;
-		}
-		
 		$complete = 0;
 		$incomplete = 0;
 		foreach ($founditems as $item)
@@ -1142,7 +1137,7 @@ class ilObjTestGUI extends ilObjectGUI
 			}
 		}
 		
-		if ($complete == 0)
+		if( count($founditems) && $complete == 0 )
 		{
 			// delete import directory
 			ilUtil::delDir($basedir);
@@ -1157,7 +1152,7 @@ class ilObjTestGUI extends ilObjectGUI
 		$_SESSION["tst_import_qti_file"] = $qti_file;
 		$_SESSION["tst_import_subdir"] = $subdir;
 		
-		if( $qtiParser->getQuestionSetType() == ilObjTest::QUESTION_SET_TYPE_RANDOM )
+		if( $qtiParser->getQuestionSetType() != ilObjTest::QUESTION_SET_TYPE_FIXED )
 		{
 			$this->importVerifiedFileObject();
 			return;
@@ -2569,6 +2564,7 @@ class ilObjTestGUI extends ilObjectGUI
 			}
 
 			$pool = new ilSelectInputGUI($this->lng->txt("select_questionpool"), "qpl");
+			$pool->setInfo($this->lng->txt('select_question_pool_info'));
 			$pool->setOptions($options);
 			$form->addItem($pool);
 		}
@@ -3776,7 +3772,7 @@ class ilObjTestGUI extends ilObjectGUI
 		$this->ctrl->forwardCommand($info);
 	}
 	
-	protected function renoveImportFailsObject()
+	protected function removeImportFailsObject()
 	{
 		require_once 'Modules/TestQuestionPool/classes/questions/class.ilAssQuestionSkillAssignmentImportFails.php';
 		$qsaImportFails = new ilAssQuestionSkillAssignmentImportFails($this->object->getId());
@@ -4422,6 +4418,14 @@ class ilObjTestGUI extends ilObjectGUI
 				$this->tabs_gui->removeTab($tabId);
 			}
 		}
+	}
+	
+	public static function accessViolationRedirect()
+	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		
+		ilUtil::sendInfo($DIC->language()->txt("no_permission"), true);
+		$DIC->ctrl()->redirectByClass('ilObjTestGUI', "infoScreen");
 	}
 	
 	/**
