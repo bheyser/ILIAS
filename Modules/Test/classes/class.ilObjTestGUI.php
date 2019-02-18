@@ -4881,8 +4881,9 @@ class ilObjTestGUI extends ilObjectGUI
 			$scoring_adjust_active = (bool) $setting->get('assessment_adjustments_enabled', false);
 			if ($ilAccess->checkAccess("write", "", $this->ref_id) && $scoring_adjust_active && !in_array('scoringadjust', $hidden_tabs))
 			{
-				$this->tabs_gui->addTab('scoringadjust', 'scoringadjust',
-					$DIC->ctrl()->getLinkTargetByClass('ilTestCorrectionsGUI')
+				$this->tabs_gui->addTarget('scoringadjust',
+					$DIC->ctrl()->getLinkTargetByClass('ilTestCorrectionsGUI'),
+					'', 'ilTestCorrectionsGUI'
 				);
 			}
 

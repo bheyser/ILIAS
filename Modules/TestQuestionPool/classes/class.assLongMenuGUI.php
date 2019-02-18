@@ -762,6 +762,7 @@ class assLongMenuGUI extends assQuestionGUI implements ilGuiQuestionScoringAdjus
 			$section->setTitle($this->lng->txt('longmenu'). ' ' .($lmIndex + 1));
 			$form->addItem($section);
 			
+			require_once 'Modules/TestQuestionPool/classes/forms/class.ilAssLongmenuCorrectionsInputGUI.php';
 			$lmInput = new ilAssLongmenuCorrectionsInputGUI(
 				$this->lng->txt('answers'), 'longmenu_'.$lmIndex
 			);

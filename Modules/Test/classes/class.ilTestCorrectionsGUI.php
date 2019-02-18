@@ -73,7 +73,7 @@ class ilTestCorrectionsGUI
 	
 	protected function showQuestionList()
 	{
-		$this->DIC->tabs()->activateTab(ilTestTabsManager::TAB_ID_CORRECTION);
+		$this->DIC->tabs()->activateTab('scoringadjust');
 		
 		$table_gui = new ilTestQuestionsTableGUI(
 			$this, 'showQuestionList', $this->testOBJ->getRefId()
@@ -226,6 +226,7 @@ class ilTestCorrectionsGUI
 	{
 		$response = new stdClass();
 		
+		require_once 'Modules/TestQuestionPool/classes/forms/class.ilAddAnswerModalFormGUI.php';
 		$form = new ilAddAnswerModalFormGUI();
 		$form->build();
 		$form->setValuesByPost();
@@ -288,7 +289,7 @@ class ilTestCorrectionsGUI
 	
 	protected function confirmQuestionRemoval()
 	{
-		$this->DIC->tabs()->activateTab(ilTestTabsManager::TAB_ID_CORRECTION);
+		$this->DIC->tabs()->activateTab('scoringadjust');
 		
 		$questionGUI = $this->getQuestion((int)$_GET['qid']);
 
@@ -296,20 +297,15 @@ class ilTestCorrectionsGUI
 			$questionGUI->object->getTitle(), $questionGUI->object->getId() 
 		);
 		
-		$buttons = array(
-			$this->DIC->ui()->factory()->button()->standard(
-				$this->DIC->language()->txt('confirm'),
-				$this->DIC->ctrl()->getLinkTarget($this, 'performQuestionRemoval')
-			),
-			$this->DIC->ui()->factory()->button()->standard(
-				$this->DIC->language()->txt('cancel'),
-				$this->DIC->ctrl()->getLinkTarget($this, 'showQuestionList')
-			)
-		);
+		$gui = new ilConfirmationGUI();
+		$gui->setHeaderText($confirmation);
+		$gui->setCancel($this->DIC->language()->txt('cancel'), 'showQuestionList');
+		$gui->setConfirm($this->DIC->language()->txt('confirm'), 'performQuestionRemoval');
+		$gui->setFormAction($this->DIC->ctrl()->getFormAction($this));
 		
-		$this->DIC->ui()->mainTemplate()->setContent($this->DIC->ui()->renderer()->render(
-			$this->DIC->ui()->factory()->messageBox()->confirmation($confirmation)->withButtons($buttons)
-		));
+		
+		
+		$this->DIC->ui()->mainTemplate()->setContent($gui->getHTML());
 	}
 	
 	protected function performQuestionRemoval()
@@ -321,11 +317,6 @@ class ilTestCorrectionsGUI
 		
 		$participantData = new ilTestParticipantData($DIC->database(), $DIC->language());
 		$participantData->load($this->testOBJ->getTestId());
-		
-		// remove question from test and reindex remaining questions
-		$this->testOBJ->removeQuestion($questionGUI->object->getId());
-		$this->testOBJ->reindexFixedQuestionOrdering();
-		$this->testOBJ->loadQuestions();
 		
 		// remove question solutions
 		$questionGUI->object->removeAllExistingSolutions();
@@ -339,8 +330,15 @@ class ilTestCorrectionsGUI
 		// trigger learning progress
 		ilLPStatusWrapper::_refreshStatus($this->testOBJ->getId(), $participantData->getUserIds());
 		
+		// remove question from test and reindex remaining questions
+		$this->testOBJ->removeQuestion($questionGUI->object->getId());
+		$reindexedSequencePositionMap = $this->testOBJ->reindexFixedQuestionOrdering();
+		$this->testOBJ->loadQuestions();
+		
 		// remove questions from all sequences
-		$this->testOBJ->removeQuestionFromSequences($questionGUI->object->getId(), $participantData->getActiveIds());
+		$this->testOBJ->removeQuestionFromSequences(
+			$questionGUI->object->getId(), $participantData->getActiveIds(), $reindexedSequencePositionMap
+		);
 		
 		// finally delete the question itself
 		$questionGUI->object->delete($questionGUI->object->getId());

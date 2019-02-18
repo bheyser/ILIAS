@@ -3462,7 +3462,12 @@ function getAnswerFeedbackPoints()
 		return false;
 	}
 
-	public function removeQuestionFromSequences($questionId, $activeIds)
+	/**
+	 * @param int $questionId
+	 * @param array $activeIds
+	 * @param ilTestReindexedSequencePositionMap $reindexedSequencePositionMap
+	 */
+	public function removeQuestionFromSequences($questionId, $activeIds, ilTestReindexedSequencePositionMap $reindexedSequencePositionMap)
 	{
 		global $DIC; /* @var ILIAS\DI\Container $DIC */
 		
@@ -3480,7 +3485,7 @@ function getAnswerFeedbackPoints()
 				$testSequence = $testSequenceFactory->getSequenceByActiveIdAndPass($activeId, $pass);
 				$testSequence->loadFromDb();
 				
-				$testSequence->removeQuestion($questionId);
+				$testSequence->removeQuestion($questionId, $reindexedSequencePositionMap);
 				$testSequence->saveToDb();
 			}
 		}
@@ -11355,6 +11360,9 @@ function getAnswerFeedbackPoints()
 	    $this->poolUsage = (boolean)$usage;
 	}
 
+	/**
+	 * @return ilTestReindexedSequencePositionMap
+	 */
 	public function reindexFixedQuestionOrdering()
 	{
 		$tree = isset($GLOBALS['DIC']) ? $GLOBALS['DIC']['tree'] : $GLOBALS['tree'];
@@ -11366,9 +11374,11 @@ function getAnswerFeedbackPoints()
 		$questionSetConfig = $qscFactory->getQuestionSetConfig();
 
 		/* @var ilTestFixedQuestionSetConfig $questionSetConfig */
-		$questionSetConfig->reindexQuestionOrdering();
+		$reindexedSequencePositionMap = $questionSetConfig->reindexQuestionOrdering();
 
 		$this->loadQuestions();
+		
+		return $reindexedSequencePositionMap;
 	}
 
 	public function setQuestionOrderAndObligations($orders, $obligations)

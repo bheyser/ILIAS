@@ -194,6 +194,7 @@ class ilAnswerFrequencyStatisticTableGUI extends ilTable2GUI
 			$this->getParentObject(), 'addAnswerAsynch'
 		);
 		
+		require_once 'Modules/TestQuestionPool/classes/forms/class.ilAddAnswerModalFormGUI.php';
 		$form = new ilAddAnswerModalFormGUI();
 		$form->setId($uid);
 		$form->setFormAction($formAction);
