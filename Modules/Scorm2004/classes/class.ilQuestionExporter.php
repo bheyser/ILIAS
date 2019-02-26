@@ -162,7 +162,10 @@ class ilQuestionExporter
 	private function assMultipleChoice() {
 		
 		global $tpl;
-		$this->q_gui->populateJavascriptFilesRequiredForWorkForm($tpl);
+		// PATCH-BEGIN: excludeMcOptions
+		//$this->q_gui->populateJavascriptFilesRequiredForWorkForm($tpl);
+		$tpl->addJavaScript('Modules/TestQuestionPool/js/ilAssMultipleChoice.js');
+		// PATCH-END: excludeMcOptions
 		$tpl->addCss('Modules/Test/templates/default/ta.css');
 		
 		$this->tpl->setCurrentBlock("multiplechoice");

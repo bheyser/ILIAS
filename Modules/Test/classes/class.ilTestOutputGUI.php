@@ -639,6 +639,20 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 			$q_id = $this->testSequence->getQuestionForSequence($_GET["sequence"]);
 			if (is_numeric($q_id) && (int)$q_id) 
 			{
+				// PATCH-BEGIN: excludeMcOptions
+				if( isset($_POST['excluded_mc_options']) && strlen($_POST['excluded_mc_options']) )
+				{
+					$excludedOptions = json_decode($_POST['excluded_mc_options']);
+
+					require_once 'Modules/TestQuestionPool/classes/class.ilAssExcludedMcOptionsStorage.php';
+
+					$storage = new ilAssExcludedMcOptionsStorage(
+						$this->testSession->getActiveId(), $this->testSession->getPass(), (int)$q_id
+					);
+					
+					$storage->replaceExcludedOptions($excludedOptions);
+				}
+				// PATCH-END: excludeMcOptions
 				$questionOBJ = $this->getQuestionInstance($q_id);
 				$pass = NULL;
 				$active_id = $this->testSession->getActiveId();

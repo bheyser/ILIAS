@@ -235,6 +235,18 @@ class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 		// generate the question output
 		include_once "./Services/UICore/classes/class.ilTemplate.php";
 		$template = new ilTemplate("tpl.il_as_qpl_mc_sr_output_solution.html", TRUE, TRUE, "Modules/TestQuestionPool");
+		// PATCH-BEGIN: excludeMcOptions
+		if( !$show_correct_solution )
+		{
+			require_once 'Modules/TestQuestionPool/classes/class.ilAssExcludedMcOptionsStorage.php';
+			$excludedMcOptionsStorage = new ilAssExcludedMcOptionsStorage($active_id, $pass, $this->object->getId());
+			$excludedMcOptions = $excludedMcOptionsStorage->getExcludedOptions();
+		}
+		else
+		{
+			$excludedMcOptions = array();
+		}
+		// PATCH-END: excludeMcOptions
 		$solutiontemplate = new ilTemplate("tpl.il_as_tst_solution_output.html",TRUE, TRUE, "Modules/TestQuestionPool");
 		foreach ($keys as $answer_id)
 		{
@@ -345,6 +357,12 @@ class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 				$resulttext = ($points == 1) ? "(%s " . $this->lng->txt("point") . ")" : "(%s " . $this->lng->txt("points") . ")"; 
 				$template->setVariable("RESULT_OUTPUT", sprintf($resulttext, $points));
 			}
+			// PATCH-BEGIN: excludeMcOptions
+			if( in_array($answer_id, $excludedMcOptions) )
+			{
+				$template->setVariable('EXCLUDED_OPTION_CSS_CLASS', 'mcOptionExcluded');
+			}
+			// PATCH-END: excludeMcOptions
 			$template->parseCurrentBlock();
 		}
 		$questiontext = $this->object->getQuestion();
@@ -480,6 +498,11 @@ class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 		// generate the question output
 		include_once "./Services/UICore/classes/class.ilTemplate.php";
 		$template = new ilTemplate("tpl.il_as_qpl_mc_sr_output.html", TRUE, TRUE, "Modules/TestQuestionPool");
+		// PATCH-BEGIN: excludeMcOptions
+		require_once 'Modules/TestQuestionPool/classes/class.ilAssExcludedMcOptionsStorage.php';
+		$excludedMcOptionsStorage = new ilAssExcludedMcOptionsStorage($active_id, $pass, $this->object->getId());
+		$excludedMcOptions = $excludedMcOptionsStorage->getExcludedOptions();
+		// PATCH-END: excludeMcOptions
 		foreach ($keys as $answer_id)
 		{
 			$answer = $this->object->answers[$answer_id];
@@ -565,10 +588,34 @@ class assSingleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScoringA
 			{
 				$template->setVariable("CHECKED_ANSWER", " checked=\"checked\"");
 			}
+			// PATCH-BEGIN: excludeMcOptions
+			$template->setVariable('QID', $this->object->getId());
+			$template->setVariable('TOGGLE_EXCLUSION_BTN_ID', 'toggle_option_exclusion_btn_'.$this->object->getId().'_'.$answer_id);
+			if( in_array($answer_id, $excludedMcOptions) )
+			{
+				$template->setVariable('TOGGLE_EXCLUSION_BTN_LABEL', $this->lng->txt('tst_mc_include_opt_btn_label'));
+				$template->setVariable('TOGGLE_EXCLUSION_BTN_CSS_CLASS', 'mcExclusionToggleInverted');
+				$template->setVariable('EXCLUDED_OPTION_CSS_CLASS', 'mcOptionExcluded');
+				$template->setVariable('INPUT_DISABLED', 'disabled="disabled"');
+			}
+			else
+			{
+				$template->setVariable('TOGGLE_EXCLUSION_BTN_LABEL', $this->lng->txt('tst_mc_exclude_opt_btn_label'));
+			}
+			// PATCH-END: excludeMcOptions
 			$template->parseCurrentBlock();
 		}
 		$questiontext = $this->object->getQuestion();
 		$template->setVariable("QUESTIONTEXT", $this->object->prepareTextareaOutput($questiontext, TRUE));
+		// PATCH-BEGIN: excludeMcOptions
+		$template->setVariable('QUESTION_ID', $this->object->getId());
+		$template->setVariable('EXCLUDE_OPTION_BUTTON_LABEL', $this->lng->txt('tst_mc_exclude_opt_btn_label'));
+		$template->setVariable('INCLUDE_OPTION_BUTTON_LABEL', $this->lng->txt('tst_mc_include_opt_btn_label'));
+		$template->setVariable('EXCLUDED_OPTIONS_INPUT', str_replace('"', '&quot;', json_encode($excludedMcOptions)));
+		$template->setVariable('EXCLUDED_OPTIONS_JSON', json_encode($excludedMcOptions));
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		$DIC->ui()->mainTemplate()->addJavaScript('Modules/TestQuestionPool/js/ilAssMultipleChoiceExtended.js');
+		// PATCH-END: excludeMcOptions
 		$questionoutput = $template->get();
 		$pageoutput = $this->outQuestionPage("", $is_postponed, $active_id, $questionoutput);
 		return $pageoutput;

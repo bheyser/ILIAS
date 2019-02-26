@@ -659,6 +659,20 @@ div.ilc_Page.readonly textarea[disabled]
 	left:0;
 }
 
+/* PATCH-BEGIN: excludeMcOptions */
+.mcOptionExcluded {
+	text-decoration: line-through;
+}
+.mcExclusionToggle {
+	margin-left: 20px;
+}
+.mcExclusionToggleInverted {
+	background-color: #ffffff !important;
+	border: solid #708bae 1px !important;
+	color: #708bae !important;
+}
+/* PATCH-END: excludeMcOptions */
+
 .textarea {
 	cursor: not-allowed !important;
 	border: 1px solid rgb(169, 169, 169);

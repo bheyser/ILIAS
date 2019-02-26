@@ -11,7 +11,9 @@
 				<input type="checkbox" name="multiple_choice_result_q{QID}_{SUFFIX}" value="{SOLUTION_VALUE}" readonly disabled {SOLUTION_CHECKED} />
 				<!-- END solution_field -->
 			</div>
-			<div>
+			<!-- PATCH-BEGIN: excludeMcOptions -->
+			<div class="{EXCLUDED_OPTION_CSS_CLASS}">
+			<!-- PATCH-END: excludeMcOptions -->
 <!-- BEGIN answer_image -->
 				<div class="ilc_media_cont_MediaContainer">
 					<div class="ilc_qimg_QuestionImage ilc_Mob">
