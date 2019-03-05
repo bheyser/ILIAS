@@ -80,3 +80,19 @@ if(!$ilDB->tableExists('hist_answer_progress'))
 <?php
 	$ilCtrlStructureReader->getStructure();
 ?>
+<#4>
+<?php
+if( !$ilDB->tableExists('qpl_mc_opt_excluded') )
+{
+	$ilDB->createTable('qpl_mc_opt_excluded', array(
+		'active_fi' => array('type' => 'integer', 'notnull' => true, 'length' => 4, 'default' => 0),
+		'pass_index' => array('type' => 'integer', 'notnull' => true, 'length' => 4, 'default' => 0),
+		'question_fi' => array('type' => 'integer', 'notnull' => true, 'length' => 4, 'default' => 0),
+		'option_index' => array('type' => 'integer', 'notnull' => true, 'length' => 4, 'default' => 0)
+	));
+	
+	$ilDB->addPrimaryKey('qpl_mc_opt_excluded', array(
+		'active_fi', 'pass_index', 'question_fi', 'option_index'
+	));
+}
+?>
