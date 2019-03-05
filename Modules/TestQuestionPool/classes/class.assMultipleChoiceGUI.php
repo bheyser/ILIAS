@@ -241,6 +241,18 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 		// generate the question output
 		include_once "./Services/UICore/classes/class.ilTemplate.php";
 		$template = new ilTemplate("tpl.il_as_qpl_mc_mr_output_solution.html", TRUE, TRUE, "Modules/TestQuestionPool");
+		// PATCH-BEGIN: excludeMcOptions
+		if( !$show_correct_solution )
+		{
+			require_once 'Modules/TestQuestionPool/classes/class.ilAssExcludedMcOptionsStorage.php';
+			$excludedMcOptionsStorage = new ilAssExcludedMcOptionsStorage($active_id, $pass, $this->object->getId());
+			$excludedMcOptions = $excludedMcOptionsStorage->getExcludedOptions();
+		}
+		else
+		{
+			$excludedMcOptions = array();
+		}
+		// PATCH-END: excludeMcOptions
 		$solutiontemplate = new ilTemplate("tpl.il_as_tst_solution_output.html",TRUE, TRUE, "Modules/TestQuestionPool");
 		foreach ($keys as $answer_id)
 		{
@@ -417,6 +429,12 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 					$template->setVariable('SOLUTION_VALUE', $answer_id);
 				}
 			}
+			// PATCH-BEGIN: excludeMcOptions
+			if( in_array($answer_id, $excludedMcOptions) )
+			{
+				$template->setVariable('EXCLUDED_OPTION_CSS_CLASS', 'mcOptionExcluded');
+			}
+			// PATCH-END: excludeMcOptions
 			$template->parseCurrentBlock();
 		}
 		$questiontext = $this->object->getQuestion();
@@ -589,6 +607,11 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 		// generate the question output
 		include_once "./Services/UICore/classes/class.ilTemplate.php";
 		$template = new ilTemplate("tpl.il_as_qpl_mc_mr_output.html", TRUE, TRUE, "Modules/TestQuestionPool");
+		// PATCH-BEGIN: excludeMcOptions
+		require_once 'Modules/TestQuestionPool/classes/class.ilAssExcludedMcOptionsStorage.php';
+		$excludedMcOptionsStorage = new ilAssExcludedMcOptionsStorage($active_id, $pass, $this->object->getId());
+		$excludedMcOptions = $excludedMcOptionsStorage->getExcludedOptions();
+		// PATCH-END: excludeMcOptions
 		foreach ($keys as $answer_id)
 		{
 			$answer = $this->object->answers[$answer_id];
@@ -646,13 +669,38 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 					$template->setVariable("CHECKED_ANSWER", " checked=\"checked\"");
 				}
 			}
+			// PATCH-BEGIN: excludeMcOptions
+			$template->setVariable('QID', $this->object->getId());
+			$template->setVariable('TOGGLE_EXCLUSION_BTN_ID', 'toggle_option_exclusion_btn_'.$this->object->getId().'_'.$answer_id);
+			if( in_array($answer_id, $excludedMcOptions) )
+			{
+				$template->setVariable('TOGGLE_EXCLUSION_BTN_LABEL', $this->lng->txt('tst_mc_include_opt_btn_label'));
+				$template->setVariable('TOGGLE_EXCLUSION_BTN_CSS_CLASS', 'mcExclusionToggleInverted');
+				$template->setVariable('EXCLUDED_OPTION_CSS_CLASS', 'mcOptionExcluded');
+				$template->setVariable('INPUT_DISABLED', 'disabled="disabled"');
+				
+			}
+			else
+			{
+				$template->setVariable('TOGGLE_EXCLUSION_BTN_LABEL', $this->lng->txt('tst_mc_exclude_opt_btn_label'));
+			}
+			if( $this->object->getSelectionLimit() && count($user_solution) == $this->object->getSelectionLimit() )
+			{
+				if( !in_array($answer_id, $user_solution) )
+				{
+					$template->setVariable('INPUT_DISABLED', 'disabled="disabled"');
+				}
+			}
+			// PATCH-END: excludeMcOptions
 			$template->parseCurrentBlock();
 		}
 
 // fau: testNav - add 'none of the above', if needed by the deprecated test setting to score empty answers
 		if ($this->withNoneAbove)
 		{
-			$this->tpl->addJavaScript('Modules/TestQuestionPool/js/ilAssMultipleChoice.js');
+			// PATCH-BEGIN: excludeMcOptions
+			$this->tpl->addJavaScript('Modules/TestQuestionPool/js/ilAssMultipleChoiceExtended.js');
+			// PATCH-END: excludeMcOptions
 			$template->setCurrentBlock('none_above');
 			$template->setVariable('LABEL_NONE_ABOVE', $this->lng->txt('tst_mc_label_none_above'));
 			if ($this->isAnswered && empty($user_solution))
@@ -680,6 +728,13 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 		{
 			$template->setVariable('SELECTION_LIMIT_VALUE', 'null');
 		}
+		// PATCH-BEGIN: excludeMcOptions
+		$template->setVariable('QUESTION_ID', $this->object->getId());
+		$template->setVariable('EXCLUDE_OPTION_BUTTON_LABEL', $this->lng->txt('tst_mc_exclude_opt_btn_label'));
+		$template->setVariable('INCLUDE_OPTION_BUTTON_LABEL', $this->lng->txt('tst_mc_include_opt_btn_label'));
+		$template->setVariable('EXCLUDED_OPTIONS_INPUT', str_replace('"', '&quot;', json_encode($excludedMcOptions)));
+		$template->setVariable('EXCLUDED_OPTIONS_JSON', json_encode($excludedMcOptions));
+		// PATCH-END: excludeMcOptions
 		$questionoutput = $template->get();
 		$pageoutput = $this->outQuestionPage("", $is_postponed, $active_id, $questionoutput);
 		return $pageoutput;
@@ -687,7 +742,9 @@ class assMultipleChoiceGUI extends assQuestionGUI implements ilGuiQuestionScorin
 	
 	public function populateJavascriptFilesRequiredForWorkForm(ilTemplate $tpl)
 	{
-		$tpl->addJavaScript('Modules/TestQuestionPool/js/ilAssMultipleChoice.js');
+		// PATCH-BEGIN: excludeMcOptions
+		$tpl->addJavaScript('Modules/TestQuestionPool/js/ilAssMultipleChoiceExtended.js');
+		// PATCH-END: excludeMcOptions
 	}
 
 	/**

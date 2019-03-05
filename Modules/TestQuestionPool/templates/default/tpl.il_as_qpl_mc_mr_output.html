@@ -1,4 +1,6 @@
-<div class="ilc_question_MultipleChoice">
+<!-- PATCH-BEGIN: excludeMcOptions -->
+<div class="ilc_question_MultipleChoice" data-qst-id="{QUESTION_ID}">
+<!-- PATCH-END: excludeMcOptions -->
 	<div class="ilc_qtitle_Title">{QUESTIONTEXT}</div>
 	<!-- BEGIN selection_limit_hint -->
 	<p class="ilAdditionalAssQuestionInstruction">{SELECTION_LIMIT_HINT}</p>
@@ -7,10 +9,14 @@
 <!-- BEGIN answer_row -->
 		<div class="ilc_qanswer_Answer">
 			<div>
-				<input type="checkbox" name="multiple_choice_result_{ANSWER_ID}" value="{ANSWER_ID}" id="answer_{ANSWER_ID}"{CHECKED_ANSWER} class="ilAssMultipleChoiceOption ilAssMultipleChoiceResult" data-qst-id="{QID}" data-ans-id="{ANSWER_ID}" />
+				<!-- PATCH-BEGIN: excludeMcOptions -->
+				<input type="checkbox" name="multiple_choice_result_{ANSWER_ID}" value="{ANSWER_ID}" id="answer_{ANSWER_ID}"{CHECKED_ANSWER} class="ilAssMultipleChoiceOption ilAssMultipleChoiceResult" data-qst-id="{QID}" data-ans-id="{ANSWER_ID}" {INPUT_DISABLED}/>
+				<!-- PATCH-END: excludeMcOptions -->
 			</div>
 			<div>
-				<label for="answer_{ANSWER_ID}" class="answertext">
+				<!-- PATCH-BEGIN: excludeMcOptions -->
+				<label for="answer_{ANSWER_ID}" class="answertext {EXCLUDED_OPTION_CSS_CLASS}">
+				<!-- PATCH-END: excludeMcOptions -->
 <!-- BEGIN preview -->
 					<div class="ilc_media_cont_MediaContainer">
 						<div class="ilc_qimg_QuestionImage ilc_Mob"><img border="0" src="{ANSWER_IMAGE_URL}" alt="{ANSWER_IMAGE_ALT}" title="{ANSWER_IMAGE_TITLE}" /></div>
@@ -27,6 +33,13 @@
 					{ANSWER_TEXT}
 				</label>
 			</div>
+			<!-- PATCH-BEGIN: excludeMcOptions -->
+			<!-- BEGIN toggle_exclusion -->
+			<div>
+				<a id="{TOGGLE_EXCLUSION_BTN_ID}" class="btn btn-default mcExclusionToggle {TOGGLE_EXCLUSION_BTN_CSS_CLASS}" href="#" data-qst-id="{QID}" data-ans-id="{ANSWER_ID}">&nbsp;{TOGGLE_EXCLUSION_BTN_LABEL}&nbsp;</a>
+			</div>
+			<!-- END toggle_exclusion -->
+			<!-- PATCH-END: excludeMcOptions -->
 		</div>
 <!-- BEGIN feedback -->
 		<div>
@@ -42,17 +55,31 @@
 		</div>
 		<!-- END none_above -->
 	</div>
+	<!-- PATCH-BEGIN: excludeMcOptions -->
+	<input type="hidden" name="excluded_mc_options" value="{EXCLUDED_OPTIONS_INPUT}" />
+	<!-- PATCH-END: excludeMcOptions -->
 </div>
 <script type="text/javascript">
 	(function($) { $(document).ready(
 
 			function()
 			{
+                // PATCH-BEGIN: excludeMcOptions
 				var question = $.fn.ilAssMultipleChoiceEngine({QUESTION_ID}, {
+                    qstContainerSelectorBase: 'div.ilc_question_MultipleChoice',
+                    mcOptionsSelector: 'input.ilAssMultipleChoiceOption',
+                    exclusionToggleBtnSelector: 'a.mcExclusionToggle',
+                    exclusionToggleBtnLabels: {
+                        exclude_option_button: '{EXCLUDE_OPTION_BUTTON_LABEL}',
+                        include_option_button: '{INCLUDE_OPTION_BUTTON_LABEL}'
+                    },
+                    excludedMcOptions: {EXCLUDED_OPTIONS_JSON},
+                    excludedMcOptionsInputName: 'excluded_mc_options',
 					maxSelection: {SELECTION_LIMIT_VALUE}
 				});
 
 				question.init();
+                // PATCH-END: excludeMcOptions
 			}
 
 	); }(jQuery));
