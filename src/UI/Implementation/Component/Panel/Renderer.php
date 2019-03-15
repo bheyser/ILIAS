@@ -139,7 +139,7 @@ class Renderer extends AbstractComponentRenderer {
 			{
 				$first = false;
 			}
-			else
+			elseif( $component->isDividerEnabled() )
 			{
 				$tpl->setCurrentBlock('data-row-divider');
 				$tpl->setVariable('DIVIDER', $default_renderer->render($divider));

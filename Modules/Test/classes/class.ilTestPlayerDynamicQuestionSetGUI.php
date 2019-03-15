@@ -269,31 +269,34 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 			}
 		}
 		
-		$form->addCommandButton('filterQuestionSelection', 'Save');
-		$form->addCommandButton('showQuestionSelection', 'Cancel');
+		$form->addCommandButton('filterQuestionSelection', 'Save Question Selection');
+		$form->addCommandButton('resetQuestionSelection', 'Reset Question Selection');
 		
 		return $form;
 	}
 	
-	protected function changeQuestionSelectionCmd()
+	protected function showAnsweringStatisticCmd()
 	{
-		$form = $this->buildQuestionSelectionForm();
-		
-		$this->tpl->setContent($form->getHTML());
-	}
-	
-	protected function showQuestionSelectionCmd()
-	{
-		$this->prepareSummaryPage();
-		
 		$this->testSequence->loadQuestions(
-				$this->dynamicQuestionSetConfig, $this->testSession->getQuestionSetFilterSelection()
+			$this->dynamicQuestionSetConfig, $this->testSession->getQuestionSetFilterSelection()
 		);
 		
 		$this->testSequence->cleanupQuestions($this->testSession);
-
+		
 		$this->testSequence->saveToDb();
-			
+
+		$filteredData = array($this->buildQuestionSetAnswerStatisticRowArray(
+			$this->testSequence->getSelectedQuestionsData(), $this->testSequence->getTrackedQuestionList()
+		)); #vd($filteredData);
+		$filteredTableGUI = $this->buildQuestionSetFilteredStatisticTableGUI();
+		$filteredTableGUI->setData($filteredData);
+		
+		$completeData = array($this->buildQuestionSetAnswerStatisticRowArray(
+			$this->testSequence->getCompleteQuestionsData(), $this->testSequence->getTrackedQuestionList()
+		)); #vd($completeData);
+		$completeTableGUI = $this->buildQuestionSetCompleteStatisticTableGUI();
+		$completeTableGUI->setData($completeData);
+		
 		require_once 'Services/UIComponent/Toolbar/classes/class.ilToolbarGUI.php';
 		$toolbarGUI = new ilToolbarGUI();
 		
@@ -304,7 +307,71 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		$button->setPrimary(true);
 		$toolbarGUI->addButtonInstance($button);
 		
+		$button = ilLinkButton::getInstance();
+		$button->setUrl($this->ctrl->getLinkTarget($this, 'showQuestionSelection'));
+		$button->setCaption('Change Question Selection', false);
+		$toolbarGUI->addButtonInstance($button);
+		
+		if( $this->object->getShowCancel() )
+		{
+			$button = ilLinkButton::getInstance();
+			$button->setUrl($this->ctrl->getLinkTarget(
+				$this, ilTestPlayerCommands::SUSPEND_TEST
+			));
+			$button->setCaption('cancel_test');
+			$toolbarGUI->addButtonInstance($button);
+		}
+		
+		if( $this->object->isPassDeletionAllowed() )
+		{
+			require_once 'Modules/Test/classes/confirmations/class.ilTestPassDeletionConfirmationGUI.php';
+			
+			$toolbarGUI->addButton(
+				$this->lng->txt('tst_dyn_test_pass_deletion_button'),
+				$this->getPassDeletionTarget(ilTestPassDeletionConfirmationGUI::CONTEXT_DYN_TEST_PLAYER)
+			);
+		}
+		
+		$content = $toolbarGUI->getHTML();
+		
 		if( true )
+		{
+			$content .= $this->renderQuestionSelectionStatisticsReport($filteredData[0], $completeData[0]);
+		}
+		elseif( true )
+		{
+			$content .= $this->getSelectedQuestionsStatisticsHTML($filteredData[0]);
+			$content .= $this->getCompleteQuestionPoolStatisticsHTML($completeData[0]);
+		}
+		else
+		{
+			$content = $this->ctrl->getHTML($filteredTableGUI);
+			$content .= $this->ctrl->getHTML($completeTableGUI);
+		}
+		
+		$this->tpl->setContent($content);
+	}
+	
+	protected function showQuestionSelectionCmd()
+	{
+		$this->prepareSummaryPage();
+		
+		require_once 'Services/UIComponent/Toolbar/classes/class.ilToolbarGUI.php';
+		$toolbarGUI = new ilToolbarGUI();
+		
+		require_once 'Services/UIComponent/Button/classes/class.ilLinkButton.php';
+		$button = ilLinkButton::getInstance();
+		$button->setUrl($this->getStartTestFromQuestionSelectionLink());
+		$button->setCaption($this->getEnterTestButtonLangVar());
+		$button->setPrimary(true);
+		$toolbarGUI->addButtonInstance($button);
+		
+			$button = ilLinkButton::getInstance();
+			$button->setUrl($this->ctrl->getLinkTarget($this, 'showAnsweringStatistic'));
+			$button->setCaption('Answering Statistic', false);
+			$toolbarGUI->addButtonInstance($button);
+		
+		if( false )
 		{
 			$button = ilLinkButton::getInstance();
 			$button->setUrl($this->ctrl->getLinkTarget($this, 'changeQuestionSelection'));
@@ -337,43 +404,143 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 			);
 		}
 		
-		$filteredData = array($this->buildQuestionSetAnswerStatisticRowArray(
-			$this->testSequence->getSelectedQuestionsData(), $this->testSequence->getTrackedQuestionList()
-		)); #vd($filteredData);
-		$filteredTableGUI = $this->buildQuestionSetFilteredStatisticTableGUI();
-		$filteredTableGUI->setData($filteredData);
-
-		$completeData = array($this->buildQuestionSetAnswerStatisticRowArray(
-			$this->testSequence->getCompleteQuestionsData(), $this->testSequence->getTrackedQuestionList()
-		)); #vd($completeData);
-		$completeTableGUI = $this->buildQuestionSetCompleteStatisticTableGUI();
-		$completeTableGUI->setData($completeData);
-
 		$content = $this->ctrl->getHTML($toolbarGUI);
-		if( true )
-		{
-			$content .= $this->getSelectedQuestionsStatisticsHTML($filteredData[0]);
-			$content .= $this->getCompleteQuestionPoolStatisticsHTML($completeData[0]);
-		}
-		else
-		{
-			$content .= $this->ctrl->getHTML($filteredTableGUI);
-			$content .= $this->ctrl->getHTML($completeTableGUI);
-		}
-
-		$this->tpl->setVariable('TABLE_LIST_OF_QUESTIONS', $content);	
-
+		
+		$form = $this->buildQuestionSelectionForm();
+		$content .= $form->getHTML();
+		
+		$this->tpl->setVariable('TABLE_LIST_OF_QUESTIONS', $content);
+		
 		if( $this->object->getEnableProcessingTime() )
 		{
 			$this->outProcessingTime($this->testSession->getActiveId());
 		}
+	}
+	
+	protected function renderQuestionSelectionStatisticsReport($filteredData, $completeData)
+	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		$f = $DIC->ui()->factory();
+		
+		/*$dropdown = $f->dropdown()->standard([
+			$f->link()->standard('Change Question Selection',
+				$this->ctrl->getLinkTarget($this, 'showQuestionSelection')
+			),
+			$f->link()->standard('Reset Question Selection',
+				$this->ctrl->getLinkTarget($this, 'resetQuestionSelection')
+			)
+		]);*/
+
+		$card = $f->card()->standard('Answering Statistic for Selected Questions')->withSections([
+			$this->getAnsweringStatisticListing($filteredData, 'Selected Questions', false)
+		]);
+		
+		$panel1 = $f->panel()->sub('Questions to be Presented', [
+			$this->getQuestionSelectionDescription()
+		])->withCard($card);//->withActions($dropdown);
+		
+		$panel2 = $f->panel()->sub('Answering Statistic for Complete Question Pool', [
+			$this->getAnsweringStatisticListing($completeData, 'All Questions', true)
+		]);
+		
+		
+		$reportPanel = $f->panel()->report('Question Selection', [$panel1, $panel2]);
+		
+		
+		return $DIC->ui()->renderer()->render($reportPanel);
+	}
+	
+	protected function getQuestionSelectionDescription()
+	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		
+		$items = [];
+		
+		switch( $this->testSession->getQuestionSetFilterSelection()->getAnswerStatusSelection() )
+		{
+			case ilAssQuestionList::ANSWER_STATUS_FILTER_NON_ANSWERED_ONLY:
+				$items[] = $this->lng->txt('tst_question_answer_status_non_answered');
+				break;
+			
+			case ilAssQuestionList::ANSWER_STATUS_FILTER_WRONG_ANSWERED_ONLY:
+				$items[] = $this->lng->txt('tst_question_answer_status_wrong_answered');
+				break;
+			
+			case ilAssQuestionList::ANSWER_STATUS_FILTER_ALL_NON_CORRECT:
+			default:
+				$items[] = $this->lng->txt('tst_question_answer_status_all_non_correct');
+		}
+		
+		foreach($this->dynamicQuestionSetConfig->getFilterTaxonomyIds() as $taxId)
+		{
+			if( $this->testSession->getQuestionSetFilterSelection()->hasSelectedTaxonomy($taxId) )
+			{
+				$selection = $this->testSession->getQuestionSetFilterSelection()->getSelectedTaxonomy($taxId);
+				
+				foreach($selection as $k => $v)
+				{
+					$selection[$k] = ilTaxonomyNode::_lookupTitle($v);
+				}
+				
+				$items[] = $DIC->ui()->factory()->legacy(
+					ilObject::_lookupTitle($taxId).': '.implode(', ', $selection)
+				);
+			}
+		}
+		
+		return $DIC->ui()->factory()->listing()->unordered($items);
+	}
+	
+	protected function getAnsweringStatisticListing($data, $totalQuestionsLabel, $dividerEnabled)
+	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		
+		
+		$descriptive = $DIC->ui()->factory()->listing()->descriptive([
+			$totalQuestionsLabel => (string)$data['total_all'],
+			'' => (string)$data['total_all'],
+		]);
+		
+		$panel = $DIC->ui()->factory()->panel()->data('')->withDividerEnabled($dividerEnabled);
+
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy($totalQuestionsLabel),
+			$DIC->ui()->factory()->legacy((string)$data['total_all'])
+		);
+		
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Open Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['total_open'])
+		);
+		
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Never Seen Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['non_answered_notseen'])
+		);
+		
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Skipped Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['non_answered_skipped'])
+		);
+		
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Wrong Answered Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['wrong_answered'])
+		);
+		
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Correct Answered Questions'),
+			$DIC->ui()->factory()->legacy((string)$data['correct_answered'])
+		);
+		
+		return $panel;
 	}
 
 	protected function getSelectedQuestionsStatisticsHTML($data)
 	{
 		global $DIC;
 		
-		$panel = $DIC->ui()->factory()->panel()->data('Currently Selected Questions');
+		$panel = $DIC->ui()->factory()->panel()->data('')->withDividerEnabled(true);
 		#var_dump($data); exit;
 		
 		foreach($this->dynamicQuestionSetConfig->getFilterTaxonomyIds() as $taxId)
@@ -446,14 +613,16 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 			$DIC->ui()->factory()->legacy((string)$data['correct_answered'])
 		);
 		
-		return $DIC->ui()->renderer()->render($panel);
+		$panelOuter = $DIC->ui()->factory()->panel()->standard('Currently Selected Questions', $panel);
+		
+		return $DIC->ui()->renderer()->render($panelOuter);
 	}
 
 	protected function getCompleteQuestionPoolStatisticsHTML($data)
 	{
 		global $DIC;
 		
-		$panel = $DIC->ui()->factory()->panel()->data('Complete Question Pool');
+		$panel = $DIC->ui()->factory()->panel()->data('')->withDividerEnabled(true);
 		
 		$panel->withAdditionalEntry(
 			$DIC->ui()->factory()->legacy('Total Questions'),
@@ -485,7 +654,9 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 			$DIC->ui()->factory()->legacy((string)$data['correct_answered'])
 		);
 		
-		return $DIC->ui()->renderer()->render($panel);
+		$panelOuter = $DIC->ui()->factory()->panel()->standard('Complete Question Pool', $panel);
+		
+		return $DIC->ui()->renderer()->render($panelOuter);
 	}
 	
 	protected function filterQuestionSelectionCmd()

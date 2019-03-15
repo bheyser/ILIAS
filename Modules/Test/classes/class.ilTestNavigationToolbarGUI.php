@@ -245,6 +245,7 @@ class ilTestNavigationToolbarGUI extends ilToolbarGUI
 		if( $this->isQuestionSelectionButtonEnabled() )
 		{
 			$this->addQuestionSelectionButton();
+			$this->addAnsweringStatisticButton();
 		}
 
 		if( $this->isSuspendTestButtonEnabled() )
@@ -292,6 +293,19 @@ class ilTestNavigationToolbarGUI extends ilToolbarGUI
 			$this->playerGUI, ilTestPlayerCommands::SHOW_QUESTION_SELECTION
 		));
 		$btn->setCaption('tst_change_dyn_test_question_selection');
+		//$btn->setDisabled($this->isDisabledStateEnabled());
+		$btn->addCSSClass('ilTstNavElem');
+		$this->addButtonInstance($btn);
+	}
+	
+	private function addAnsweringStatisticButton()
+	{
+		$btn = ilTestPlayerNavButton::getInstance();
+		$btn->setNextCommand('showAnsweringStatistic');
+		$btn->setUrl($this->ctrl->getLinkTarget(
+			$this->playerGUI, 'showAnsweringStatistic'
+		));
+		$btn->setCaption('Answering Statistic', false);
 		//$btn->setDisabled($this->isDisabledStateEnabled());
 		$btn->addCSSClass('ilTstNavElem');
 		$this->addButtonInstance($btn);
