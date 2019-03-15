@@ -37,6 +37,16 @@ interface Data extends \ILIAS\UI\Component\Component {
 	public function isDividerEnabled();
 	
 	/**
+	 * @return string
+	 */
+	public function getLeftColumnCssClass();
+	
+	/**
+	 * @return string
+	 */
+	public function getRightColumnCssClass();
+	
+	/**
 	 * Adds data entry to be displayed within the data-panel
 	 *
 	 * @param Component $dataLabel

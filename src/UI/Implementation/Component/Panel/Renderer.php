@@ -147,6 +147,8 @@ class Renderer extends AbstractComponentRenderer {
 			}
 
 			$tpl->setCurrentBlock('data-row');
+			$tpl->setVariable('LABEL_CLASS', $component->getLeftColumnCssClass());
+			$tpl->setVariable('VALUE_CLASS', $component->getRightColumnCssClass());
 			$tpl->setVariable('LABEL', $default_renderer->render($entry[0]));
 			$tpl->setVariable('VALUE', $default_renderer->render($entry[1]));
 			$tpl->parseCurrentBlock();

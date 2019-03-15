@@ -340,8 +340,8 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		}
 		elseif( true )
 		{
-			$content .= $this->getSelectedQuestionsStatisticsHTML($filteredData[0]);
-			$content .= $this->getCompleteQuestionPoolStatisticsHTML($completeData[0]);
+			$content .= $this->getSelectedQuestionsStatisticsHTML($filteredData[0], 'Questions Selected');
+			$content .= $this->getCompleteQuestionPoolStatisticsHTML($completeData[0], 'All Questions in Pool');
 		}
 		else
 		{
@@ -432,7 +432,7 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		]);*/
 
 		$card = $f->card()->standard('Answering Statistic for Selected Questions')->withSections([
-			$this->getAnsweringStatisticListing($filteredData, 'Selected Questions', false)
+			$this->getAnsweringStatisticListing($filteredData, 'Questions Selected', false)
 		]);
 		
 		$panel1 = $f->panel()->sub('Questions to be Presented', [
@@ -440,7 +440,7 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		])->withCard($card);//->withActions($dropdown);
 		
 		$panel2 = $f->panel()->sub('Answering Statistic for Complete Question Pool', [
-			$this->getAnsweringStatisticListing($completeData, 'All Questions', true)
+			$this->getAnsweringStatisticListing($completeData, 'All Questions in Pool', true)
 		]);
 		
 		
@@ -509,34 +509,42 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		);
 		
 		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Open Questions'),
-			$DIC->ui()->factory()->legacy((string)$data['total_open'])
+			$DIC->ui()->factory()->legacy('Questions Answered Fully Correct'),
+			$DIC->ui()->factory()->legacy((string)$data['correct_answered'])
 		);
 		
 		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Never Seen Questions'),
-			$DIC->ui()->factory()->legacy((string)$data['non_answered_notseen'])
-		);
-		
-		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Skipped Questions'),
-			$DIC->ui()->factory()->legacy((string)$data['non_answered_skipped'])
-		);
-		
-		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Wrong Answered Questions'),
+			$DIC->ui()->factory()->legacy('Questions Answered Wrongly'),
 			$DIC->ui()->factory()->legacy((string)$data['wrong_answered'])
 		);
 		
 		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Correct Answered Questions'),
-			$DIC->ui()->factory()->legacy((string)$data['correct_answered'])
+			$DIC->ui()->factory()->legacy('Questions not Answered, yet'),
+			$DIC->ui()->factory()->legacy((string)($data['non_answered_notseen'] + $data['non_answered_skipped']))
 		);
+		
+		if( false )
+		{
+			$panel->withAdditionalEntry(
+				$DIC->ui()->factory()->legacy('Open Questions'),
+				$DIC->ui()->factory()->legacy((string)$data['total_open'])
+			);
+			
+			$panel->withAdditionalEntry(
+				$DIC->ui()->factory()->legacy('Never Seen Questions'),
+				$DIC->ui()->factory()->legacy((string)$data['non_answered_notseen'])
+			);
+			
+			$panel->withAdditionalEntry(
+				$DIC->ui()->factory()->legacy('Skipped Questions'),
+				$DIC->ui()->factory()->legacy((string)$data['non_answered_skipped'])
+			);
+		}
 		
 		return $panel;
 	}
 
-	protected function getSelectedQuestionsStatisticsHTML($data)
+	protected function getSelectedQuestionsStatisticsHTML($data, $allQuestionsLabel)
 	{
 		global $DIC;
 		
@@ -584,75 +592,91 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		);
 		
 		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Total Questions'),
+			$DIC->ui()->factory()->legacy($allQuestionsLabel),
 			$DIC->ui()->factory()->legacy((string)$data['total_all'])
 		);
-
+		
 		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Open Questions'),
-			$DIC->ui()->factory()->legacy((string)$data['total_open'])
-		);
-
-		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Never Seen Questions'),
-			$DIC->ui()->factory()->legacy((string)$data['non_answered_notseen'])
-		);
-
-		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Skipped Questions'),
-			$DIC->ui()->factory()->legacy((string)$data['non_answered_skipped'])
-		);
-
-		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Wrong Answered Questions'),
-			$DIC->ui()->factory()->legacy((string)$data['wrong_answered'])
-		);
-
-		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Correct Answered Questions'),
+			$DIC->ui()->factory()->legacy('Questions Answered Fully Correct'),
 			$DIC->ui()->factory()->legacy((string)$data['correct_answered'])
 		);
+		
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Questions Answered Wrongly'),
+			$DIC->ui()->factory()->legacy((string)$data['wrong_answered'])
+		);
+		
+		$panel->withAdditionalEntry(
+			$DIC->ui()->factory()->legacy('Questions not Answered, yet'),
+			$DIC->ui()->factory()->legacy((string)($data['non_answered_notseen'] + $data['non_answered_skipped']))
+		);
+		
+		if( false )
+		{
+			$panel->withAdditionalEntry(
+				$DIC->ui()->factory()->legacy('Open Questions'),
+				$DIC->ui()->factory()->legacy((string)$data['total_open'])
+			);
+			
+			$panel->withAdditionalEntry(
+				$DIC->ui()->factory()->legacy('Never Seen Questions'),
+				$DIC->ui()->factory()->legacy((string)$data['non_answered_notseen'])
+			);
+			
+			$panel->withAdditionalEntry(
+				$DIC->ui()->factory()->legacy('Skipped Questions'),
+				$DIC->ui()->factory()->legacy((string)$data['non_answered_skipped'])
+			);
+		}
 		
 		$panelOuter = $DIC->ui()->factory()->panel()->standard('Currently Selected Questions', $panel);
 		
 		return $DIC->ui()->renderer()->render($panelOuter);
 	}
 
-	protected function getCompleteQuestionPoolStatisticsHTML($data)
+	protected function getCompleteQuestionPoolStatisticsHTML($data, $allQuestionsLabel)
 	{
 		global $DIC;
 		
 		$panel = $DIC->ui()->factory()->panel()->data('')->withDividerEnabled(true);
 		
 		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Total Questions'),
+			$DIC->ui()->factory()->legacy($allQuestionsLabel),
 			$DIC->ui()->factory()->legacy((string)$data['total_all'])
 		);
 		
 		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Open Questions'),
-			$DIC->ui()->factory()->legacy((string)$data['total_open'])
+			$DIC->ui()->factory()->legacy('Questions Answered Fully Correct'),
+			$DIC->ui()->factory()->legacy((string)$data['correct_answered'])
 		);
 		
 		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Never Seen Questions'),
-			$DIC->ui()->factory()->legacy((string)$data['non_answered_notseen'])
-		);
-		
-		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Skipped Questions'),
-			$DIC->ui()->factory()->legacy((string)$data['non_answered_skipped'])
-		);
-		
-		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Wrong Answered Questions'),
+			$DIC->ui()->factory()->legacy('Questions Answered Wrongly'),
 			$DIC->ui()->factory()->legacy((string)$data['wrong_answered'])
 		);
 		
 		$panel->withAdditionalEntry(
-			$DIC->ui()->factory()->legacy('Correct Answered Questions'),
-			$DIC->ui()->factory()->legacy((string)$data['correct_answered'])
+			$DIC->ui()->factory()->legacy('Questions not Answered, yet'),
+			$DIC->ui()->factory()->legacy((string)($data['non_answered_notseen'] + $data['non_answered_skipped']))
 		);
+		
+		if( false )
+		{
+			$panel->withAdditionalEntry(
+				$DIC->ui()->factory()->legacy('Open Questions'),
+				$DIC->ui()->factory()->legacy((string)$data['total_open'])
+			);
+			
+			$panel->withAdditionalEntry(
+				$DIC->ui()->factory()->legacy('Never Seen Questions'),
+				$DIC->ui()->factory()->legacy((string)$data['non_answered_notseen'])
+			);
+			
+			$panel->withAdditionalEntry(
+				$DIC->ui()->factory()->legacy('Skipped Questions'),
+				$DIC->ui()->factory()->legacy((string)$data['non_answered_skipped'])
+			);
+		}
 		
 		$panelOuter = $DIC->ui()->factory()->panel()->standard('Complete Question Pool', $panel);
 		

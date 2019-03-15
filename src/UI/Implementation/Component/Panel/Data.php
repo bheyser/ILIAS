@@ -51,6 +51,32 @@ class Data extends Panel implements \ILIAS\UI\Component\Panel\Data {
 	}
 	
 	/**
+	 * @return string
+	 */
+	public function getLeftColumnCssClass()
+	{
+		if( $this->isDividerEnabled() )
+		{
+			return 'col-md-6';
+		}
+		
+		return 'col-md-9';
+	}
+	
+	/**
+	 * @return string
+	 */
+	public function getRightColumnCssClass()
+	{
+		if( $this->isDividerEnabled() )
+		{
+			return 'col-md-6';
+		}
+		
+		return 'col-md-3 ilRight';
+	}
+	
+	/**
 	 * @param Component $dataLabel
 	 * @param Component $dataValue
 	 * @return \ILIAS\UI\Component\Panel\Data|Data
