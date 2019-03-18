@@ -867,6 +867,10 @@ assessment#:#material#:#Material
 assessment#:#material_download#:#Materialien zum Herunterladen###deprecated
 assessment#:#material_file#:#Materialdatei
 assessment#:#maxchars#:#Maximale Anzahl von Zeichen
+assessment#:#qst_essay_chars_remaining#:#Noch übrige Zeichen:
+assessment#:#qst_essay_allready_written_words#:#Bereits geschriebene Wörter:
+assessment#:#qst_essay_wordcounter_enabled#:#Wortzähler
+assessment#:#qst_essay_wordcounter_enabled_info#:#Teilnehmern wird ein Wortzähler gezeigt. Er bietet eine Orientierung darüber wie viel Text Teilnehmer bereits geschrieben haben.
 assessment#:#maximum_nr_of_tries_reached#:#Sie haben die maximale Anzahl von Testdurchläufen für diesen Test ausgeschöpft. Der Test kann nicht noch einmal gestartet werden.
 assessment#:#maximum_points#:#Maximal erreichbare Punktezahl
 assessment#:#maxsize#:#Maximale Dateigröße
