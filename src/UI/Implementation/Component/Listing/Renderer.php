@@ -26,6 +26,9 @@ class Renderer extends AbstractComponentRenderer {
 		if ($component instanceof Component\Listing\Descriptive) {
 			return $this->render_descriptive($component, $default_renderer);
 		}
+		elseif ($component instanceof Component\Listing\Labeled) {
+			return $this->render_labeled($component, $default_renderer);
+		}
 		else {
 			return $this->render_simple($component, $default_renderer);
 		}
@@ -58,6 +61,67 @@ class Renderer extends AbstractComponentRenderer {
 				$tpl->parseCurrentBlock();
 			}
 		}
+		return $tpl->get();
+	}
+	
+	/**
+	 * @param Component\Listing\Labeled $component
+	 * @param RendererInterface $default_renderer
+	 */
+	protected function render_labeled(Component\Listing\Labeled $component, RendererInterface $default_renderer) {
+		global $DIC; /* @var \ILIAS\DI\Container $DIC */
+		
+		$divider = $DIC->ui()->factory()->divider()->horizontal();
+		
+		switch( $component->getSplitRatio() )
+		{
+			case Labeled::SPLIT_RATIO_1_3:
+				
+				$labelCssClass = 'col-md-3';
+				$contentCssClass = 'col-md-9';
+				break;
+				
+			case Labeled::SPLIT_RATIO_3_1:
+				
+				$labelCssClass = 'col-md-9';
+				$contentCssClass = 'col-md-3';
+				break;
+			
+			case Labeled::SPLIT_RATIO_1_1:
+			default:
+			
+			$labelCssClass = 'col-md-6';
+			$contentCssClass = 'col-md-6';
+				break;
+		}
+		
+		$tpl = $this->getTemplate("tpl.labeled.html", true, true);
+		
+		$first = true;
+		
+		foreach($component->getItems() as $label => $content)
+		{
+			if( $first )
+			{
+				$first = false;
+			}
+			elseif( $component->hasDivider() )
+			{
+				$tpl->setCurrentBlock('data-row-divider');
+				$tpl->setVariable('DIVIDER', $default_renderer->render($divider));
+				$tpl->parseCurrentBlock();
+			}
+			
+			$content = is_string($content) ? $content : $default_renderer->render($content);
+			
+			$tpl->setCurrentBlock('data-row');
+			$tpl->setVariable('LABEL_CLASS', $labelCssClass);
+			$tpl->setVariable('VALUE_CLASS', $contentCssClass);
+			$tpl->setVariable('LABEL', $label);
+			$tpl->setVariable('VALUE', $content);
+			$tpl->parseCurrentBlock();
+		}
+		
 		return $tpl->get();
 	}
 
