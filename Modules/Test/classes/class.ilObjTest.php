@@ -12805,5 +12805,16 @@ function getAnswerFeedbackPoints()
 			}
 		}
 	}
+	function evalTotalFinished()
+	{
+		global $ilDB;
+		
+		$result = $ilDB->queryF("SELECT COUNT(active_id) total FROM tst_active WHERE test_fi = %s AND submitted = %s",
+			array('integer', 'integer'),
+			array($this->getTestId(), 1)
+		);
+		$row = $ilDB->fetchAssoc($result);
+		return $row["total"];
+	}
 	
 }

@@ -114,6 +114,7 @@ class ilTestTabsManager
 		{
 			case self::TAB_ID_EXAM_DASHBOARD:
 			case self::TAB_ID_RESULTS:
+			default:
 				
 				$this->tabs->activateTab($tabId);
 		}
@@ -135,6 +136,7 @@ class ilTestTabsManager
 			case self::SUBTAB_ID_HIGHSCORE:
 			case self::SUBTAB_ID_SKILL_RESULTS:
 			case self::SUBTAB_ID_MY_SOLUTIONS:
+			default:
 				
 				$this->tabs->activateSubTab($subTabId);
 		}
@@ -797,7 +799,7 @@ class ilTestTabsManager
 		}
 	}
 	
-	protected function getStatisticsSubTabs()
+	public function getStatisticsSubTabs()
 	{
 		global $DIC; /* @var ILIAS\DI\Container $DIC */
 		
@@ -809,16 +811,28 @@ class ilTestTabsManager
 			, "");
 		
 		// aggregated results subtab
-		$this->tabs->addSubTabTarget("tst_results_aggregated",
-			$DIC->ctrl()->getLinkTargetByClass("iltestevaluationgui", "eval_a"),
-			array("eval_a"),
-			"", "");
+		#$this->tabs->addSubTabTarget("tst_results_aggregated",
+		#	$DIC->ctrl()->getLinkTargetByClass("iltestevaluationgui", "eval_a"),
+		#	array("eval_a"),
+		#	"", "");
 		
 		// question export
 		$this->tabs->addSubTabTarget("tst_single_results",
 			$DIC->ctrl()->getLinkTargetByClass("iltestevaluationgui", "singleResults"),
 			array("singleResults"),
 			"", "");
+		
+		//return;
+		
+		// aggregated test results
+		$this->tabs->addSubTab('agg_tst_results', $DIC->language()->txt('tst_results_aggregated'),
+			$DIC->ctrl()->getLinkTargetByClass('ilTestStatisticsGUI', 'showAggregatedTestResults')
+		);
+		
+		// aggregated question results
+		$this->tabs->addSubTab('agg_qst_results', 'Aggregated Question Results',
+			$DIC->ctrl()->getLinkTargetByClass('ilTestStatisticsGUI', 'showAggregatedQuestionResults')
+		);
 	}
 	
 	public function getSettingsSubTabs()

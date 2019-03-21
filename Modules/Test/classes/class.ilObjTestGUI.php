@@ -25,6 +25,7 @@ require_once 'Modules/Test/classes/class.ilTestParticipantAccessFilter.php';
  * @ilCtrl_Calls ilObjTestGUI: ilTestDashboardGUI, ilTestResultsGUI
  * @ilCtrl_Calls ilObjTestGUI: ilLearningProgressGUI, ilMarkSchemaGUI
  * @ilCtrl_Calls ilObjTestGUI: ilTestEvaluationGUI
+ * @ilCtrl_Calls ilObjTestGUI: ilTestStatisticsGUI
  * @ilCtrl_Calls ilObjTestGUI: ilAssGenFeedbackPageGUI, ilAssSpecFeedbackPageGUI
  * @ilCtrl_Calls ilObjTestGUI: ilInfoScreenGUI, ilObjectCopyGUI, ilTestScoringGUI
  * @ilCtrl_Calls ilObjTestGUI: ilRepositorySearchGUI, ilTestExportGUI
@@ -311,6 +312,14 @@ class ilObjTestGUI extends ilObjectGUI
 				if (!$this->object->getKioskMode()) $this->prepareOutput();
 				$gui = new ilTestPlayerDynamicQuestionSetGUI($this->object);
 				$gui->setObjectiveOrientedContainer($this->getObjectiveOrientedContainer());
+				$this->ctrl->forwardCommand($gui);
+				break;
+
+			case "ilteststatisticsgui":
+				$this->prepareOutput();
+				$this->addHeaderAction();
+				require_once 'Modules/Test/classes/class.ilTestStatisticsGUI.php';
+				$gui = new ilTestStatisticsGUI($this->tabsManager, $this->object);
 				$this->ctrl->forwardCommand($gui);
 				break;
 

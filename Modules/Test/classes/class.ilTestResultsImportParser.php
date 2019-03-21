@@ -223,6 +223,7 @@ class ilTestResultsImportParser extends ilSaxParser
 						));
 						break;
 					case 'tst_solutions':
+						if( !$this->question_id_mapping[$a_attribs['question_fi']] ) break;
 						$next_id = $ilDB->nextId('tst_solutions');
 						$affectedRows = $ilDB->insert("tst_solutions", array(
 							"solution_id" => array("integer", $next_id),
@@ -235,6 +236,7 @@ class ilTestResultsImportParser extends ilSaxParser
 						));
 						break;
 					case 'tst_test_result':
+						if( !$this->question_id_mapping[$a_attribs['question_fi']] ) break;
 						$next_id = $ilDB->nextId('tst_test_result');
 						$affectedRows = $ilDB->manipulateF("INSERT INTO tst_test_result (test_result_id, active_fi, question_fi, points, pass, manual, tstamp) VALUES (%s, %s, %s, %s, %s, %s, %s)",
 							array('integer', 'integer','integer', 'float', 'integer', 'integer','integer'),
