@@ -151,12 +151,78 @@ class ilTestQuestionSideListGUI
 		$panel->setHeading($this->lng->txt('list_of_questions'));
 		return $panel;
 	}
+	
+	private function renderWorkflow()
+	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		$uif = $DIC->ui()->factory();
+		
+		$steps = [];
+		$activeStep = 0;
+		
+		foreach( array_values($this->getQuestionSummaryData()) as $i => $row )
+		{
+			$step = $uif->listing()->workflow()->step(
+				ilUtil::prepareFormOutput($row['title']),
+				strlen($row['description']) ? $row['description'] : '',
+				$this->buildLink($row['sequence'])
+			);
+			
+			$step = $step->withStatus(\ILIAS\UI\Component\Listing\Workflow\Step::NOT_STARTED);
+			
+			if( true && isset($row['answerstatus']) )
+			{
+				require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionList.php';
+				
+				switch( $row['answerstatus'] )
+				{
+					case ilAssQuestionList::QUESTION_ANSWER_STATUS_CORRECT_ANSWERED:
+						$step = $step->withStatus(\ILIAS\UI\Component\Listing\Workflow\Step::SUCCESSFULLY);
+						break;
+					case ilAssQuestionList::QUESTION_ANSWER_STATUS_WRONG_ANSWERED:
+						$step = $step->withStatus(\ILIAS\UI\Component\Listing\Workflow\Step::UNSUCCESSFULLY);
+						break;
+				}
+			}
+			elseif( $row['worked_through'] )
+			{
+				$step = $step->withStatus(\ILIAS\UI\Component\Listing\Workflow\Step::IN_PROGRESS);
+			}
+			
+			if( $this->isDisabled() || $row['disabled'] )
+			{
+				$step = $step->withAvailability(\ILIAS\UI\Component\Listing\Workflow\Step::NOT_AVAILABLE);
+			}
+			elseif( true )
+			{
+				$step = $step->withAvailability(\ILIAS\UI\Component\Listing\Workflow\Step::AVAILABLE);
+			}
+			
+			if( $row['sequence'] == $this->getCurrentSequenceElement() )
+			{
+				$activeStep = $i;
+			}
+			
+			$steps[] = $step;
+		}
+		
+		$workflow = $uif->listing()->workflow()->linear('Fragenworkflow', $steps);
+		
+		$workflow = $workflow->withActive($activeStep);
+		
+		return $DIC->ui()->renderer()->render($workflow);
+	}
 
 	/**
 	 * @return string
 	 */
 	private function renderList()
 	{
+		if( true )
+		{
+			return $this->renderWorkflow();
+		}
+		
 		$tpl = new ilTemplate('tpl.il_as_tst_list_of_questions_short.html', true, true, 'Modules/Test');
 
 		foreach( $this->getQuestionSummaryData() as $row )
