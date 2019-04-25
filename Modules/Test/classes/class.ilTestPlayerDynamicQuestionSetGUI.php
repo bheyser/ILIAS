@@ -345,7 +345,7 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		}
 		else
 		{
-			$content = $this->ctrl->getHTML($filteredTableGUI);
+			$content .= $this->ctrl->getHTML($filteredTableGUI);
 			$content .= $this->ctrl->getHTML($completeTableGUI);
 		}
 		
