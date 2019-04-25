@@ -230,7 +230,7 @@ class ilTestNavigationToolbarGUI extends ilToolbarGUI
 		$this->disabledStateEnabled = $disabledStateEnabled;
 	}
 	
-	public function build()
+	public function build($withResultLink = false)
 	{
 		if( $this->isQuestionTreeButtonEnabled() )
 		{
@@ -246,6 +246,7 @@ class ilTestNavigationToolbarGUI extends ilToolbarGUI
 		{
 			$this->addQuestionSelectionButton();
 			$this->addAnsweringStatisticButton();
+			$this->addTestResultsButton();
 		}
 
 		if( $this->isSuspendTestButtonEnabled() )
@@ -306,6 +307,23 @@ class ilTestNavigationToolbarGUI extends ilToolbarGUI
 			$this->playerGUI, 'showAnsweringStatistic'
 		));
 		$btn->setCaption('Answering Statistic', false);
+		//$btn->setDisabled($this->isDisabledStateEnabled());
+		$btn->addCSSClass('ilTstNavElem');
+		$this->addButtonInstance($btn);
+	}
+	
+	private function addTestResultsButton()
+	{
+		$this->ctrl->setParameter(
+			$this->playerGUI, 'context', ilTestPassDeletionConfirmationGUI::CONTEXT_DYN_TEST_PLAYER
+		);
+		
+		$btn = ilTestPlayerNavButton::getInstance();
+		$btn->setNextCommand('showTestResults');
+		$btn->setUrl($this->ctrl->getLinkTarget(
+			$this->playerGUI, 'showTestResults'
+		));
+		$btn->setCaption('Test Results', false);
 		//$btn->setDisabled($this->isDisabledStateEnabled());
 		$btn->addCSSClass('ilTstNavElem');
 		$this->addButtonInstance($btn);

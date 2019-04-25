@@ -14,6 +14,7 @@ class ilTestPassDeletionConfirmationGUI extends ilConfirmationGUI
 	const CONTEXT_PASS_OVERVIEW = 'contPassOverview';
 	const CONTEXT_INFO_SCREEN = 'contInfoScreen';
 	const CONTEXT_DYN_TEST_PLAYER = 'contDynTestPlayer';
+	const CONTEXT_DYN_TEST_QUESTION_SELECTION = 'contDynQuestSelect';
 
 	/**
 	 * @var ilCtrl

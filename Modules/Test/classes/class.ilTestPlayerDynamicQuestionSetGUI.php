@@ -215,6 +215,21 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		$this->ctrl->redirect($this, ilTestPlayerCommands::SHOW_QUESTION);
 	}
 	
+	protected function showTestResultsCmd()
+	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		
+		$DIC->ctrl()->setParameterByClass('ilMyTestResultsGUI', 'context',
+			$_GET['context']
+		);
+		
+		$DIC->ctrl()->setParameterByClass('ilTestEvaluationGUI', 'pass', 0);
+		
+		$DIC->ctrl()->redirectByClass(
+			array('ilTestResultsGUI', 'ilMyTestResultsGUI', 'ilTestEvaluationGUI'), 'outUserPassDetails'
+		);
+	}
+	
 	protected function buildQuestionSelectionForm()
 	{
 		$form = new ilPropertyFormGUI();
@@ -370,6 +385,18 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 			$button->setUrl($this->ctrl->getLinkTarget($this, 'showAnsweringStatistic'));
 			$button->setCaption('Answering Statistic', false);
 			$toolbarGUI->addButtonInstance($button);
+		
+		$this->ctrl->setParameter(
+			$this, 'context', ilTestPassDeletionConfirmationGUI::CONTEXT_DYN_TEST_QUESTION_SELECTION
+		);
+		
+		$btn = ilTestPlayerNavButton::getInstance();
+		$btn->setNextCommand('showTestResults');
+		$btn->setUrl($this->ctrl->getLinkTarget(
+			$this, 'showTestResults'
+		));
+		$btn->setCaption('Test Results', false);
+		$toolbarGUI->addButtonInstance($btn);
 		
 		if( false )
 		{
@@ -1030,7 +1057,7 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 					throw new ilTestException('no presentation mode given');
 			}
 			
-			$navigationToolbarGUI->build();
+			$navigationToolbarGUI->build(true);
 			$this->populateTestNavigationToolbar($navigationToolbarGUI);
 
 // fau: testNav - enable the question navigation in edit mode
@@ -1060,7 +1087,7 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		{
 			$this->prepareTestPage(ilTestPlayerAbstractGUI::PRESENTATION_MODE_VIEW, null, null);
 
-			$navigationToolbarGUI->build();
+			$navigationToolbarGUI->build(true);
 			$this->populateTestNavigationToolbar($navigationToolbarGUI);
 			
 			$this->outCurrentlyFinishedPage();

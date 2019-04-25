@@ -1272,7 +1272,29 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 		$this->handleTabs('results_pass_oriented');
 		
 		$ilTabs->clearSubTabs();
-		$ilTabs->setBackTarget($this->lng->txt('tst_results_back_overview'), $this->ctrl->getLinkTarget($this));
+		
+		if( isset($_GET['context']) )
+		{
+			switch( $_GET['context'] )
+			{
+				case ilTestPassDeletionConfirmationGUI::CONTEXT_DYN_TEST_PLAYER:
+					$ilTabs->setBackTarget('Back to Test', $this->ctrl->getLinkTargetByClass(
+						['ilObjTestGUI', 'ilTestPlayerDynamicQuestionSetGUI'],
+						ilTestPlayerCommands::SHOW_QUESTION
+					));
+					break;
+				case ilTestPassDeletionConfirmationGUI::CONTEXT_DYN_TEST_QUESTION_SELECTION:
+					$ilTabs->setBackTarget('Back to Test', $this->ctrl->getLinkTargetByClass(
+						['ilObjTestGUI', 'ilTestPlayerDynamicQuestionSetGUI'],
+						ilTestPlayerCommands::SHOW_QUESTION_SELECTION
+					));
+					break;
+			}
+		}
+		else
+		{
+			$ilTabs->setBackTarget($this->lng->txt('tst_results_back_overview'), $this->ctrl->getLinkTarget($this));
+		}
 
 		$testSession = $this->testSessionFactory->getSession();
 
