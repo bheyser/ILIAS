@@ -508,6 +508,8 @@ class ilQuestionBrowserTableGUI extends ilTable2GUI
 				$this->ctrl->setParameterByClass('ilAssQuestionHintsGUI', 'q_id', null);
 				$actions->addItem($this->lng->txt('tst_question_hints_tab'), '', $hintsHref);
 			}
+
+			$this->completeActionsItems($actions, $data);
 			
 			if( $this->isQuestionCommentingEnabled() )
 			{
@@ -605,5 +607,31 @@ class ilQuestionBrowserTableGUI extends ilTable2GUI
 	{
 		$ajax_hash = ilCommonActionDispatcherGUI::buildAjaxHash(1, $_GET['ref_id'], 'quest', $this->parent_obj->object->getId(), 'quest', $questionId);
 		return ilNoteGUI::getListCommentsJSCall($ajax_hash, '');
+	}
+	
+	/**
+	 * @param ilAdvancedSelectionListGUI $list
+	 * @param array $rowData
+	 */
+	protected function completeActionsItems(ilAdvancedSelectionListGUI $list, array $rowData)
+	{
+		try
+		{
+			global $DIC; /* @var ILIAS\DI\Container $DIC */
+			
+			$authoringGUI = $DIC->question()->getAuthoringCommandInstance(
+				$DIC->question()->getQuestionInstance($rowData['question_id'])
+			);
+			
+			if( $this->getEditable() )
+			{
+				$editQstCfgLink = $authoringGUI->getEditQuestionConfigLink();
+				$list->addItem($editQstCfgLink->getLabel(), '', $editQstCfgLink->getAction());
+			}
+		}
+		catch(ilAssessmentQuestionException $e)
+		{
+		
+		}
 	}
 }

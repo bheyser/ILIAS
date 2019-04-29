@@ -21,6 +21,11 @@ interface ilAsqQuestionAuthoring
 	 * @param ilAsqQuestion $question
 	 */
 	public function setQuestion(ilAsqQuestion $question);
+	
+	/**
+	 * @return ilAsqQuestion
+	 */
+	public function getQuestion() : ilAsqQuestion;
 
 	/**
 	 * @param ilQuestionChangeListener $listener
@@ -55,9 +60,9 @@ interface ilAsqQuestionAuthoring
 	public function getPreviewLink() : \ILIAS\UI\Component\Link\Link;
 	
 	/**
-	 * @return \ILIAS\UI\Component\Link\Link
+	 * @return \ILIAS\UI\Component\Link\Standard
 	 */
-	public function getEditQuestionConfigLink() : \ILIAS\UI\Component\Link\Link;
+	public function getEditQuestionConfigLink() : \ILIAS\UI\Component\Link\Standard;
 	
 	/**
 	 * @return \ILIAS\UI\Component\Link\Link

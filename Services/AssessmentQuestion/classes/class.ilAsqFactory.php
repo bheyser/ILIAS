@@ -19,6 +19,17 @@ class ilAsqFactory
 	{
 		return new ilAsqService();
 	}
+
+	/**
+	 * @param int $parentObjId
+	 * @param int $parentRefId
+	 * @param int[] $parentTaxonomyIds
+	 * @return ilAsqQuestionAuthoringGUI
+	 */
+	public function forwardAuthoringGUI(int $parentObjId, int $parentRefId, array $parentTaxonomyIds) : ilAsqQuestionAuthoringGUI
+	{
+		return new ilAsqQuestionAuthoringGUI($parentObjId, $parentRefId, $parentTaxonomyIds);
+	}
 	
 	/**
 	 * @param integer $parentObjectId
@@ -67,15 +78,15 @@ class ilAsqFactory
 	/**
 	 * @param ilAsqQuestion $questionInstance
 	 * @return ilAsqQuestionAuthoring
+	 * @throws ilAsqInvalidArgumentException
 	 */
 	public function getAuthoringCommandInstance($questionInstance) : ilAsqQuestionAuthoring
 	{
-		$authoringGUI; /* @var ilAsqQuestionAuthoring $authoringGUI */
+		$classnameProvider = $this->getClassnameProvider($questionInstance->getQuestionType());
+		$classname = $classnameProvider->getAuthoringClassname();
 		
-		/**
-		 * initialise $authoringGUI as an instance of the question type corresponding authoring class
-		 * that implements ilAsqQuestionAuthoring depending on the given $questionInstance
-		 */
+		/* @var ilAsqQuestionAuthoring $authoringGUI */
+		$authoringGUI = new $classname();
 		
 		$authoringGUI->setQuestion($questionInstance);
 		
@@ -113,15 +124,19 @@ class ilAsqFactory
 	/**
 	 * @param integer $questionId
 	 * @return ilAsqQuestion
+	 * @throws ilAsqInvalidArgumentException
 	 */
 	public function getQuestionInstance($questionId) : ilAsqQuestion
 	{
-		$questionInstance; /* @var ilAsqQuestion $questionInstance */
+		$questionType = $this->getQuestionType($questionId);
 		
-		/**
-		 * initialise $questionInstance as an instance of the question type corresponding object class
-		 * that implements ilAsqQuestion depending on the given $questionId
-		 */
+		$classnameProvider = $this->getClassnameProvider($questionType);
+		$classname = $classnameProvider->getInstanceClassname();
+		
+		/* @var ilAsqQuestion $questionInstance */
+		$questionInstance = new $classname();
+		
+		$questionInstance->setQuestionType($questionType);
 		
 		$questionInstance->setId($questionId);
 		$questionInstance->load();
@@ -255,5 +270,64 @@ class ilAsqFactory
 		$resultCalculator->setSolution($solutionInstance);
 		
 		return $resultCalculator;
+	}
+	
+	
+	/**
+	 * @param ilAsqQuestionType $questionType
+	 * @return ilAsqQuestionClassnameProvider
+	 * @throws ilAsqInvalidArgumentException
+	 */
+	protected function getClassnameProvider(ilAsqQuestionType $questionType)
+	{
+		if( $questionType->isPluginType() )
+		{
+			// TODO: ask plugin object for class name provider and return
+		}
+		
+		switch( $questionType->getIdentifier() )
+		{
+			case 'assSingleChoice': return new ilAsqSingleChoiceClassnameProvider();
+		}
+		
+		throw new ilAsqInvalidArgumentException(
+			"invalid question type given: '{$questionType->getIdentifier()}'"
+		);
+	}
+	
+	/**
+	 * @param int $questionId
+	 * @return ilAsqQuestionType
+	 * @throws ilAsqInvalidArgumentException
+	 */
+	protected function getQuestionType($questionId)
+	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		
+		$query = "
+			SELECT qt.type_tag question_type, qt.plugin is_plugin
+			FROM qpl_questions q
+			INNER JOIN qpl_qst_type qt
+			ON q.question_type_fi = qt.question_type_id
+			WHERE q.question_id = %s
+		";
+		
+		$res = $DIC->database()->queryF(
+			$query, array('integer'), array($questionId)
+		);
+		
+		while( $row = $DIC->database()->fetchAssoc($res) )
+		{
+			$questionType = new ilAsqQuestionType();
+			$questionType->setIdentifier($row['question_type']);
+			$questionType->setPluginType($row['is_plugin']);
+			$questionType->setPluginName($row['plugin_name']);
+			
+			return $questionType;
+		}
+		
+		throw new ilAsqInvalidArgumentException(
+			"invalid question id given: '{$questionId}'"
+		);
 	}
 }

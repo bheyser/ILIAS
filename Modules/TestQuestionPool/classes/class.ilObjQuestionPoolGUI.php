@@ -28,6 +28,7 @@ require_once './Modules/Test/classes/class.ilObjTest.php';
  * @ilCtrl_Calls ilObjQuestionPoolGUI: ilAssQuestionPreviewGUI
  * @ilCtrl_Calls ilObjQuestionPoolGUI: assKprimChoiceGUI, assLongMenuGUI
  * @ilCtrl_Calls ilObjQuestionPoolGUI: ilQuestionPoolSkillAdministrationGUI
+ * @ilCtrl_Calls ilObjQuestionPoolGUI: ilAsqQuestionAuthoringGUI
  *
  * @ingroup ModulesTestQuestionPool
  * 
@@ -382,6 +383,14 @@ class ilObjQuestionPoolGUI extends ilObjectGUI
 				
 				$cmd.= "Object";
 				$ret = $this->$cmd();
+				break;
+				
+			case 'ilasqquestionauthoringgui':
+				
+				$this->ctrl->forwardCommand($DIC->question()->forwardAuthoringGUI(
+					$this->object->getId(), $this->object->getRefId(), $this->object->getTaxonomyIds()
+				));
+				
 				break;
 				
 			default:

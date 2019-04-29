@@ -14,7 +14,7 @@ interface ilAsqQuestion
 	/**
 	 * @param $parentId
 	 */
-	public function setParentId($parentId);
+	public function setParentId(int $parentId);
 	
 	/**
 	 * @return int
@@ -24,7 +24,7 @@ interface ilAsqQuestion
 	/**
 	 * @param int $questionId
 	 */
-	public function setId($questionId);
+	public function setId(int $questionId);
 	
 	/**
 	 * @return int
@@ -32,9 +32,29 @@ interface ilAsqQuestion
 	public function getId() : int;
 	
 	/**
+	 * @param ilAsqQuestionType
+	 */
+	public function setQuestionType(ilAsqQuestionType $questionType);
+	
+	/**
+	 * @return ilAsqQuestionType
+	 */
+	public function getQuestionType() : ilAsqQuestionType;
+	
+	/**
+	 * @param string $title
+	 */
+	public function setTitle(string $title);
+	
+	/**
 	 * @return string
 	 */
 	public function getTitle() : string;
+	
+	/**
+	 * @param string $comment
+	 */
+	public function setComment(string $comment);
 	
 	/**
 	 * @return string
@@ -42,14 +62,19 @@ interface ilAsqQuestion
 	public function getComment() : string;
 	
 	/**
+	 * @param int $owner
+	 */
+	public function setOwner(int $owner);
+	
+	/**
 	 * @return int
 	 */
 	public function getOwner() : int;
 	
 	/**
-	 * @return string
+	 * @param string $questionText
 	 */
-	public function getQuestionType() : string;
+	public function setQuestionText(string $questionText);
 	
 	/**
 	 * @return string
