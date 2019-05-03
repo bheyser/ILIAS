@@ -27,4 +27,12 @@ class ilAsqSingleChoiceClassnameProvider implements ilAsqQuestionClassnameProvid
 	{
 		return 'ilAsqSingleChoiceAuthoringGUI';
 	}
+	
+	/**
+	 * @return string
+	 */
+	public function getConfigFormClassname()
+	{
+		return 'ilAsqSingleChoiceConfigFormGUI';
+	}
 }

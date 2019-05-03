@@ -72,6 +72,26 @@ interface ilAsqQuestion
 	public function getOwner() : int;
 	
 	/**
+	 * @param string $author
+	 */
+	public function setAuthor(string $author);
+	
+	/**
+	 * @return string
+	 */
+	public function getAuthor() : string;
+	
+	/**
+	 * @param ilAsqQuestionLifecycle $lifecycle
+	 */
+	public function setLifecycle(ilAsqQuestionLifecycle $lifecycle);
+	
+	/**
+	 * @return ilAsqQuestionLifecycle
+	 */
+	public function getLifecycle() : ilAsqQuestionLifecycle;
+	
+	/**
 	 * @param string $questionText
 	 */
 	public function setQuestionText(string $questionText);
@@ -82,14 +102,24 @@ interface ilAsqQuestion
 	public function getQuestionText() : string;
 	
 	/**
+	 * @param float $points
+	 */
+	public function setPoints(float $points);
+	
+	/**
 	 * @return float
 	 */
 	public function getPoints() : float;
 	
 	/**
-	 * @return string
+	 * @param DateInterval $workingTime
 	 */
-	public function getEstimatedWorkingTime() : string;
+	public function setEstimatedWorkingTime(DateInterval $workingTime);
+	
+	/**
+	 * @return DateInterval
+	 */
+	public function getEstimatedWorkingTime() : DateInterval;
 	
 	/**
 	 * Loads question data

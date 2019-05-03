@@ -24,11 +24,13 @@ class ilAsqFactory
 	 * @param int $parentObjId
 	 * @param int $parentRefId
 	 * @param int[] $parentTaxonomyIds
+	 * @param \ILIAS\UI\Component\Link\Link $parentBackLink
 	 * @return ilAsqQuestionAuthoringGUI
 	 */
-	public function forwardAuthoringGUI(int $parentObjId, int $parentRefId, array $parentTaxonomyIds) : ilAsqQuestionAuthoringGUI
+	public function forwardAuthoringGUI(int $parentObjId, int $parentRefId,
+		array $parentTaxonomyIds, \ILIAS\UI\Component\Link\Link $parentBackLink) : ilAsqQuestionAuthoringGUI
 	{
-		return new ilAsqQuestionAuthoringGUI($parentObjId, $parentRefId, $parentTaxonomyIds);
+		return new ilAsqQuestionAuthoringGUI($parentObjId, $parentRefId, $parentTaxonomyIds, $parentBackLink);
 	}
 	
 	/**
@@ -329,5 +331,23 @@ class ilAsqFactory
 		throw new ilAsqInvalidArgumentException(
 			"invalid question id given: '{$questionId}'"
 		);
+	}
+	
+	/**
+	 * @param ilAsqQuestion $questionInstance
+	 * @return ilAsqQuestionConfigForm
+	 * @throws ilAsqInvalidArgumentException
+	 */
+	public function getQuestionConfigForm(ilAsqQuestionAuthoring $questionAuthoring)
+	{
+		$classnameProvider = $this->getClassnameProvider($questionAuthoring->getQuestion()->getQuestionType());
+		$classname = $classnameProvider->getConfigFormClassname();
+		
+		/* @var ilAsqQuestionConfigForm $questionConfigForm */
+		$questionConfigForm = new $classname($questionAuthoring->getQuestion(), $questionAuthoring->getTaxonomies());
+		
+		$questionConfigForm->init($questionAuthoring);
+		
+		return $questionConfigForm;
 	}
 }

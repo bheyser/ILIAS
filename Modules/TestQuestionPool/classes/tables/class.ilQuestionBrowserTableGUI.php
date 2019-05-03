@@ -374,7 +374,19 @@ class ilQuestionBrowserTableGUI extends ilTable2GUI
 	 */
 	public function fillRow($data)
 	{
-		global $DIC;
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		
+		try
+		{
+			$qstAuthoringGUI = $DIC->question()->getAuthoringCommandInstance(
+				$DIC->question()->getQuestionInstance($data['question_id'])
+			);
+		}
+		catch(ilAsqInvalidArgumentException $e)
+		{
+			return;
+		}
+		
 		$ilUser = $DIC['ilUser'];
 		$ilAccess = $DIC['ilAccess'];
 		include_once "./Modules/TestQuestionPool/classes/class.assQuestion.php";
@@ -467,14 +479,20 @@ class ilQuestionBrowserTableGUI extends ilTable2GUI
 				}
 			}
 
-			$actions->addItem($this->lng->txt('preview'), '', $this->ctrl->getLinkTargetByClass('ilAssQuestionPreviewGUI', ilAssQuestionPreviewGUI::CMD_SHOW));
+			$link = $qstAuthoringGUI->getPreviewLink();
+			$actions->addItem($link->getLabel(), '', $link->getAction());
+			
 			if($this->getEditable())
 			{
-				$editHref = $this->ctrl->getLinkTargetByClass($data['type_tag'].'GUI', 'editQuestion');
-				$actions->addItem($this->lng->txt('edit_question'), '', $editHref);
-
-				$editPageHref = $this->ctrl->getLinkTargetByClass('ilAssQuestionPageGUI', 'edit');
-				$actions->addItem($this->lng->txt('edit_page'), '', $editPageHref);
+				$link = $qstAuthoringGUI->getEditQuestionConfigLink();
+				$actions->addItem($link->getLabel(), '', $link->getAction());
+				#$editHref = $this->ctrl->getLinkTargetByClass($data['type_tag'].'GUI', 'editQuestion');
+				#$actions->addItem($this->lng->txt('edit_question'), '', $editHref);
+				
+				$link = $qstAuthoringGUI->getEditQuestionPageLink();
+				$actions->addItem($link->getLabel(), '', $link->getAction());
+				#$editPageHref = $this->ctrl->getLinkTargetByClass('ilAssQuestionPageGUI', 'edit');
+				#$actions->addItem($this->lng->txt('edit_page'), '', $editPageHref);
 			}
 
 			if($this->getWriteAccess())
@@ -497,19 +515,23 @@ class ilQuestionBrowserTableGUI extends ilTable2GUI
 
 			if($this->getEditable())
 			{
-				require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionFeedbackEditingGUI.php';
-				$this->ctrl->setParameterByClass('ilAssQuestionFeedbackEditingGUI', 'q_id', $data['question_id']);
-				$feedbackHref = $this->ctrl->getLinkTargetByClass('ilAssQuestionFeedbackEditingGUI', ilAssQuestionFeedbackEditingGUI::CMD_SHOW);
-				$this->ctrl->setParameterByClass('ilAssQuestionFeedbackEditingGUI', 'q_id', null);
-				$actions->addItem($this->lng->txt('tst_feedback'), '', $feedbackHref);
+				$link = $qstAuthoringGUI->getEditFeedbacksLink();
+				$actions->addItem($link->getLabel(), '', $link->getAction());
+				
+				$link = $qstAuthoringGUI->getEditHintsLink();
+				$actions->addItem($link->getLabel(), '', $link->getAction());
+				
+				#require_once 'Modules/TestQuestionPool/classes/class.ilAssQuestionFeedbackEditingGUI.php';
+				#$this->ctrl->setParameterByClass('ilAssQuestionFeedbackEditingGUI', 'q_id', $data['question_id']);
+				#$feedbackHref = $this->ctrl->getLinkTargetByClass('ilAssQuestionFeedbackEditingGUI', ilAssQuestionFeedbackEditingGUI::CMD_SHOW);
+				#$this->ctrl->setParameterByClass('ilAssQuestionFeedbackEditingGUI', 'q_id', null);
+				#$actions->addItem($this->lng->txt('tst_feedback'), '', $feedbackHref);
 
-				$this->ctrl->setParameterByClass('ilAssQuestionHintsGUI', 'q_id', $data['question_id']);
-				$hintsHref =  $this->ctrl->getLinkTargetByClass('ilAssQuestionHintsGUI', ilAssQuestionHintsGUI::CMD_SHOW_LIST);
-				$this->ctrl->setParameterByClass('ilAssQuestionHintsGUI', 'q_id', null);
-				$actions->addItem($this->lng->txt('tst_question_hints_tab'), '', $hintsHref);
+				#$this->ctrl->setParameterByClass('ilAssQuestionHintsGUI', 'q_id', $data['question_id']);
+				#$hintsHref =  $this->ctrl->getLinkTargetByClass('ilAssQuestionHintsGUI', ilAssQuestionHintsGUI::CMD_SHOW_LIST);
+				#$this->ctrl->setParameterByClass('ilAssQuestionHintsGUI', 'q_id', null);
+				#$actions->addItem($this->lng->txt('tst_question_hints_tab'), '', $hintsHref);
 			}
-
-			$this->completeActionsItems($actions, $data);
 			
 			if( $this->isQuestionCommentingEnabled() )
 			{
@@ -544,7 +566,9 @@ class ilQuestionBrowserTableGUI extends ilTable2GUI
 		$this->tpl->setVariable('QUESTION_ID', $data["question_id"]);
 		if(!$this->confirmdelete)
 		{
-			$this->tpl->setVariable('QUESTION_HREF_LINKED', $this->ctrl->getLinkTargetByClass('ilAssQuestionPreviewGUI', ilAssQuestionPreviewGUI::CMD_SHOW));
+			$link = $qstAuthoringGUI->getPreviewLink();
+			
+			$this->tpl->setVariable('QUESTION_HREF_LINKED', $link->getAction());
 			$this->tpl->setVariable('QUESTION_TITLE_LINKED', $data['title']);
 			$this->tpl->setVariable('ACTIONS', $actions->getHTML());
 		}
@@ -607,31 +631,5 @@ class ilQuestionBrowserTableGUI extends ilTable2GUI
 	{
 		$ajax_hash = ilCommonActionDispatcherGUI::buildAjaxHash(1, $_GET['ref_id'], 'quest', $this->parent_obj->object->getId(), 'quest', $questionId);
 		return ilNoteGUI::getListCommentsJSCall($ajax_hash, '');
-	}
-	
-	/**
-	 * @param ilAdvancedSelectionListGUI $list
-	 * @param array $rowData
-	 */
-	protected function completeActionsItems(ilAdvancedSelectionListGUI $list, array $rowData)
-	{
-		try
-		{
-			global $DIC; /* @var ILIAS\DI\Container $DIC */
-			
-			$authoringGUI = $DIC->question()->getAuthoringCommandInstance(
-				$DIC->question()->getQuestionInstance($rowData['question_id'])
-			);
-			
-			if( $this->getEditable() )
-			{
-				$editQstCfgLink = $authoringGUI->getEditQuestionConfigLink();
-				$list->addItem($editQstCfgLink->getLabel(), '', $editQstCfgLink->getAction());
-			}
-		}
-		catch(ilAssessmentQuestionException $e)
-		{
-		
-		}
 	}
 }

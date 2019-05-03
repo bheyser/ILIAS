@@ -45,19 +45,19 @@ interface ilAsqQuestionAuthoring
 	public function callNewIdListeners($a_new_question_id);
 	
 	/**
-	 * @param array $taxonomies - an array of taxonomy ids
+	 * @param int[] $taxonomies - an array of taxonomy ids
 	 */
 	public function setTaxonomies($taxonomies);
 	
 	/**
-	 * @param string $backLinkTarget - an http link
+	 * @param \ILIAS\UI\Component\Link\Standard $backLink - an http link
 	 */
-	public function setBackLink($backLinkTarget);
+	public function setBackLink(\ILIAS\UI\Component\Link\Standard $backLinkTarget);
 	
 	/**
-	 * @return \ILIAS\UI\Component\Link\Link
+	 * @return \ILIAS\UI\Component\Link\Standard
 	 */
-	public function getPreviewLink() : \ILIAS\UI\Component\Link\Link;
+	public function getPreviewLink() : \ILIAS\UI\Component\Link\Standard;
 	
 	/**
 	 * @return \ILIAS\UI\Component\Link\Standard
@@ -65,22 +65,27 @@ interface ilAsqQuestionAuthoring
 	public function getEditQuestionConfigLink() : \ILIAS\UI\Component\Link\Standard;
 	
 	/**
-	 * @return \ILIAS\UI\Component\Link\Link
+	 * @return \ILIAS\UI\Component\Link\Standard
 	 */
-	public function getEditQuestionPageLink() : \ILIAS\UI\Component\Link\Link;
+	public function getEditQuestionPageLink() : \ILIAS\UI\Component\Link\Standard;
 	
 	/**
-	 * @return \ILIAS\UI\Component\Link\Link
+	 * @return \ILIAS\UI\Component\Link\Standard
 	 */
-	public function getEditFeedbacksLink() : \ILIAS\UI\Component\Link\Link;
+	public function getEditFeedbacksLink() : \ILIAS\UI\Component\Link\Standard;
 	
 	/**
-	 * @return \ILIAS\UI\Component\Link\Link
+	 * @return \ILIAS\UI\Component\Link\Standard
 	 */
-	public function getEditHintsLink() : \ILIAS\UI\Component\Link\Link;
+	public function getEditHintsLink() : \ILIAS\UI\Component\Link\Standard;
 	
 	/**
-	 * @return \ILIAS\UI\Component\Link\Link
+	 * @return \ILIAS\UI\Component\Link\Standard
 	 */
-	public function getStatisticLink() : \ILIAS\UI\Component\Link\Link;
+	public function getEditSuggestedSolutionLink() : \ILIAS\UI\Component\Link\Standard;
+	
+	/**
+	 * @return \ILIAS\UI\Component\Link\Standard
+	 */
+	public function getStatisticLink() : \ILIAS\UI\Component\Link\Standard;
 }

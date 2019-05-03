@@ -941,7 +941,7 @@ abstract class assQuestion
 	}
 	
 	/**
-	 * @param ilAssQuestionLifecycle $lifecycle
+	 * @param ilAsqQuestionLifecycle $lifecycle
 	 */
 	public function setLifecycle(ilAssQuestionLifecycle $lifecycle)
 	{

@@ -17,15 +17,14 @@ require_once './Modules/Test/classes/class.ilObjTest.php';
  * 
  * @version		$Id$
  *
- * @ilCtrl_Calls ilObjQuestionPoolGUI: ilAssQuestionPageGUI, ilQuestionBrowserTableGUI, ilToolbarGUI
+ * @ilCtrl_Calls ilObjQuestionPoolGUI: ilQuestionBrowserTableGUI, ilToolbarGUI
  * @ilCtrl_Calls ilObjQuestionPoolGUI: assMultipleChoiceGUI, assClozeTestGUI, assMatchingQuestionGUI
  * @ilCtrl_Calls ilObjQuestionPoolGUI: assOrderingQuestionGUI, assImagemapQuestionGUI, assJavaAppletGUI
  * @ilCtrl_Calls ilObjQuestionPoolGUI: assNumericGUI, assTextSubsetGUI, assSingleChoiceGUI, ilPropertyFormGUI
  * @ilCtrl_Calls ilObjQuestionPoolGUI: assTextQuestionGUI, ilObjectMetaDataGUI, ilPermissionGUI, ilObjectCopyGUI
  * @ilCtrl_Calls ilObjQuestionPoolGUI: ilQuestionPoolExportGUI, ilInfoScreenGUI, ilObjTaxonomyGUI, ilCommonActionDispatcherGUI
- * @ilCtrl_Calls ilObjQuestionPoolGUI: ilAssQuestionHintsGUI, ilAssQuestionFeedbackEditingGUI, ilLocalUnitConfigurationGUI
+ * @ilCtrl_Calls ilObjQuestionPoolGUI: ilLocalUnitConfigurationGUI
  * @ilCtrl_Calls ilObjQuestionPoolGUI: ilObjQuestionPoolSettingsGeneralGUI, assFormulaQuestionGUI
- * @ilCtrl_Calls ilObjQuestionPoolGUI: ilAssQuestionPreviewGUI
  * @ilCtrl_Calls ilObjQuestionPoolGUI: assKprimChoiceGUI, assLongMenuGUI
  * @ilCtrl_Calls ilObjQuestionPoolGUI: ilQuestionPoolSkillAdministrationGUI
  * @ilCtrl_Calls ilObjQuestionPoolGUI: ilAsqQuestionAuthoringGUI
@@ -388,7 +387,10 @@ class ilObjQuestionPoolGUI extends ilObjectGUI
 			case 'ilasqquestionauthoringgui':
 				
 				$this->ctrl->forwardCommand($DIC->question()->forwardAuthoringGUI(
-					$this->object->getId(), $this->object->getRefId(), $this->object->getTaxonomyIds()
+					$this->object->getId(), $this->object->getRefId(), $this->object->getTaxonomyIds(),
+					$DIC->ui()->factory()->link()->standard($this->lng->txt('qpl'),
+						$DIC->ctrl()->getLinkTarget($this, 'questions')
+					)
 				));
 				
 				break;

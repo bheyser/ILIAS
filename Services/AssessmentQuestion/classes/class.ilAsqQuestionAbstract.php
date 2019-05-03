@@ -45,7 +45,30 @@ abstract class ilAsqQuestionAbstract implements ilAsqQuestion
 	/**
 	 * @var string
 	 */
+	protected $author;
+	
+	/**
+	 * @var ilAsqQuestionLifecycle
+	 */
+	protected $lifecycle;
+	
+	/**
+	 * @var DateInterval
+	 */
+	protected $estimatedWorkingTime;
+	
+	/**
+	 * @var string
+	 */
 	protected $questionText;
+	
+	/**
+	 * ilAsqQuestionAbstract constructor.
+	 */
+	public function __construct()
+	{
+		$this->setEstimatedWorkingTime(new DateInterval('PT0S'));
+	}
 	
 	/**
 	 * @param int $parentId
@@ -141,6 +164,54 @@ abstract class ilAsqQuestionAbstract implements ilAsqQuestion
 	public function getOwner(): int
 	{
 		return $this->owner;
+	}
+	
+	/**
+	 * @return string
+	 */
+	public function getAuthor(): string
+	{
+		return $this->author;
+	}
+	
+	/**
+	 * @param string $author
+	 */
+	public function setAuthor(string $author)
+	{
+		$this->author = $author;
+	}
+	
+	/**
+	 * @return ilAsqQuestionLifecycle
+	 */
+	public function getLifecycle(): ilAsqQuestionLifecycle
+	{
+		return $this->lifecycle;
+	}
+	
+	/**
+	 * @param ilAsqQuestionLifecycle $lifecycle
+	 */
+	public function setLifecycle(ilAsqQuestionLifecycle $lifecycle)
+	{
+		$this->lifecycle = $lifecycle;
+	}
+	
+	/**
+	 * @param DateInterval $estimatedWorkingTime
+	 */
+	public function setEstimatedWorkingTime(DateInterval $estimatedWorkingTime)
+	{
+		$this->estimatedWorkingTime = $estimatedWorkingTime;
+	}
+	
+	/**
+	 * @return DateInterval
+	 */
+	public function getEstimatedWorkingTime(): DateInterval
+	{
+		return $this->estimatedWorkingTime;
 	}
 	
 	/**

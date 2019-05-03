@@ -204,28 +204,28 @@ abstract class assQuestionGUI
 		
 		return $notesGUI->getNotesHTML();
 	}
-
+	
 	/**
-	* execute command
-	*/
+	 * execute command
+	 */
 	function executeCommand()
 	{
 		$cmd = $this->ctrl->getCmd("editQuestion");
 		$next_class = $this->ctrl->getNextClass($this);
-
+		
 		$cmd = $this->getCommand($cmd);
-
+		
 		switch($next_class)
 		{
 			case 'ilformpropertydispatchgui':
 				$form = $this->buildEditForm();
-
+				
 				require_once 'Services/Form/classes/class.ilFormPropertyDispatchGUI.php';
 				$form_prop_dispatch = new ilFormPropertyDispatchGUI();
 				$form_prop_dispatch->setItem($form->getItemByPostVar(ilUtil::stripSlashes($_GET['postvar'])));
 				return $this->ctrl->forwardCommand($form_prop_dispatch);
 				break;
-
+			
 			default:
 				$ret = $this->$cmd();
 				break;

@@ -21,4 +21,9 @@ interface ilAsqQuestionClassnameProvider
 	 * @return string
 	 */
 	public function getAuthoringClassname();
+	
+	/**
+	 * @return string
+	 */
+	public function getConfigFormClassname();
 }
