@@ -1103,4 +1103,17 @@ class assTextQuestion extends assQuestion implements ilObjQuestionScoringAdjusta
 		require_once 'Services/Utilities/classes/class.ilStr.php';
 		return ilStr::strLen($text);
 	}
+	
+	public function countWords($text)
+	{
+		$text = str_replace('&nbsp;', ' ', $text);
+		
+		$text = preg_replace('/[.,:;!?\-_#\'"+*\\/=()&%§$]/m', '', $text);
+		
+		$text = preg_replace('/^\s*/m', '', $text);
+		$text = preg_replace('/\s*$/m', '', $text);
+		$text = preg_replace('/\s+/m', ' ', $text);
+
+        return count(explode(' ', $text));
+	}
 }
