@@ -292,9 +292,18 @@ class assFormulaQuestionResult
 			}
 		}
 
+		try{
 		$math                  = new EvalMath();
-		$math->suppress_errors = true;
+		$math->suppress_errors = false;
 		$result                = $math->evaluate($formula); // baseunit-result!!
+		} catch(ErrorException $e) {
+			$m = "EvalMath has thrown an Error (!)\n";
+			$m.= "error message: ".$e->getMessage()."\n";
+			$m.= "formula: $formula\n";
+			$m.= "variables: ".print_r($variables,true)."\n";
+			$m.= "results: ".print_r($results,true)."\n";
+			throw new Exception($m);
+		}
 
 		$resultWithRespectedUnit = ilMath::_round($result, $this->getPrecision());
 		if(is_object($this->getUnit()))

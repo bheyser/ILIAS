@@ -504,6 +504,7 @@ class assFormulaQuestion extends assQuestion implements iQuestionCondition
 
 					$template = new ilTemplate("tpl.il_as_qpl_formulaquestion_output_solution_image.html", true, true, 'Modules/TestQuestionPool');
 
+					try {
 					if($resObj->isCorrect($this->getVariables(), $this->getResults(), $user_value, $resunit))
 					{
 						$template->setCurrentBlock("icon_ok");
@@ -517,6 +518,16 @@ class assFormulaQuestion extends assQuestion implements iQuestionCondition
 						$template->setVariable("ICON_NOT_OK", ilUtil::getImagePath("icon_not_ok.svg"));
 						$template->setVariable("TEXT_NOT_OK", $this->lng->txt("answer_is_wrong"));
 						$template->parseCurrentBlock();
+					}
+					} catch(Exception $e) {
+						$m = $e->getMessage();
+						$m.= "Question ID: {$this->getId()}\n";
+						$m.= "Original QID: {$this->getOriginalId()}\n";
+						$m.= "Parent Obj ID: {$this->getObjId()}\n";
+						$m.= "Parent Ref ID: {$_GET['ref_id']}\n";
+						$m.= "Active ID: {$_GET['active_id']}\n";
+						$m.= "Pass: {$_GET['pass']}\n";
+						throw new Exception($m);
 					}
 					$checkSign = $template->get();
 				}
