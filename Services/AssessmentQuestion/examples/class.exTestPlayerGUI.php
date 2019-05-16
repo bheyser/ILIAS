@@ -39,18 +39,18 @@ class exTestPlayerGUI
 		global $DIC; /* @var ILIAS\DI\Container $DIC */
 		
 		$questionId = 0; // initialise with id of question to be shown
+		$questionInstance = $DIC->question()->getQuestionInstance($questionId);
 		
 		/**
 		 * fetch possibly existing participant solution, an empty one is required otherwise
 		 */
 		
-		$participantSolution = $this->getParticipantSolution($questionId);
+		$participantSolution = $this->getParticipantSolution($questionInstance);
 		
 		/**
 		 * question presentation to be answered by the examine
 		 */
 		
-		$questionInstance = $DIC->question()->getQuestionInstance($questionId);
 		$questionPresentationGUI = $DIC->question()->getQuestionPresentationInstance($questionInstance);
 		
 		$questionNavigationAware; /* @var ilAsqQuestionNavigationAware $questionNavigationAware */
@@ -172,10 +172,10 @@ class exTestPlayerGUI
 	 * this method returns either an initialised solution object instance, or and empty one,
 	 * depending on self managed test results (handled by a future ilTestResult)
 	 *
-	 * @param integer $questionId
+	 * @param ilAsqQuestion $question
 	 * @return ilAsqQuestionSolution
 	 */
-	public function getParticipantSolution($questionId)
+	public function getParticipantSolution(ilAsqQuestion $question)
 	{
 		global $DIC; /* @var ILIAS\DI\Container $DIC */
 		
@@ -188,9 +188,9 @@ class exTestPlayerGUI
 		
 		if( $solutionId )
 		{
-			return $DIC->question()->getQuestionSolutionInstance($questionId, $solutionId);
+			return $DIC->question()->getQuestionSolutionInstance($question, $solutionId);
 		}
 		
-		return $DIC->question()->getEmptyQuestionSolutionInstance($questionId);
+		return $DIC->question()->getEmptyQuestionSolutionInstance($question);
 	}
 }

@@ -11,10 +11,10 @@
  * @package     Services/AssessmentQuestion
  *
  * @ilCtrl_Calls ilAsqQuestionAuthoringGUI: ilAsqSingleChoiceAuthoringGUI
- * @ilCtrl_Calls ilAsqQuestionAuthoringGUI: ilAssQuestionPreviewGUI
- * @ilCtrl_Calls ilAsqQuestionAuthoringGUI: ilAssQuestionPageGUI
- * @ilCtrl_Calls ilAsqQuestionAuthoringGUI: ilAssQuestionFeedbackEditingGUI
- * @ilCtrl_Calls ilAsqQuestionAuthoringGUI: ilAssQuestionHintsGUI
+ * @ilCtrl_Calls ilAsqQuestionAuthoringGUI: ilAsqQuestionPreviewGUI
+ * @ilCtrl_Calls ilAsqQuestionAuthoringGUI: ilAsqQuestionPageGUI
+ * @ilCtrl_Calls ilAsqQuestionAuthoringGUI: ilAsqQuestionFeedbackEditingGUI
+ * @ilCtrl_Calls ilAsqQuestionAuthoringGUI: ilAsqQuestionHintsGUI
  * @ilCtrl_Calls ilAsqQuestionAuthoringGUI: ilCommonActionDispatcherGUI
  * @ilCtrl_Calls ilAsqQuestionAuthoringGUI: ilFormPropertyDispatchGUI
  */
@@ -174,7 +174,7 @@ class ilAsqQuestionAuthoringGUI
 				
 				$DIC->tabs()->activateTab(self::TAB_ID_PREVIEW);
 				
-				$gui = new ilAssQuestionPreviewGUI(
+				$gui = new ilAsqQuestionPreviewGUI(
 					$DIC->ctrl(), $DIC->tabs(), $DIC->ui()->mainTemplate(),
 					$DIC->language(), $DIC->database(), $DIC->user()
 				);

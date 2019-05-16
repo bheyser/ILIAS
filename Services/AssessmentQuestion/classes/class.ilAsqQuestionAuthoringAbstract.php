@@ -148,11 +148,11 @@ abstract class ilAsqQuestionAuthoringAbstract implements ilAsqQuestionAuthoring
 		global $DIC; /* @var ILIAS\DI\Container $DIC */
 		
 		$DIC->ctrl()->setParameterByClass(
-			'ilAssQuestionPreviewGUI', 'qid', $this->getQuestion()->getId()
+			'ilAsqQuestionPreviewGUI', 'qid', $this->getQuestion()->getId()
 		);
 		
 		$url = $DIC->ctrl()->getLinkTargetByClass(
-			array('ilAsqQuestionAuthoringGUI', 'ilAssQuestionPreviewGUI'), ilAssQuestionPreviewGUI::CMD_SHOW
+			array('ilAsqQuestionAuthoringGUI', 'ilAsqQuestionPreviewGUI'), ilAssQuestionPreviewGUI::CMD_SHOW
 		);
 		
 		return $DIC->ui()->factory()->link()->standard(
@@ -168,11 +168,11 @@ abstract class ilAsqQuestionAuthoringAbstract implements ilAsqQuestionAuthoring
 		global $DIC; /* @var ILIAS\DI\Container $DIC */
 		
 		$DIC->ctrl()->setParameterByClass(
-			'ilAssQuestionPageGUI', 'qid', $this->getQuestion()->getId()
+			'ilAsqQuestionPageGUI', 'qid', $this->getQuestion()->getId()
 		);
 		
 		$url = $DIC->ctrl()->getLinkTargetByClass(
-			array('ilAsqQuestionAuthoringGUI', 'ilAssQuestionPageGUI'), 'edit'
+			array('ilAsqQuestionAuthoringGUI', 'ilAsqQuestionPageGUI'), 'edit'
 		);
 		
 		return $DIC->ui()->factory()->link()->standard(
@@ -206,11 +206,11 @@ abstract class ilAsqQuestionAuthoringAbstract implements ilAsqQuestionAuthoring
 		global $DIC; /* @var ILIAS\DI\Container $DIC */
 		
 		$DIC->ctrl()->setParameterByClass(
-			'ilAssQuestionFeedbackEditingGUI', 'qid', $this->getQuestion()->getId()
+			'ilAsqQuestionFeedbackEditingGUI', 'qid', $this->getQuestion()->getId()
 		);
 		
 		$url = $DIC->ctrl()->getLinkTargetByClass(
-			array('ilAsqQuestionAuthoringGUI', 'ilAssQuestionFeedbackEditingGUI'), ilAssQuestionFeedbackEditingGUI::CMD_SHOW
+			array('ilAsqQuestionAuthoringGUI', 'ilAsqQuestionFeedbackEditingGUI'), ilAssQuestionFeedbackEditingGUI::CMD_SHOW
 		);
 		
 		return $DIC->ui()->factory()->link()->standard(
@@ -226,11 +226,11 @@ abstract class ilAsqQuestionAuthoringAbstract implements ilAsqQuestionAuthoring
 		global $DIC; /* @var ILIAS\DI\Container $DIC */
 		
 		$DIC->ctrl()->setParameterByClass(
-			'ilAssQuestionHintsGUI', 'qid', $this->getQuestion()->getId()
+			'ilAsqQuestionHintsGUI', 'qid', $this->getQuestion()->getId()
 		);
 		
 		$url = $DIC->ctrl()->getLinkTargetByClass(
-			array('ilAsqQuestionAuthoringGUI', 'ilAssQuestionHintsGUI'), ilAssQuestionHintsGUI::CMD_SHOW_LIST
+			array('ilAsqQuestionAuthoringGUI', 'ilAsqQuestionHintsGUI'), ilAssQuestionHintsGUI::CMD_SHOW_LIST
 		);
 		
 		return $DIC->ui()->factory()->link()->standard(

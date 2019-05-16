@@ -12,29 +12,14 @@
 interface ilAsqQuestionSolution
 {
 	/**
-	 * @param integer $solutionId
+	 * @return ilAsqQuestion
 	 */
-	public function setSolutionId($solutionId);
-	
+	public function getQuestion() : ilAsqQuestion;
+
 	/**
 	 * @return integer
 	 */
-	public function getSolutionId() : int;
-	
-	/**
-	 * @param integer $questionId
-	 */
-	public function setQuestionId($questionId);
-	
-	/**
-	 * @return integer
-	 */
-	public function getQuestionId() : int;
-	
-	/**
-	 * Loads soluton data
-	 */
-	public function load();
+	public function getId() : int;
 	
 	/**
 	 * Saves solution data

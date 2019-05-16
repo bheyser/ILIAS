@@ -15,15 +15,20 @@ interface ilAsqQuestionClassnameProvider
 	/**
 	 * @return string
 	 */
-	public function getInstanceClassname();
+	public function getQuestionClassname() : string;
 	
 	/**
 	 * @return string
 	 */
-	public function getAuthoringClassname();
+	public function getSolutionClassname() : string;
 	
 	/**
 	 * @return string
 	 */
-	public function getConfigFormClassname();
+	public function getAuthoringClassname() : string;
+	
+	/**
+	 * @return string
+	 */
+	public function getConfigFormClassname() : string;
 }

@@ -15,7 +15,7 @@ class ilAsqSingleChoiceClassnameProvider implements ilAsqQuestionClassnameProvid
 	/**
 	 * @return string
 	 */
-	public function getInstanceClassname()
+	public function getQuestionClassname() : string
 	{
 		return 'ilAsqSingleChoiceQuestion';
 	}
@@ -23,7 +23,15 @@ class ilAsqSingleChoiceClassnameProvider implements ilAsqQuestionClassnameProvid
 	/**
 	 * @return string
 	 */
-	public function getAuthoringClassname()
+	public function getSolutionClassname() : string
+	{
+		return 'ilAsqSingleChoiceSolution';
+	}
+	
+	/**
+	 * @return string
+	 */
+	public function getAuthoringClassname() : string
 	{
 		return 'ilAsqSingleChoiceAuthoringGUI';
 	}
@@ -31,7 +39,7 @@ class ilAsqSingleChoiceClassnameProvider implements ilAsqQuestionClassnameProvid
 	/**
 	 * @return string
 	 */
-	public function getConfigFormClassname()
+	public function getConfigFormClassname() : string
 	{
 		return 'ilAsqSingleChoiceConfigFormGUI';
 	}

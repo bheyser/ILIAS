@@ -95,6 +95,21 @@ class ilAsqFactory
 		return $authoringGUI;
 	}
 	
+	public function questionPresentation() : ilAsqQuestionPresentationFactory
+	{
+		return new ilAsqQuestionPresentationFactory();
+	}
+	
+	public function solutionPresentation() : ilAsqSolutionPresentationFactory
+	{
+		return new ilAsqSolutionPresentationFactory();
+	}
+	
+	public function feedbackPresentation() : ilAsqFeedbackPresentationFactory
+	{
+		return new ilAsqFeedbackPresentationFactory();
+	}
+	
 	/**
 	 * render purpose constants that are required to get corresponding presentation renderer
 	 */
@@ -133,7 +148,7 @@ class ilAsqFactory
 		$questionType = $this->getQuestionType($questionId);
 		
 		$classnameProvider = $this->getClassnameProvider($questionType);
-		$classname = $classnameProvider->getInstanceClassname();
+		$classname = $classnameProvider->getQuestionClassname();
 		
 		/* @var ilAsqQuestion $questionInstance */
 		$questionInstance = new $classname();
@@ -217,49 +232,44 @@ class ilAsqFactory
 	}
 	
 	/**
-	 * @param integer $questionId
+	 * @param ilAsqQuestion $question
 	 * @param integer $solutionId
 	 * @return ilAsqQuestionSolution
+	 * @throws ilAsqInvalidArgumentException
 	 */
-	public function getQuestionSolutionInstance($questionId, $solutionId) : ilAsqQuestionSolution
+	public function getQuestionSolutionInstance(ilAsqQuestion $question, $solutionId) : ilAsqQuestionSolution
 	{
-		$questionSolutionInstance; /* @var ilAsqQuestionSolution $questionSolutionInstance */
+		$classnameProvider = $this->getClassnameProvider($question->getQuestionType());
+		$classname = $classnameProvider->getQuestionClassname();
 		
-		/**
-		 * initialise $questionSolutionInstance as an instance of the question type corresponding object class
-		 * that implements ilAsqQuestionSolution depending on the given $questionId and $solutionId
-		 */
-		$questionSolutionInstance->setQuestionId($questionId);
-		$questionSolutionInstance->setSolutionId($solutionId);
-		$questionSolutionInstance->load();
+		/* @var ilAsqQuestionSolution $solutionInstance */
+		$solutionInstance = new $classname($question);
+		$solutionInstance->setSolutionId($solutionId);
+		$solutionInstance->load();
 		
-		return $questionSolutionInstance;
+		return $solutionInstance;
 	}
 	
 	/**
-	 * @param integer $questionId
+	 * @param ilAsqQuestion $question
 	 * @return ilAsqQuestionSolution
 	 */
-	public function getEmptyQuestionSolutionInstance($questionId) : ilAsqQuestionSolution
+	public function getEmptyQuestionSolutionInstance($question) : ilAsqQuestionSolution
 	{
-		$emptySolutionInstance; /* @var ilAsqQuestionSolution $questionSolutionInstance */
-		
-		/**
-		 * initialise $emptySolutionInstance as an instance of the question type corresponding object class
-		 * that implements ilAsqQuestionSolution depending on the given $questionId
-		 */
-		
-		$emptySolutionInstance->setQuestionId($questionId);
+		$classnameProvider = $this->getClassnameProvider($question->getQuestionType());
+		$classname = $classnameProvider->getQuestionClassname();
+
+		$emptySolutionInstance = new $classname();
+		$emptySolutionInstance->setQuestion($question);
 		
 		return $emptySolutionInstance;
 	}
 	
 	/**
-	 * @param ilAsqQuestion $questionInstance
 	 * @param ilAsqQuestionSolution $solutionInstance
 	 * @return ilAsqResultCalculator
 	 */
-	public function getResultCalculator(ilAsqQuestion $questionInstance, ilAsqQuestionSolution $solutionInstance) : ilAsqResultCalculator
+	public function getResultCalculator(ilAsqQuestionSolution $solutionInstance) : ilAsqResultCalculator
 	{
 		$resultCalculator; /* @var ilAsqResultCalculator $resultCalculator */
 		
@@ -268,7 +278,6 @@ class ilAsqFactory
 		 * that implements ilAsqResultCalculator depending on the given $questionInstance and $solutionInstance
 		 */
 		
-		$resultCalculator->setQuestion($questionInstance);
 		$resultCalculator->setSolution($solutionInstance);
 		
 		return $resultCalculator;
