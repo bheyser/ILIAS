@@ -180,7 +180,56 @@ class ilAsqSingleChoiceQuestion extends ilAsqQuestionAbstract
 	
 	public function save()
 	{
-		// TODO: Implement save() method.
+		global $DIC;
+		$ilDB = $DIC['ilDB'];
+		
+		// cleanup RTE images which are not inserted into the question text
+		include_once("./Services/RTE/classes/class.ilRTE.php");
+		if( !$this->hasId() )
+		{
+			// Neuen Datensatz schreiben
+			$next_id = $ilDB->nextId('qpl_questions');
+			$affectedRows = $ilDB->insert("qpl_questions", array(
+				"question_id" => array("integer", $next_id),
+				"question_type_fi" => array("integer", $this->getQuestionType()->getId()),
+				"obj_fi" => array("integer", $this->getParentId()),
+				"title" => array("text", $this->getTitle()),
+				"description" => array("text", $this->getComment()),
+				"author" => array("text", $this->getAuthor()),
+				"owner" => array("integer", $this->getOwner()),
+				"question_text" => array("clob", ilRTE::_replaceMediaObjectImageSrc($this->getQuestionText(), 0)),
+				//"points" => array("float", $this->getMaximumPoints()),
+				"working_time" => array("text", $this->getEstimatedWorkingTime()->format('%H:%I:%S')),
+				//"nr_of_tries" => array("integer", $this->getNrOfTries()),
+				"created" => array("integer", time()),
+				//"original_id" => array("integer", ($original_id) ? $original_id : NULL),
+				"tstamp" => array("integer", time()),
+				//"external_id" => array("text", $this->getExternalId()),
+				//'add_cont_edit_mode' => array('text', $this->getAdditionalContentEditingMode())
+			));
+			$this->setId($next_id);
+			// create page object of question
+			//$this->createPageObject();
+		}
+		else
+		{
+			// Vorhandenen Datensatz aktualisieren
+			$affectedRows = $ilDB->update("qpl_questions", array(
+				"obj_fi" => array("integer", $this->getParentId()),
+				"title" => array("text", $this->getTitle()),
+				"description" => array("text", $this->getComment()),
+				"author" => array("text", $this->getAuthor()),
+				"question_text" => array("clob", ilRTE::_replaceMediaObjectImageSrc($this->getQuestionText(), 0)),
+				//"points" => array("float", $this->getMaximumPoints()),
+				//"nr_of_tries" => array("integer", $this->getNrOfTries()),
+				"working_time" => array("text", $this->getEstimatedWorkingTime()->format('%H:%I:%S')),
+				"tstamp" => array("integer", time()),
+				'complete' => array('integer', $this->isComplete()),
+				//"external_id" => array("text", $this->getExternalId())
+			), array(
+				"question_id" => array("integer", $this->getId())
+			));
+		}
 	}
 	
 	public function delete()
@@ -200,7 +249,7 @@ class ilAsqSingleChoiceQuestion extends ilAsqQuestionAbstract
 	
 	public function isComplete(): bool
 	{
-		// TODO: Implement isComplete() method.
+		return true;
 	}
 	
 	public function getBestSolution(): ilAsqQuestionSolution

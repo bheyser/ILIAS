@@ -871,6 +871,23 @@ class ilObjQuestionPoolGUI extends ilObjectGUI
 			$addContEditMode = assQuestion::ADDITIONAL_CONTENT_EDITING_MODE_DEFAULT;
 		}
 
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		
+		$questionType = $DIC->question()->getQuestionTypeByTypeIdentifier($_POST["sel_question_types"]);
+		
+		$questionInstance = $DIC->question()->getEmptyQuestionInstance(
+			$questionType, $this->object->getId(), $addContEditMode
+		);
+		
+		$questionInstance->save();
+		
+		$questionAuthoringGUI = $DIC->question()->getAuthoringCommandInstance($questionInstance);
+		
+		$DIC->ctrl()->redirectToUrl(str_replace('&amp;', '&',
+				$questionAuthoringGUI->getEditQuestionConfigLink()->getAction()
+		));
+		
+		
 		include_once "./Modules/TestQuestionPool/classes/class.assQuestionGUI.php";
 		$q_gui =& assQuestionGUI::_getQuestionGUI($_POST["sel_question_types"]);
 		$this->object->addQuestionChangeListeners($q_gui->object);

@@ -119,8 +119,8 @@ abstract class ilAsqQuestionConfigForm extends ilPropertyFormGUI
 		$this->setTableWidth('100%');
 		$this->setMultipart(true);
 		
-		$this->setId($this->getQuestion()->getQuestionType()->getIdentifier());
-		$this->setTitle($this->getQuestion()->getQuestionType()->getIdentifier());
+		$this->setId($this->getQuestion()->getQuestionType()->getTag());
+		$this->setTitle($this->getQuestion()->getQuestionType()->getTag());
 		
 		$this->addBasicQuestionProperties();
 		$this->addQuestionSpecificProperties();

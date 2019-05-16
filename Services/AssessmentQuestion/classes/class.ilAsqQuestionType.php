@@ -11,9 +11,14 @@
 class ilAsqQuestionType
 {
 	/**
+	 * @var int
+	 */
+	protected $id;
+	
+	/**
 	 * @var string
 	 */
-	protected $identifier;
+	protected $tag;
 	
 	/**
 	 * @var bool
@@ -35,19 +40,35 @@ class ilAsqQuestionType
 	}
 	
 	/**
-	 * @return string
+	 * @return int
 	 */
-	public function getIdentifier() : string
+	public function getId(): int
 	{
-		return $this->identifier;
+		return $this->id;
 	}
 	
 	/**
-	 * @param string $identifier
+	 * @param int $id
 	 */
-	public function setIdentifier($identifier)
+	public function setId(int $id)
 	{
-		$this->identifier = $identifier;
+		$this->id = $id;
+	}
+	
+	/**
+	 * @return string
+	 */
+	public function getTag() : string
+	{
+		return $this->tag;
+	}
+	
+	/**
+	 * @param string $tag
+	 */
+	public function setTag($tag)
+	{
+		$this->tag = $tag;
 	}
 	
 	/**

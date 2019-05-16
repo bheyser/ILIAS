@@ -145,7 +145,7 @@ class ilAsqFactory
 	 */
 	public function getQuestionInstance($questionId) : ilAsqQuestion
 	{
-		$questionType = $this->getQuestionType($questionId);
+		$questionType = $this->getQuestionTypeByQuestionId($questionId);
 		
 		$classnameProvider = $this->getClassnameProvider($questionType);
 		$classname = $classnameProvider->getQuestionClassname();
@@ -162,17 +162,22 @@ class ilAsqFactory
 	}
 	
 	/**
-	 * @param string $questionId
+	 * @param ilAsqQuestionType $questionType
+	 * @param int $parentId
+	 * @param string $additionalContentEditingMode
 	 * @return ilAsqQuestion
+	 * @throws ilAsqInvalidArgumentException
 	 */
-	public function getEmptyQuestionInstance($questionType) : ilAsqQuestion
+	public function getEmptyQuestionInstance(ilAsqQuestionType $questionType, int $parentId, string $additionalContentEditingMode) : ilAsqQuestion
 	{
-		$questionInstance; /* @var ilAsqQuestion $questionInstance */
+		$classnameProvider = $this->getClassnameProvider($questionType);
+		$classname = $classnameProvider->getQuestionClassname();
 		
-		/**
-		 * initialise $questionInstance as an instance of the question type corresponding object class
-		 * that implements ilAsqQuestion depending on the given $questionType
-		 */
+		/* @var ilAsqQuestion $questionInstance */
+		$questionInstance = new $classname();
+		
+		$questionInstance->setQuestionType($questionType);
+		$questionInstance->setParentId($parentId);
 		
 		return $questionInstance;
 	}
@@ -296,13 +301,13 @@ class ilAsqFactory
 			// TODO: ask plugin object for class name provider and return
 		}
 		
-		switch( $questionType->getIdentifier() )
+		switch( $questionType->getTag() )
 		{
 			case 'assSingleChoice': return new ilAsqSingleChoiceClassnameProvider();
 		}
 		
 		throw new ilAsqInvalidArgumentException(
-			"invalid question type given: '{$questionType->getIdentifier()}'"
+			"invalid question type given: '{$questionType->getTag()}'"
 		);
 	}
 	
@@ -311,12 +316,12 @@ class ilAsqFactory
 	 * @return ilAsqQuestionType
 	 * @throws ilAsqInvalidArgumentException
 	 */
-	protected function getQuestionType($questionId)
+	protected function getQuestionTypeByQuestionId($questionId)
 	{
 		global $DIC; /* @var ILIAS\DI\Container $DIC */
 		
 		$query = "
-			SELECT qt.type_tag question_type, qt.plugin is_plugin
+			SELECT qt.question_type_id type_id, qt.type_tag type_tag, qt.plugin is_plugin, qt.plugin_name plugin_name
 			FROM qpl_questions q
 			INNER JOIN qpl_qst_type qt
 			ON q.question_type_fi = qt.question_type_id
@@ -330,7 +335,8 @@ class ilAsqFactory
 		while( $row = $DIC->database()->fetchAssoc($res) )
 		{
 			$questionType = new ilAsqQuestionType();
-			$questionType->setIdentifier($row['question_type']);
+			$questionType->setId($row['type_id']);
+			$questionType->setTag($row['type_tag']);
 			$questionType->setPluginType($row['is_plugin']);
 			$questionType->setPluginName($row['plugin_name']);
 			
@@ -339,6 +345,41 @@ class ilAsqFactory
 		
 		throw new ilAsqInvalidArgumentException(
 			"invalid question id given: '{$questionId}'"
+		);
+	}
+	
+	/**
+	 * @param string $typeIdentifier
+	 * @return ilAsqQuestionType
+	 * @throws ilAsqInvalidArgumentException
+	 */
+	public function getQuestionTypeByTypeIdentifier($typeIdentifier)
+	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		
+		$query = "
+			SELECT qt.question_type_id type_id, qt.type_tag type_tag, qt.plugin is_plugin, qt.plugin_name plugin_name
+			FROM qpl_qst_type qt
+			WHERE qt.type_tag = %s
+		";
+		
+		$res = $DIC->database()->queryF(
+			$query, array('text'), array($typeIdentifier)
+		);
+		
+		while( $row = $DIC->database()->fetchAssoc($res) )
+		{
+			$questionType = new ilAsqQuestionType();
+			$questionType->setId($row['type_id']);
+			$questionType->setTag($row['type_tag']);
+			$questionType->setPluginType($row['is_plugin']);
+			$questionType->setPluginName($row['plugin_name']);
+			
+			return $questionType;
+		}
+		
+		throw new ilAsqInvalidArgumentException(
+			"invalid qst type identifier given: '{$typeIdentifier}'"
 		);
 	}
 	

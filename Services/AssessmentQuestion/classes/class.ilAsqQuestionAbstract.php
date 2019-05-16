@@ -67,7 +67,15 @@ abstract class ilAsqQuestionAbstract implements ilAsqQuestion
 	 */
 	public function __construct()
 	{
+		$this->setOwner(0);
+		
+		$this->setTitle('');
+		$this->setComment('');
+		$this->setAuthor('');
+		
 		$this->setEstimatedWorkingTime(new DateInterval('PT0S'));
+		
+		$this->setQuestionText('');
 	}
 	
 	/**
@@ -100,6 +108,14 @@ abstract class ilAsqQuestionAbstract implements ilAsqQuestion
 	public function getId(): int
 	{
 		return $this->id;
+	}
+	
+	/**
+	 * @return bool
+	 */
+	public function hasId(): int
+	{
+		return is_integer($this->id);
 	}
 	
 	/**
