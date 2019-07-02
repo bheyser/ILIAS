@@ -148,7 +148,7 @@ class ilTestQuestionSideListGUI
 		$panel = ilPanelGUI::getInstance();
 		$panel->setHeadingStyle(ilPanelGUI::HEADING_STYLE_SUBHEADING);
 		$panel->setPanelStyle(ilPanelGUI::PANEL_STYLE_SECONDARY);
-		$panel->setHeading($this->lng->txt('list_of_questions'));
+		//$panel->setHeading($this->lng->txt('list_of_questions'));
 		return $panel;
 	}
 	
@@ -206,7 +206,7 @@ class ilTestQuestionSideListGUI
 			$steps[] = $step;
 		}
 		
-		$workflow = $uif->listing()->workflow()->linear('Fragenworkflow', $steps);
+		$workflow = $uif->listing()->workflow()->linear($this->lng->txt('list_of_questions'), $steps);
 		
 		$workflow = $workflow->withActive($activeStep);
 		

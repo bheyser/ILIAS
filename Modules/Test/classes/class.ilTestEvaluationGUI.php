@@ -1286,7 +1286,7 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 				case ilTestPassDeletionConfirmationGUI::CONTEXT_DYN_TEST_QUESTION_SELECTION:
 					$ilTabs->setBackTarget('Back to Test', $this->ctrl->getLinkTargetByClass(
 						['ilObjTestGUI', 'ilTestPlayerDynamicQuestionSetGUI'],
-						ilTestPlayerCommands::SHOW_QUESTION_SELECTION
+						'showAnsweringStatistic'
 					));
 					break;
 			}

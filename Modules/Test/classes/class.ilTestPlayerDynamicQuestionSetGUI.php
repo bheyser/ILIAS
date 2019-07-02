@@ -185,7 +185,7 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		
 		if( $this->dynamicQuestionSetConfig->isAnyQuestionFilterEnabled() )
 		{
-			$this->ctrl->redirect($this, ilTestPlayerCommands::SHOW_QUESTION_SELECTION);
+			$this->ctrl->redirect($this, 'showAnsweringStatistic');
 		}
 		
 		$this->ctrl->redirect($this, ilTestPlayerCommands::SHOW_QUESTION);
@@ -209,7 +209,7 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		
 		if( $this->dynamicQuestionSetConfig->isAnyQuestionFilterEnabled() )
 		{
-			$this->ctrl->redirect($this, ilTestPlayerCommands::SHOW_QUESTION_SELECTION);
+			$this->ctrl->redirect($this, 'showAnsweringStatistic');
 		}
 		
 		$this->ctrl->redirect($this, ilTestPlayerCommands::SHOW_QUESTION);
@@ -290,8 +290,187 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		return $form;
 	}
 	
+	protected function questionSelectionRoundtripModalCmd()
+	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		
+		$replaceSignal = new \ILIAS\UI\Implementation\Component\ReplaceSignal($_GET['signal']);
+		$currentPage = $_GET['page'];
+		$lastPage = $nextPage = $modalTitle = null;
+		
+		$pages = $this->getQuestionSelectionModalPages();
+		
+		$form = new ilPropertyFormGUI();
+		$form->setId('qstSel_'.$currentPage);
+		
+		foreach($pages as $page)
+		{
+			if( $page == $currentPage )
+			{
+				$modalTitle = $this->fillQuestionSelectionFormVisibleInputs($form, $currentPage);
+				$lastPage = $page;
+				continue;
+			}
+			
+			if( $lastPage == $currentPage )
+			{
+				$nextPage = $page;
+				break;
+			}
+			
+			$this->fillQuestionSelectionFormHiddenInputs($form, $currentPage);
+			
+			$lastPage = $page;
+		}
+		
+		$button = $DIC->ui()->factory()->button()->primary('Next', '#');
+		
+		if(false)
+		if( $nextPage )
+		{
+			$DIC->ctrl()->setParameter($this, 'signal', $replaceSignal->getId());
+			$DIC->ctrl()->setParameter($this, 'page', $nextPage);
+			
+			$url = $DIC->ctrl()->getLinkTarget(
+				$this, 'questionSelectionRoundtripModal', '', true
+			);
+			
+			$button = $button->withOnLoadCode(
+				function($id) use ($form, $url) { return "alert('$id');
+					$('#{$id}').click(function() {
+						$.post('{$url}', $('#{$form->getId()}').serialize());
+						return false;
+					});
+				";}
+			);
+		}
+		else
+		{
+			$button = $button->withOnLoadCode(
+				function($id) use ($form) { return "
+					$('#{$id}').click(function() {
+						$('#{$form->getId()}').submit();
+						return false;
+					});
+				";}
+			);
+		}
+		
+		$modal = $DIC->ui()->factory()->modal()->roundtrip($modalTitle, $DIC->ui()->factory()->legacy($form->getHTML()));
+		$modal = $modal->withActionButtons([$button]);
+		
+		if( $nextPage || true )
+		{
+			$echo = $DIC->ui()->renderer()->renderAsync($modal);
+			echo $echo;
+			exit;
+		}
+		
+		$DIC->ctrl()->redirect($this, 'showAnsweringStatistic');
+	}
+	
+	protected function fillQuestionSelectionFormVisibleInputs(ilPropertyFormGUI $form, $page)
+	{
+		$matches = $modalTitle = null;
+		
+		if($page == 'filter_answerstatus')
+		{
+			$inp = new ilRadioGroupInputGUI($this->lng->txt('tst_question_answer_status'), 'question_answer_status');
+			$inp->addOption(new ilRadioOption(
+				$this->lng->txt('tst_question_answer_status_all_non_correct'), ilAssQuestionList::ANSWER_STATUS_FILTER_ALL_NON_CORRECT
+			));
+			$inp->addOption(new ilRadioOption(
+				$this->lng->txt('tst_question_answer_status_non_answered'), ilAssQuestionList::ANSWER_STATUS_FILTER_NON_ANSWERED_ONLY
+			));
+			$inp->addOption(new ilRadioOption(
+				$this->lng->txt('tst_question_answer_status_wrong_answered'), ilAssQuestionList::ANSWER_STATUS_FILTER_WRONG_ANSWERED_ONLY
+			));
+			$form->addItem($inp);
+			
+			if( $this->testSession->getQuestionSetFilterSelection()->hasAnswerStatusSelection() )
+			{
+				$inp->setValue($this->testSession->getQuestionSetFilterSelection()->getAnswerStatusSelection());
+			}
+			else
+			{
+				$inp->setValue(ilAssQuestionList::ANSWER_STATUS_FILTER_ALL_NON_CORRECT);
+			}
+			
+			$modalTitle = $this->lng->txt('tst_question_answer_status');
+		}
+		elseif(preg_match('/^filter_tax_(\d+)$/', $page, $matches))
+		{
+			$taxId = $matches[1];
+			
+			$postvar = "tax_$taxId";
+			
+			$inp = new ilTaxSelectInputGUI($taxId, $postvar, true);
+			
+			$form->addItem($inp);
+			$form->addItem($inp);
+			
+			if( $this->testSession->getQuestionSetFilterSelection()->hasSelectedTaxonomy($taxId) )
+			{
+				$inp->setValue($this->testSession->getQuestionSetFilterSelection()->getSelectedTaxonomy($taxId));
+			}
+			
+			$tax = new ilObjTaxonomy($taxId);
+			$modalTitle = $tax->getTitle();
+		}
+		
+		return $modalTitle;
+	}
+	
+	protected function fillQuestionSelectionFormHiddenInputs(ilPropertyFormGUI $form, $page)
+	{
+		if(preg_match('/^filter_tax_(\d+)$/', $page, $matches))
+		{
+			$taxId = $matches[1];
+		}
+	}
+	
+	protected function getQuestionSelectionModalPages()
+	{
+		$pages = array();
+		
+		if( $this->dynamicQuestionSetConfig->isTaxonomyFilterEnabled() )
+		{
+			foreach ($this->dynamicQuestionSetConfig->getFilterTaxonomyIds() as $taxId)
+			{
+				$pages[] = 'filter_tax_'.$taxId;
+			}
+		}
+		
+		if( $this->dynamicQuestionSetConfig->isAnswerStatusFilterEnabled() )
+		{
+			$pages[] = 'filter_answerstatus';
+		}
+		
+		return $pages;
+	}
+	
+	protected function getQuestionSelectionModal()
+	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		
+		$pages = $this->getQuestionSelectionModalPages();
+		
+		$modal = $DIC->ui()->factory()->modal()->roundtrip('', []);
+		
+		$DIC->ctrl()->setParameter($this, 'signal', $modal->getReplaceSignal()->getId());
+		$DIC->ctrl()->setParameter($this, 'page', $pages[2]);
+		
+		$modal = $modal->withAsyncRenderUrl($DIC->ctrl()->getLinkTarget(
+			$this, 'questionSelectionRoundtripModal', '', true
+		));
+		
+		return $modal;
+	}
+	
 	protected function showAnsweringStatisticCmd()
 	{
+		global $DIC; /* @var ILIAS\DI\Container $DIC */
+		
 		$this->testSequence->loadQuestions(
 			$this->dynamicQuestionSetConfig, $this->testSession->getQuestionSetFilterSelection()
 		);
@@ -322,10 +501,32 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		$button->setPrimary(true);
 		$toolbarGUI->addButtonInstance($button);
 		
+		$modal = $this->getQuestionSelectionModal();
+
+		$button = $DIC->ui()->factory()->button()->standard('Change Question Selection', "")->withOnClick(
+			$modal->getShowSignal()
+		);
+		
+		$toolbarGUI->addComponent($button);
+		
+		/*
 		$button = ilLinkButton::getInstance();
 		$button->setUrl($this->ctrl->getLinkTarget($this, 'showQuestionSelection'));
 		$button->setCaption('Change Question Selection', false);
 		$toolbarGUI->addButtonInstance($button);
+		*/
+		
+		$this->ctrl->setParameter(
+			$this, 'context', ilTestPassDeletionConfirmationGUI::CONTEXT_DYN_TEST_QUESTION_SELECTION
+		);
+		
+		$btn = ilTestPlayerNavButton::getInstance();
+		$btn->setNextCommand('showTestResults');
+		$btn->setUrl($this->ctrl->getLinkTarget(
+			$this, 'showTestResults'
+		));
+		$btn->setCaption('Test Results', false);
+		$toolbarGUI->addButtonInstance($btn);
 		
 		if( $this->object->getShowCancel() )
 		{
@@ -347,18 +548,26 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 			);
 		}
 		
-		$content = $toolbarGUI->getHTML();
+		$content = $DIC->ui()->renderer()->render($modal).$toolbarGUI->getHTML();
 		
-		if( true )
+		if( true ) // third variant for reporting panel attempt using two main panels
 		{
-			$content .= $this->renderQuestionSelectionStatisticsReport($filteredData[0], $completeData[0]);
+			$content .= $this->renderQuestionSelectionStatisticsReport(
+				$filteredData[0], $completeData[0], true
+			);
 		}
-		elseif( true )
+		elseif( true ) // second attempt using reporting panel with card
+		{
+			$content .= $this->renderQuestionSelectionStatisticsReport(
+				$filteredData[0], $completeData[0], false
+			);
+		}
+		elseif( true ) // first stats only draft using two labeled listing panel
 		{
 			$content .= $this->getSelectedQuestionsStatisticsHTML($filteredData[0], 'Questions Selected');
 			$content .= $this->getCompleteQuestionPoolStatisticsHTML($completeData[0], 'All Questions in Pool');
 		}
-		else
+		else // former screen using tables for statistics and selection
 		{
 			$content .= $this->ctrl->getHTML($filteredTableGUI);
 			$content .= $this->ctrl->getHTML($completeTableGUI);
@@ -444,7 +653,7 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		}
 	}
 	
-	protected function renderQuestionSelectionStatisticsReport($filteredData, $completeData)
+	protected function renderQuestionSelectionStatisticsReport($filteredData, $completeData, $alternativeVariant = false)
 	{
 		global $DIC; /* @var ILIAS\DI\Container $DIC */
 		$f = $DIC->ui()->factory();
@@ -458,21 +667,37 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 			)
 		]);*/
 
-		$card = $f->card()->standard('Answering Statistic for Selected Questions')->withSections([
-			$this->getAnsweringStatisticListing($filteredData, 'Questions Selected', false)
+		$card = $f->card()->standard('Answering Statistic for Complete Question Pool')->withSections([
+			$this->getAnsweringStatisticListing($completeData, 'All Questions in Pool', false)
 		]);
 		
-		$panel1 = $f->panel()->sub('Questions to be Presented', [
-			$this->getQuestionSelectionDescription()
-		])->withCard($card);//->withActions($dropdown);
-		
-		$panel2 = $f->panel()->sub('Answering Statistic for Complete Question Pool', [
-			$this->getAnsweringStatisticListing($completeData, 'All Questions in Pool', true)
-		]);
-		
-		
-		$reportPanel = $f->panel()->report('Question Selection', [$panel1, $panel2]);
-		
+		if($alternativeVariant)
+		{
+			$panel1 = $f->panel()->sub('', [
+				$this->getQuestionSelectionDescription()
+			])->withCard($card);//->withActions($dropdown);
+			
+			$panel2 = $f->panel()->sub('', [
+				$this->getAnsweringStatisticListing($filteredData, 'Questions Selected', true)
+			]);
+			
+			$reportPanel = [
+				$f->panel()->report('Selection and Complete Pool', $panel1),
+				$f->panel()->report('Answering Statistic for Selected Questions', $panel2),
+			];
+		}
+		else
+		{
+			$panel1 = $f->panel()->sub('Selection and Complete Pool', [
+				$this->getQuestionSelectionDescription()
+			])->withCard($card);//->withActions($dropdown);
+			
+			$panel2 = $f->panel()->sub('Answering Statistic for Selected Questions', [
+				$this->getAnsweringStatisticListing($filteredData, 'Questions Selected', true)
+			]);
+			
+			$reportPanel = $f->panel()->report('Answering Statistic', [$panel1, $panel2]);
+		}
 		
 		return $DIC->ui()->renderer()->render($reportPanel);
 	}
