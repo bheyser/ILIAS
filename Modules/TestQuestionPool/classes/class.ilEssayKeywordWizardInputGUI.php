@@ -152,8 +152,8 @@ class ilEssayKeywordWizardInputGUI extends ilSingleChoiceWizardInputGUI
 			{
 				$tpl->setVariable( "DISABLED_POINTS", " disabled=\"disabled\"" );
 			}
-			$tpl->setVariable( "ADD_BUTTON", ilGlyphGUI::get(ilGlyphGUI::ADD) );
-			$tpl->setVariable( "REMOVE_BUTTON", ilGlyphGUI::get(ilGlyphGUI::REMOVE) );
+			$tpl->setVariable( "ADD_BUTTON", $DIC->ui()->renderer()->render($DIC->ui()->factory()->glyph()->add()) );
+			$tpl->setVariable( "REMOVE_BUTTON", $DIC->ui()->renderer()->render($DIC->ui()->factory()->glyph()->remove()) );
 			$tpl->parseCurrentBlock();
 			$i++;
 		}

@@ -328,8 +328,8 @@ class ilAnswerWizardInputGUI extends ilTextInputGUI
 				$tpl->setVariable("CMD_UP", "cmd[up" . $this->getFieldId() . "][$i]");
 				$tpl->setVariable("CMD_DOWN", "cmd[down" . $this->getFieldId() . "][$i]");
 				$tpl->setVariable("ID", $this->getPostVar() . "[$i]");
-				$tpl->setVariable("UP_BUTTON", ilGlyphGUI::get(ilGlyphGUI::UP));
-				$tpl->setVariable("DOWN_BUTTON", ilGlyphGUI::get(ilGlyphGUI::DOWN));
+				$tpl->setVariable("UP_BUTTON", $DIC->ui()->renderer()->render($DIC->ui()->factory()->glyph()->up()));
+				$tpl->setVariable("DOWN_BUTTON", $DIC->ui()->renderer()->render($DIC->ui()->factory()->glyph()->down()));
 				$tpl->parseCurrentBlock();
 			}
 			$tpl->setCurrentBlock("row");
@@ -342,8 +342,8 @@ class ilAnswerWizardInputGUI extends ilTextInputGUI
 				$tpl->setVariable("ADD_REMOVE_ID", $this->getPostVar() . "[$i]");
 				$tpl->setVariable("CMD_ADD", "cmd[add" . $this->getFieldId() . "][$i]");
 				$tpl->setVariable("CMD_REMOVE", "cmd[remove" . $this->getFieldId() . "][$i]");
-				$tpl->setVariable("ADD_BUTTON", ilGlyphGUI::get(ilGlyphGUI::ADD));
-				$tpl->setVariable("REMOVE_BUTTON", ilGlyphGUI::get(ilGlyphGUI::REMOVE));
+				$tpl->setVariable("ADD_BUTTON", $DIC->ui()->renderer()->render($DIC->ui()->factory()->glyph()->add()));
+				$tpl->setVariable("REMOVE_BUTTON", $DIC->ui()->renderer()->render($DIC->ui()->factory()->glyph()->remove()));
 			}
 			if ($this->getDisabled())
 			{

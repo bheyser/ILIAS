@@ -159,6 +159,8 @@ class ilTextWizardInputGUI extends ilTextInputGUI
 	
 	public function render($a_mode = "")
 	{
+		global $DIC; /* @var \ILIAS\DI\Container $DIC */
+		
 		$tpl = new ilTemplate("tpl.prop_textwizardinput.html", true, true, "Services/Form");
 		$i = 0;
 		foreach ($this->values as $value)
@@ -175,8 +177,8 @@ class ilTextWizardInputGUI extends ilTextInputGUI
 				$tpl->setVariable("CMD_UP", "cmd[up" . $this->getFieldId() . "][$i]");
 				$tpl->setVariable("CMD_DOWN", "cmd[down" . $this->getFieldId() . "][$i]");
 				$tpl->setVariable("ID", $this->getFieldId() . "[$i]");
-				$tpl->setVariable("UP_BUTTON", ilGlyphGUI::get(ilGlyphGUI::UP));
-				$tpl->setVariable("DOWN_BUTTON", ilGlyphGUI::get(ilGlyphGUI::DOWN));
+				$tpl->setVariable("UP_BUTTON", $DIC->ui()->renderer()->render($DIC->ui()->factory()->glyph()->up()));
+				$tpl->setVariable("DOWN_BUTTON", $DIC->ui()->renderer()->render($DIC->ui()->factory()->glyph()->down()));
 				$tpl->parseCurrentBlock();
 			}
 			$tpl->setCurrentBlock("row");
@@ -194,8 +196,8 @@ class ilTextWizardInputGUI extends ilTextInputGUI
 			{
 				$tpl->setVariable("CMD_ADD", "cmd[add" . $this->getFieldId() . "][$i]");
 				$tpl->setVariable("CMD_REMOVE", "cmd[remove" . $this->getFieldId() . "][$i]");
-				$tpl->setVariable("ADD_BUTTON", ilGlyphGUI::get(ilGlyphGUI::ADD));
-				$tpl->setVariable("REMOVE_BUTTON", ilGlyphGUI::get(ilGlyphGUI::REMOVE));
+				$tpl->setVariable("ADD_BUTTON", $DIC->ui()->renderer()->render($DIC->ui()->factory()->glyph()->add()));
+				$tpl->setVariable("REMOVE_BUTTON", $DIC->ui()->renderer()->render($DIC->ui()->factory()->glyph()->remove()));
 			}
 			
 			$tpl->parseCurrentBlock();

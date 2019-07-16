@@ -157,6 +157,8 @@ class ilKprimChoiceWizardInputGUI extends ilSingleChoiceWizardInputGUI
 	 */
 	public function insert($a_tpl)
 	{
+		global $DIC; /* @var \ILIAS\DI\Container $DIC */
+		
 		$tpl = new ilTemplate("tpl.prop_kprimchoicewizardinput.html", true, true, "Modules/TestQuestionPool");
 
 		foreach ($this->values as $value)
@@ -235,8 +237,8 @@ class ilKprimChoiceWizardInputGUI extends ilSingleChoiceWizardInputGUI
 				$tpl->setVariable("CMD_DOWN", "cmd[down" . $this->getFieldId() . "][{$value->getPosition()}]");
 				$tpl->setVariable("UP_ID", "up_{$this->getPostVar()}[{$value->getPosition()}]");
 				$tpl->setVariable("DOWN_ID", "down_{$this->getPostVar()}[{$value->getPosition()}]");
-				$tpl->setVariable("UP_BUTTON", ilGlyphGUI::get(ilGlyphGUI::UP));
-				$tpl->setVariable("DOWN_BUTTON", ilGlyphGUI::get(ilGlyphGUI::DOWN));
+				$tpl->setVariable("UP_BUTTON", $DIC->ui()->renderer()->render($DIC->ui()->factory()->glyph()->up()));
+				$tpl->setVariable("DOWN_BUTTON", $DIC->ui()->renderer()->render($DIC->ui()->factory()->glyph()->down()));
 				$tpl->parseCurrentBlock();
 			}
 			
