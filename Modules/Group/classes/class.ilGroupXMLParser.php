@@ -400,30 +400,28 @@ class ilGroupXMLParser extends ilSaxParser
 			$this->group_obj->createReference();
 			$this->group_obj->putInTree($this->__getParentId());
 			$this->group_obj->setPermissions($this->__getParentId());
-			$this->group_obj->initGroupStatus($this->group_data["type"] == "open" ? GRP_TYPE_PUBLIC : GRP_TYPE_CLOSED);
-		} 
-		else
-		{
-			switch($this->group_data['type'])
-			{
-				case 'open':
-					$grp_status = GRP_TYPE_PUBLIC;
-					break;
-					
-				case 'closed':
-					$grp_status = GRP_TYPE_CLOSED;
-					break;
-					
-			}
-			
-			$this->group_obj->updateOwner();
-			if($this->group_obj->getGroupStatus() != $grp_status)
-			{
-				$this->group_obj->setGroupType($grp_status);
-				$this->group_obj->updateGroupType();
+			if(
+				array_key_exists('type', $this->group_data) &&
+				$this->group_data['type'] == 'closed'
+			) {
+				$this->group_obj->updateGroupType(GRP_TYPE_CLOSED);
 			}
 		}
-
+		else
+		{
+			if(
+				array_key_exists('type', $this->group_data) &&
+				$this->group_data['type'] == 'closed'
+			) {
+				$this->group_obj->updateGroupType(GRP_TYPE_CLOSED);
+			}
+			else if(
+				array_key_exists('type', $this->group_data) &&
+				$this->group_data['type'] == 'open'
+			) {
+				$this->group_obj->updateGroupType(GRP_TYPE_OPEN);
+			}
+		}
 		// SET GROUP SPECIFIC DATA
 		switch($this->group_data['registration_type'])
 		{
@@ -473,14 +471,7 @@ class ilGroupXMLParser extends ilSaxParser
 		$this->group_obj->setCancellationEnd($this->group_data['cancel_end']);
 		$this->group_obj->setMinMembers($this->group_data['min_members']);
 		$this->group_obj->setShowMembers($this->group_data['show_members'] ? $this->group_data['show_members'] : 0);
-		
 		$this->group_obj->setMailToMembersType((int) $this->group_data['mail_members_type']);
-		
-		if ($this->mode == ilGroupXMLParser::$CREATE)
-		{
-			$this->group_obj->initGroupStatus($this->group_data["type"] == "open" ? 0 : 1);
-		}
-
 		$this->group_obj->update();
 
 		// ASSIGN ADMINS/MEMBERS
@@ -507,7 +498,7 @@ class ilGroupXMLParser extends ilSaxParser
 		$this->participants->updateNotification($ilUser->getId(),$ilSetting->get('mail_grp_admin_notification', true));
 		
 		// attach ADMINs
-		if (count($this->group_data["admin"]["attach"]))
+		if (isset($this->group_data["admin"]["attach"]) && count($this->group_data["admin"]["attach"]))
 		{
 			foreach($this->group_data["admin"]["attach"] as $user)
 			{
@@ -525,7 +516,7 @@ class ilGroupXMLParser extends ilSaxParser
 			}
 		}
 		// detach ADMINs
-		if (count($this->group_data["admin"]["detach"]))
+		if (isset($this->group_data["admin"]["detach"]) && count($this->group_data["admin"]["detach"]))
 		{
 			foreach($this->group_data["admin"]["detach"] as $user)
 			{
@@ -542,7 +533,7 @@ class ilGroupXMLParser extends ilSaxParser
 			}
 		}
 		// MEMBER
-		if (count($this->group_data["member"]["attach"]))
+		if (isset($this->group_data["member"]["attach"]) && count($this->group_data["member"]["attach"]))
 		{
 			foreach($this->group_data["member"]["attach"] as $user)
 			{
@@ -556,7 +547,7 @@ class ilGroupXMLParser extends ilSaxParser
 			}
 		}
 
-		if (count($this->group_data["member"]["detach"]))
+		if (isset($this->group_data["member"]["detach"]) && count($this->group_data["member"]["detach"]))
 		{
 			foreach($this->group_data["member"]["detach"] as $user)
 			{

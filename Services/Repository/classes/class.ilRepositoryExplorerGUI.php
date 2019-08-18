@@ -79,7 +79,7 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 		$objDefinition = $DIC["objDefinition"];
 
 		$this->cur_ref_id = (int) $_GET["ref_id"];
-		
+
 		$this->top_node_id = 0;
 		if ($ilSetting->get("rep_tree_limit_grp_crs") && $this->cur_ref_id > 0)
 		{
@@ -104,7 +104,6 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 		$this->setSkipRootNode(false);
 		$this->setAjax(true);
 		$this->setOrderField("title");
-
 		if ($ilSetting->get("repository_tree_pres") == "" ||
 			($ilSetting->get("rep_tree_limit_grp_crs") && $this->top_node_id == 0))
 		{			
@@ -438,7 +437,7 @@ class ilRepositoryExplorerGUI extends ilTreeExplorerGUI
 		include_once("./Services/Container/classes/class.ilContainerSorting.php");	
 		$sort = ilContainerSorting::_getInstance($parent_obj_id);									
 		$block_pos = $sort->getBlockPositions();
-		if (sizeof($block_pos))
+		if (is_array($block_pos) && count($block_pos) > 0)
 		{
 			$tmp = $this->type_grps[$parent_type];						
 

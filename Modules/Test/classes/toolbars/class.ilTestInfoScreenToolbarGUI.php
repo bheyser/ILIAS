@@ -690,7 +690,7 @@ class ilTestInfoScreenToolbarGUI extends ilToolbarGUI
 				}
 				
 				$button = ilLinkButton::getInstance();
-				$button->setUrl($this->ctrl->getLinkTarget($this, 'renoveImportFails'));
+				$button->setUrl($this->ctrl->getLinkTargetByClass('ilObjTestGUI', 'removeImportFails'));
 				$button->setCaption('ass_skl_import_fails_remove_btn');
 				$importFailsMsg[] = $button->render();
 				
@@ -705,7 +705,7 @@ class ilTestInfoScreenToolbarGUI extends ilToolbarGUI
 				
 				if( $this->hasFixedQuestionSetSkillAssignsLowerThanBarrier() )
 				{
-					$this->addFailureMessage($this->getSkillAssignBarrierInfo());
+					$this->addInfoMessage($this->getSkillAssignBarrierInfo());
 				}
 			}
 
