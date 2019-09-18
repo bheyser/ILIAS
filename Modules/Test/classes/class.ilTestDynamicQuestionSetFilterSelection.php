@@ -121,6 +121,15 @@ class ilTestDynamicQuestionSetFilterSelection
 	{
 		return $this->taxonomySelection[$taxonomyId];
 	}
+	
+	/**
+	 * @param $taxonomyId
+	 * @param $selection
+	 */
+	public function setSelectedTaxonomy($taxonomyId, $selection)
+	{
+		$this->taxonomySelection[$taxonomyId] = $selection;
+	}
 
 	/**
 	 * @param array $forcedQuestionIds

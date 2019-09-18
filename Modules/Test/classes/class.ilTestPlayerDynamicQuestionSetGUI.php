@@ -290,83 +290,243 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		return $form;
 	}
 	
+	protected function setQuestionSelectionCmd()
+	{
+		global $DIC; /* @var \ILIAS\DI\Container $DIC */
+		
+		$filterSelection = $this->testSession->getQuestionSetFilterSelection();
+
+		if( $this->dynamicQuestionSetConfig->isAnswerStatusFilterEnabled() )
+		{
+			if( isset($_POST['filter_answerstatus']) )
+			{
+				$filterSelection->setAnswerStatusSelection($_POST['filter_answerstatus']);
+			}
+		}
+		
+		if( $this->dynamicQuestionSetConfig->isTaxonomyFilterEnabled() )
+		{
+			foreach ($this->dynamicQuestionSetConfig->getFilterTaxonomyIds() as $taxId)
+			{
+				$enabledPostvar = 'enabled_tax_'.$taxId;
+				$filterPostvar = 'filter_tax_'.$taxId;
+				
+				if( isset($_POST[$enabledPostvar]) && $_POST[$enabledPostvar] && isset($_POST[$filterPostvar]) )
+				{
+					$selection = array();
+					
+					if(strlen($_POST[$filterPostvar]))
+					{
+						$selection = implode(':', $_POST[$filterPostvar]);
+					}
+					
+					$filterSelection->setSelectedTaxonomy($taxId, $selection);
+				}
+			}
+		}
+		
+		$this->testSession->saveToDb();
+		
+		$DIC->ctrl()->redirect($this, 'showAnsweringStatistic');
+	}
+	
 	protected function questionSelectionRoundtripModalCmd()
 	{
 		global $DIC; /* @var ILIAS\DI\Container $DIC */
 		
 		$replaceSignal = new \ILIAS\UI\Implementation\Component\ReplaceSignal($_GET['signal']);
-		$currentPage = $_GET['page'];
-		$lastPage = $nextPage = $modalTitle = null;
+		$requestedPage = $_GET['requestPage'];
 		
 		$pages = $this->getQuestionSelectionModalPages();
 		
+		foreach($pages as $page)
+		{
+			if( isset($_GET[$page]) )
+			{
+				$_POST[$page] = $_GET[$page];
+			}
+			
+			$page = str_replace('filter_', 'enabled_', $page);
+			
+			if( isset($_GET[$page]) )
+			{
+				$_POST[$page] = $_GET[$page];
+			}
+		}
+		
 		$form = new ilPropertyFormGUI();
-		$form->setId('qstSel_'.$currentPage);
+		$form->setId('qstSel_'.$requestedPage);
+		$form->setFormAction($DIC->ctrl()->getFormAction($this, 'setQuestionSelection'));
+		
+		$modalTitle = null;
+		$nextPage = null;
+		$previousPage = null;
+		
+		$loopsPreviousPage = null;
+		$loopExpectNextPage = false;
 		
 		foreach($pages as $page)
 		{
-			if( $page == $currentPage )
-			{
-				$modalTitle = $this->fillQuestionSelectionFormVisibleInputs($form, $currentPage);
-				$lastPage = $page;
-				continue;
-			}
-			
-			if( $lastPage == $currentPage )
+			if($loopExpectNextPage)
 			{
 				$nextPage = $page;
-				break;
+				$loopExpectNextPage = false;
 			}
 			
-			$this->fillQuestionSelectionFormHiddenInputs($form, $currentPage);
+			if( $page == $requestedPage )
+			{
+				$modalTitle = $this->fillQuestionSelectionFormVisibleInputs($form, $page);
+				$loopExpectNextPage = true;
+				$previousPage = $loopsPreviousPage;
+			}
+			else
+			{
+				$this->fillQuestionSelectionFormHiddenInputs($form, $page);
+			}
 			
-			$lastPage = $page;
+			$loopsPreviousPage = $page;
 		}
 		
-		$button = $DIC->ui()->factory()->button()->primary('Next', '#');
+		$form->setValuesByPost();
 		
-		if(false)
+		$nextLabel = $nextPage ? 'Next' : 'Apply';
+		$buttonNext = $DIC->ui()->factory()->button()->primary($nextLabel, '#');
+		
+		$buttonBack = $DIC->ui()->factory()->button()->standard('Back', '#');
+		
+		$modal = $DIC->ui()->factory()->modal()->roundtrip(
+			$modalTitle, $DIC->ui()->factory()->legacy($form->getHTML())
+		);
+		
 		if( $nextPage )
 		{
+			// previous button
+			
 			$DIC->ctrl()->setParameter($this, 'signal', $replaceSignal->getId());
-			$DIC->ctrl()->setParameter($this, 'page', $nextPage);
+			$DIC->ctrl()->setParameter($this, 'requestPage', $previousPage);
+			$DIC->ctrl()->setParameter($this, 'fromPage', $requestedPage);
 			
 			$url = $DIC->ctrl()->getLinkTarget(
 				$this, 'questionSelectionRoundtripModal', '', true
 			);
 			
-			$button = $button->withOnLoadCode(
-				function($id) use ($form, $url) { return "alert('$id');
-					$('#{$id}').click(function() {
-						$.post('{$url}', $('#{$form->getId()}').serialize());
-						return false;
-					});
-				";}
+			$replaceSignal = $replaceSignal->withAsyncRenderUrl($url);
+			
+			$buttonBack = $buttonBack->/*withOnClick($replaceSignal)->*/withOnLoadCode(
+				function($id) use ($modal, $form, $replaceSignal, $url) {
+					return "
+						$('#{$id}').click(function(event) {
+						
+							var formData = $('#form_{$form->getId()}').serialize();
+							
+							var asyncUrl = '{$url}&'+formData;
+							
+							$(this).trigger('{$replaceSignal->getId()}',{
+								id: '{$replaceSignal->getId()}',
+								event: 'click',
+								triggerer: $(this),
+								options: {url: asyncUrl}
+							});
+							
+						});
+					";
+				}
+			);
+			
+			// next button
+			
+			$DIC->ctrl()->setParameter($this, 'signal', $replaceSignal->getId());
+			$DIC->ctrl()->setParameter($this, 'requestPage', $nextPage);
+			$DIC->ctrl()->setParameter($this, 'fromPage', $requestedPage);
+			
+			$url = $DIC->ctrl()->getLinkTarget(
+				$this, 'questionSelectionRoundtripModal', '', true
+			);
+			
+			$replaceSignal = $replaceSignal->withAsyncRenderUrl($url);
+			
+			$buttonNext = $buttonNext->/*withOnClick($replaceSignal)->*/withOnLoadCode(
+				function($id) use ($modal, $form, $replaceSignal, $url) {
+					return "
+						$('#{$id}').click(function(event) {
+						
+							var formData = $('#form_{$form->getId()}').serialize();
+							
+							var asyncUrl = '{$url}&'+formData;
+							
+							$(this).trigger('{$replaceSignal->getId()}',{
+								id: '{$replaceSignal->getId()}',
+								event: 'click',
+								triggerer: $(this),
+								options: {url: asyncUrl}
+							});
+							
+						});
+					";
+				}
 			);
 		}
 		else
 		{
-			$button = $button->withOnLoadCode(
+			// previous button
+			
+			$DIC->ctrl()->setParameter($this, 'signal', $replaceSignal->getId());
+			$DIC->ctrl()->setParameter($this, 'requestPage', $previousPage);
+			$DIC->ctrl()->setParameter($this, 'fromPage', $requestedPage);
+			
+			$url = $DIC->ctrl()->getLinkTarget(
+				$this, 'questionSelectionRoundtripModal', '', true
+			);
+			
+			$replaceSignal = $replaceSignal->withAsyncRenderUrl($url);
+			
+			$buttonBack = $buttonBack/*->withOnClick($replaceSignal)*/->withOnLoadCode(
+				function($id) use ($modal, $form, $replaceSignal, $url) {
+					return "
+						$('#{$id}').click(function(event) {
+						
+							var formData = $('#form_{$form->getId()}').serialize();
+							
+							var asyncUrl = '{$url}&'+formData;
+							
+							$(this).trigger('{$replaceSignal->getId()}',{
+								id: '{$replaceSignal->getId()}',
+								event: 'click',
+								triggerer: $(this),
+								options: {url: asyncUrl}
+							});
+							
+						});
+					";
+				}
+			);
+			
+			// submit button
+			
+			$buttonNext = $buttonNext->withOnLoadCode(
 				function($id) use ($form) { return "
 					$('#{$id}').click(function() {
-						$('#{$form->getId()}').submit();
+						$('#form_{$form->getId()}').submit();
 						return false;
 					});
 				";}
 			);
 		}
 		
-		$modal = $DIC->ui()->factory()->modal()->roundtrip($modalTitle, $DIC->ui()->factory()->legacy($form->getHTML()));
-		$modal = $modal->withActionButtons([$button]);
-		
-		if( $nextPage || true )
+		if( $previousPage )
 		{
-			$echo = $DIC->ui()->renderer()->renderAsync($modal);
-			echo $echo;
-			exit;
+			$modal = $modal->withActionButtons([$buttonBack, $buttonNext]);
+		}
+		else
+		{
+			$modal = $modal->withActionButtons([$buttonNext]);
 		}
 		
-		$DIC->ctrl()->redirect($this, 'showAnsweringStatistic');
+		$echo = $DIC->ui()->renderer()->renderAsync($modal);
+		echo $echo;
+		exit;
+		
+		//$DIC->ctrl()->redirect($this, 'showAnsweringStatistic');
 	}
 	
 	protected function fillQuestionSelectionFormVisibleInputs(ilPropertyFormGUI $form, $page)
@@ -375,7 +535,7 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		
 		if($page == 'filter_answerstatus')
 		{
-			$inp = new ilRadioGroupInputGUI($this->lng->txt('tst_question_answer_status'), 'question_answer_status');
+			$inp = new ilRadioGroupInputGUI($this->lng->txt('tst_question_answer_status'), 'filter_answerstatus');
 			$inp->addOption(new ilRadioOption(
 				$this->lng->txt('tst_question_answer_status_all_non_correct'), ilAssQuestionList::ANSWER_STATUS_FILTER_ALL_NON_CORRECT
 			));
@@ -401,21 +561,27 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		elseif(preg_match('/^filter_tax_(\d+)$/', $page, $matches))
 		{
 			$taxId = $matches[1];
-			
 			$postvar = "tax_$taxId";
-			
-			$inp = new ilTaxSelectInputGUI($taxId, $postvar, true);
-			
-			$form->addItem($inp);
-			$form->addItem($inp);
-			
-			if( $this->testSession->getQuestionSetFilterSelection()->hasSelectedTaxonomy($taxId) )
-			{
-				$inp->setValue($this->testSession->getQuestionSetFilterSelection()->getSelectedTaxonomy($taxId));
-			}
-			
+
 			$tax = new ilObjTaxonomy($taxId);
 			$modalTitle = $tax->getTitle();
+			
+			$enabledInput = new ilRadioGroupInputGUI($modalTitle, 'enabled_'.$postvar);
+			$form->addItem($enabledInput);
+
+			$optAll = new ilRadioOption('All Questions', 0);
+			$optFilter = new ilRadioOption('Filter by Taxonomy', 1);
+			$enabledInput->addOption($optAll);
+			$enabledInput->addOption($optFilter);
+			
+			#$inp = new ilTaxSelectInputGUI($taxId, 'filter_'.$postvar, true);
+			
+			#$optFilter->addSubItem($inp);
+			
+			#if( $this->testSession->getQuestionSetFilterSelection()->hasSelectedTaxonomy($taxId) )
+			#{
+			#	$inp->setValue($this->testSession->getQuestionSetFilterSelection()->getSelectedTaxonomy($taxId));
+			#}
 		}
 		
 		return $modalTitle;
@@ -423,9 +589,31 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 	
 	protected function fillQuestionSelectionFormHiddenInputs(ilPropertyFormGUI $form, $page)
 	{
+		if($page == 'filter_answerstatus')
+		{
+			$inp = new ilHiddenInputGUI($page,
+				isset($_POST[$page]) ? $_POST[$page] : null
+			);
+			
+			$form->addItem($inp);
+		}
+		
 		if(preg_match('/^filter_tax_(\d+)$/', $page, $matches))
 		{
 			$taxId = $matches[1];
+			$postvar = "tax_$taxId";
+			
+			$inp = new ilHiddenInputGUI('enabled_'.$postvar,
+				isset($_POST['enabled_'.$postvar]) ? $_POST['enabled_'.$postvar] : null
+			);
+			
+			$form->addItem($inp);
+			
+			$inp = new ilHiddenInputGUI('filter_'.$postvar,
+				isset($_POST['filter_'.$postvar]) ? $_POST['filter_'.$postvar] : null
+			);
+			
+			$form->addItem($inp);
 		}
 	}
 	
@@ -433,17 +621,17 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 	{
 		$pages = array();
 		
+		if( $this->dynamicQuestionSetConfig->isAnswerStatusFilterEnabled() )
+		{
+			$pages[] = 'filter_answerstatus';
+		}
+		
 		if( $this->dynamicQuestionSetConfig->isTaxonomyFilterEnabled() )
 		{
 			foreach ($this->dynamicQuestionSetConfig->getFilterTaxonomyIds() as $taxId)
 			{
 				$pages[] = 'filter_tax_'.$taxId;
 			}
-		}
-		
-		if( $this->dynamicQuestionSetConfig->isAnswerStatusFilterEnabled() )
-		{
-			$pages[] = 'filter_answerstatus';
 		}
 		
 		return $pages;
@@ -457,8 +645,11 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
 		
 		$modal = $DIC->ui()->factory()->modal()->roundtrip('', []);
 		
-		$DIC->ctrl()->setParameter($this, 'signal', $modal->getReplaceSignal()->getId());
-		$DIC->ctrl()->setParameter($this, 'page', $pages[2]);
+		$replaceSignalId = $modal->getReplaceSignal()->getId();
+		
+		$DIC->ctrl()->setParameter($this, 'signal', $replaceSignalId);
+		$DIC->ctrl()->setParameter($this, 'requestPage', $pages[0]);
+		$DIC->ctrl()->setParameter($this, 'fromPage', '');
 		
 		$modal = $modal->withAsyncRenderUrl($DIC->ctrl()->getLinkTarget(
 			$this, 'questionSelectionRoundtripModal', '', true
