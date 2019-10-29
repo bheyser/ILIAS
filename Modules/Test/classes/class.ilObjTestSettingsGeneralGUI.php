@@ -1115,6 +1115,15 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 			$seqheader->setTitle($this->lng->txt("tst_presentation_properties"));
 			$form->addItem($seqheader);
 		}
+		// PATCH-BEGIN: excludeMcOptions
+        else
+        {
+            // sequence properties
+            $seqheader = new ilFormSectionHeaderGUI();
+            $seqheader->setTitle($this->lng->txt("tst_presentation_properties"));
+            $form->addItem($seqheader);
+        }
+        // PATCH-END: excludeMcOptions
 
 		// question title output
 		$title_output = new ilRadioGroupInputGUI($this->lng->txt("tst_title_output"), "title_output");
@@ -1236,6 +1245,24 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 			$char_selector->addFormProperties($form);
 			$char_selector->setFormValues($form);
 		}
+
+		// PATCH-BEGIN: excludeMcOptions
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        $excludeMcOptions = new ilCheckboxInputGUI(
+            $DIC->language()->txt('form_exclude_mc_options'), 'exclude_mc_options'
+        );
+
+        $excludeMcOptions->setInfo($DIC->language()->txt('form_exclude_mc_options_info'));
+        $excludeMcOptions->setChecked($this->testOBJ->isExcludeMcOptionsEnabled());
+
+        if( $this->testOBJ->participantDataExist() )
+        {
+            $excludeMcOptions->setDisabled(true);
+        }
+
+        $form->addItem($excludeMcOptions);
+		// PATCH-END: excludeMcOptions
 	}
 
 	/**
@@ -1288,7 +1315,14 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 			$this->testOBJ->setCharSelectorAvailability($char_selector->getConfig()->getAvailability());
 			$this->testOBJ->setCharSelectorDefinition($char_selector->getConfig()->getDefinition());
 		}
-	}
+
+        // PATCH-BEGIN: excludeMcOptions
+        if( !$this->testOBJ->participantDataExist() )
+        {
+            $this->testOBJ->setExcludeMcOptionsEnabled((bool)$form->getInput('exclude_mc_options'));
+        }
+        // PATCH-END: excludeMcOptions
+    }
 
 	/**
 	 * @param ilPropertyFormGUI $form

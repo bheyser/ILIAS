@@ -130,6 +130,36 @@ abstract class assQuestionGUI
 		$this->navigationGUI = null;
 	}
 
+	// PATCH-BEGIN: excludeMcOptions
+    protected $testOBJ = null;
+
+    protected function getTestObject()
+    {
+        if( $this->testOBJ === null )
+        {
+            $this->testOBJ = ilObjectFactory::getInstanceByObjId(
+                $this->object->getObjId(), false
+            );
+        }
+
+        return $this->testOBJ;
+    }
+
+    protected function isExcludeMcOptionsEnabled()
+    {
+        /* @var ilObjTest $testOBJ */
+
+        $testOBJ = $this->getTestObject();
+
+        if( !$testOBJ )
+        {
+            return false;
+        }
+
+        return $testOBJ->isExcludeMcOptionsEnabled();
+    }
+	// PATCH-END: excludeMcOptions
+
 	/**
 	* execute command
 	*/

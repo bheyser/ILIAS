@@ -640,7 +640,7 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
 			if (is_numeric($q_id) && (int)$q_id) 
 			{
 				// PATCH-BEGIN: excludeMcOptions
-				if( isset($_POST['excluded_mc_options']) && strlen($_POST['excluded_mc_options']) )
+				if( $this->object->isExcludeMcOptionsEnabled() && isset($_POST['excluded_mc_options']) && strlen($_POST['excluded_mc_options']) )
 				{
 					$excludedOptions = json_decode($_POST['excluded_mc_options']);
 

@@ -11625,6 +11625,8 @@ assessment#:#tst_questions_hints_toolbar_cmd_add_hint#:#Add Hint
 assessment#:#tst_questions_hints_toolbar_cmd_reset_ordering_clipboard#:#Reset Hint Ordering Clipboard
 assessment#:#tst_mc_exclude_opt_btn_label#:#Exclude Answer
 assessment#:#tst_mc_include_opt_btn_label#:#Revert Answer Exclusion
+assessment#:#form_exclude_mc_options#:#Exclude Answers
+assessment#:#form_exclude_mc_options_info#:#This option offers participants a possibility to exclude answers for SC/MC questions.
 assessment#:#tst_question_hints_delete_hints_missing_selection_msg#:#No hint(s) selected for deletion.
 assessment#:#tst_question_hints_delete_hints_confirm_header#:#Do you really want to delete the following hint(s)?
 assessment#:#tst_question_hints_delete_hints_confirm_item#:#Hint %s: %s

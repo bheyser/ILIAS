@@ -11550,6 +11550,8 @@ assessment#:#tst_questions_hints_toolbar_cmd_add_hint#:#Lösungshinweis hinzufü
 assessment#:#tst_questions_hints_toolbar_cmd_reset_ordering_clipboard#:#Zwischenablage für Sortierung der Lösungshinweise zurücksetzen
 assessment#:#tst_mc_exclude_opt_btn_label#:#Antwort ausgrenzen
 assessment#:#tst_mc_include_opt_btn_label#:#Ausgrenzen zurücksetzen
+assessment#:#form_exclude_mc_options#:#Antworten ausgrenzen
+assessment#:#form_exclude_mc_options_info#:#Diese Option stellt Teilnehmern für SC/MC Fragen eine Funktion bereit, mit der Antworten ausgegrenzt werden können.
 assessment#:#tst_question_hints_delete_hints_missing_selection_msg#:#Es wurde(n) kein(e) Lösungshinweis(e) zum Löschen ausgewählt.
 assessment#:#tst_question_hints_delete_hints_confirm_header#:#Möchten Sie den/die folgenden Lösungshinweis(e) wirklich löschen?
 assessment#:#tst_question_hints_delete_hints_confirm_item#:#Lösungshinweis %s: %s

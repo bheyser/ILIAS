@@ -586,7 +586,27 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
 	 */
 	protected $pass_waiting = "00:000:00:00:00";
 	#endregion
-	
+
+    // PATCH-BEGIN: excludeMcOptions
+    protected $excludeMcOptionsEnabled = false;
+
+    /**
+     * @return bool
+     */
+    public function isExcludeMcOptionsEnabled()
+    {
+        return $this->excludeMcOptionsEnabled;
+    }
+
+    /**
+     * @param bool $excludeMcOptionsEnabled
+     */
+    public function setExcludeMcOptionsEnabled($excludeMcOptionsEnabled)
+    {
+        $this->excludeMcOptionsEnabled = $excludeMcOptionsEnabled;
+    }
+    // PATCH-END: excludeMcOptions
+
 	/**
 	 * Constructor
 	 * 
@@ -1335,6 +1355,9 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
 				'char_selector_availability' => array('integer', (int)$this->getCharSelectorAvailability()),
 				'char_selector_definition'   => array('text', (string)$this->getCharSelectorDefinition()),
 				'skill_service'              => array('integer', (int)$this->isSkillServiceEnabled()),
+				// PATCH-BEGIN: excludeMcOptions
+				'exclude_mc_options'         => array('integer', (int)$this->isExcludeMcOptionsEnabled()),
+                // PATCH-END: excludeMcOptions
 				'result_tax_filters'         => array('text', serialize((array)$this->getResultFilterTaxIds())),
 				'show_grading_status'        => array('integer', (int)$this->isShowGradingStatusEnabled()),
 				'show_grading_mark'          => array('integer', (int)$this->isShowGradingMarkEnabled()),
@@ -1457,6 +1480,9 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
 						'char_selector_availability' => array('integer', (int)$this->getCharSelectorAvailability()),
 						'char_selector_definition'   => array('text', (string)$this->getCharSelectorDefinition()),
 						'skill_service'              => array('integer', (int)$this->isSkillServiceEnabled()),
+                        // PATCH-BEGIN: excludeMcOptions
+                        'exclude_mc_options'         => array('integer', (int)$this->isExcludeMcOptionsEnabled()),
+                        // PATCH-END: excludeMcOptions
 						'result_tax_filters'         => array('text', serialize((array)$this->getResultFilterTaxIds())),
 						'show_grading_status'        => array('integer', (int)$this->isShowGradingStatusEnabled()),
 						'show_grading_mark'          => array('integer', (int)$this->isShowGradingMarkEnabled()),
@@ -1979,6 +2005,9 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
 			$this->setCharSelectorAvailability((int)$data->char_selector_availability);
 			$this->setCharSelectorDefinition($data->char_selector_definition);
 			$this->setSkillServiceEnabled((bool)$data->skill_service);
+            // PATCH-BEGIN: excludeMcOptions
+			$this->setExcludeMcOptionsEnabled((bool)$data->exclude_mc_options);
+            // PATCH-END: excludeMcOptions
 			$this->setResultFilterTaxIds(strlen($data->result_tax_filters) ? unserialize($data->result_tax_filters) : array());
 			$this->setShowGradingStatusEnabled((bool)$data->show_grading_status);
 			$this->setShowGradingMarkEnabled((bool)$data->show_grading_mark);
@@ -6083,6 +6112,11 @@ function getAnswerFeedbackPoints()
 				case 'skill_service':
 					$this->setSkillServiceEnabled((bool)$metadata['entry']);
 					break;
+				// PATCH-BEGIN: excludeMcOptions
+                case 'exclude_mc_options':
+                    $this->setExcludeMcOptionsEnabled((bool)$metadata['entry']);
+                    break;
+                // PATCH-END: excludeMcOptions
 				case 'result_tax_filters':
 					$this->setResultFilterTaxIds(strlen($metadata['entry']) ? unserialize($metadata['entry']) : array());
 					break;
@@ -6540,6 +6574,13 @@ function getAnswerFeedbackPoints()
 		$a_xml_writer->xmlElement("fieldlabel", NULL, "skill_service");
 		$a_xml_writer->xmlElement("fieldentry", NULL, (int)$this->isSkillServiceEnabled());
 		$a_xml_writer->xmlEndTag("qtimetadatafield");
+
+        // PATCH-BEGIN: excludeMcOptions
+        $a_xml_writer->xmlStartTag("qtimetadatafield");
+        $a_xml_writer->xmlElement("fieldlabel", NULL, "exclude_mc_options");
+        $a_xml_writer->xmlElement("fieldentry", NULL, (int)$this->isExcludeMcOptionsEnabled());
+        $a_xml_writer->xmlEndTag("qtimetadatafield");
+        // PATCH-END: excludeMcOptions
 
 		// result_tax_filters
 		$a_xml_writer->xmlStartTag("qtimetadatafield");
@@ -7308,6 +7349,9 @@ function getAnswerFeedbackPoints()
 		$newObj->setCharSelectorAvailability((int)$this->getCharSelectorAvailability());
 		$newObj->setCharSelectorDefinition($this->getCharSelectorDefinition());
 		$newObj->setSkillServiceEnabled($this->isSkillServiceEnabled());
+        // PATCH-BEGIN: excludeMcOptions
+		$newObj->setExcludeMcOptionsEnabled($this->isExcludeMcOptionsEnabled());
+        // PATCH-END: excludeMcOptions
 		$newObj->setResultFilterTaxIds($this->getResultFilterTaxIds());
 		$newObj->setInstantFeedbackAnswerFixationEnabled($this->isInstantFeedbackAnswerFixationEnabled());
 		$newObj->setForceInstantFeedbackEnabled($this->isForceInstantFeedbackEnabled());
@@ -9904,6 +9948,9 @@ function getAnswerFeedbackPoints()
 			'char_selector_availability' => $this->getCharSelectorAvailability(),
 			'char_selector_definition'   => $this->getCharSelectorDefinition(),
 			'skill_service'              => (int)$this->isSkillServiceEnabled(),
+            // PATCH-BEGIN: excludeMcOptions
+            'exclude_mc_options'         => (int)$this->isExcludeMcOptionsEnabled(),
+            // PATCH-END: excludeMcOptions
 			'result_tax_filters'         => (array)$this->getResultFilterTaxIds(),
 			'show_grading_status'        => (int)$this->isShowGradingStatusEnabled(),
 			'show_grading_mark'          => (int)$this->isShowGradingMarkEnabled(),
@@ -10067,6 +10114,9 @@ function getAnswerFeedbackPoints()
 		$this->setCharSelectorAvailability($testsettings['char_selector_availability']);
 		$this->setCharSelectorDefinition($testsettings['char_selector_definition']);
 		$this->setSkillServiceEnabled((bool)$testsettings['skill_service']);
+        // PATCH-BEGIN: excludeMcOptions
+        $this->setExcludeMcOptionsEnabled((bool)$testsettings['exclude_mc_options']);
+        // PATCH-END: excludeMcOptions
 		$this->setResultFilterTaxIds((array)$testsettings['result_tax_filters']);
 		$this->setShowGradingStatusEnabled((bool)$testsettings['show_grading_status']);
 		$this->setShowGradingMarkEnabled((bool)$testsettings['show_grading_mark']);

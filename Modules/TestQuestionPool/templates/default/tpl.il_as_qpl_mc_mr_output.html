@@ -66,6 +66,7 @@
 			{
                 // PATCH-BEGIN: excludeMcOptions
 				var question = $.fn.ilAssMultipleChoiceEngine({QUESTION_ID}, {
+				    <!-- BEGIN exclude_mc_options_js_opts -->
                     qstContainerSelectorBase: 'div.ilc_question_MultipleChoice',
                     mcOptionsSelector: 'input.ilAssMultipleChoiceOption',
                     exclusionToggleBtnSelector: 'a.mcExclusionToggle',
@@ -75,6 +76,7 @@
                     },
                     excludedMcOptions: {EXCLUDED_OPTIONS_JSON},
                     excludedMcOptionsInputName: 'excluded_mc_options',
+                    <!-- END exclude_mc_options_js_opts -->
 					maxSelection: {SELECTION_LIMIT_VALUE}
 				});
 
