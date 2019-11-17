@@ -18,6 +18,7 @@ class ilTestTabsManager
 	const SUBTAB_ID_QST_PAGE_VIEW = 'qst_page_view';
 
 	const TAB_ID_INFOSCREEN = 'info_short';
+	const TAB_ID_TEST_LAUNCH = 'test_launch';
 	const TAB_ID_SETTINGS = 'settings';
 	const TAB_ID_LEARNING_PROGRESS = 'learning_progress';
 	const TAB_ID_MANUAL_SCORING = 'manscoring';
@@ -116,6 +117,7 @@ class ilTestTabsManager
 	{
 		switch($tabId)
 		{
+			case self::TAB_ID_TEST_LAUNCH:
 			case self::TAB_ID_EXAM_DASHBOARD:
 			case self::TAB_ID_RESULTS:
 				
@@ -365,6 +367,19 @@ class ilTestTabsManager
 	{
 		return $this->testAccess->checkStatisticsAccess();
 	}
+
+	/**
+	 * @return bool
+	 */
+	protected function checkTestLaunchTabAccess()
+    {
+        if( $this->testOBJ->getOfflineStatus() )
+        {
+            false;
+        }
+
+        return $this->isReadAccessGranted();
+    }
 	
 	/**
 	 */

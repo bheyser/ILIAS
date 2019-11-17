@@ -287,6 +287,15 @@ class ilObjTestGUI extends ilObjectGUI
 				$this->ctrl->forwardCommand($gui);
 				break;
 
+            case strtolower(ilTestLaunchGUI::class):
+
+                $this->prepareOutput();
+                $this->addHeaderAction();
+
+                $gui = new ilTestLaunchGUI($this->object);
+
+                $DIC->ctrl()->forwardCommand($gui);
+
 			case "iltestplayerfixedquestionsetgui":
 				$this->trackTestObjectReadEvent();
 				require_once "./Modules/Test/classes/class.ilTestPlayerFixedQuestionSetGUI.php";
