@@ -237,9 +237,13 @@
         }
     };
 
-    var handleExclusionToggle = function()
+    var handleExclusionToggle = function(e)
     {
         instances[fetchQuestionId(this)].exclusionToggled(this);
+
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
     };
 
     var handleSelectionChange = function()
