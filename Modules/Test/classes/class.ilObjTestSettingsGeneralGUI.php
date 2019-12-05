@@ -465,6 +465,8 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 
 	private function buildForm()
 	{
+	    global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
 		require_once 'Services/Form/classes/class.ilPropertyFormGUI.php';
 		$form = new ilPropertyFormGUI();
 		$form->setFormAction($this->ctrl->getFormAction($this));
@@ -488,28 +490,23 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 		$ecs->addSettingsToForm($form, 'tst');
 		
 		// additional features
-		
-		$orgunitServiceActive = ilOrgUnitGlobalSettings::getInstance()->getObjectPositionSettingsByType(
-			$this->testOBJ->getType()
-		)->isActive();
 
-		$skillServiceActive = ilObjTest::isSkillManagementGloballyActivated();
-		
-		
-		if( $orgunitServiceActive || $skillServiceActive )
-		{
-			$otherHead = new ilFormSectionHeaderGUI();
-			$otherHead->setTitle($this->lng->txt('obj_features'));
-			$form->addItem($otherHead);
-		}
-		
+        $otherHead = new ilFormSectionHeaderGUI();
+        $otherHead->setTitle($this->lng->txt('obj_features'));
+        $form->addItem($otherHead);
+
+        $infoScreen = new ilCheckboxInputGUI($DIC->language()->txt('tst_info_screen_enabled'), 'info_screen_enabled');
+        $infoScreen->setInfo($DIC->language()->txt('tst_info_screen_enabled_desc'));
+        $infoScreen->setChecked($this->testOBJ->isInfoScreenEnabled());
+        $form->addItem($infoScreen);
+
 		require_once 'Services/Object/classes/class.ilObjectServiceSettingsGUI.php';
 		ilObjectServiceSettingsGUI::initServiceSettingsForm($this->testOBJ->getId(), $form, array(
 				ilObjectServiceSettingsGUI::ORGU_POSITION_ACCESS
 		));
 		
 		// skill service activation for FIXED tests only
-		if( $skillServiceActive )
+		if( ilObjTest::isSkillManagementGloballyActivated() )
 		{
 			$skillService = new ilCheckboxInputGUI($this->lng->txt('tst_activate_skill_service'), 'skill_service');
 			$skillService->setInfo($this->lng->txt('tst_activate_skill_service_desc'));
@@ -535,6 +532,8 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
 		$this->saveQuestionBehaviourProperties($form);
 		$this->saveTestSequenceSettings($form);
 		$this->saveTestFinishProperties($form);
+
+		$this->testOBJ->setInfoScreenEnabled($form->getInput('info_screen_enabled'));
 
 		if( !$this->testOBJ->participantDataExist() )
 		{
