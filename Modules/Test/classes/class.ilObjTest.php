@@ -1914,10 +1914,6 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
 		{
 			$data = $ilDB->fetchObject($result);
 			$this->setTestId($data->test_id);
-			if (strlen($this->getAuthor()) == 0)
-			{
-				$this->saveAuthorToMetadata($data->author);
-			}
 			$this->setAuthor($data->author);
 			include_once("./Services/RTE/classes/class.ilRTE.php");
 			$this->setIntroductionEnabled($data->intro_enabled);
@@ -7304,39 +7300,6 @@ function getAnswerFeedbackPoints()
   }
 
 /**
-* Saves an authors name into the lifecycle metadata if no lifecycle metadata exists
-* This will only be called for conversion of "old" tests where the author hasn't been
-* stored in the lifecycle metadata
-*
-* @param string $a_author A string containing the name of the test author
-* @access private
-* @see $author
-*/
-	function saveAuthorToMetadata($a_author = "")
-	{
-		$md = new ilMD($this->getId(), 0, $this->getType());
-		$md_life =& $md->getLifecycle();
-		if (!$md_life)
-		{
-			if (strlen($a_author) == 0)
-			{
-				global $DIC;
-				$ilUser = $DIC['ilUser'];
-				$a_author = $ilUser->getFullname();
-			}
-
-			$md_life =& $md->addLifecycle();
-			$md_life->save();
-			$con =& $md_life->addContribute();
-			$con->setRole("Author");
-			$con->save();
-			$ent =& $con->addEntity();
-			$ent->setEntity($a_author);
-			$ent->save();
-		}
-	}
-
-/**
 * Create meta data entry
 *
 * @access public
@@ -7344,7 +7307,6 @@ function getAnswerFeedbackPoints()
 	function createMetaData()
 	{
 		parent::createMetaData();
-		$this->saveAuthorToMetadata();
 	}
 
 /**
