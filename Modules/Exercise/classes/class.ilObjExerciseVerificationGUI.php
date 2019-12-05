@@ -2,18 +2,13 @@
 
 /* Copyright (c) 1998-2009 ILIAS open source, Extended GPL, see docs/LICENSE */
 
-include_once ('./Services/Object/classes/class.ilObject2GUI.php');
-
 /**
-* GUI class for exercise verification
-*
-* @author Jörg Lützenkirchen <luetzenkirchen@leifos.com>
-* @version $Id: class.ilPersonalDesktopGUI.php 26976 2010-12-16 13:24:38Z akill $
-*
-* @ilCtrl_Calls ilObjExerciseVerificationGUI: ilWorkspaceAccessGUI
-*
-* @ingroup ModulesExercise
-*/
+ * GUI class for exercise verification
+ *
+ * @author Jörg Lützenkirchen <luetzenkirchen@leifos.com>
+ *
+ * @ilCtrl_Calls ilObjExerciseVerificationGUI: ilWorkspaceAccessGUI
+ */
 class ilObjExerciseVerificationGUI extends ilObject2GUI
 {
 	public function getType()
@@ -30,11 +25,10 @@ class ilObjExerciseVerificationGUI extends ilObject2GUI
 		
 		if($this->id_type == self::WORKSPACE_NODE_ID)
 		{
-			include_once "Services/DiskQuota/classes/class.ilDiskQuotaHandler.php";
 			if(!ilDiskQuotaHandler::isUploadPossible())
 			{				
 				$this->lng->loadLanguageModule("file");
-				ilUtil::sendFailure($this->lng->txt("personal_workspace_quota_exceeded_warning"), true);
+				ilUtil::sendFailure($this->lng->txt("personal_resources_quota_exceeded_warning"), true);
 				$this->ctrl->redirect($this, "cancel");
 			}
 		}
@@ -44,7 +38,6 @@ class ilObjExerciseVerificationGUI extends ilObject2GUI
 		$ilTabs->setBackTarget($this->lng->txt("back"),
 			$this->ctrl->getLinkTarget($this, "cancel"));
 
-		include_once "Modules/Exercise/classes/class.ilExerciseVerificationTableGUI.php";
 		$table = new ilExerciseVerificationTableGUI($this, "create");
 		$this->tpl->setContent($table->getHTML());
 	}
@@ -141,7 +134,6 @@ class ilObjExerciseVerificationGUI extends ilObject2GUI
 			}
 			else if(!$a_url)
 			{
-				include_once "Services/PersonalWorkspace/classes/class.ilWorkspaceAccessHandler.php";
 				$access_handler = new ilWorkspaceAccessHandler($tree);
 				if(!$access_handler->checkAccess("read", "", $wsp_id))
 				{
@@ -167,13 +159,11 @@ class ilObjExerciseVerificationGUI extends ilObject2GUI
 	
 	function downloadFromPortfolioPage(ilPortfolioPage $a_page)
 	{				
-		include_once "Services/COPage/classes/class.ilPCVerification.php";
 		if(ilPCVerification::isInPortfolioPage($a_page, $this->object->getType(), $this->object->getId()))
 		{
 			$this->deliver();
 		}
 		
-		include_once "Modules/Exercise/exceptions/class.ilExerciseException.php";
 		throw new ilExerciseException($this->lng->txt('permission_denied'));
 	}
 

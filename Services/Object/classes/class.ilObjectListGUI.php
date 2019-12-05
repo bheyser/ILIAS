@@ -175,6 +175,11 @@ class ilObjectListGUI
 	protected $object_service;
 
 	/**
+	 * @var ilFavouritesManager
+	 */
+	protected $fav_manager;
+
+	/**
 	* constructor
 	*
 	*/
@@ -209,8 +214,10 @@ class ilObjectListGUI
 		
 		include_once('Services/LDAP/classes/class.ilLDAPRoleGroupMapping.php');
 		$this->ldap_mapping = ilLDAPRoleGroupMapping::_getInstance();
+		$this->fav_manager = new ilFavouritesManager();
 
 		$this->lng->loadLanguageModule("obj");
+		$this->lng->loadLanguageModule("rep");
 	}
 
 
@@ -1148,15 +1155,9 @@ class ilObjectListGUI
 			require_once ('Services/WebDAV/classes/class.ilDAVActivationChecker.php');
 			if ($a_cmd == 'mount_webfolder' && ilDAVActivationChecker::_isActive())
 			{
-				require_once ('Services/WebDAV/classes/class.ilWebDAVUtil.php');
-				$dav_util = ilWebDAVUtil::getInstance();
-
-				// XXX: The following is a very dirty, ugly trick.
-				//        To mount URI needs to be put into two attributes:
-				//        href and folder. This hack returns both attributes
-				//        like this:  http://...mount_uri..." folder="http://...folder_uri...
-				return $dav_util->getMountURI($this->ref_id).
-							'" folder="'.$dav_util->getFolderURI($this->ref_id);
+				global $DIC;
+				$uri_builder = new ilWebDAVUriBuilder($DIC->http()->request());
+				return $uri_builder->getUriToMountInstructionModalByRef($this->ref_id);
 			}
 			// END WebDAV Get mount webfolder link.
 
@@ -1191,12 +1192,6 @@ class ilObjectListGUI
 	*/
 	function getCommandFrame($a_cmd)
 	{
-		// BEGIN WebDAV Get mount webfolder link.
-		require_once ('Services/WebDAV/classes/class.ilDAVActivationChecker.php');
-		if ($a_cmd == 'mount_webfolder' && ilDAVActivationChecker::_isActive())
-		{
-			return '_blank';        
-		}
 		// begin-patch fm
 		if($a_cmd == 'fileManagerLaunch')
 		{
@@ -1274,7 +1269,7 @@ class ilObjectListGUI
 							"alert" => false, 
 							"property" => $lng->txt("in_use_by"),
 							"value" => $lock_user->getLogin(),
-							"link" => 	"./ilias.php?user=".$lock_user->getId().'&cmd=showUserProfile&cmdClass=ilpersonaldesktopgui&baseClass=ilPersonalDesktopGUI',
+							"link" => 	"./ilias.php?user=".$lock_user->getId().'&cmd=showUserProfile&cmdClass=ildashboardgui&baseClass=ilDashboardGUI',
 						);
 					}
 				}
@@ -1283,56 +1278,6 @@ class ilObjectListGUI
 				if($this->getDetailsLevel() == self::DETAILS_SEARCH)
 				{
 					return $props;
-				}
-
-				// BEGIN WebDAV Display warning for invisible Unix files and files with special characters
-				if (preg_match('/^(\\.|\\.\\.)$/', $this->title))
-				{
-					$props[] = array("alert" => false, "property" => $lng->txt("filename_interoperability"),
-						"value" => $lng->txt("filename_special_filename"),
-						'propertyNameVisible' => false);
-				} 
-				else if (preg_match('/^\\./', $this->title))
-				{
-					$props[] = array("alert" => false, "property" => $lng->txt("filename_visibility"),
-						"value" => $lng->txt("filename_hidden_unix_file"),
-						'propertyNameVisible' => false);
-				}
-				else if (preg_match('/~$/', $this->title))
-				{
-					$props[] = array("alert" => false, "property" => $lng->txt("filename_visibility"),
-						"value" => $lng->txt("filename_hidden_backup_file"),
-						'propertyNameVisible' => false);
-				}
-				else if (preg_match('/[\\/]/', $this->title))
-				{
-					$props[] = array("alert" => false, "property" => $lng->txt("filename_interoperability"),
-						"value" => $lng->txt("filename_special_characters"),
-						'propertyNameVisible' => false);
-				} 
-				else if (preg_match('/[\\\\\\/:*?"<>|]/', $this->title))
-				{
-					$props[] = array("alert" => false, "property" => $lng->txt("filename_interoperability"),
-						"value" => $lng->txt("filename_windows_special_characters"),
-						'propertyNameVisible' => false);
-				}
-				else if (preg_match('/\\.$/', $this->title))
-				{
-					$props[] = array("alert" => false, "property" => $lng->txt("filename_interoperability"),
-						"value" => $lng->txt("filename_windows_empty_extension"),
-						'propertyNameVisible' => false);
-				} 
-				else if (preg_match('/^(\\.|\\.\\.)$/', $this->title))
-				{
-					$props[] = array("alert" => false, "property" => $lng->txt("filename_interoperability"),
-						"value" => $lng->txt("filename_special_filename"),
-						'propertyNameVisible' => false);
-				} 
-				else if (preg_match('/#/', $this->title))
-				{
-					$props[] = array("alert" => false, "property" => $lng->txt("filename_interoperability"),
-						"value" => $lng->txt("filename_windows_webdav_issue"),
-						'propertyNameVisible' => false);
 				}
 			}
 			// END WebDAV Display warning for invisible files and files with special characters
@@ -1575,7 +1520,7 @@ class ilObjectListGUI
 				
 			// workaround for repository frameset
 			#var_dump("<pre>",$this->default_command['link'],"</pre>");
-			$this->default_command["link"] = 
+			$this->default_command["link"] =
 				$this->appendRepositoryFrameParameter($this->default_command["link"]);
 
 			#var_dump("<pre>",$this->default_command['link'],"</pre>");
@@ -2194,7 +2139,9 @@ class ilObjectListGUI
 			$prevent_background_click = false;
 			if ($a_cmd == 'mount_webfolder')
 			{
-				$prevent_background_click = true;
+				$a_onclick = "triggerWebDAVModal('$a_href')";
+				$a_href = "#";
+				ilWebDAVMountInstructionsModalGUI::maybeRenderWebDAVModalInGlobalTpl();
 			}
 
 			$this->current_selection_list->addItem($a_text, "", $a_href, $a_img, $a_text, $a_frame,
@@ -2455,7 +2402,7 @@ class ilObjectListGUI
 				$this->ctrl->setParameter($this->container_obj, "ref_id", $this->container_obj->object->getRefId());
 			}
 
-			if (!$ilUser->isDesktopItem($this->getCommandId(), $type))
+			if (!$this->fav_manager->ifIsFavourite($ilUser->getId(), $this->getCommandId()))
 			{
 				// Pass type and object ID to ilAccess to improve performance
     			if ($this->checkCommandAccess("read", "", $this->ref_id, $this->type, $this->obj_id))
@@ -2465,7 +2412,7 @@ class ilObjectListGUI
 						$this->ctrl->setParameter($this->container_obj, "type", $type);
 						$this->ctrl->setParameter($this->container_obj, "item_ref_id", $this->getCommandId());
 						$cmd_link = $this->ctrl->getLinkTarget($this->container_obj, "addToDesk");
-						$this->insertCommand($cmd_link, $this->lng->txt("to_desktop"), "",
+						$this->insertCommand($cmd_link, $this->lng->txt("rep_add_to_favourites"), "",
 							"");
 					}					
 				}
@@ -2477,7 +2424,7 @@ class ilObjectListGUI
 					$this->ctrl->setParameter($this->container_obj, "type", $type);
 					$this->ctrl->setParameter($this->container_obj, "item_ref_id", $this->getCommandId());
 					$cmd_link = $this->ctrl->getLinkTarget($this->container_obj, "removeFromDesk");
-					$this->insertCommand($cmd_link, $this->lng->txt("unsubscribe"), "",
+					$this->insertCommand($cmd_link, $this->lng->txt("rep_remove_from_favourites"), "",
 						"");
 				}
 			}
@@ -2794,9 +2741,9 @@ class ilObjectListGUI
 			return $this->current_selection_list->getHTML(true);
 		}
 		
-		return $this->current_selection_list->getHTML();		
+		return $this->current_selection_list->getHTML();
 	}
-	
+
 	/**
 	 * Toogle comments action status
 	 * 
@@ -3977,9 +3924,19 @@ class ilObjectListGUI
 		$this->insertCommands();
 		$actions = [];
 		foreach ($this->current_selection_list->getItems() as $action_item) {
-			$actions[] = $ui->factory()
+			$action = $ui->factory()
 				->button()
 				->shy($action_item['title'], $action_item['link']);
+
+			// Dirty hack to remain the "onclick" action of action items
+			if ($action_item['onclick'] != NULL && $action_item['onclick'] != '')
+			{
+				$action = $action->withAdditionalOnLoadCode(function($id) use ($action_item) {
+					return "$('#$id').click(function(){".$action_item['onclick'].";});";
+				});
+			}
+
+			$actions[] = $action;
 		}
 
 		$dropdown = $ui->factory()

@@ -21,6 +21,8 @@ class ilDerivedTaskProviderMasterFactory
 	protected $default_provider_factories = array(
 		ilExerciseDerivedTaskProviderFactory::class,
 		\ilForumDerivedTaskProviderFactory::class,
+        \ILIAS\Survey\Tasks\DerivedTaskProviderFactory::class,
+		ilBlogDerivedTaskProviderFactory::class
 	);
 
 	/**

@@ -2,13 +2,11 @@
 
 /* Copyright (c) 1998-2011 ILIAS open source, Extended GPL, see docs/LICENSE */
 
-include_once("./Services/Table/classes/class.ilTableGUI.php");
 
 /**
 * Class ilAdministratioGUI
 *
 * @author Alex Killing <alex.killing@gmx.de>
-* @version $Id$
 *
 * @ilCtrl_Calls ilAdministrationGUI: ilObjGroupGUI, ilObjFolderGUI, ilObjFileGUI, ilObjCourseGUI, ilCourseObjectivesGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjSAHSLearningModuleGUI, ilObjChatroomGUI, ilObjForumGUI
@@ -25,7 +23,7 @@ include_once("./Services/Table/classes/class.ilTableGUI.php");
 * @ilCtrl_Calls ilAdministrationGUI: ilObjSearchSettingsGUI, ilObjStyleSettingsGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjAssessmentFolderGUI, ilObjExternalToolsSettingsGUI, ilObjUserTrackingGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjAdvancedEditingGUI, ilObjPrivacySecurityGUI, ilObjNewsSettingsGUI
-* @ilCtrl_Calls ilAdministrationGUI: ilObjPersonalDesktopSettingsGUI, ilObjMediaCastGUI
+* @ilCtrl_Calls ilAdministrationGUI: ilObjMediaCastGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjLanguageExtGUI, ilObjMDSettingsGUI, ilObjComponentSettingsGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjCalendarSettingsGUI, ilObjSurveyAdministrationGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjCategoryReferenceGUI, ilObjCourseReferenceGUI, ilObjRemoteCourseGUI, ilObjGroupReferenceGUI
@@ -38,7 +36,8 @@ include_once("./Services/Table/classes/class.ilTableGUI.php");
 * @ilCtrl_Calls ilAdministrationGUI: ilObjBibliographicAdminGUI, ilObjBibliographicGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjStudyProgrammeAdminGUI, ilObjStudyProgrammeGUI
 * @ilCtrl_Calls ilAdministrationGUI: ilObjBadgeAdministrationGUI, ilMemberExportSettingsGUI
-* @ilCtrl_Calls ilAdministrationGUI: ilObjFileAccessSettingsGUI, ilPermissionGUI, ilObjRemoteTestGUI
+* @ilCtrl_Calls ilAdministrationGUI: ilObjFileAccessSettingsGUI, ilPermissionGUI, ilObjRemoteTestGUI, ilPropertyFormGUI
+* @ilCtrl_Calls ilAdministrationGUI: ilObjCmiXapiAdministrationGUI, ilObjCmiXapiGUI, ilObjLTIConsumerGUI
 */
 class ilAdministrationGUI
 {
@@ -77,6 +76,11 @@ class ilAdministrationGUI
 	var $ctrl;
 
 	/**
+	 * @var \ilLogger|null
+	 */
+	private $logger = null;
+
+	/**
 	* Constructor
 	* @access	public
 	*/
@@ -104,13 +108,13 @@ class ilAdministrationGUI
 		$this->objDefinition = $objDefinition;
 		$this->ctrl = $ilCtrl;
 
+		$this->logger = $DIC->logger()->adm();
+
 		$context = $DIC->globalScreen()->tool()->context();
 		$context->claim()->administration();
 
 		$ilMainMenu->setActive("administration");
 		
-		$this->creation_mode = false;
-
 		$this->ctrl->saveParameter($this, array("ref_id", "admin_mode"));
 		
 		if ($_GET["admin_mode"] != "repository")
@@ -150,34 +154,16 @@ class ilAdministrationGUI
 		$ilDB = $this->db;
 		
 		// permission checks
-		include_once './Services/MainMenu/classes/class.ilMainMenuGUI.php';
 		if(!$rbacsystem->checkAccess("visible", SYSTEM_FOLDER_ID) &&
 				!$rbacsystem->checkAccess("read", SYSTEM_FOLDER_ID))
 		{
 			$ilErr->raiseError($this->lng->txt('permission_denied'),$ilErr->WARNING);
 		}
 		
-		// check creation mode
-		// determined by "new_type" parameter
-		$new_type = $_POST["new_type"]
-			? $_POST["new_type"]
-			: $_GET["new_type"];
-		if ($new_type != "")
-		{
-			$this->creation_mode = true;
-		}
 	
-		// determine next class
-		if ($this->creation_mode)
-		{
-			$obj_type = $new_type;
-			$class_name = $this->objDefinition->getClassName($obj_type);
-			$next_class = strtolower("ilObj".$class_name."GUI");
-			$this->ctrl->setCmdClass($next_class);
-		}
 		// set next_class directly for page translations
 		// (no cmdNode is given in translation link)
-		elseif ($this->ctrl->getCmdClass() == "ilobjlanguageextgui")
+		if ($this->ctrl->getCmdClass() == "ilobjlanguageextgui")
 		{
 			$next_class = "ilobjlanguageextgui";
 		}
@@ -221,7 +207,6 @@ class ilAdministrationGUI
 					
 					$class_path = $this->ctrl->lookupClassPath($next_class);
 					// get gui class instance
-					include_once($class_path);
 					$class_name = $this->ctrl->getClassForClasspath($class_path);
 					if (($next_class == "ilobjrolegui" || $next_class == "ilobjusergui"
 						|| $next_class == "ilobjroletemplategui"))
@@ -245,8 +230,6 @@ class ilAdministrationGUI
 						}
 						else
 						{
-							if (!$this->creation_mode)
-							{
 								if(is_subclass_of($class_name, "ilObject2GUI"))
 								{
 									$this->gui_obj = new $class_name($this->cur_ref_id, ilObject2GUI::REPOSITORY_NODE_ID);
@@ -256,30 +239,10 @@ class ilAdministrationGUI
 									$this->gui_obj = new $class_name("", $this->cur_ref_id, true, false);
 								}
 							}
-							else
-							{
-								if(is_subclass_of($class_name, "ilObject2GUI"))
-								{
-									$this->gui_obj = new $class_name(null, ilObject2GUI::REPOSITORY_NODE_ID, $this->cur_ref_id);
-								}
-								else
-								{
-									$this->gui_obj = new $class_name("", 0, true, false);
-								}
-							}
-						}
-						$this->gui_obj->setCreationMode($this->creation_mode);
+						$this->gui_obj->setCreationMode(false);
 					}
-					$tabs_out = ($new_type == "")
-						? true
-						: false;
-
-					// set standard screen id
-//					if (strtolower($next_class) == strtolower($this->ctrl->getCmdClass()) ||
-//						"ilpermissiongui" == strtolower($this->ctrl->getCmdClass()))
-//					{
+					$tabs_out = true;
 						$ilHelp->setScreenIdComponent(ilObject::_lookupType($this->cur_ref_id,true));
-//					}
 					$this->showTree();
 						
 					$this->ctrl->setReturn($this, "return");					

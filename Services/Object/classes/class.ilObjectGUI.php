@@ -129,6 +129,11 @@ class ilObjectGUI
 	const CFORM_CLONE = 3;
 
 	/**
+	 * @var ilFavouritesManager
+	 */
+	protected $favourites;
+
+	/**
 	* Constructor
 	* @access	public
 	* @param	array	??
@@ -154,6 +159,8 @@ class ilObjectGUI
 		$ilErr = $DIC["ilErr"];
 		$lng = $DIC->language();
 		$ilTabs = $DIC->tabs();
+
+		$this->favourites = new ilFavouritesManager();
 
 		$this->ilias = $DIC["ilias"];
 
@@ -542,15 +549,6 @@ class ilObjectGUI
 	{
 		$tree = $this->tree;
 
-/*		if ($_GET["admin_mode"] == "repository")
-		{
-			$this->ctrl->setParameterByClass("iladministrationgui", "admin_mode", "settings");
-			$this->tabs_gui->setBackTarget($this->lng->txt("administration"),
-				$this->ctrl->getLinkTargetByClass("iladministrationgui", "frameset"),
-				ilFrameTargetInfo::_getFrame("MainContent"));
-			$this->ctrl->setParameterByClass("iladministrationgui", "admin_mode", "repository");
-		}*/
-		
 		if ($this->checkPermissionBool("visible,read"))
 		{
 			$this->tabs_gui->addTarget("view",
@@ -562,12 +560,6 @@ class ilObjectGUI
 		{
 			$this->tabs_gui->addTarget("perm_settings",
 				$this->ctrl->getLinkTargetByClass(array(get_class($this),'ilpermissiongui'), "perm"), "", "ilpermissiongui");
-		}
-			
-		if ($tree->getSavedNodeData($this->object->getRefId()))
-		{
-			$this->tabs_gui->addTarget("trash",
-				$this->ctrl->getLinkTarget($this, "trash"), "trash", get_class($this));
 		}
 	}
 
@@ -1612,33 +1604,29 @@ class ilObjectGUI
 	// END Security: Hide objects which aren't accessible by the user.
 
 	/**
-	* list childs of current object
-	*
-	* @access	public
+	 * viewObject container presentation for "administration -> repository, trash, permissions"
+	 * @throws \ilObjectException
 	*/
 	public function viewObject()
 	{
-		$tpl = $this->tpl;
-		$ilErr = $this->ilErr;
+		global $DIC;
 
-		if (!$this->rbacsystem->checkAccess("visible,read", $this->object->getRefId()))
-		{
-			$ilErr->raiseError($this->lng->txt("permission_denied"),$ilErr->MESSAGE);
-		}
+		$tpl = $DIC->ui()->mainTemplate();
+		$user = $DIC->user();
+
+		$this->checkPermission('visible') && $this->checkPermission('read');
+
+		$this->tabs_gui->activateTab('view');
 		
-		// BEGIN ChangeEvent: record read event.
-		require_once('Services/Tracking/classes/class.ilChangeEvent.php');
-		$ilUser = $this->user;
 		ilChangeEvent::_recordReadEvent(
 			$this->object->getType(),
 			$this->object->getRefId(),
-			$this->object->getId(), $ilUser->getId());		
-		// END ChangeEvent: record read event.
+			$this->object->getId(),
+			$user->getId()
+		);
 
-		include_once("./Services/Repository/classes/class.ilAdminSubItemsTableGUI.php");
-		if (!$this->call_by_reference)
-		{
-			$this->ctrl->setParameter($this, "obj_id", $this->obj_id); 
+		if(!$this->withReferences()) {
+			$this->ctrl->setParameter($this, 'obj_id', $this->obj_id);
 		}
 		$itab = new ilAdminSubItemsTableGUI($this, "view", $_GET["ref_id"],
 			$this->checkPermissionBool('write'));
@@ -2235,6 +2223,34 @@ class ilObjectGUI
 		$ctrl = $this->ctrl;
 		$link = ilLink::_getLink($this->object->getRefId());
 		$ctrl->redirectToURL($link);
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function addToDeskObject()
+	{
+		$lng = $this->lng;
+		$ctrl = $this->ctrl;
+		$user = $this->user;
+		$this->favourites->add($user->getId(), (int) $_GET["item_ref_id"]);
+		$lng->loadLanguageModule("rep");
+		ilUtil::sendSuccess($lng->txt("rep_added_to_favourites"), true);
+		$ctrl->redirectToURL(ilLink::_getLink((int) $_GET["ref_id"]));
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function removeFromDeskObject()
+	{
+		$lng = $this->lng;
+		$ctrl = $this->ctrl;
+		$user = $this->user;
+		$lng->loadLanguageModule("rep");
+		$this->favourites->remove($user->getId(), (int) $_GET["item_ref_id"]);
+		ilUtil::sendSuccess($lng->txt("rep_removed_from_favourites"), true);
+		$ctrl->redirectToURL(ilLink::_getLink((int) $_GET["ref_id"]));
 	}
 
 }

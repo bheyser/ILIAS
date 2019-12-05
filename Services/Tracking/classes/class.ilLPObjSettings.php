@@ -46,9 +46,19 @@ class ilLPObjSettings
 	const LP_MODE_COLLECTION_MOBS = 21;
 	const LP_MODE_STUDY_PROGRAMME = 22;
 	const LP_MODE_INDIVIDUAL_ASSESSMENT = 23;
+	const LP_MODE_CMIX_COMPLETED = 24;
+	const LP_MODE_CMIX_COMPL_WITH_FAILED = 25;
+	const LP_MODE_CMIX_PASSED = 26;
+	const LP_MODE_CMIX_PASSED_WITH_FAILED = 27;
+	const LP_MODE_CMIX_COMPLETED_OR_PASSED = 28;
+	const LP_MODE_CMIX_COMPL_OR_PASSED_WITH_FAILED = 29;
 
 	const LP_DEFAULT_VISITS = 30; // ???
+
+	const LP_MODE_LTI_OUTCOME = 31;
 	
+	const LP_MODE_COURSE_REFERENCE = 32;
+
 	protected static $map = array(
 		
 		self::LP_MODE_DEACTIVATED => array('ilLPStatus', 
@@ -121,9 +131,40 @@ class ilLPObjSettings
 
 		,self::LP_MODE_INDIVIDUAL_ASSESSMENT => array('ilLPStatusIndividualAssessment',
 			'trac_mode_individual_assessment', 'trac_mode_individual_assessment_info')
+
+        ,self::LP_MODE_CMIX_COMPLETED => array(ilLPStatusCmiXapiCompleted::class,
+            'trac_mode_cmix_completed', 'trac_mode_cmix_completed_info')
+
+        ,self::LP_MODE_CMIX_COMPL_WITH_FAILED => array(ilLPStatusCmiXapiCompletedWithFailed::class,
+            'trac_mode_cmix_compl_with_failed', 'trac_mode_cmix_compl_with_failed_info')
+
+        ,self::LP_MODE_CMIX_PASSED => array(ilLPStatusCmiXapiPassed::class,
+            'trac_mode_cmix_passed', 'trac_mode_cmix_passed_info')
+
+        ,self::LP_MODE_CMIX_PASSED_WITH_FAILED => array(ilLPStatusCmiXapiPassedWithFailed::class,
+            'trac_mode_cmix_passed_with_failed', 'trac_mode_cmix_passed_with_failed_info')
+
+        ,self::LP_MODE_CMIX_COMPLETED_OR_PASSED => array(ilLPStatusCmiXapiCompletedOrPassed::class,
+            'trac_mode_cmix_completed_or_passed', 'trac_mode_cmix_completed_or_passed_info')
+
+        ,self::LP_MODE_CMIX_COMPL_OR_PASSED_WITH_FAILED => array(ilLPStatusCmiXapiCompletedOrPassedWithFailed::class,
+            'trac_mode_cmix_compl_or_passed_with_failed', 'trac_mode_cmix_compl_or_passed_with_failed_info')
+
+        ,self::LP_MODE_LTI_OUTCOME => array(ilLPStatusLtiOutcome::class,
+		'trac_mode_lti_outcome', 'trac_mode_lti_outcome_info')
+
+		,self::LP_MODE_COURSE_REFERENCE => [
+			'ilLPStatusCourseReference',
+			'trac_mode_course_reference',
+			'trac_mode_course_reference_info'
+		]
 	);
 
-	function __construct($a_obj_id)
+	/**
+	 * ilLPObjSettings constructor.
+	 * @param int $a_obj_id
+	 */
+	public function __construct($a_obj_id)
 	{
 		global $DIC;
 

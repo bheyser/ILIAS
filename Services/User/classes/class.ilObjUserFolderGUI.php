@@ -23,6 +23,14 @@ class ilObjUserFolderGUI extends ilObjectGUI
 
 	protected $log;
 
+	/** @var ilObjUserFolder */
+	public $object;
+
+    /**
+     * @var ilUserSettingsConfig
+     */
+    protected $user_settings_config;
+
 	/**
 	* Constructor
 	* @access public
@@ -44,6 +52,8 @@ class ilObjUserFolderGUI extends ilObjectGUI
 
 		$ilCtrl->saveParameter($this, "letter");
 
+		$this->user_settings_config = new ilUserSettingsConfig();
+
 		$this->log = ilLoggerFactory::getLogger("user");
 	}
 
@@ -61,6 +71,7 @@ class ilObjUserFolderGUI extends ilObjectGUI
 		global $DIC;
 
 		$ilTabs = $DIC['ilTabs'];
+		$access = $DIC->access();
 		
 		$next_class = $this->ctrl->getNextClass($this);
 		$cmd = $this->ctrl->getCmd();
@@ -83,6 +94,12 @@ class ilObjUserFolderGUI extends ilObjectGUI
 				break;
 				
 			case 'ilrepositorysearchgui':
+
+				if(!$access->checkRbacOrPositionPermissionAccess("read_users", \ilObjUserFolder::ORG_OP_EDIT_USER_ACCOUNTS, USER_FOLDER_ID))
+				{
+					$this->ilias->raiseError($this->lng->txt("permission_denied"),$this->ilias->error_obj->MESSAGE);
+				}
+
 				include_once('./Services/Search/classes/class.ilRepositorySearchGUI.php');
 				$user_search = new ilRepositorySearchGUI();
 				$user_search->setTitle($this->lng->txt("search_user_extended")); // #17502
@@ -93,6 +110,7 @@ class ilObjUserFolderGUI extends ilObjectGUI
 					'searchResultHandler',
 					$this->getUserMultiCommands(true)
 				);
+				$user_search->addUserAccessFilterCallable(array($this, "searchUserAccessFilterCallable"));
 				$this->tabs_gui->setTabActive('search_user_extended');
 				$this->ctrl->setReturn($this,'view');
 				$ret =& $this->ctrl->forwardCommand($user_search);
@@ -225,11 +243,11 @@ class ilObjUserFolderGUI extends ilObjectGUI
 		global $DIC;
 
 		$rbacsystem = $DIC['rbacsystem'];
-		$ilUser = $DIC['ilUser'];
-		$ilToolbar = $DIC['ilToolbar'];
+		$ilToolbar = $DIC->toolbar();
 		$tpl = $DIC['tpl'];
 		$ilSetting = $DIC['ilSetting'];
-		$lng = $DIC['lng'];
+		$access = $DIC->access();
+		$user_filter = null;
 		
 		include_once "Services/UIComponent/Button/classes/class.ilLinkButton.php";
 
@@ -247,22 +265,35 @@ class ilObjUserFolderGUI extends ilObjectGUI
 			$ilToolbar->addButtonInstance($button);
 		}
 
+		if(
+			!$access->checkAccess('read_users', '', USER_FOLDER_ID) &&
+			$access->checkRbacOrPositionPermissionAccess(
+				'read_users',
+				\ilObjUserFolder::ORG_OP_EDIT_USER_ACCOUNTS,
+				USER_FOLDER_ID))
+		{
+			$users = \ilLocalUser::_getAllUserIds(\ilLocalUser::_getUserFolderId());
+			$user_filter = $access->filterUserIdsByRbacOrPositionOfCurrentUser(
+				'read_users',
+				\ilObjUserFolder::ORG_OP_EDIT_USER_ACCOUNTS,
+				USER_FOLDER_ID,
+				$users
+			);
+		}
+
 		// alphabetical navigation
-		include_once './Services/User/classes/class.ilUserAccountSettings.php';
-		$aset = ilUserAccountSettings::getInstance();
 		if ((int) $ilSetting->get('user_adm_alpha_nav'))
 		{
+			if(count($ilToolbar->getItems()) > 0)
+			{
 			$ilToolbar->addSeparator();
+			}
 
 			// alphabetical navigation
 			include_once("./Services/Form/classes/class.ilAlphabetInputGUI.php");
 			$ai = new ilAlphabetInputGUI("", "first");
 			include_once("./Services/User/classes/class.ilObjUser.php");
-			$ai->setLetters(ilObjUser::getFirstLettersOfLastnames());
-			/*$ai->setLetters(array("A","B","C","D","E","F","G","H","I","J",
-				"K","L","M","N","O","P","Q","R","S","T",
-				"U","V","W","X","Y","Z","1","2","3","4","_",
-				"Ä","Ü","Ö",":",";","+","*","#","§","%","&"));*/
+			$ai->setLetters(ilObjUser::getFirstLettersOfLastnames($user_filter));
 			$ai->setParentCommand($this, "chooseLetter");
 			$ai->setHighlighted($_GET["letter"]);
 			$ilToolbar->addInputItem($ai, true);
@@ -270,7 +301,10 @@ class ilObjUserFolderGUI extends ilObjectGUI
 		}
 
 		include_once("./Services/User/classes/class.ilUserTableGUI.php");
-		$utab = new ilUserTableGUI($this, "view");
+		$utab = new ilUserTableGUI($this, "view",ilUserTableGUI::MODE_USER_FOLDER, false);
+			$utab->addFilterItemValue('user_ids', $user_filter);
+		$utab->getItems();
+
 		$tpl->setContent($utab->getHTML());
 	}
 
@@ -281,6 +315,7 @@ class ilObjUserFolderGUI extends ilObjectGUI
 	{
 		include_once './Services/User/classes/class.ilUserAutoComplete.php';
 		$auto = new ilUserAutoComplete();
+		$auto->addUserAccessFilterCallable([$this,'filterUserIdsByRbacOrPositionOfCurrentUser']);
 		$auto->setSearchFields(array('login','firstname','lastname','email', 'second_email'));
 		$auto->enableFieldSearchableCheck(false);
 		$auto->setMoreLinkAvailable(true);
@@ -292,6 +327,22 @@ class ilObjUserFolderGUI extends ilObjectGUI
 
 		echo $auto->getList($_REQUEST['term']);
 		exit();
+	}
+
+	/**
+	 * @param int[] $user_ids
+	 */
+	public function filterUserIdsByRbacOrPositionOfCurrentUser(array $user_ids)
+	{
+		global $DIC;
+
+		$access = $DIC->access();
+		return $access->filterUserIdsByRbacOrPositionOfCurrentUser(
+			'read_users',
+			\ilObjUserFolder::ORG_OP_EDIT_USER_ACCOUNTS,
+			USER_FOLDER_ID,
+			$user_ids
+		);
 	}
 
 	/**
@@ -461,22 +512,20 @@ class ilObjUserFolderGUI extends ilObjectGUI
 	{
 		global $DIC;
 
-		$rbacsystem = $DIC['rbacsystem'];
 		$ilUser = $DIC['ilUser'];
 
-		// FOR NON_REF_OBJECTS WE CHECK ACCESS ONLY OF PARENT OBJECT ONCE
-		if (!$rbacsystem->checkAccess('write',$this->object->getRefId()))
-		{
+		if(!$this->checkUserManipulationAccessBool()) {
 			$this->ilias->raiseError($this->lng->txt("msg_no_perm_write"),$this->ilias->error_obj->WARNING);
 		}
 		
 		// FOR ALL SELECTED OBJECTS
-		foreach ($_POST["id"] as $id)
+		foreach ($this->getActionUserIds() as $id)
 		{
-			// instatiate correct object class (usr)
-			$obj =& $this->ilias->obj_factory->getInstanceByObjId($id);
-			$obj->setActive(TRUE, $ilUser->getId());
+			$obj = \ilObjectFactory::getInstanceByObjId($id, false);
+			if($obj instanceof \ilObjUser) {
+				$obj->setActive(true, $ilUser->getId());
 			$obj->update();
+		}
 		}
 
 		ilUtil::sendSuccess($this->lng->txt("user_activated"),true);
@@ -500,22 +549,19 @@ class ilObjUserFolderGUI extends ilObjectGUI
 	{
 		global $DIC;
 
-		$rbacsystem = $DIC['rbacsystem'];
 		$ilUser = $DIC['ilUser'];
 		
-		// FOR NON_REF_OBJECTS WE CHECK ACCESS ONLY OF PARENT OBJECT ONCE
-		if (!$rbacsystem->checkAccess('write',$this->object->getRefId()))
-		{
+		if(!$this->checkUserManipulationAccessBool()) {
 			$this->ilias->raiseError($this->lng->txt("msg_no_perm_write"),$this->ilias->error_obj->WARNING);
 		}
-		
 		// FOR ALL SELECTED OBJECTS
-		foreach ($_POST["id"] as $id)
+		foreach ($this->getActionUserIds() as $id)
 		{
-			// instatiate correct object class (usr)
-			$obj =& $this->ilias->obj_factory->getInstanceByObjId($id);
-			$obj->setActive(FALSE, $ilUser->getId());
+			$obj = \ilObjectFactory::getInstanceByObjId($id, false);
+			if($obj instanceof \ilObjUser) {
+				$obj->setActive(false, $ilUser->getId());
 			$obj->update();
+		}
 		}
 
 		// Feedback
@@ -531,29 +577,30 @@ class ilObjUserFolderGUI extends ilObjectGUI
 		}
 	}
 	
-	function confirmaccessFreeObject()
+	/**
+	 * "access free"
+	 */
+	protected function confirmaccessFreeObject()
 	{
 		global $DIC;
 
 		$rbacsystem = $DIC['rbacsystem'];
 		$ilUser = $DIC['ilUser'];
 
-		// FOR NON_REF_OBJECTS WE CHECK ACCESS ONLY OF PARENT OBJECT ONCE
-		if (!$rbacsystem->checkAccess('write',$this->object->getRefId()))
-		{
+		if(!$this->checkUserManipulationAccessBool()) {
 			$this->ilias->raiseError($this->lng->txt("msg_no_perm_write"),$this->ilias->error_obj->WARNING);
 		}
 		
-		// FOR ALL SELECTED OBJECTS
-		foreach ($_POST["id"] as $id)
+		foreach ($this->getActionUserIds() as $id)
 		{
-			// instatiate correct object class (usr)
-			$obj = $this->ilias->obj_factory->getInstanceByObjId($id);
+			$obj = \ilObjectFactory::getInstanceByObjId($id, false);
+			if($obj instanceof \ilObjUser) {
 			$obj->setTimeLimitUnlimited(1);
 			$obj->setTimeLimitFrom("");
 			$obj->setTimeLimitUntil("");
 			$obj->setTimeLimitMessage(0);
 			$obj->update();
+		}
 		}
 
 		// Feedback
@@ -581,6 +628,10 @@ class ilObjUserFolderGUI extends ilObjectGUI
 		return true;
 	}
 	
+	/**
+	 * @param bool $a_from_search
+	 * @return \ilPropertyFormGUI|void
+	 */
 	protected function initAccessRestrictionForm($a_from_search = false)
 	{
 		$user_ids = $this->getActionUserIds();			
@@ -626,8 +677,17 @@ class ilObjUserFolderGUI extends ilObjectGUI
 		return $form;
 	}
 
-	function confirmaccessRestrictObject()
+	/**
+	 * @return bool
+	 * @throws \ilDatabaseException
+	 * @throws \ilObjectNotFoundException
+	 */
+	protected function confirmaccessRestrictObject()
 	{
+		global $DIC;
+
+		$ilUser = $DIC->user();
+
 		$form = $this->initAccessRestrictionForm();
 		if(!$form->checkInput())
 		{
@@ -642,30 +702,21 @@ class ilObjUserFolderGUI extends ilObjectGUI
 			return $this->setAccessRestrictionObject($form);
 		}
 
-		global $DIC;
 
-		$rbacsystem = $DIC['rbacsystem'];
-		$ilUser = $DIC['ilUser'];
-
-		// FOR NON_REF_OBJECTS WE CHECK ACCESS ONLY OF PARENT OBJECT ONCE
-		if (!$rbacsystem->checkAccess('write',$this->object->getRefId()))
-		{
+		if(!$this->checkUserManipulationAccessBool()) {
 			$this->ilias->raiseError($this->lng->txt("msg_no_perm_write"),$this->ilias->error_obj->WARNING);
 		}		
-		
-		// FOR ALL SELECTED OBJECTS
-		foreach ($_POST["id"] as $id)
+		foreach ($this->getActionUserIds() as $id)
 		{
-			// instatiate correct object class (usr)
-			$obj = $this->ilias->obj_factory->getInstanceByObjId($id);
+			$obj = \ilObjectFactory::getInstanceByObjId($id, false);
+			if($obj instanceof \ilObjUser) {
 			$obj->setTimeLimitUnlimited(0);
 			$obj->setTimeLimitFrom($timefrom);
 			$obj->setTimeLimitUntil($timeuntil);
 			$obj->setTimeLimitMessage(0);
 			$obj->update();
 		}
-
-		// Feedback
+		}
 		ilUtil::sendSuccess($this->lng->txt("access_restricted"),true);
 
 		if ($_POST["frsrch"])
@@ -727,20 +778,62 @@ class ilObjUserFolderGUI extends ilObjectGUI
 	/**
 	 * Get selected items for table action
 	 * 
-	 * @return array
+	 * @return int[]
 	 */
 	protected function getActionUserIds()
 	{
+		global $DIC;
+		$access = $DIC->access();
+
 		if($_POST["select_cmd_all"])
 		{
 			include_once("./Services/User/classes/class.ilUserTableGUI.php");
 			$utab = new ilUserTableGUI($this, "view", ilUserTableGUI::MODE_USER_FOLDER, false);
+
+			if(!$access->checkAccess('read_users', '', USER_FOLDER_ID) &&
+				$access->checkRbacOrPositionPermissionAccess(
+					'read_users',
+					\ilObjUserFolder::ORG_OP_EDIT_USER_ACCOUNTS,
+					USER_FOLDER_ID))
+			{
+				$users = \ilLocalUser::_getAllUserIds(\ilLocalUser::_getUserFolderId());
+				$filtered_users = $access->filterUserIdsByRbacOrPositionOfCurrentUser(
+					'read_users',
+					\ilObjUserFolder::ORG_OP_EDIT_USER_ACCOUNTS,
+					USER_FOLDER_ID,
+					$users
+				);
+
+				$utab->addFilterItemValue("user_ids",$filtered_users);
+			}
+
 			return $utab->getUserIdsForFilter();
 		}
 		else
 		{
-			return $_POST["id"];
+			return $access->filterUserIdsByRbacOrPositionOfCurrentUser(
+				'read_user',
+				\ilObjUserFolder::ORG_OP_EDIT_USER_ACCOUNTS,
+				USER_FOLDER_ID,
+				(array) $_POST['id']
+			);
 		}
+	}
+
+	/**
+	 * Check if current user has access to manipulate user data
+	 * @return bool
+	 */
+	private function checkUserManipulationAccessBool()
+	{
+		global $DIC;
+
+		$access = $DIC->access();
+		return $access->checkRbacOrPositionPermissionAccess(
+			'write',
+			\ilObjUserFolder::ORG_OP_EDIT_USER_ACCOUNTS,
+			USER_FOLDER_ID
+		);
 	}
 
 	/**
@@ -2029,6 +2122,8 @@ class ilObjUserFolderGUI extends ilObjectGUI
 
 		$ilias = $DIC['ilias'];
 		$ilSetting = $DIC['ilSetting'];
+
+        $user_settings_config = $this->user_settings_config;
 		
 		// see ilUserFieldSettingsTableGUI
 		include_once("./Services/User/classes/class.ilUserProfile.php");
@@ -2106,20 +2201,20 @@ class ilObjUserFolderGUI extends ilObjectGUI
 		
 			if (!$_POST["chb"]["visible_".$field] && !$field_properties[$field]["visible_hide"])
 			{
-				$ilias->setSetting("usr_settings_hide_".$field, "1");
+                $user_settings_config->setVisible($field, false);
 			}
 			else
 			{
-				$ilias->deleteSetting("usr_settings_hide_".$field);
+                $user_settings_config->setVisible($field, true);
 			}
 
 			if (!$_POST["chb"]["changeable_" . $field] && !$field_properties[$field]["changeable_hide"])
 			{
-				$ilias->setSetting("usr_settings_disable_".$field, "1");
+                $user_settings_config->setChangeable($field, false);
 			}
 			else
 			{
-				$ilias->deleteSetting("usr_settings_disable_".$field);
+                $user_settings_config->setChangeable($field, true);
 			}
 
 			// registration visible			
@@ -2329,6 +2424,8 @@ class ilObjUserFolderGUI extends ilObjectGUI
 	function exportObject()
 	{
 		global $DIC;
+
+		$this->checkPermission("write,read_users");
 
 		$ilias = $DIC['ilias'];
 		$ilCtrl = $DIC['ilCtrl'];
@@ -2626,12 +2723,17 @@ class ilObjUserFolderGUI extends ilObjectGUI
 		global $DIC;
 
 		$rbacsystem = $DIC['rbacsystem'];
+		$access = $DIC->access();
 		
 		if ($rbacsystem->checkAccess("visible,read",$this->object->getRefId()))
 		{
 			$this->tabs_gui->addTarget("usrf",
 				$this->ctrl->getLinkTarget($this, "view"), array("view","delete","resetFilter", "userAction", ""), "", "");
 
+		}
+
+		if ($access->checkRbacOrPositionPermissionAccess("read_users", \ilObjUserFolder::ORG_OP_EDIT_USER_ACCOUNTS, USER_FOLDER_ID))
+		{
 			$this->tabs_gui->addTarget(
 				"search_user_extended",
 				$this->ctrl->getLinkTargetByClass('ilRepositorySearchGUI',''),
@@ -2641,7 +2743,8 @@ class ilObjUserFolderGUI extends ilObjectGUI
 			);
 		}
 		
-		if ($rbacsystem->checkAccess("write",$this->object->getRefId()))
+		
+		if ($rbacsystem->checkAccess("write,read_users",$this->object->getRefId()))
 		{
 			$this->tabs_gui->addTarget("settings",
 				$this->ctrl->getLinkTarget($this, "generalSettings"),array('askForUserPasswordReset', 'forceUserPasswordReset', 'settings','generalSettings','listUserDefinedField','newAccountMail'));
@@ -2852,6 +2955,24 @@ class ilObjUserFolderGUI extends ilObjectGUI
 	}
 
 	/**
+	 * @param array $a_user_ids
+	 * @return array
+	 */
+	public function searchUserAccessFilterCallable(array $a_user_ids): array
+	{
+		global $DIC;
+		$access = $DIC->access();
+
+		if(!$this->checkPermissionBool("read_user"))
+		{
+			$a_user_ids = $access->filterUserIdsByPositionOfCurrentUser(
+				\ilObjUserFolder::ORG_OP_EDIT_USER_ACCOUNTS, USER_FOLDER_ID, $a_user_ids );
+		}
+
+		return $a_user_ids;
+	}
+
+	/**
 	 * Handles multi command from repository search gui
 	 */
 	public  function searchResultHandler($a_usr_ids,$a_cmd)
@@ -2936,43 +3057,77 @@ class ilObjUserFolderGUI extends ilObjectGUI
 		return $cmds;
 	}
 	
-	function usrExportX86Object()
+	/**
+	 * Export excel
+	 */
+	protected function usrExportX86Object()
 	{
 		$user_ids = $this->getActionUserIds();	
 		if(!$user_ids)
 		{
-			ilUtil::sendFailure($this->lng->txt('select_one'));
-			return $this->viewObject();
+			ilUtil::sendFailure($this->lng->txt('select_one'),true);
+			return $this->ctrl->redirect($this, 'view');
 		}
-		$this->object->buildExportFile("userfolder_export_excel_x86", $user_ids);		
+
+		if($this->checkPermissionBool('write,read_users')) {
+			$this->object->buildExportFile(ilObjUserFolder::FILE_TYPE_EXCEL, $user_ids);
 		$this->ctrl->redirectByClass("ilobjuserfoldergui", "export");
+		}
+		elseif($this->checkUserManipulationAccessBool()) {
+			$fullname = $this->object->buildExportFile(ilObjUserFolder::FILE_TYPE_EXCEL, $user_ids, true);
+			ilUtil::deliverFile($fullname.'.xlsx', $this->object->getExportFilename(ilObjUserFolder::FILE_TYPE_EXCEL).'.xlsx','',false, true);
+		}
 	}
 	
-	function usrExportCsvObject()
+	/**
+	 * Export csv
+	 */
+	protected function usrExportCsvObject()
 	{
 		$user_ids = $this->getActionUserIds();	
 		if(!$user_ids)
 		{
-			ilUtil::sendFailure($this->lng->txt('select_one'));
-			return $this->viewObject();
+			ilUtil::sendFailure($this->lng->txt('select_one'),true);
+			return $this->ctrl->redirect($this, 'view');
 		}
-		$this->object->buildExportFile("userfolder_export_csv", $user_ids);		
+
+		if($this->checkPermissionBool("write,read_users"))
+		{
+			$this->object->buildExportFile(ilObjUserFolder::FILE_TYPE_CSV, $user_ids);
 		$this->ctrl->redirectByClass("ilobjuserfoldergui", "export");
+		}
+		elseif($this->checkUserManipulationAccessBool()) {
+			$fullname = $this->object->buildExportFile(ilObjUserFolder::FILE_TYPE_CSV, $user_ids, true);
+			ilUtil::deliverFile($fullname, $this->object->getExportFilename(ilObjUserFolder::FILE_TYPE_CSV),'',false, true);
+		}
 	}
 	
-	function usrExportXmlObject()
+	/**
+	 * Export xml
+	 */
+	protected function usrExportXmlObject()
 	{
 		$user_ids = $this->getActionUserIds();	
 		if(!$user_ids)
 		{
-			ilUtil::sendFailure($this->lng->txt('select_one'));
-			return $this->viewObject();
+			ilUtil::sendFailure($this->lng->txt('select_one'),true);
+			return $this->ctrl->redirect($this, 'view');
 		}
-		$this->object->buildExportFile("userfolder_export_xml", $user_ids);		
+		if($this->checkPermissionBool("write,read_users"))
+		{
+			$this->object->buildExportFile(ilObjUserFolder::FILE_TYPE_XML,  $user_ids);
 		$this->ctrl->redirectByClass("ilobjuserfoldergui", "export");
+		}
+		elseif($this->checkUserManipulationAccessBool()) {
+			$fullname = $this->object->buildExportFile(ilObjUserFolder::FILE_TYPE_XML, $user_ids, true);
+			ilUtil::deliverFile($fullname, $this->object->getExportFilename(ilObjUserFolder::FILE_TYPE_XML),'',false, true);
+		}
 	}
 	
-	function mailObject()
+	/**
+	 *
+	 */
+	protected function mailObject()
 	{
 		global $DIC;
 
@@ -2981,8 +3136,8 @@ class ilObjUserFolderGUI extends ilObjectGUI
 		$user_ids = $this->getActionUserIds();			
 		if(!$user_ids)
 		{
-			ilUtil::sendFailure($this->lng->txt('select_one'));
-			return $this->viewObject();
+			ilUtil::sendFailure($this->lng->txt('select_one'),true);
+			return $this->ctrl->redirect($this, 'view');
 		}
 		
 		// remove existing (temporary) lists
@@ -3080,9 +3235,12 @@ class ilObjUserFolderGUI extends ilObjectGUI
 		}		
 	}
 
+	/**
+	 * Add users to clipboard
+	 */
 	protected function addToClipboardObject()
 	{
-		$users = (array) $_POST['id'];
+		$users = $this->getActionUserIds();
 		if(!count($users))
 		{
 			ilUtil::sendFailure($this->lng->txt('select_one'),true);

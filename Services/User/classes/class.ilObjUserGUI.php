@@ -598,15 +598,31 @@ class ilObjUserGUI extends ilObjectGUI
 	*/
     function editObject()
     {
-        global $ilias, $rbacsystem, $rbacreview, $rbacadmin, $styleDefinition, $ilUser
-			,$ilSetting, $ilCtrl;
+    	global $DIC;
 
-		include_once('./Services/Authentication/classes/class.ilAuthUtils.php');
-
-        //load ILIAS settings
-        $settings = $ilias->getAllSettings();
+        $ilias = $DIC['ilias'];
+        $rbacsystem = $DIC->rbac()->system();
+        $access = $DIC->access();
 
 		// User folder
+		// User folder && access granted by rbac or by org unit positions
+		if($this->usrf_ref_id == USER_FOLDER_ID &&
+			(
+				!$rbacsystem->checkAccess('visible,read', $this->usrf_ref_id) ||
+				!$access->checkRbacOrPositionPermissionAccess('write', \ilObjUserFolder::ORG_OP_EDIT_USER_ACCOUNTS, $this->usrf_ref_id) ||
+				!in_array($this->object->getId(), $access->filterUserIdsByRbacOrPositionOfCurrentUser
+				(
+					'write',
+					\ilObjUserFolder::ORG_OP_EDIT_USER_ACCOUNTS,
+					USER_FOLDER_ID,
+					[$this->object->getId()])
+				)
+			)
+		)
+		{
+			$this->ilias->raiseError($this->lng->txt("msg_no_perm_modify_user"),$this->ilias->error_obj->MESSAGE);
+		}
+
 		if($this->usrf_ref_id == USER_FOLDER_ID and !$rbacsystem->checkAccess('visible,read',$this->usrf_ref_id))
 		{
 			$this->ilias->raiseError($this->lng->txt("msg_no_perm_modify_user"),$this->ilias->error_obj->MESSAGE);
@@ -826,14 +842,25 @@ class ilObjUserGUI extends ilObjectGUI
 	{
 		global $DIC;
 
-		$tpl = $DIC['tpl'];
-		$rbacsystem = $DIC['rbacsystem'];
-		$ilias = $DIC['ilias'];
-		$ilUser = $DIC['ilUser'];
-		$ilSetting = $DIC['ilSetting'];
+		$tpl = $DIC->ui()->mainTemplate();
+		$rbacsystem = $DIC->rbac()->system();
+		$ilUser = $DIC->user();
+		$access = $DIC->access();
 		
-		// User folder
-		if($this->usrf_ref_id == USER_FOLDER_ID and !$rbacsystem->checkAccess('visible,read,write',$this->usrf_ref_id))
+		// User folder && access granted by rbac or by org unit positions
+		if($this->usrf_ref_id == USER_FOLDER_ID &&
+			(
+				!$rbacsystem->checkAccess('visible,read', USER_FOLDER_ID) ||
+				!$access->checkRbacOrPositionPermissionAccess('write', \ilObjUserFolder::ORG_OP_EDIT_USER_ACCOUNTS, USER_FOLDER_ID) ||
+				!in_array($this->object->getId(), $access->filterUserIdsByRbacOrPositionOfCurrentUser
+				(
+					'write',
+					\ilObjUserFolder::ORG_OP_EDIT_USER_ACCOUNTS,
+					USER_FOLDER_ID,
+					[$this->object->getId()])
+				)
+			)
+		)
 		{
 			$this->ilias->raiseError($this->lng->txt("msg_no_perm_modify_user"),$this->ilias->error_obj->MESSAGE);
 		}
@@ -1407,7 +1434,7 @@ class ilObjUserGUI extends ilObjectGUI
 			$lng->loadLanguageModule("file");
 		
 			$quota_head = new ilFormSectionHeaderGUI();
-			$quota_head->setTitle($lng->txt("personal_workspace_disk_quota"));
+			$quota_head->setTitle($lng->txt("personal_resources_disk_quota"));
 			$this->form_gui->addItem($quota_head);
 			
 			// personal workspace disk quota
@@ -2137,10 +2164,13 @@ class ilObjUserGUI extends ilObjectGUI
 		$rbacsystem = $DIC['rbacsystem'];
 		$ilUser = $DIC['ilUser'];
 		$ilTabs = $DIC['ilTabs'];
+		$access = $DIC->access();
 		
 		$ilTabs->activateTab("role_assignment");
 
-		if (!$rbacsystem->checkAccess("edit_roleassignment", $this->usrf_ref_id))
+		if (!$rbacsystem->checkAccess("edit_roleassignment", $this->usrf_ref_id) &&
+			!$access->isCurrentUserBasedOnPositionsAllowedTo("read_users", array($this->object->getId()))
+		)
 		{
 			$this->ilias->raiseError($this->lng->txt("msg_no_perm_assign_role_to_user"),$this->ilias->error_obj->MESSAGE);
 		}
@@ -2545,8 +2575,8 @@ class ilObjUserGUI extends ilObjectGUI
 			if($ilUser->getId() != ANONYMOUS_USER_ID &&
 				$ilUser->hasDeletionFlag())
 			{
-				$ilCtrl->initBaseClass("ilpersonaldesktopgui");
-				$ilCtrl->redirectByClass(array("ilpersonaldesktopgui", "ilpersonalsettingsgui"), "deleteOwnAccount3");						
+				$ilCtrl->initBaseClass("ildashboardgui");
+				$ilCtrl->redirectByClass(array("ildashboardgui", "ilpersonalsettingsgui"), "deleteOwnAccount3");
 			}
 			exit("This account is not flagged for deletion."); // #12160
 		}
@@ -2554,7 +2584,7 @@ class ilObjUserGUI extends ilObjectGUI
 		// badges
 		if(substr($a_target, -4) == "_bdg")
 		{
-			$_GET["baseClass"] = "ilPersonalDesktopGUI";
+			$_GET["baseClass"] = "ilDashboardGUI";
 			$_GET["cmd"] = "jumpToBadges";
 			include("ilias.php");
 			exit();
@@ -2579,8 +2609,8 @@ class ilObjUserGUI extends ilObjectGUI
 		{
 			if ($ilUser->getId() > 0 && !$ilUser->isAnonymous()) {
 				$ilCtrl->setTargetScript('ilias.php');
-				$ilCtrl->initBaseClass('ilpersonaldesktopgui');
-				$ilCtrl->redirectByClass(array('ilpersonaldesktopgui', 'ilpersonalprofilegui'), 'showUserAgreement');
+				$ilCtrl->initBaseClass('ildashboardgui');
+				$ilCtrl->redirectByClass(array('ildashboardgui', 'ilpersonalprofilegui'), 'showUserAgreement');
 			} else {
 				$_GET['baseClass'] = 'ilStartUpGUI';
 				$ilCtrl->setTargetScript('ilias.php');

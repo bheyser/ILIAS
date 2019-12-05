@@ -37,6 +37,9 @@ class Renderer extends AbstractComponentRenderer
         if ($component->hasMainbar()) {
             $tpl->setVariable('MAINBAR', $default_renderer->render($component->getMainbar()));
         }
+        if ($component->hasModeInfo()) {
+            $tpl->setVariable('MODEINFO', $default_renderer->render($component->getModeInfo()));
+        }
 
         $breadcrumbs = $component->getBreadcrumbs();
         if ($breadcrumbs && $breadcrumbs->getItems()) {
@@ -53,6 +56,8 @@ class Renderer extends AbstractComponentRenderer
         }
 
         $tpl->setVariable("TITLE", $component->getTitle());
+        $tpl->setVariable("SHORT_TITLE", $component->getShortTitle());
+        $tpl->setVariable("VIEW_TITLE", $component->getViewTitle());
         $tpl->setVariable('CONTENT', $default_renderer->render($component->getContent()));
 
         if ($component->hasFooter()) {

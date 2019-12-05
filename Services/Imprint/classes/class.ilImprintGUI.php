@@ -102,7 +102,7 @@ class ilImprintGUI extends ilPageObjectGUI
 	{
 		$lng = $this->lng;
 		
-		if($this->getOutputMode() == IL_PAGE_PREVIEW)
+		if($this->getOutputMode() == ilPageObjectGUI::PREVIEW)
 		{
 			if(!$this->getPageObject()->getActive())
 			{
@@ -121,7 +121,7 @@ class ilImprintGUI extends ilPageObjectGUI
 		
 		if(!ilImprint::isActive())
 		{
-			ilUtil::redirect("ilias.php?baseClass=ilPersonalDesktopGUI");
+			ilUtil::redirect("ilias.php?baseClass=ilDashboardGUI");
 		}
 		
 		$tpl->loadStandardTemplate();

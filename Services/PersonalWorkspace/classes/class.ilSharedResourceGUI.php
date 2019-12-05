@@ -119,8 +119,8 @@ class ilSharedResourceGUI
 			// see ilPersonalWorkspaceGUI				
 			if($owner_id != $ilUser->getId())
 			{					
-				$ilCtrl->setParameterByClass("ilpersonaldesktopgui", "dsh", $owner_id);
-				$link = $ilCtrl->getLinkTargetByClass("ilpersonaldesktopgui", "jumptoworkspace");
+				$ilCtrl->setParameterByClass("ildashboardgui", "dsh", $owner_id);
+				$link = $ilCtrl->getLinkTargetByClass("ildashboardgui", "jumptoworkspace");
 				$ilLocator->addItem($lng->txt("wsp_tab_shared"), $link);		
 
 				include_once "Services/User/classes/class.ilUserUtil.php";
@@ -128,7 +128,7 @@ class ilSharedResourceGUI
 			}
 			else
 			{					
-				$link = $ilCtrl->getLinkTargetByClass("ilpersonaldesktopgui", "jumptoworkspace");
+				$link = $ilCtrl->getLinkTargetByClass("ildashboardgui", "jumptoworkspace");
 				$ilLocator->addItem($lng->txt("wsp_tab_personal"), $link);	
 			}
 			
@@ -140,25 +140,21 @@ class ilSharedResourceGUI
 		switch($next_class)
 		{
 			case "ilobjbloggui":
-				include_once "Modules/Blog/classes/class.ilObjBlogGUI.php";
-				$bgui = new ilObjBlogGUI($this->node_id, ilObject2GUI::WORKSPACE_NODE_ID);				
+				$bgui = new ilObjBlogGUI($this->node_id, ilObject2GUI::WORKSPACE_NODE_ID);
 				$ilCtrl->forwardCommand($bgui);			
 				break;
 			
 			case "ilobjfilegui":
-				include_once "Modules/File/classes/class.ilObjFileGUI.php";
 				$fgui = new ilObjFileGUI($this->node_id, ilObject2GUI::WORKSPACE_NODE_ID);
 				$ilCtrl->forwardCommand($fgui);
 				break;		
 			
 			case "ilobjtestverificationgui":
-				include_once "Modules/Test/classes/class.ilObjTestVerificationGUI.php";
 				$tgui = new ilObjTestVerificationGUI($this->node_id, ilObject2GUI::WORKSPACE_NODE_ID);
 				$ilCtrl->forwardCommand($tgui);
 				break;		
 			
 			case "ilobjexerciseverificationgui":
-				include_once "Modules/Exercise/classes/class.ilObjExerciseVerificationGUI.php";
 				$egui = new ilObjExerciseVerificationGUI($this->node_id, ilObject2GUI::WORKSPACE_NODE_ID);
 				$ilCtrl->forwardCommand($egui);
 				break;		
@@ -322,12 +318,15 @@ class ilSharedResourceGUI
 			case "blog":
 				$ilCtrl->setParameterByClass($gui, "wsp_id", $a_node_id);
 				$ilCtrl->setParameterByClass($gui, "gtp", (int)$_GET["gtp"]);
+				$ilCtrl->setParameterByClass($gui, "edt", $_GET["edt"]);
 				$ilCtrl->redirectByClass($gui, "preview");
 				
 			case "tstv":
 			case "excv":
 			case "crsv":
 			case "scov":
+			case "cmxv":
+			case "ltiv":
 				$ilCtrl->setParameterByClass($gui, "wsp_id", $a_node_id);
 				$ilCtrl->redirectByClass($gui, "deliver");
 				
@@ -419,14 +418,14 @@ class ilSharedResourceGUI
 				include_once "Services/PersonalWorkspace/classes/class.ilWorkspaceTree.php";			
 				$tree = new ilWorkspaceTree($ilUser->getId());
 				$owner = $tree->lookupOwner($this->node_id);
-				ilUtil::redirect("ilias.php?baseClass=ilPersonalDesktopGUI&cmd=jumpToWorkspace&dsh=".$owner);
+				ilUtil::redirect("ilias.php?baseClass=ilDashboardGUI&cmd=jumpToWorkspace&dsh=".$owner);
 			}		
 			else
 			{
 				include_once "Modules/Portfolio/classes/class.ilObjPortfolio.php";
 				$prtf = new ilObjPortfolio($this->portfolio_id, false);
 				$owner = $prtf->getOwner();				
-				ilUtil::redirect("ilias.php?baseClass=ilPersonalDesktopGUI&cmd=jumpToPortfolio&dsh=".$owner);
+				ilUtil::redirect("ilias.php?baseClass=ilDashboardGUI&cmd=jumpToPortfolio&dsh=".$owner);
 			}
 		}
 	}

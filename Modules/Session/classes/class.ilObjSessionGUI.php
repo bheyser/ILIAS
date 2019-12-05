@@ -4,7 +4,6 @@
 include_once('./Services/Object/classes/class.ilObjectGUI.php');
 include_once('./Modules/Session/classes/class.ilObjSession.php');
 include_once('./Modules/Session/classes/class.ilSessionFile.php');
-include_once './Services/PersonalDesktop/interfaces/interface.ilDesktopItemHandling.php';
 
 /**
 *
@@ -260,6 +259,7 @@ class ilObjSessionGUI extends ilObjectGUI implements ilDesktopItemHandling
 		global $DIC;
 
 		$ilUser = $DIC['ilUser'];
+        $ilAppEventHandler = $DIC['ilAppEventHandler'];
 
 		$this->checkPermission('visible');
 		
@@ -292,12 +292,34 @@ class ilObjSessionGUI extends ilObjectGUI implements ilDesktopItemHandling
 			case ilMembershipRegistrationSettings::TYPE_DIRECT:
 				$part->register($ilUser->getId());
 				ilUtil::sendSuccess($this->lng->txt('event_registered'),true);
+
+				$ilAppEventHandler->raise(
+					"Modules/Session",
+					'enter',
+					array(
+						'obj_id' => $this->getCurrentObject()->getId(),
+						'ref_id' => $this->getCurrentObject()->getRefId(),
+						'usr_id' => $ilUser->getId()
+					)
+				);
+
 				$this->ctrl->redirect($this,'infoScreen');
 				break;
 			
 			case ilMembershipRegistrationSettings::TYPE_REQUEST:
 				ilUtil::sendSuccess($this->lng->txt('sess_registered_confirm'),true);
 				$part->addSubscriber($ilUser->getId());
+
+				$ilAppEventHandler->raise(
+					"Modules/Session",
+					'register',
+					array(
+						'obj_id' => $this->getCurrentObject()->getId(),
+						'ref_id' => $this->getCurrentObject()->getRefId(),
+						'usr_id' => $ilUser->getId()
+					)
+				);
+
 				$this->ctrl->redirect($this,'infoScreen');
 				break;
 		}
@@ -348,8 +370,9 @@ class ilObjSessionGUI extends ilObjectGUI implements ilDesktopItemHandling
 		global $DIC;
 
 		$ilUser = $DIC['ilUser'];
-		
-		include_once './Modules/Session/classes/class.ilSessionParticipants.php';
+        $ilAppEventHandler = $DIC['ilAppEventHandler'];
+
+        include_once './Modules/Session/classes/class.ilSessionParticipants.php';
 		$part = ilSessionParticipants::getInstance($this->object->getRefId());
 		if($part->isSubscriber($ilUser->getId()))
 		{
@@ -377,6 +400,16 @@ class ilObjSessionGUI extends ilObjectGUI implements ilDesktopItemHandling
 			return;
 		}
 
+		$ilAppEventHandler->raise(
+			"Modules/Session",
+			'unregister',
+			array(
+				'obj_id' => $this->getCurrentObject()->getId(),
+				'ref_id' => $this->getCurrentObject()->getRefId(),
+				'usr_id' => $ilUser->getId()
+			)
+		);
+
 		ilUtil::sendSuccess($this->lng->txt('event_unregistered'),true);
 		$this->ctrl->returnToParent($this);
 	}
@@ -397,6 +430,19 @@ class ilObjSessionGUI extends ilObjectGUI implements ilDesktopItemHandling
 		$ilErr = $DIC["ilErr"];
 		$lng = $DIC->language();
 
+		$ilCtrl = $DIC->ctrl();
+		$parts = explode('_', $a_target);
+		$a_target = $parts[0];
+
+		if ($ilAccess->checkAccess('write', '', $a_target)) {
+			if (isset($parts[1]) && 'part' === $parts[1]) {
+				$ilCtrl->initBaseClass('ilRepositoryGUI');
+				$ilCtrl->setParameterByClass('ilSessionMembershipGUI', 'ref_id', (int) $a_target);
+				$ilCtrl->setTargetScript('ilias.php');
+				$ilCtrl->redirectByClass(array('ilRepositoryGUI', __CLASS__, 'ilSessionMembershipGUI'));
+			}
+		}
+
 		if($ilAccess->checkAccess('visible', "", $a_target))
 		{
 			ilObjectGUI::_gotoRepositoryNode($a_target, "infoScreen");
@@ -412,26 +458,7 @@ class ilObjSessionGUI extends ilObjectGUI implements ilDesktopItemHandling
 		}
 	}
 	
-    /**
-     * @see ilDesktopItemHandling::addToDesk()
-     */
-    public function addToDeskObject()
-    {
-	 	include_once './Services/PersonalDesktop/classes/class.ilDesktopItemGUI.php';
-	 	ilDesktopItemGUI::addToDesktop();
-		$this->infoScreenObject();
-    }
-    
-    /**
-     * @see ilDesktopItemHandling::removeFromDesk()
-     */
-    public function removeFromDeskObject()
-    {
-	 	include_once './Services/PersonalDesktop/classes/class.ilDesktopItemGUI.php';
-	 	ilDesktopItemGUI::removeFromDesktop();
-		$this->infoScreenObject();
-    }
-	
+
 	
 	/**
 	* this one is called from the info button in the repository
@@ -1619,7 +1646,7 @@ class ilObjSessionGUI extends ilObjectGUI implements ilDesktopItemHandling
 		$dur->setEnd($this->object->getFirstAppointment()->getEnd());
 		
 		$this->form->addItem($dur);
-		
+
 
 		// Recurrence
 		if($a_mode == 'create')
@@ -1835,7 +1862,10 @@ class ilObjSessionGUI extends ilObjectGUI implements ilDesktopItemHandling
 		$this->object->setPhone(ilUtil::stripSlashes($_POST['tutor_phone']));
 		$this->object->setEmail(ilUtil::stripSlashes($_POST['tutor_email']));
 		$this->object->setDetails(ilUtil::stripSlashes($_POST['details']));
-		
+
+		$this->object->setRegistrationNotificationEnabled(ilUtil::stripSlashes($_POST['registration_notification']));
+		$this->object->setRegistrationNotificationOption(ilUtil::stripSlashes($_POST['notification_option']));
+
 		$this->object->setRegistrationType((int) $_POST['registration_type']);
 		// $this->object->setRegistrationMinUsers((int) $_POST['registration_min_members']);
 		$this->object->setRegistrationMaxUsers((int) $_POST['registration_max_members']);
@@ -2116,7 +2146,7 @@ class ilObjSessionGUI extends ilObjectGUI implements ilDesktopItemHandling
 				);
 			}
 		}
-		
+
 		// export
 		if ($ilAccess->checkAccess("write", "", $this->object->getRefId()))
 		{
@@ -2322,6 +2352,6 @@ class ilObjSessionGUI extends ilObjectGUI implements ilDesktopItemHandling
 		$tpl->setContent($form->getHtml());
 	}
 
-	
+
 }
 ?>

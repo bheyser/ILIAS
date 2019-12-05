@@ -5,7 +5,6 @@
 * Class ilExerciseMembers
 *
 * @author Stefan Meyer <meyer@leifos.com>
-* @version $Id$
 *
 * @ingroup ModulesExercise
 */
@@ -25,6 +24,11 @@ class ilExerciseMembers
 //	var $status_returned;
 //	var $notice;
 
+	/**
+	 * @var ilRecommendedContentManager
+	 */
+	protected $recommended_content_manager;
+
 	function __construct($a_exc)
 	{
 		global $DIC;
@@ -34,6 +38,8 @@ class ilExerciseMembers
 		$this->obj_id = $a_exc->getId();
 		$this->ref_id = $a_exc->getRefId();
 		$this->read();
+
+		$this->recommended_content_manager = new ilRecommendedContentManager();
 	}
 
 	/**
@@ -85,11 +91,9 @@ class ilExerciseMembers
 	{
 		$ilDB = $this->db;
 
-		if($this->exc->hasAddToDesktop())
+		/*if($this->exc->hasAddToDesktop())
 		{
-			$tmp_user = ilObjectFactory::getInstanceByObjId($a_usr_id);
-			$tmp_user->addDesktopItem($this->getRefId(),"exc");
-		}
+		}*/
 
 		$ilDB->manipulate("DELETE FROM exc_members ".
 			"WHERE obj_id = ".$ilDB->quote($this->getObjId(), "integer")." ".
@@ -101,12 +105,10 @@ class ilExerciseMembers
 			array("integer", "integer", "text", "integer", "integer"),
 			array($this->getObjId(), $a_usr_id, 'notgraded', 0, 0));
 
-		include_once("./Modules/Exercise/classes/class.ilExAssignment.php");
 		ilExAssignment::createNewUserRecords($a_usr_id, $this->getObjId());
 		
 		$this->read();
 		
-		include_once("./Services/Tracking/classes/class.ilLPStatusWrapper.php");
 		ilLPStatusWrapper::_updateStatus($this->getObjId(), $a_usr_id);
 
 		return true;
@@ -159,8 +161,7 @@ class ilExerciseMembers
 	{
 		$ilDB = $this->db;
 
-		$tmp_user = ilObjectFactory::getInstanceByObjId($a_usr_id);
-		$tmp_user->dropDesktopItem($this->getRefId(),"exc");
+		$this->recommended_content_manager->removeObjectRecommendation($a_usr_id, $this->getRefId());
 
 		$query = "DELETE FROM exc_members ".
 			"WHERE obj_id = ".$ilDB->quote($this->getObjId(), "integer")." ".
@@ -170,11 +171,9 @@ class ilExerciseMembers
 		
 		$this->read();
 		
-		include_once("./Services/Tracking/classes/class.ilLPStatusWrapper.php");
 		ilLPStatusWrapper::_updateStatus($this->getObjId(), $a_usr_id);
 		
 		// delete all delivered files of the member
-		include_once("./Modules/Exercise/classes/class.ilExSubmission.php");
 		ilExSubmission::deleteUser($this->exc->getId(), $a_usr_id);
 
 // @todo: delete all assignment associations (and their files)
@@ -255,7 +254,6 @@ class ilExerciseMembers
 					$row["status"], (int) $row["feedback"], (int) $row["sent"])
 					);
 			
-			include_once("./Services/Tracking/classes/class.ilLPStatusWrapper.php");
 			ilLPStatusWrapper::_updateStatus($a_new_id, $row["usr_id"]);
 		}
 		return true;
@@ -270,7 +268,6 @@ class ilExerciseMembers
 			$ilDB->quote($this->getObjId(), "integer");
 		$ilDB->manipulate($query);
 		
-		include_once("./Services/Tracking/classes/class.ilLPStatusWrapper.php");
 		ilLPStatusWrapper::_refreshStatus($this->getObjId());
 
 		return true;
@@ -350,7 +347,6 @@ class ilExerciseMembers
 			" AND usr_id = ".$ilDB->quote($a_user_id, "integer")
 			);
 		
-		include_once("./Services/Tracking/classes/class.ilLPStatusWrapper.php");
 		ilLPStatusWrapper::_updateStatus($a_obj_id, $a_user_id);
 	}
 	
@@ -378,7 +374,6 @@ class ilExerciseMembers
 			" AND usr_id = ".$ilDB->quote($a_user_id, "integer")
 			);
 		
-		include_once("./Services/Tracking/classes/class.ilLPStatusWrapper.php");
 		ilLPStatusWrapper::_updateStatus($a_obj_id, $a_user_id);
 	}
 	

@@ -1,5 +1,6 @@
 <?php namespace ILIAS\Administration;
 
+use ILIAS\DI\Exceptions\Exception;
 use ILIAS\GlobalScreen\Scope\MainMenu\Provider\AbstractStaticMainMenuProvider;
 use ILIAS\MainMenu\Provider\StandardTopItemsProvider;
 
@@ -31,8 +32,9 @@ class AdministrationMainBarProvider extends AbstractStaticMainMenuProvider
         $this->dic->language()->loadLanguageModule('administration');
 
         list($groups, $titems) = $this->getGroups();
-
+        $position = 1;
         foreach ($groups as $group => $group_items) {
+            // Is Group
             if (is_array($group_items) && count($group_items) > 0) {
                 // Entries
                 $links = [];
@@ -41,10 +43,12 @@ class AdministrationMainBarProvider extends AbstractStaticMainMenuProvider
                         continue;
                     }
 
-                    $path = \ilObject::_getIcon("", "tiny", $titems[$group_item]["type"]);
-                    $icon = $this->dic->ui()->factory()->symbol()->icon()->custom($path, $titems[$group_item]["type"]);
+                    //$path = \ilObject::_getIcon("", "tiny", $titems[$group_item]["type"]);
+                    //$icon = $this->dic->ui()->factory()->symbol()->icon()->custom($path, $titems[$group_item]["type"]);
+                    $icon = $this->dic->ui()->factory()->symbol()->icon()->standard($titems[$group_item]["type"], $titems[$group_item]["title"])
+                        ->withIsOutlined(true);
 
-                    if ($_GET["admin_mode"] == "settings" && $titems[$group_item]["ref_id"] == ROOT_FOLDER_ID) {
+                    if ($_GET["admin_mode"] != 'repository' && $titems[$group_item]["ref_id"] == ROOT_FOLDER_ID) {
                         $identification = $this->if->identifier('mm_adm_rep');
                         $action = "ilias.php?baseClass=ilAdministrationGUI&ref_id=" . $titems[$group_item]["ref_id"] . "&admin_mode=repository";
                     } else {
@@ -66,8 +70,8 @@ class AdministrationMainBarProvider extends AbstractStaticMainMenuProvider
                     ->linkList($this->if->identifier('adm_content_' . $group))
                     ->withLinks($links)
                     ->withTitle($this->dic->language()->txt("adm_" . $group))
-                    // ->withAsyncContentURL("ilias.php?baseClass=ilAdministrationGUI&cmd=getDropDown&cmdMode=asynch")
                     ->withParent($top)
+                    ->withPosition($position)
                     ->withAlwaysAvailable(true)
                     ->withNonAvailableReason($this->dic->ui()->factory()->legacy("{$this->dic->language()->txt('item_must_be_always_active')}"))
                     ->withVisibilityCallable(
@@ -79,6 +83,7 @@ class AdministrationMainBarProvider extends AbstractStaticMainMenuProvider
                             return ($dic->user()->getId() != ANONYMOUS_USER_ID);
                         }
                     );
+                $position++;
             }
         }
 
@@ -177,15 +182,17 @@ class AdministrationMainBarProvider extends AbstractStaticMainMenuProvider
 			"layout_and_navigation" =>
 				array("mme", "stys", "adve", "accs"),
 			"user_administration" =>
-				array("usrf", 'tos', "rolf", "otpl", "orgu", "auth", "ps"),
+				array("usrf", 'tos', "rolf", "otpl", "auth", "ps"),
 			"personal_workspace" =>
-				array("pdts", "prfa", "nwss", "awra", "cadm", "cals", "mail"),
+				array("dshs", "tags", "cals", "prfa", "prss", "nots", "awra"),
 			"achievements" =>
-				array("skmg", "bdga", "cert", "trac"),
+				array("lhts", "skmg", "trac", "bdga", "cert"),
+            "communication" =>
+                array("mail", "cadm", "nwss", "coms"),
 			"search_and_find" =>
-				array("seas", "mds", "tags", "taxs"),
+				array("seas", "mds", "taxs"),
 			"extending_ilias" =>
-				array('ecss', "ltis", "cmps", "extt"),
+				array('ecss', "ltis", "cmis", "cmps", "extt"),
 			"repository_and_objects" =>
 				array("reps", "crss", "grps", "prgs", "bibs", "blga", "chta", "excs", "facs", "frma", "lrss",
 					"mcts", "mobs", "svyf", "assf", "wbrs", "wiks"),
