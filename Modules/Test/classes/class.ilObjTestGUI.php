@@ -46,6 +46,7 @@ require_once 'Modules/Test/classes/class.ilTestParticipantAccessFilter.php';
  * @ilCtrl_Calls ilObjTestGUI: ilTestSkillAdministrationGUI
  * @ilCtrl_Calls ilObjTestGUI: ilAssQuestionPreviewGUI
  * @ilCtrl_Calls ilObjTestGUI: ilTestQuestionBrowserTableGUI, ilTestInfoScreenToolbarGUI, ilLTIProviderObjectSettingGUI
+ * @ilCtrl_Calls ilObjTestGUI: ilTestLaunchGUI
  *
  * @ingroup ModulesTest
  */
@@ -289,12 +290,16 @@ class ilObjTestGUI extends ilObjectGUI
 
             case strtolower(ilTestLaunchGUI::class):
 
+                $DIC->tabs()->activateTab(ilTestTabsManager::TAB_ID_TEST_LAUNCH);
+
                 $this->prepareOutput();
                 $this->addHeaderAction();
 
                 $gui = new ilTestLaunchGUI($this->object);
 
                 $DIC->ctrl()->forwardCommand($gui);
+
+                break;
 
 			case "iltestplayerfixedquestionsetgui":
 				$this->trackTestObjectReadEvent();

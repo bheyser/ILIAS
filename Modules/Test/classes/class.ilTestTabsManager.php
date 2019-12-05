@@ -371,6 +371,19 @@ class ilTestTabsManager
 	/**
 	 * @return bool
 	 */
+	protected function checkInfoTabTabAccess()
+    {
+        if( !$this->testOBJ->isInfoScreenEnabled() )
+        {
+            false;
+        }
+
+        return $this->isReadAccessGranted();
+    }
+
+	/**
+	 * @return bool
+	 */
 	protected function checkTestLaunchTabAccess()
     {
         if( $this->testOBJ->getOfflineStatus() )
@@ -380,7 +393,7 @@ class ilTestTabsManager
 
         return $this->isReadAccessGranted();
     }
-	
+
 	/**
 	 */
 	public function perform()
@@ -569,14 +582,23 @@ class ilTestTabsManager
 		}
 		
 		// info tab
-		if ($this->isReadAccessGranted() && !$this->isHiddenTab('info_short'))
+		if( $this->checkInfoTabTabAccess() && !$this->isHiddenTab('info_short') )
 		{
 			$this->tabs->addTarget("info_short",
 				$DIC->ctrl()->getLinkTargetByClass('ilObjTestGUI','infoScreen'),
 				array("infoScreen", "outIntroductionPage", "showSummary",
 					"setAnonymousId", "redirectToInfoScreen"));
 		}
-		
+
+		// launch tab
+		if( $this->checkTestLaunchTabAccess() )
+		{
+			$this->tabs->addTab(self::TAB_ID_TEST_LAUNCH,
+				$DIC->language()->txt(self::TAB_ID_TEST_LAUNCH),
+				$DIC->ctrl()->getLinkTargetByClass(ilTestLaunchGUI::class)
+            );
+		}
+
 		// settings tab
 		if( $this->isWriteAccessGranted() )
 		{

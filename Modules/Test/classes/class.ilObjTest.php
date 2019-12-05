@@ -585,8 +585,12 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
 	 * @var string mm:ddd:hh:ii:ss
 	 */
 	protected $pass_waiting = "00:000:00:00:00";
-	#endregion
-	
+
+    /**
+     * @var bool
+     */
+	protected $infoScreenEnabled = true;
+
 	/**
 	 * Constructor
 	 * 
@@ -1366,7 +1370,8 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
 				'inst_fb_answer_fixation'    => array('integer', (int)$this->isInstantFeedbackAnswerFixationEnabled()),
 				'force_inst_fb' => array('integer', (int)$this->isForceInstantFeedbackEnabled()),
 				'broken'                     => array('integer', (int)$this->isTestFinalBroken()),
-				'pass_waiting'              => array('text', (string)$this->getPassWaiting())
+				'pass_waiting'              => array('text', (string)$this->getPassWaiting()),
+				'info_screen'              => array(\ilDBConstants::T_INTEGER, (int)$this->isInfoScreenEnabled())
 			));
 				    
 			$this->test_id = $next_id;
@@ -1489,7 +1494,8 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
 						'inst_fb_answer_fixation'    => array('integer', (int)$this->isInstantFeedbackAnswerFixationEnabled()),
 						'force_inst_fb' => array('integer', (int)$this->isForceInstantFeedbackEnabled()),
 						'broken'                     => array('integer', (int)$this->isTestFinalBroken()),
-						'pass_waiting'              => array('text', (string)$this->getPassWaiting())
+						'pass_waiting'              => array('text', (string)$this->getPassWaiting()),
+                        'info_screen'              => array(\ilDBConstants::T_INTEGER, (int)$this->isInfoScreenEnabled())
 					),
 					array(
 						'test_id' => array('integer', (int)$this->getTestId())
@@ -2016,6 +2022,7 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
 			$this->setForceInstantFeedbackEnabled((bool)$data->force_inst_fb);
 			$this->setTestFinalBroken((bool)$data->broken);
 			$this->setPassWaiting($data->pass_waiting);
+			$this->setInfoScreenEnabled((bool)$data->info_screen);
 			$this->loadQuestions();
 		}
 
@@ -3468,6 +3475,24 @@ function getAnswerFeedbackPoints()
 		}
 		return false;
 	}
+
+
+    /**
+     * @return bool
+     */
+    public function isInfoScreenEnabled() : bool
+    {
+        return $this->infoScreenEnabled;
+    }
+
+
+    /**
+     * @param bool $infoScreenEnabled
+     */
+    public function setInfoScreenEnabled(bool $infoScreenEnabled) : void
+    {
+        $this->infoScreenEnabled = $infoScreenEnabled;
+    }
 	
 	/**
 	 * @param int $questionId
@@ -6050,6 +6075,9 @@ function getAnswerFeedbackPoints()
 				case "pass_waiting":
 					$this->setPassWaiting($metadata["entry"]);
 					break;				
+				case "info_screen":
+					$this->setInfoScreenEnabled((bool)$metadata["entry"]);
+					break;
 				case "kiosk":
 					$this->setKiosk($metadata["entry"]);
 					break;
@@ -6512,7 +6540,13 @@ function getAnswerFeedbackPoints()
 		$a_xml_writer->xmlElement("fieldlabel", NULL, "pass_waiting");
 		$a_xml_writer->xmlElement("fieldentry", NULL,  $this->getPassWaiting());
 		$a_xml_writer->xmlEndTag("qtimetadatafield");
-		
+
+		// pass_waiting
+		$a_xml_writer->xmlStartTag("qtimetadatafield");
+		$a_xml_writer->xmlElement("fieldlabel", NULL, "info_screen");
+		$a_xml_writer->xmlElement("fieldentry", NULL,  (int)$this->isInfoScreenEnabled());
+		$a_xml_writer->xmlEndTag("qtimetadatafield");
+
 		// kiosk
 		$a_xml_writer->xmlStartTag("qtimetadatafield");
 		$a_xml_writer->xmlElement("fieldlabel", NULL, "kiosk");
@@ -10276,7 +10310,8 @@ function getAnswerFeedbackPoints()
 			'highscore_top_table'     => $this->getHighscoreTopTable(),
 			'highscore_top_num'       => $this->getHighscoreTopNum(),
 			'use_previous_answers' => (string)$this->getUsePreviousAnswers(),
-			'pass_waiting'          => $this->getPassWaiting()
+			'pass_waiting'          => $this->getPassWaiting(),
+			'info_screen'          => $this->isInfoScreenEnabled()
 		);
 		
 		$next_id = $ilDB->nextId('tst_test_defaults');
@@ -10429,7 +10464,8 @@ function getAnswerFeedbackPoints()
 		$this->setActivationEndingTime($testsettings['activation_end_time']);
 		$this->setActivationVisibility($testsettings['activation_visibility']);
 		$this->setPassWaiting($testsettings['pass_waiting']);
-		
+		$this->setInfoScreenEnabled((bool)$testsettings['info_screen']);
+
 		$this->saveToDb();
 
 		return true;
