@@ -290,6 +290,8 @@ class ilObjTestGUI extends ilObjectGUI
 
             case strtolower(ilTestLaunchGUI::class):
 
+                $this->trackTestObjectReadEvent();
+                
                 $DIC->tabs()->activateTab(ilTestTabsManager::TAB_ID_TEST_LAUNCH);
 
                 $this->prepareOutput();
