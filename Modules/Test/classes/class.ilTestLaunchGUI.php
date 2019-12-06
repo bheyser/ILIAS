@@ -50,6 +50,32 @@ class ilTestLaunchGUI
 
     protected function showLaunchScreenCmd()
     {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
 
+        $html = '';
+
+        if( $this->testOBJ->isIntroductionEnabled() )
+        {
+            $panel = $this->getIntroductionPanel();
+            $html .= $DIC->ui()->renderer()->render($panel);
+        }
+
+        $DIC->ui()->mainTemplate()->setContent($html);
+    }
+
+    protected function getIntroductionPanel()
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        $tpl = new ilTemplate('tpl.intro_panel.html', true, true, 'Modules/Test');
+
+        $tpl->setVariable('INTRODUCTION', $this->testOBJ->getIntroduction());
+
+        $panel = $DIC->ui()->factory()->panel()->standard(
+            $DIC->language()->txt('tst_introduction'),
+            $DIC->ui()->factory()->legacy($tpl->get())
+        );
+
+        return $panel;
     }
 }
