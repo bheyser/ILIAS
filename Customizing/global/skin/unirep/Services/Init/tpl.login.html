@@ -1,0 +1,74 @@
+<div id="main-bg-startup" class="main-bg-startup">
+	<div class="col-sm-12">
+		<!-- BEGIN login_information -->{TXT_LOGIN_INFORMATION}<!-- END login_information -->
+		<!-- BEGIN login_page_editor -->{LPE}<!-- END login_page_editor -->
+	</div>
+<div class="ilStartupSection">
+	<!-- BEGIN shib_login_form -->{SHIB_LOGIN_FORM}<!-- END shib_login_form -->
+	<!-- BEGIN saml_login -->{SAML_LOGIN_FORM}<!-- END saml_login -->
+	<!-- BEGIN cas_login -->{CAS_LOGIN_FORM}<!-- END cas_login_form -->
+	<!-- BEGIN oidc_login -->{OPEN_ID_CONNECT_LOGIN_FORM}<!-- END oidc_login -->
+	<div class="unirepLogin">
+		<div class="col-sm-6 ilStartupSection">
+			<div class="unirepLoginMask">
+				<div class="form-horizontal">
+					<div class="ilFormHeader display">
+						<h3 class="ilHeader">Einwahl mit meiner ZIV-Kennung</h3>
+					</div>
+				</div>	
+				<div class="form-horizontal">
+					<div class="form-group" style="visibility: hidden;">
+					<!-- HIDDEN --><label class="col-sm-3 control-label">
+					<!-- HIDDEN -->Benutzername
+					<!-- HIDDEN --><span class="asterisk">*</span>
+					<!-- HIDDEN --></label>
+					<!-- HIDDEN --><div class="col-sm-9">
+					<!-- HIDDEN --><input class="form-control" type="text">
+					<!-- HIDDEN --></div>
+					</div>
+					<div class="form-group" style="visibility: hidden;">
+					<!-- HIDDEN --><label class="col-sm-3 control-label">
+					<!-- HIDDEN -->Passwort
+					<!-- HIDDEN --><span class="asterisk">*</span>
+					<!-- HIDDEN --></label>
+					<!-- HIDDEN --><div class="col-sm-9">
+					<!-- HIDDEN --><input class="form-control" type="password" size="20">
+					<!-- HIDDEN --><br>
+					<!-- HIDDEN --></div>
+					</div>
+					<div class="ilFormFooter clearfix">
+						<div class="col-sm-6"></div>
+						<div class="col-sm-6 ilFormCmds">
+							<a class="btn btn-default btn-sm" href="https://sso.uni-muenster.de/unirep-online">Anmelden</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="loginForm mobileLoginForm col-sm-6 ilStartupSection">
+			<div class="unirepLoginMask">
+				<div class="form-horizontal">
+					<div class="ilFormHeader display">
+						<h3 class="ilHeader">Einwahl mit meiner Sonder-Kennung</h3>
+					</div>
+				</div>
+				<!-- BEGIN ilias_login -->{LOGIN_FORM}<!-- END ilias_login -->
+			</div>
+		</div>
+	</div>
+	
+	<div class="col-sm-12 ilCenter ilStartupSection">
+		<!-- BEGIN reg_links -->{REG_PWD_CLIENT_LINKS}<!-- END reg_links -->
+		<!-- BEGIN agreement -->{USER_AGREEMENT}<!-- END agreement -->
+	</div>
+</div>
+<script language="JavaScript">
+<!--
+if (document.formlogin.username && document.formlogin.password)
+{
+	if(document.formlogin.username.value!="") document.formlogin.password.focus();
+	else document.formlogin.username.focus();
+}
+//-->
+</script>
+</div>

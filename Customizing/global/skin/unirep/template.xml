@@ -1,0 +1,6 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<template xmlns = "http://www.w3.org" version = "2" name = "ILIAS 5.4.10">
+	<style 	name = "WWU / UNIREP"
+		id = "unirep"
+		image_directory = "images" />
+</template>
