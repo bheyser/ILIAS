@@ -199,6 +199,12 @@ class ilStartUpGUI
         
         $this->getLogger()->debug('Showing login page');
 
+        // begin-patch unirep
+        if (isset($_GET['target'])) {
+            \ilSession::set('unirep_sso_target') = $_GET['target'];
+        }
+        // end-patch unirep
+
         $frontend = new ilAuthFrontendCredentialsApache($this->httpRequest, $this->ctrl);
         $frontend->tryAuthenticationOnLoginPage();
         
