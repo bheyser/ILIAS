@@ -201,7 +201,7 @@ class ilStartUpGUI
 
         // begin-patch unirep
         if (isset($_GET['target'])) {
-            \ilSession::set('unirep_sso_target') = $_GET['target'];
+            \ilSession::set('unirep_sso_target',$_GET['target']);
         }
         // end-patch unirep
 
