@@ -27,6 +27,9 @@ require_once 'Modules/Test/classes/class.ilTestParticipantAccessFilter.php';
  * @ilCtrl_Calls ilObjTestGUI: ilTestEvaluationGUI
  * @ilCtrl_Calls ilObjTestGUI: ilAssGenFeedbackPageGUI, ilAssSpecFeedbackPageGUI
  * @ilCtrl_Calls ilObjTestGUI: ilInfoScreenGUI, ilObjectCopyGUI, ilTestScoringGUI
+ * PATCH BEGIN: manual scoring pilot
+ * @ilCtrl_Calls ilObjTestGUI: ilTestScoringPilotGUI
+ * PATCH END: manual scoring pilot
  * @ilCtrl_Calls ilObjTestGUI: ilRepositorySearchGUI, ilTestExportGUI
  * @ilCtrl_Calls ilObjTestGUI: assMultipleChoiceGUI, assClozeTestGUI, assMatchingQuestionGUI
  * @ilCtrl_Calls ilObjTestGUI: assOrderingQuestionGUI, assImagemapQuestionGUI, assJavaAppletGUI
@@ -371,6 +374,16 @@ class ilObjTestGUI extends ilObjectGUI
                 $output_gui->setTestAccess($this->getTestAccess());
                 $this->ctrl->forwardCommand($output_gui);
                 break;
+
+            // patch begin: manual scoring pilot
+            case strtolower(ilTestScoringPilotGUI::class):
+                $this->prepareOutput();
+                $this->addHeaderAction();
+                $gui = new ilTestScoringPilotGUI($this->object);
+                $gui->setTestAccess($this->getTestAccess());
+                $DIC->ctrl()->forwardCommand($gui);
+                break;
+            // patch end: manual scoring pilot
 
             case 'ilmarkschemagui':
                 if (!$ilAccess->checkAccess('write', '', $this->object->getRefId())) {

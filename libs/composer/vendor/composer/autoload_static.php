@@ -7444,6 +7444,7 @@ class ComposerStaticInit2fffdf922cf8fdbf1f62eec345993c83
         'ilTestScoring' => __DIR__ . '/../..' . '/../../Modules/Test/classes/class.ilTestScoring.php',
         'ilTestScoringByQuestionsGUI' => __DIR__ . '/../..' . '/../../Modules/Test/classes/class.ilTestScoringByQuestionsGUI.php',
         'ilTestScoringGUI' => __DIR__ . '/../..' . '/../../Modules/Test/classes/class.ilTestScoringGUI.php',
+        'ilTestScoringPilotGUI' => __DIR__ . '/../..' . '/../../Modules/Test/classes/class.ilTestScoringPilotGUI.php',
         'ilTestSearch' => __DIR__ . '/../..' . '/../../Services/Search/classes/class.ilTestSearch.php',
         'ilTestSequence' => __DIR__ . '/../..' . '/../../Modules/Test/classes/class.ilTestSequence.php',
         'ilTestSequenceDynamicQuestionSet' => __DIR__ . '/../..' . '/../../Modules/Test/classes/class.ilTestSequenceDynamicQuestionSet.php',

@@ -7078,6 +7078,7 @@ return array(
     'ilTestScoring' => $baseDir . '/../../Modules/Test/classes/class.ilTestScoring.php',
     'ilTestScoringByQuestionsGUI' => $baseDir . '/../../Modules/Test/classes/class.ilTestScoringByQuestionsGUI.php',
     'ilTestScoringGUI' => $baseDir . '/../../Modules/Test/classes/class.ilTestScoringGUI.php',
+    'ilTestScoringPilotGUI' => $baseDir . '/../../Modules/Test/classes/class.ilTestScoringPilotGUI.php',
     'ilTestSearch' => $baseDir . '/../../Services/Search/classes/class.ilTestSearch.php',
     'ilTestSequence' => $baseDir . '/../../Modules/Test/classes/class.ilTestSequence.php',
     'ilTestSequenceDynamicQuestionSet' => $baseDir . '/../../Modules/Test/classes/class.ilTestSequenceDynamicQuestionSet.php',

@@ -70,6 +70,12 @@ class ilTestScoringGUI extends ilTestServiceGUI
 
         $ilTabs->addSubTab('man_scoring_by_qst', $this->lng->txt('tst_man_scoring_by_qst'), $this->ctrl->getLinkTargetByClass('ilTestScoringByQuestionsGUI', 'showManScoringByQuestionParticipantsTable'));
         $ilTabs->addSubTab('man_scoring', $this->lng->txt('tst_man_scoring_by_part'), $this->ctrl->getLinkTargetByClass('ilTestScoringGUI', 'showManScoringParticipantsTable'));
+        // patch begin: manual scoring pilot
+        $DIC->tabs()->addSubTab('man_scoring_pilot',
+            $DIC->language()->txt('man_scoring_pilot'),
+            $DIC->ctrl()->getLinkTargetByClass('ilTestScoringPilotGUI')
+        );
+        // patch end: manual scoring pilot
         $ilTabs->setSubTabActive($active_sub_tab);
     }
     
@@ -484,7 +490,14 @@ class ilTestScoringGUI extends ilTestServiceGUI
     /**
      * @return ilTestManScoringParticipantsTableGUI
      */
-    private function buildManScoringParticipantsTable($withData = false)
+    // patch begin: manual scoring pilot
+    /*
+    // patch end: manual scoring pilot
+    private function ($withData = false)
+    // patch begin: manual scoring pilot
+    */
+    protected function buildManScoringParticipantsTable($withData = false)
+    // patch end: manual scoring pilot
     {
         require_once 'Modules/Test/classes/tables/class.ilTestManScoringParticipantsTableGUI.php';
         $table = new ilTestManScoringParticipantsTableGUI($this);
