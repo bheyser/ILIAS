@@ -339,4 +339,12 @@ class Factory implements \ILIAS\UI\Factory
     {
         return $this->messagebox_factory;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function frameset()
+    {
+        return new \ILIAS\UI\Implementation\Component\Frameset\Factory();
+    }
 }

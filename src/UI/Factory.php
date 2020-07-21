@@ -756,4 +756,9 @@ interface Factory
      * @return  \ILIAS\UI\Component\MessageBox\Factory
      */
     public function messageBox();
+
+    /**
+     * @return  \ILIAS\UI\Component\Frameset\Factory
+     */
+    public function frameset();
 }
