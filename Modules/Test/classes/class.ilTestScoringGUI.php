@@ -78,8 +78,15 @@ class ilTestScoringGUI extends ilTestServiceGUI
         // patch end: manual scoring pilot
         $ilTabs->setSubTabActive($active_sub_tab);
     }
-    
+
+    // PATCH BEGIN: manual scoring pilot
+    /*
+    // PATCH END: manual scoring pilot
     private function fetchActiveIdParameter()
+    // PATCH BEGIN: manual scoring pilot
+    */
+    protected function fetchActiveIdParameter()
+    // PATCH END: manual scoring pilot
     {
         global $DIC;
         $ilCtrl = $DIC['ilCtrl'];

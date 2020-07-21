@@ -56,12 +56,50 @@ class ilTestScoringPilotGUI extends ilTestScoringGUI
         $DIC->ui()->mainTemplate()->setContent($table->getHTML());
     }
 
+    protected function getFirstQuestionId($activeId)
+    {
+        return 4711;
+    }
+
     protected function showManScoringParticipantScreenCmd()
     {
         global $DIC; /* @var \ILIAS\DI\Container $DIC */
 
-        
+        $activeId = $this->fetchActiveIdParameter();
+        $questionId = $this->getFirstQuestionId($activeId);
 
-        $DIC->ui()->mainTemplate()->setContent('<pre>'.print_r($_GET, 1).'</pre>');
+        $question = assQuestionGUI::_getQuestionGUI('', $questionId);
+
+        $DIC->tabs()->clearTargets();
+        $DIC->tabs()->clearSubTabs();
+
+        $DIC->tabs()->setBackTarget(
+            $DIC->language()->txt('back'),
+            $DIC->ctrl()->getLinkTarget($this, 'showParticipants')
+        );
+
+        $r = $DIC->ui()->renderer();
+        $f = $DIC->ui()->factory()->frameset();
+
+
+        $mainFrame = $f->frame($DIC->ui()->factory()->legacy(
+            "MAIN"
+        ));
+
+        $leftFrame = $f->frame($DIC->ui()->factory()->legacy(
+            "LEFT"
+        ));
+
+        $rightFrame = $f->frame($DIC->ui()->factory()->legacy(
+            "RIGHT"
+        ));
+
+        $frameSet = $f->set($questionId, $mainFrame);
+        $frameSet = $frameSet->withLeftFrame($leftFrame);
+        $frameSet = $frameSet->withRightFrame($rightFrame);
+
+        $DIC->ui()->mainTemplate()->setContent(
+            $r->render($frameSet)
+        );
     }
 }
