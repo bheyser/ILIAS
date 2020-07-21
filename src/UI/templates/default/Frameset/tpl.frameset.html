@@ -1,0 +1,87 @@
+<!-- BEGIN frameset -->
+<div id="frameset_{ID}" class="frameset">
+    <!-- BEGIN left_frame -->
+    <aside class="resizable sidebar-left movable-div position-fixed bottom-0 left-0 animated">
+        <div class="leftFrame">{LEFT_FRAME_CONTENT}</div>
+    </aside>
+    <!-- END left_frame -->
+    <!-- BEGIN right_frame -->
+    <aside class="resizable sidebar-right movable-div position-fixed bottom-0 right-0 animated">
+        <div class="rightFrame">{RIGHT_FRAME_CONTENT}</div>
+    </aside>
+    <!-- END right_frame -->
+    <!-- BEGIN main_frame -->
+    <div class="content d-flex h-100 flex-column <!-- BEGIN has_left -->marginLeft<!-- END has_left --> <!-- BEGIN has_right -->marginRight<!-- END has_right -->">
+        <div class="mainFrame">{MAIN_FRAME_CONTENT}</div>
+    </div>
+    <!-- END main_frame -->
+</div>
+<!-- END frameset -->
+<!-- BEGIN javascript -->
+<script type="text/javascript">
+(function($){
+
+  $(document).ready(function() {
+
+    function initResize(e) {
+      currentResizeElement = $(e.target).parent();
+      window.addEventListener('mousemove', performResize, false);
+      window.addEventListener('mouseup', stopResize, false);
+    }
+
+    function stopResize(e) {
+      currentResizeElement = null;
+      window.removeEventListener('mousemove', performResize, false);
+      window.removeEventListener('mouseup', stopResize, false);
+    }
+
+    function performResize(e) {
+      var mainFrameMarginLeft = $(mainContentElement).css('margin-left');
+      var mainFrameMarginRight = $(mainContentElement).css('margin-right');
+
+      //console.log(mainFrameMarginLeft, mainFrameWidth, mainFrameMarginRight);
+
+      if( $(mainContentElement).width() <= 100 )
+      {
+        return;
+      }
+
+      var newSideFrameWidth = null;
+
+      if( $(currentResizeElement).hasClass('sidebar-left') )
+      {
+        newSideFrameWidth = (
+          e.clientX - $(currentResizeElement).offset().left
+        );
+
+        mainContentElement.css('margin-left', newSideFrameWidth + 'px');
+      }
+      else if( $(currentResizeElement).hasClass('sidebar-right') )
+      {
+        newSideFrameWidth = (
+          $(currentResizeElement).offset().left - e.clientX + $(currentResizeElement).width()
+        );
+
+        mainContentElement.css('margin-right', newSideFrameWidth + 'px');
+      }
+
+      $(currentResizeElement).css('width', newSideFrameWidth + 'px');
+    }
+
+    var mainContentElement = $('#frameset_{ID} .content');
+    var currentResizeElement = null;
+
+    $('#frameset_{ID} aside.resizable').each(function(pos, elem) {
+      var resizer = document.createElement('div');
+      resizer.className = 'draghandle';
+      resizer.style.width = '5px';
+      resizer.style.height = '100vh';
+      elem.appendChild(resizer);
+      resizer.addEventListener('mousedown', initResize, false);
+    });
+
+  });
+
+})(jQuery);
+</script>
+<!-- END javascript -->
