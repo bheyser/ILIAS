@@ -84,15 +84,15 @@ class ilTestScoringPilotGUI extends ilTestScoringGUI
 
         $mainFrame = $f->frame($DIC->ui()->factory()->legacy(
             "MAIN"
-        ));
+        ))->withMinimalWidth('200px');
 
         $leftFrame = $f->frame($DIC->ui()->factory()->legacy(
             "LEFT"
-        ));
+        ))->withMinimalWidth('100px')->withInitialWidth('33%');
 
         $rightFrame = $f->frame($DIC->ui()->factory()->legacy(
             "RIGHT"
-        ));
+        ))->withMinimalWidth('100px')->withInitialWidth('33%');
 
         $frameSet = $f->set($questionId, $mainFrame);
         $frameSet = $frameSet->withLeftFrame($leftFrame);
