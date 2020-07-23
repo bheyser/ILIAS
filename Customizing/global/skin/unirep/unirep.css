@@ -18240,16 +18240,21 @@ div#bot_center_area {
 /* patch begin: manual scoring pilot */
 .frameset {
   clear: both;
-  min-height: 100vh;
+  min-height: 60vh;
   width: 100%;
-  height: 100%;
+  /*height: 100%;*/
   table-layout: fixed;
   overflow: hidden;
   padding-top: 0;
+  border: solid #009dd1 1px;
 }
 
 .frameset aside.resizable {
-  height: 100vh;
+  height: 60vh;
+}
+
+.frameset .content {
+  margin: 15px;
 }
 
 .frameset aside.resizable {
@@ -18280,6 +18285,8 @@ div#bot_center_area {
   top: 0;
   bottom: 0;
   cursor: col-resize;
+  border-left: solid #009dd1 1px;
+  border-right: solid #009dd1 1px;
 }
 .frameset aside.leftFrame .draghandle {
   right: 0;

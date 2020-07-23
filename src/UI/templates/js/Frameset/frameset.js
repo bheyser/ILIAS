@@ -30,7 +30,10 @@
 
         console.log(config);
 
-        mainFrameElement = $(this).find('.content');
+        mainFrameElement = $(that).find('.mainFrame');
+
+        $(mainFrameElement).css('margin-left', config.leftFrame.initWidth);
+        $(mainFrameElement).css('margin-right', config.rightFrame.initWidth);
 
         $(that).find('aside.leftFrame').each(function(pos, elem) {
           var resizer = buildResizerElement();

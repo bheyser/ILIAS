@@ -55,20 +55,12 @@ class Renderer extends AbstractComponentRenderer
         $tpl->setCurrentBlock('left_frame');
         $tpl->setVariable('LEFT_FRAME_CONTENT', $renderer->render($frame->getContent()));
         $tpl->parseCurrentBlock();
-
-        $tpl->setCurrentBlock('has_left');
-        $tpl->touchBlock('has_left');
-        $tpl->parseCurrentBlock();
     }
 
     protected function renderRightFrame(RendererInterface $renderer, Template $tpl, Frame $frame)
     {
         $tpl->setCurrentBlock('right_frame');
         $tpl->setVariable('RIGHT_FRAME_CONTENT', $renderer->render($frame->getContent()));
-        $tpl->parseCurrentBlock();
-
-        $tpl->setCurrentBlock('has_right');
-        $tpl->touchBlock('has_right');
         $tpl->parseCurrentBlock();
     }
 
