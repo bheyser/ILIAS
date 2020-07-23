@@ -5,5 +5,15 @@ namespace ILIAS\UI\Component\Frameset;
 
 interface Frame
 {
+    /**
+     * @param integer $minimalWidth
+     * @return Frame
+     */
+    public function withMinimalWidth($minimalWidth);
 
+    /**
+     * @param integer $initialWidth
+     * @return Frame
+     */
+    public function withInitialWidth($initialWidth);
 }

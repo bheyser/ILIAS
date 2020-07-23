@@ -14,12 +14,46 @@ class Frame implements \ILIAS\UI\Component\Frameset\Frame
     protected $content;
 
     /**
+     * @var integer
+     */
+    protected $minimalWidth;
+
+    /**
+     * @var integer
+     */
+    protected $initialWidth;
+
+    /**
      * Frame constructor.
      * @param Component $content
      */
     public function __construct(Component $content)
     {
         $this->content = $content;
+        $this->minimalWidth = null;
+        $this->initialWidth = null;
+    }
+
+    /**
+     * @param $minimalWidth
+     * @return Frame
+     */
+    public function withMinimalWidth($minimalWidth)
+    {
+        $that = clone $this;
+        $that->minimalWidth = $minimalWidth;
+        return $that;
+    }
+
+     /**
+     * @param $initialWidth
+     * @return Frame
+     */
+    public function withInitialWidth($initialWidth)
+    {
+        $that = clone $this;
+        $that->initialWidth = $initialWidth;
+        return $that;
     }
 
     /**
@@ -28,5 +62,37 @@ class Frame implements \ILIAS\UI\Component\Frameset\Frame
     public function getContent()
     {
         return $this->content;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasMinimalWidth()
+    {
+        return $this->minimalWidth !== null;
+    }
+
+    /**
+     * @return int
+     */
+    public function getMinimalWidth()
+    {
+        return $this->minimalWidth;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasInitialWidth()
+    {
+        return $this->initialWidth !== null;
+    }
+
+    /**
+     * @return int
+     */
+    public function getInitialWidth()
+    {
+        return $this->initialWidth;
     }
 }

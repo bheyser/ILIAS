@@ -18247,57 +18247,45 @@ div#bot_center_area {
   overflow: hidden;
   padding-top: 0;
 }
-.frameset .content {
-  min-width: 200px;
-}
-.frameset .content.marginLeft {
-  margin-left: 200px;
-}
-.frameset .content.marginRight {
-  margin-right: 200px;
-}
+
 .frameset aside.resizable {
   height: 100vh;
 }
-.frameset aside.resizable.sidebar-left {
-  min-width: 200px;
-}
-.frameset aside.resizable.sidebar-right {
-  min-width: 200px;
-}
+
 .frameset aside.resizable {
   position: relative;
-  width: 175px;
   top: 0;
   z-index: 1000;
 }
-.frameset aside.resizable.sidebar-left {
+.frameset aside.leftFrame {
   box-shadow: -5px 0 0 #f7f7f7 inset;
   float: left;
 }
-.frameset aside.resizable.sidebar-right {
+.frameset aside.rightFrame {
   box-shadow: 5px 0 0 #f7f7f7 inset;
   float: right;
 }
-.frameset aside.resizable .leftFrame {
+
+.frameset aside.leftFrame .content {
   padding-right: 5px;
 }
-.frameset aside.resizable .rightFrame {
+.frameset aside.rightFrame .content {
   padding-left: 5px;
 }
+
 .frameset aside.resizable .draghandle {
   position: absolute;
   z-index: 100;
-  width: 6px;
+  width: 5px;
   top: 0;
   bottom: 0;
   cursor: col-resize;
 }
-.frameset aside.resizable.sidebar-left .draghandle {
+.frameset aside.leftFrame .draghandle {
   right: 0;
   float: right;
 }
-.frameset aside.resizable.sidebar-right .draghandle {
+.frameset aside.rightFrame .draghandle {
   left: 0;
   float: left;
 }

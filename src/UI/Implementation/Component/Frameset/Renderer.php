@@ -11,6 +11,9 @@ use ILIAS\UI\Implementation\Render\Template;
 
 class Renderer extends AbstractComponentRenderer
 {
+    const TEMPLATE = 'tpl.frameset.html';
+    const JS_PLUGIN = 'src/UI/templates/js/Frameset/frameset.js';
+
     protected function getComponentInterfaceName()
     {
         return array(
@@ -23,7 +26,7 @@ class Renderer extends AbstractComponentRenderer
     {
         /* @var \ILIAS\UI\Implementation\Component\Frameset\Set $component */
 
-        $tpl = $this->getTemplate('tpl.frameset.html', true, true);
+        $tpl = $this->getTemplate(self::TEMPLATE, true, true);
 
         if( $component->hasLeftFrame() || $component->hasRightFrame() )
         {
@@ -85,6 +88,57 @@ class Renderer extends AbstractComponentRenderer
 
     protected function renderJavascript(RendererInterface $renderer, Template $tpl, Set $set)
     {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        $DIC->ui()->mainTemplate()->addJavaScript(self::JS_PLUGIN);
+
+        if( $set->hasLeftFrame() )
+        {
+            if( $set->getLeftFrame()->hasMinimalWidth() )
+            {
+                $tpl->setCurrentBlock('js_lf_min_width');
+                $tpl->setVariable('LEFT_FRAME_MIN_WIDTH', $set->getLeftFrame()->getMinimalWidth());
+                $tpl->parseCurrentBlock();
+            }
+
+            if( $set->getLeftFrame()->hasInitialWidth() )
+            {
+                $tpl->setCurrentBlock('js_lf_init_width');
+                $tpl->setVariable('LEFT_FRAME_INIT_WIDTH', $set->getLeftFrame()->getInitialWidth());
+                $tpl->parseCurrentBlock();
+            }
+
+            $tpl->setCurrentBlock('js_left_frame');
+            $tpl->parseCurrentBlock();
+        }
+
+        if( $set->hasRightFrame() )
+        {
+            if( $set->getRightFrame()->hasMinimalWidth() )
+            {
+                $tpl->setCurrentBlock('js_rf_min_width');
+                $tpl->setVariable('RIGHT_FRAME_MIN_WIDTH', $set->getRightFrame()->getMinimalWidth());
+                $tpl->parseCurrentBlock();
+            }
+
+            if( $set->getRightFrame()->hasInitialWidth() )
+            {
+                $tpl->setCurrentBlock('js_rf_init_width');
+                $tpl->setVariable('RIGHT_FRAME_INIT_WIDTH', $set->getRightFrame()->getInitialWidth());
+                $tpl->parseCurrentBlock();
+            }
+
+            $tpl->setCurrentBlock('js_right_frame');
+            $tpl->parseCurrentBlock();
+        }
+
+        if( $set->getMainFrame()->hasMinimalWidth() )
+        {
+            $tpl->setCurrentBlock('js_mf_min_width');
+            $tpl->setVariable('MAIN_FRAME_MIN_WIDTH', $set->getMainFrame()->getMinimalWidth());
+            $tpl->parseCurrentBlock();
+        }
+
         $tpl->setCurrentBlock('javascript');
         $tpl->setVariable('ID', $set->getId());
         $tpl->parseCurrentBlock();
