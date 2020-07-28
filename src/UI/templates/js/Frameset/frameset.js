@@ -28,12 +28,10 @@
 
       function initFrameset() {
 
-        console.log(config);
-
         mainFrameElement = $(that).find('.mainFrame');
 
-        $(mainFrameElement).css('margin-left', config.leftFrame.initWidth);
-        $(mainFrameElement).css('margin-right', config.rightFrame.initWidth);
+        //$(mainFrameElement).css('margin-left', config.leftFrame.initWidth);
+        //$(mainFrameElement).css('margin-right', config.rightFrame.initWidth);
 
         $(that).find('aside.leftFrame').each(function(pos, elem) {
           var resizer = buildResizerElement();
@@ -53,7 +51,49 @@
           rightFrameElement = elem;
         });
 
+        $(that).find('.toggle').each(function(pos, elem) {
+          $(elem).click(toggleSideFrame);
+        });
+
         $(that).css('visibility', 'visible');
+      }
+
+      function toggleSideFrame(e) {
+
+        var toggle = e.target;
+
+        toggleToggleGlyph(toggle);
+
+        if( $(toggle).hasClass('toggle-left') && $(toggle).hasClass('toggle-open') )
+        {
+          $(leftFrameElement).show();
+        }
+        else if( $(toggle).hasClass('toggle-left') && $(toggle).hasClass('toggle-closed') )
+        {
+          $(leftFrameElement).hide();
+        }
+        else if( $(toggle).hasClass('toggle-right') && $(toggle).hasClass('toggle-open') )
+        {
+          $(rightFrameElement).show();
+        }
+        else if( $(toggle).hasClass('toggle-right') && $(toggle).hasClass('toggle-closed') )
+        {
+          $(rightFrameElement).hide();
+        }
+      }
+
+      function toggleToggleGlyph(toggle)
+      {
+        if( $(toggle).hasClass('toggle-open') )
+        {
+          $(toggle).removeClass('toggle-open');
+          $(toggle).addClass('toggle-closed');
+        }
+        else
+        {
+          $(toggle).removeClass('toggle-closed');
+          $(toggle).addClass('toggle-open');
+        }
       }
 
       function buildResizerElement() {
@@ -98,7 +138,7 @@
             return false;
           }
 
-          mainFrameElement.css('margin-left', newFrameResizeWidth + 'px');
+          //mainFrameElement.css('margin-left', newFrameResizeWidth + 'px');
         }
         else if( $(curResizeFrameElement).hasClass('rightFrame') )
         {
@@ -113,7 +153,7 @@
             return false;
           }
 
-          mainFrameElement.css('margin-right', newFrameResizeWidth + 'px');
+          //mainFrameElement.css('margin-right', newFrameResizeWidth + 'px');
         }
 
         $(curResizeFrameElement).css('width', newFrameResizeWidth + 'px');

@@ -18240,8 +18240,8 @@ div#bot_center_area {
 /* patch begin: manual scoring pilot */
 .frameset {
   clear: both;
-  min-height: 75vh;
-  max-height: 75vh;
+  min-height: 70vh;
+  max-height: 70vh;
   width: 100%;
   /*height: 100%;*/
   table-layout: fixed;
@@ -18251,11 +18251,11 @@ div#bot_center_area {
 }
 
 .frameset aside.resizable {
-  height: 70vh;
+  height: 65vh;
 }
 
 .frameset .content {
-  height: 70vh;
+  height: 65vh;
   overflow: auto;
   margin: 15px;
 }
@@ -18266,11 +18266,11 @@ div#bot_center_area {
   z-index: 1000;
 }
 .frameset aside.leftFrame {
-  box-shadow: -5px 0 0 #f7f7f7 inset;
+  box-shadow: -5px 0 0 #d6e6ea inset;
   float: left;
 }
 .frameset aside.rightFrame {
-  box-shadow: 5px 0 0 #f7f7f7 inset;
+  box-shadow: 5px 0 0 #d6e6ea inset;
   float: right;
 }
 
@@ -18280,6 +18280,10 @@ div#bot_center_area {
 .frameset aside.rightFrame .content {
   padding-left: 5px;
 }
+.frameset .mainFrame .content {
+  padding-left: 15px;
+  padding-right: 15px;
+}
 
 .frameset aside.resizable .draghandle {
   position: absolute;
@@ -18288,8 +18292,8 @@ div#bot_center_area {
   top: 0;
   bottom: 0;
   cursor: col-resize;
-  border-left: solid #009dd1 1px;
-  border-right: solid #009dd1 1px;
+  border-left: solid #84c5d9 1px;
+  border-right: solid #84c5d9 1px;
 }
 .frameset aside.leftFrame .draghandle {
   right: 0;
@@ -18298,4 +18302,39 @@ div#bot_center_area {
 .frameset aside.rightFrame .draghandle {
   left: 0;
   float: left;
-}/* patch end: manual scoring pilot */
+}
+
+.frameset .toggle-container {
+  width: 100%;
+}
+.frameset .toggle {
+  position: absolute;
+  min-width: 15px;
+  min-height: 15px;
+  width: 15px;
+  height: 15px;
+  border-bottom: solid #009dd1 1px;
+  border-top: solid #009dd1 1px;
+  background-position: center;
+  z-index: 1001;
+}
+.frameset .toggle-left {
+  left: 0;
+  float: left;
+  border-left: solid #009dd1 1px;
+}
+.frameset .toggle-right {
+  right: 0;
+  float: right;
+  border-right: solid #009dd1 1px;
+}
+.frameset .toggle-open {
+  background-image: url("../../../../templates/default/images/arrow_down.svg");
+}
+.frameset .toggle-left.toggle-closed {
+  background-image: url('../../../../templates/default/images/arrow_right.svg');
+}
+.frameset .toggle-right.toggle-closed {
+  background-image: url('../../../../templates/default/images/arrow_left.svg');
+}
+/* patch end: manual scoring pilot */

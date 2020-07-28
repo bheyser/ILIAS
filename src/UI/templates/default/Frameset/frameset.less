@@ -7,7 +7,7 @@
   table-layout: fixed;
   overflow: hidden;
   padding-top: 0;
-  border: solid #009dd1 1px;
+  border: solid #7c7c7c 1px;
 }
 
 .frameset aside.resizable {
@@ -26,11 +26,11 @@
   z-index: 1000;
 }
 .frameset aside.leftFrame {
-  box-shadow: -5px 0 0 #f7f7f7 inset;
+  box-shadow: -5px 0 0 #e8e8e8 inset;
   float: left;
 }
 .frameset aside.rightFrame {
-  box-shadow: 5px 0 0 #f7f7f7 inset;
+  box-shadow: 5px 0 0 #e8e8e8 inset;
   float: right;
 }
 
@@ -40,6 +40,10 @@
 .frameset aside.rightFrame .content {
   padding-left: 5px;
 }
+.frameset .mainFrame .content {
+  padding-left: 15px;
+  padding-right: 15px;
+}
 
 .frameset aside.resizable .draghandle {
   position: absolute;
@@ -48,8 +52,8 @@
   top: 0;
   bottom: 0;
   cursor: col-resize;
-  border-left: solid #009dd1 1px;
-  border-right: solid #009dd1 1px;
+  border-left: solid #bbbbbb 1px;
+  border-right: solid #bbbbbb 1px;
 }
 .frameset aside.leftFrame .draghandle {
   right: 0;
@@ -58,4 +62,38 @@
 .frameset aside.rightFrame .draghandle {
   left: 0;
   float: left;
+}
+
+.frameset .toggle-container {
+  width: 100%;
+}
+.frameset .toggle {
+  position: absolute;
+  min-width: 15px;
+  min-height: 15px;
+  width: 15px;
+  height: 15px;
+  border-bottom: solid #7c7c7c 1px;
+  border-top: solid #7c7c7c 1px;
+  background-position: center;
+  z-index: 1001;
+}
+.frameset .toggle-left {
+  left: 0;
+  float: left;
+  border-left: solid #7c7c7c 1px;
+}
+.frameset .toggle-right {
+  right: 0;
+  float: right;
+  border-right: solid #7c7c7c 1px;
+}
+.frameset .toggle-open {
+  background-image: url("images/arrow_down.svg");
+}
+.frameset .toggle-left.toggle-closed {
+  background-image: url('images/arrow_right.svg');
+}
+.frameset .toggle-right.toggle-closed {
+  background-image: url('images/arrow_left.svg');
 }

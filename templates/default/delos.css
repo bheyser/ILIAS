@@ -9019,7 +9019,7 @@ div.alert ul > li:before {
   table-layout: fixed;
   overflow: hidden;
   padding-top: 0;
-  border: solid #009dd1 1px;
+  border: solid #7c7c7c 1px;
 }
 .frameset aside.resizable {
   height: 70vh;
@@ -9035,11 +9035,11 @@ div.alert ul > li:before {
   z-index: 1000;
 }
 .frameset aside.leftFrame {
-  box-shadow: -5px 0 0 #f7f7f7 inset;
+  box-shadow: -5px 0 0 #e8e8e8 inset;
   float: left;
 }
 .frameset aside.rightFrame {
-  box-shadow: 5px 0 0 #f7f7f7 inset;
+  box-shadow: 5px 0 0 #e8e8e8 inset;
   float: right;
 }
 .frameset aside.leftFrame .content {
@@ -9048,6 +9048,10 @@ div.alert ul > li:before {
 .frameset aside.rightFrame .content {
   padding-left: 5px;
 }
+.frameset .mainFrame .content {
+  padding-left: 15px;
+  padding-right: 15px;
+}
 .frameset aside.resizable .draghandle {
   position: absolute;
   z-index: 100;
@@ -9055,8 +9059,8 @@ div.alert ul > li:before {
   top: 0;
   bottom: 0;
   cursor: col-resize;
-  border-left: solid #009dd1 1px;
-  border-right: solid #009dd1 1px;
+  border-left: solid #bbbbbb 1px;
+  border-right: solid #bbbbbb 1px;
 }
 .frameset aside.leftFrame .draghandle {
   right: 0;
@@ -9066,33 +9070,38 @@ div.alert ul > li:before {
   left: 0;
   float: left;
 }
-/*Container, container body, iframe*/
-.mce-tinymce,
-.mce-container-body,
-#code_ifr {
-  min-height: 100% !important;
+.frameset .toggle-container {
+  width: 100%;
 }
-/*Container body*/
-.mce-container-body {
+.frameset .toggle {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  min-width: 15px;
+  min-height: 15px;
+  width: 15px;
+  height: 15px;
+  border-bottom: solid #7c7c7c 1px;
+  border-top: solid #7c7c7c 1px;
+  background-position: center;
+  z-index: 1001;
 }
-/*Editing area*/
-.mce-container-body .mce-edit-area {
-  position: absolute;
-  top: 69px;
-  bottom: 37px;
+.frameset .toggle-left {
   left: 0;
-  right: 0;
+  float: left;
+  border-left: solid #7c7c7c 1px;
 }
-/*Footer*/
-.mce-tinymce .mce-statusbar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
+.frameset .toggle-right {
   right: 0;
+  float: right;
+  border-right: solid #7c7c7c 1px;
+}
+.frameset .toggle-open {
+  background-image: url("images/arrow_down.svg");
+}
+.frameset .toggle-left.toggle-closed {
+  background-image: url('images/arrow_right.svg');
+}
+.frameset .toggle-right.toggle-closed {
+  background-image: url('images/arrow_left.svg');
 }
 /* patch end: manual scoring pilot */
 /*		Color scheme
