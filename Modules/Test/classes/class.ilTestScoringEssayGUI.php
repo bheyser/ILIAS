@@ -35,6 +35,11 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
     public function __construct(ilObjTest $a_object)
     {
         parent::__construct($a_object);
+
+        if( isset($_POST['pass']) )
+        {
+            $_GET['pass'] = $_POST['pass'];
+        }
     }
 
     /**
@@ -56,10 +61,10 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
 
     protected function fetchQuestionIdParameter($activeId, $passIndex)
     {
-        if( isset($_GET['questionId']) && 0 < (int)$_GET['questionId'] ) {
-            $questionId = (int)$_GET['questionId'];
-        } elseif( isset($_POST['questionId']) && 0 < (int)$_POST['questionId'] ) {
-            $questionId = (int)$_POST['questionId'];
+        if( isset($_POST['question_id']) && 0 < (int)$_POST['question_id'] ) {
+            $questionId = (int)$_POST['question_id'];
+        } elseif( isset($_GET['question_id']) && 0 < (int)$_GET['question_id'] ) {
+            $questionId = (int)$_GET['question_id'];
         } else {
             $questionGui = current($this->questionGuiList);
             $questionId = $questionGui->object->getId();
