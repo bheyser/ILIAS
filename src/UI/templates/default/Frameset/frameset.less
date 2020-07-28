@@ -1,19 +1,22 @@
 .frameset {
   clear: both;
-  min-height: 60vh;
+  min-height: 75vh;
+  max-height: 75vh;
   width: 100%;
   /*height: 100%;*/
   table-layout: fixed;
   overflow: hidden;
   padding-top: 0;
-  border: solid #7c7c7c 2px;
+  border: solid #009dd1 1px;
 }
 
 .frameset aside.resizable {
-  height: 60vh;
+  height: 70vh;
 }
 
 .frameset .content {
+  height: 70vh;
+  overflow: auto;
   margin: 15px;
 }
 
@@ -45,6 +48,8 @@
   top: 0;
   bottom: 0;
   cursor: col-resize;
+  border-left: solid #009dd1 1px;
+  border-right: solid #009dd1 1px;
 }
 .frameset aside.leftFrame .draghandle {
   right: 0;

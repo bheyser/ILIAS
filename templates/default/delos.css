@@ -9012,18 +9012,21 @@ div.alert ul > li:before {
 /* patch begin: manual scoring pilot */
 .frameset {
   clear: both;
-  min-height: 60vh;
+  min-height: 75vh;
+  max-height: 75vh;
   width: 100%;
   /*height: 100%;*/
   table-layout: fixed;
   overflow: hidden;
   padding-top: 0;
-  border: solid #7c7c7c 2px;
+  border: solid #009dd1 1px;
 }
 .frameset aside.resizable {
-  height: 60vh;
+  height: 70vh;
 }
 .frameset .content {
+  height: 70vh;
+  overflow: auto;
   margin: 15px;
 }
 .frameset aside.resizable {
@@ -9052,6 +9055,8 @@ div.alert ul > li:before {
   top: 0;
   bottom: 0;
   cursor: col-resize;
+  border-left: solid #009dd1 1px;
+  border-right: solid #009dd1 1px;
 }
 .frameset aside.leftFrame .draghandle {
   right: 0;
@@ -9060,6 +9065,34 @@ div.alert ul > li:before {
 .frameset aside.rightFrame .draghandle {
   left: 0;
   float: left;
+}
+/*Container, container body, iframe*/
+.mce-tinymce,
+.mce-container-body,
+#code_ifr {
+  min-height: 100% !important;
+}
+/*Container body*/
+.mce-container-body {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+/*Editing area*/
+.mce-container-body .mce-edit-area {
+  position: absolute;
+  top: 69px;
+  bottom: 37px;
+  left: 0;
+  right: 0;
+}
+/*Footer*/
+.mce-tinymce .mce-statusbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
 }
 /* patch end: manual scoring pilot */
 /*		Color scheme

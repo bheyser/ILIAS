@@ -19,6 +19,30 @@ class ilTestManScoringParticipantsTableGUI extends ilTable2GUI
     const PARENT_RESET_FILTER_CMD = 'resetManScoringParticipantsFilter';
     
     const PARENT_EDIT_SCORING_CMD = 'showManScoringParticipantScreen';
+
+    // patch begin: manual scoring pilot
+    /**
+     * @var bool
+     */
+    protected $editScoringPilot = false;
+
+    /**
+     * @return null
+     */
+    public function isEditScoringPilot()
+    {
+        return $this->editScoringPilot;
+    }
+
+    /**
+     * @param bool $editScoringPilot
+     */
+    public function setEditScoringPilot($editScoringPilot)
+    {
+        $this->editScoringPilot = $editScoringPilot;
+    }
+    // patch end: manual scoring pilot
+
     
     /**
      * @global	ilCtrl		$ilCtrl
@@ -131,6 +155,18 @@ class ilTestManScoringParticipantsTableGUI extends ilTable2GUI
         $this->tpl->setVariable("PARTICIPANT_LASTNAME", $row['lastname']);
 
         $this->tpl->setVariable("HREF_SCORE_PARTICIPANT", $ilCtrl->getLinkTarget($this->parent_obj, self::PARENT_EDIT_SCORING_CMD));
+        // patch begin: manual scoring pilot
+        if( $this->isEditScoringPilot() )
+        {
+            $DIC->ctrl()->setParameterByClass(
+                ilTestScoringEssayGUI::class, 'active_id', $row['active_id']
+            );
+
+            $this->tpl->setVariable("HREF_SCORE_PARTICIPANT", $DIC->ctrl()->getLinkTargetByClass(
+                ilTestScoringEssayGUI::class, 'showManualScoring'
+            ));
+        }
+        // patch end: manual scoring pilot
         $this->tpl->setVariable("TXT_SCORE_PARTICIPANT", $lng->txt('tst_edit_scoring'));
     }
     

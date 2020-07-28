@@ -40,7 +40,7 @@ class Set implements \ILIAS\UI\Component\Frameset\Set
     {
         if( !strlen($id) )
         {
-            throw new InvalidArgumentException('missing id for ui-frameset');
+            throw new \ilException('missing id for ui-frameset');
         }
 
         $this->id = $id;

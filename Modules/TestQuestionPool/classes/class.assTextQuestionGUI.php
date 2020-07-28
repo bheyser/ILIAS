@@ -134,6 +134,21 @@ class assTextQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringA
         // TODO - END: what exactly is done here? cant we use the parent method?
     }
 
+    // patch begin: maual scoring pilot
+    public function getUserSolutionSnippet($activeId, $pass)
+    {
+        $user_solution = $this->getUserAnswer($activeId, $pass);
+        $user_solution = $this->object->getHtmlUserSolutionPurifier()->purify($user_solution);
+        return $user_solution;
+    }
+    public function getQuestionTextSnippet()
+    {
+        $questiontext = $this->object->getQuestion();
+        $questiontext = $this->object->prepareTextareaOutput($questiontext, true);
+        return $questiontext;
+    }
+    // patch end: maual scoring pilot
+
     /**
     * Get the question solution output
     *

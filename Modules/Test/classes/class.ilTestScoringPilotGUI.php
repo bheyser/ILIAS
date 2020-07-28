@@ -5,6 +5,7 @@
 /**
  * ilTestScoringByQuestionsGUI
  * @author     Björn Heyser <info@bjoernheyser.de>
+ * @ilCtrl_Calls ilTestScoringPilotGUI: ilTestScoringEssayGUI
  */
 class ilTestScoringPilotGUI extends ilTestScoringGUI
 {
@@ -36,11 +37,27 @@ class ilTestScoringPilotGUI extends ilTestScoringGUI
     {
         global $DIC; /* @var \ILIAS\DI\Container $DIC */
 
+        if (!$this->getTestAccess()->checkScoreParticipantsAccess()) {
+            ilObjTestGUI::accessViolationRedirect();
+        }
+
+        require_once 'Modules/Test/classes/class.ilObjAssessmentFolder.php';
+        if (!ilObjAssessmentFolder::_mananuallyScoreableQuestionTypesExists()) {
+            // allow only if at least one question type is marked for manual scoring
+            ilUtil::sendFailure($this->lng->txt("manscoring_not_allowed"), true);
+            $this->ctrl->redirectByClass("ilobjtestgui", "infoScreen");
+        }
+
         $DIC->tabs()->activateTab(ilTestTabsManager::TAB_ID_MANUAL_SCORING);
         $this->buildSubTabs($this->getActiveSubTabId());
 
         switch( $DIC->ctrl()->getNextClass($this) )
         {
+            case strtolower(ilTestScoringEssayGUI::class):
+                $gui = new ilTestScoringEssayGUI($this->object);
+                $DIC->ctrl()->forwardCommand($gui);
+                break;
+
             default:
                 $command = $DIC->ctrl()->getCmd($this->getDefaultCommand()).'Cmd';
                 $this->{$command}();
@@ -52,54 +69,8 @@ class ilTestScoringPilotGUI extends ilTestScoringGUI
         global $DIC; /* @var \ILIAS\DI\Container $DIC */
 
         $table = $this->buildManScoringParticipantsTable(true);
+        $table->setEditScoringPilot(true);
 
         $DIC->ui()->mainTemplate()->setContent($table->getHTML());
-    }
-
-    protected function getFirstQuestionId($activeId)
-    {
-        return 4711;
-    }
-
-    protected function showManScoringParticipantScreenCmd()
-    {
-        global $DIC; /* @var \ILIAS\DI\Container $DIC */
-
-        $activeId = $this->fetchActiveIdParameter();
-        $questionId = $this->getFirstQuestionId($activeId);
-
-        $question = assQuestionGUI::_getQuestionGUI('', $questionId);
-
-        $DIC->tabs()->clearTargets();
-        $DIC->tabs()->clearSubTabs();
-
-        $DIC->tabs()->setBackTarget(
-            $DIC->language()->txt('back'),
-            $DIC->ctrl()->getLinkTarget($this, 'showParticipants')
-        );
-
-        $r = $DIC->ui()->renderer();
-        $f = $DIC->ui()->factory()->frameset();
-
-
-        $mainFrame = $f->frame($DIC->ui()->factory()->legacy(
-            "MAIN"
-        ))->withMinimalWidth('200px');
-
-        $leftFrame = $f->frame($DIC->ui()->factory()->legacy(
-            "LEFT"
-        ))->withMinimalWidth('100px')->withInitialWidth('33%');
-
-        $rightFrame = $f->frame($DIC->ui()->factory()->legacy(
-            "RIGHT"
-        ))->withMinimalWidth('100px')->withInitialWidth('33%');
-
-        $frameSet = $f->set($questionId, $mainFrame);
-        $frameSet = $frameSet->withLeftFrame($leftFrame);
-        $frameSet = $frameSet->withRightFrame($rightFrame);
-
-        $DIC->ui()->mainTemplate()->setContent(
-            $r->render($frameSet)
-        );
     }
 }

@@ -103,8 +103,15 @@ class ilTestScoringGUI extends ilTestServiceGUI
         
         return $activeId;
     }
-    
+
+    // PATCH BEGIN: manual scoring pilot
+    /*
+    // PATCH END: manual scoring pilot
     private function fetchPassParameter($activeId)
+    // PATCH BEGIN: manual scoring pilot
+    */
+    protected function fetchPassParameter($activeId)
+    // PATCH END: manual scoring pilot
     {
         // fetch pass nr
         
