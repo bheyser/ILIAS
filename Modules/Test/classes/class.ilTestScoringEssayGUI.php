@@ -250,8 +250,39 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         );
 
         $DIC->ui()->mainTemplate()->setContent(
-            $DIC->ui()->renderer()->render($frameSet)
+            $DIC->ui()->renderer()->render($frameSet) . $this->getJavacript()
         );
+    }
+
+    /**
+     * @return string
+     */
+    protected function getJavacript()
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        $tpl = new ilTemplate('tpl.manual_scoring_essay.html', true, true, 'Modules/Test');
+
+        $tpl->setVariable('FEEDBACK_SAVE_URL', $DIC->ctrl()->getLinkTarget(
+            $this, 'saveManualFeedback', '', true
+        ));
+
+        $tpl->setVariable('ID', $this->curQuestionId);
+
+        return $tpl->get();
+    }
+
+    protected function saveManualFeedbackCmd()
+    {
+        /* assTextQuestionGUI $questionGui */
+        $questionGui = $this->getCurrentQuestionGUI();
+
+        $this->object->saveManualFeedback(
+            $this->curActiveId, $this->curQuestionId, $this->curPassIndex,
+            $questionGui->object->getHtmlQuestionContentPurifier()->purify($_POST['manual_feedback'])
+        );
+
+        exit;
     }
 
     /**

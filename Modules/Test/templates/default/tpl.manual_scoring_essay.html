@@ -1,0 +1,16 @@
+<script type="text/javascript">
+    function saveTextarea()
+    {
+      tinyMCE.triggerSave();
+
+      $.post(
+        '{FEEDBACK_SAVE_URL}',
+        {
+          manual_feedback: $('#frameset_{ID} textarea').val()
+        },
+        function() {
+          
+        }
+      )
+    }
+</script>
