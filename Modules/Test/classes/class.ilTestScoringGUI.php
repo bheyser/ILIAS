@@ -71,8 +71,8 @@ class ilTestScoringGUI extends ilTestServiceGUI
         $ilTabs->addSubTab('man_scoring_by_qst', $this->lng->txt('tst_man_scoring_by_qst'), $this->ctrl->getLinkTargetByClass('ilTestScoringByQuestionsGUI', 'showManScoringByQuestionParticipantsTable'));
         $ilTabs->addSubTab('man_scoring', $this->lng->txt('tst_man_scoring_by_part'), $this->ctrl->getLinkTargetByClass('ilTestScoringGUI', 'showManScoringParticipantsTable'));
         // patch begin: manual scoring pilot
-        $DIC->tabs()->addSubTab('man_scoring_pilot',
-            $DIC->language()->txt('man_scoring_pilot'),
+        $DIC->tabs()->addSubTab('man_scoring_essay',
+            $DIC->language()->txt('man_scoring_essay'),
             $DIC->ctrl()->getLinkTargetByClass('ilTestScoringPilotGUI')
         );
         // patch end: manual scoring pilot

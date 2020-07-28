@@ -180,7 +180,7 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
      * @param ilTestPassesSelector $passSelector
      * @param array $questionGuiList
      */
-    protected function getToolbar(ilTestPassesSelector $passSelector, $questionGuiList)
+    protected function buildToolbar(ilTestPassesSelector $passSelector, $questionGuiList)
     {
         global $DIC; /* @var \ILIAS\DI\Container $DIC */
 
@@ -202,7 +202,7 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         $DIC->toolbar()->addInputItem($qstSelect);
 
         $submitBtn = ilSubmitButton::getInstance();
-        $submitBtn->setCaption($DIC->language()->txt('open'));
+        $submitBtn->setCaption('open');
         $submitBtn->setCommand('showManualScoring');
         $DIC->toolbar()->addButtonInstance($submitBtn);
 
@@ -232,7 +232,7 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
             $this->curActiveId, $this->curPassIndex
         );
 
-        $this->getToolbar($passSelector, $questionGuiList);
+        $this->buildToolbar($passSelector, $questionGuiList);
 
         $questionGui = $this->getCurrentQuestionGUI();
 

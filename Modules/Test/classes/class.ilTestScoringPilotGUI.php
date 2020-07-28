@@ -30,7 +30,7 @@ class ilTestScoringPilotGUI extends ilTestScoringGUI
      */
     protected function getActiveSubTabId()
     {
-        return 'man_scoring_pilot';
+        return 'man_scoring_essay';
     }
 
     public function executeCommand()
