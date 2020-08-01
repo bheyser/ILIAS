@@ -137,8 +137,6 @@
           {
             return false;
           }
-
-          //mainFrameElement.css('margin-left', newFrameResizeWidth + 'px');
         }
         else if( $(curResizeFrameElement).hasClass('rightFrame') )
         {
@@ -146,14 +144,14 @@
             $(curResizeFrameElement).offset().left - e.clientX + $(curResizeFrameElement).width()
           );
 
+          newFrameResizeWidth += 30; // due to suboptimal margin/padding css
+
           newMainFrameWidth = mainFrameWidth - newFrameResizeWidth - leftFrameWidth;
 
           if( newMainFrameWidth <= parseInt(config.mainFrame.minWidth) )
           {
             return false;
           }
-
-          //mainFrameElement.css('margin-right', newFrameResizeWidth + 'px');
         }
 
         $(curResizeFrameElement).css('width', newFrameResizeWidth + 'px');
