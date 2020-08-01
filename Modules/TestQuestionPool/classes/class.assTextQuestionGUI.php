@@ -134,7 +134,7 @@ class assTextQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringA
         // TODO - END: what exactly is done here? cant we use the parent method?
     }
 
-    // patch begin: maual scoring pilot
+    // patch begin: manual scoring pilot
     public function getUserSolutionSnippet($activeId, $pass)
     {
         $user_solution = $this->getUserAnswer($activeId, $pass);
@@ -147,7 +147,7 @@ class assTextQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringA
         $questiontext = $this->object->prepareTextareaOutput($questiontext, true);
         return $questiontext;
     }
-    // patch end: maual scoring pilot
+    // patch end: manual scoring pilot
 
     /**
     * Get the question solution output
@@ -409,7 +409,9 @@ class assTextQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringA
         $questiontext = $this->object->getQuestion();
         $template->setVariable("QUESTIONTEXT", $this->object->prepareTextareaOutput($questiontext, true));
         $questionoutput = $template->get();
-        
+        // patch begin: manual scoring pilot
+        $questionoutput = $this->getFramesetQuestionOutput($user_solution);
+        // patch end: manual scoring pilot
         $questionoutput .= $this->getJsCode();
         
         $pageoutput = $this->outQuestionPage("", $is_postponed, $active_id, $questionoutput);
@@ -417,7 +419,63 @@ class assTextQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringA
         ilYuiUtil::initDomEvent();
         return $pageoutput;
     }
-    
+    // patch begin: manual scoring output
+    protected function getFramesetQuestionOutput($user_solution)
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        $template = new ilTemplate("tpl.il_as_qpl_text_question_output_frameset.html", true, true, "Modules/TestQuestionPool");
+        $template->setVariable('FRAMESET', $DIC->ui()->renderer()->render($this->buildFrameset($user_solution)));
+
+        return $template->get();
+    }
+    protected function buildFrameset($user_solution)
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        $mainFrame = $DIC->ui()->factory()->frameset()->frame(
+            $DIC->ui()->factory()->legacy($this->getMainFrameContent($user_solution)
+        ));
+
+        $leftFrame = $DIC->ui()->factory()->frameset()->frame(
+            $DIC->ui()->factory()->legacy($this->getLeftFrameContent()
+        ))->withInitialWidth('50%')->withMinimalWidth('200px');
+
+        return $DIC->ui()->factory()->frameset()->set($this->object->getId(), $mainFrame)->withLeftFrame($leftFrame);
+    }
+    protected function getLeftFrameContent()
+    {
+        $template = new ilTemplate("tpl.il_as_qpl_text_question_output_frameset_left.html", true, true, "Modules/TestQuestionPool");
+
+        $questiontext = $this->object->getQuestion();
+        $template->setVariable("QUESTIONTEXT", $this->object->prepareTextareaOutput($questiontext, true));
+
+        return $template->get();
+    }
+    protected function getMainFrameContent($user_solution)
+    {
+        $template = new ilTemplate("tpl.il_as_qpl_text_question_output_frameset_main.html", true, true, "Modules/TestQuestionPool");
+
+        if ($this->object->getMaxNumOfChars()) {
+            $template->setCurrentBlock("maximum_char_hint");
+            $template->setVariable("MAXIMUM_CHAR_HINT", sprintf($this->lng->txt("text_maximum_chars_allowed"), $this->object->getMaxNumOfChars()));
+            $template->parseCurrentBlock();
+            #mbecker: No such block. $template->setCurrentBlock("has_maxchars");
+            $template->setVariable("MAXCHARS", $this->object->getMaxNumOfChars());
+            $template->parseCurrentBlock();
+            $template->setCurrentBlock("maxchars_counter");
+            $template->setVariable("MAXCHARS", $this->object->getMaxNumOfChars());
+            $template->setVariable("QID", $this->object->getId());
+            $template->setVariable("TEXTBOXSIZE", strlen($this->object->getMaxNumOfChars()));
+            $template->setVariable("CHARACTERS", $this->lng->txt("characters"));
+            $template->parseCurrentBlock();
+        }
+        $template->setVariable("QID", $this->object->getId());
+        $template->setVariable("ESSAY", ilUtil::prepareFormOutput($user_solution));
+
+        return $template->get();
+    }
+    // patch end: manual scoring output
     protected function getJsCode()
     {
         $tpl = new ilTemplate('tpl.charcounter.html', true, true, 'Modules/TestQuestionPool');
