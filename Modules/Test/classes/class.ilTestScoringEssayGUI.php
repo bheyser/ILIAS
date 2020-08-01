@@ -47,7 +47,7 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
      */
     protected function getDefaultCommand()
     {
-        return 'showManScoringParticipantScreen';
+        return 'showManualScoring';
     }
 
     protected function initialise()
@@ -189,8 +189,6 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
     {
         global $DIC; /* @var \ILIAS\DI\Container $DIC */
 
-        $f = $DIC->ui()->factory();
-
         $passOptions = $this->buildPassDropdownOptions($passSelector);
         $qstOptions = $this->buildQuestionsDropdownOptions($questionGuiList);
 
@@ -208,7 +206,7 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
 
         $submitBtn = ilSubmitButton::getInstance();
         $submitBtn->setCaption('open');
-        $submitBtn->setCommand('showManualScoring');
+        $submitBtn->setCommand('changeQuestion');
         $DIC->toolbar()->addButtonInstance($submitBtn);
 
         $DIC->toolbar()->setFormAction($DIC->ctrl()->getFormAction($this));
@@ -221,6 +219,13 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         $DIC->ctrl()->setParameter($this, 'active_id', $this->curActiveId);
         $DIC->ctrl()->setParameter($this, 'pass', $this->curPassIndex);
         $DIC->ctrl()->setParameter($this, 'question_id', $this->curQuestionId);
+    }
+
+    protected function changeQuestionCmd()
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+        $this->saveParameters();
+        $DIC->ctrl()->redirect($this);
     }
 
     protected function showManualScoringCmd()
@@ -249,8 +254,10 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
             $mainContent, $leftContent, $rightContent
         );
 
+        $panel = $DIC->ui()->factory()->panel()->standard($this->buildPanelTitle(), $frameSet);
+
         $DIC->ui()->mainTemplate()->setContent(
-            $DIC->ui()->renderer()->render($frameSet) . $this->getJavacript()
+            $DIC->ui()->renderer()->render($panel) . $this->getJavacript()
         );
     }
 
@@ -264,7 +271,7 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         $tpl = new ilTemplate('tpl.manual_scoring_essay.html', true, true, 'Modules/Test');
 
         $tpl->setVariable('FEEDBACK_SAVE_URL', $DIC->ctrl()->getLinkTarget(
-            $this, 'saveManualFeedback', '', true
+            $this, 'saveManualFeedbackAsync', '', true
         ));
 
         $tpl->setVariable('ID', $this->curQuestionId);
@@ -272,7 +279,7 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         return $tpl->get();
     }
 
-    protected function saveManualFeedbackCmd()
+    protected function saveManualFeedbackAsyncCmd()
     {
         /* assTextQuestionGUI $questionGui */
         $questionGui = $this->getCurrentQuestionGUI();
@@ -283,6 +290,16 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         );
 
         exit;
+    }
+
+    protected function buildPanelTitle()
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        $title = $DIC->language()->txt('pass') . ' ' . ($this->curPassIndex + 1);
+        $title .= ': ' . $this->getCurrentQuestionGUI()->object->getTitle();
+
+        return $title;
     }
 
     /**
