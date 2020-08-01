@@ -9097,6 +9097,9 @@ div.alert ul > li:before {
 .frameset .toggle-right.toggle-closed {
   background-image: url('images/arrow_left.svg');
 }
+.frameset input[type=submit] {
+  margin-top: 15px;
+}
 /* patch end: manual scoring pilot */
 /*		Color scheme
 		Dark BLue: #0f2152;

@@ -362,6 +362,8 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
 
     protected function getRightFrameContent(assTextQuestionGUI $questionGui)
     {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
         $rtestring = ilRTE::_getRTEClassname();
         $rte = new $rtestring(); /* @var ilTinyMCE $rte */
         $rte->addUserTextEditor("manscoring-tinymce");
@@ -370,10 +372,22 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
             $this->curActiveId, $this->curQuestionId, $this->curPassIndex
         );
 
-        $tpl = new ilTemplate('tpl.manual_scoring_tinymce.html', true, true, 'Modules/Test');
+        $manualPoints = assQuestion::_getReachedPoints($this->curActiveId, $this->curQuestionId, $this->curPassIndex);
+        $manualPoints = $manualPoints ? $manualPoints : '';
 
-        $tpl->setCurrentBlock('textarea');
-        $tpl->setVariable('CONTENT', $manualFeedback);
+        $maxPoints = assQuestion::_getMaximumPoints($this->curQuestionId);
+
+        $pointsInput = new ilTextInputGUI('', 'manual_points');
+        $pointsInput->setValue($manualPoints);
+
+        $tpl = new ilTemplate('tpl.manual_scoring_rawform.html', true, true, 'Modules/Test');
+
+        $tpl->setCurrentBlock('rawform');
+        $tpl->setVariable('MANUAL_FEEDBACK', $manualFeedback);
+        $tpl->setVariable('POINTS_LABEL', sprintf($DIC->language()->txt('granted_points'), $maxPoints));
+        $tpl->setVariable('POINTS_INPUT', $pointsInput->render());
+        $tpl->setVariable('SUBMIT_LABEL', $DIC->language()->txt('save'));
+        $tpl->setVariable('SUBMIT_CMD', 'saveManualPoints');
         $tpl->parseCurrentBlock();
 
         return $tpl->get();
