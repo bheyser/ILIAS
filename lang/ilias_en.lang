@@ -8792,6 +8792,7 @@ wsp#:#wsp_share_success#:#A new entry has been added.
 wsp#:#wsp_share_search_users#:#Search Users
 assessment#:#man_scoring_essay#:#Scoring of Essay Questions
 assessment#:#granted_points#:#Points (of maximum %s)
+assessment#:#invalid_man_scoring_points#:#Please enter a vaid points value between 0 and %s! (Entered value: %s)
 content#:#cont_html_export_ids#:#HTML Export IDs
 content#:#cont_html_export_ids_info#:#Allows maintaining extra IDs for ILIAS learning modules that are used for naming HTML files when HTML export is done.
 content#:#cont_export_id#:#Export ID

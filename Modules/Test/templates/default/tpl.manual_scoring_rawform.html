@@ -1,7 +1,9 @@
 <!-- BEGIN rawform -->
-<textarea class="manscoring-tinymce">{MANUAL_FEEDBACK}</textarea>
-<br />
-<div><label>{POINTS_LABEL}</label></div>
-<div>{POINTS_INPUT}</div>
-<div class="ilRight"><input class="btn btn-default btn-sm" type="submit" value="{SUBMIT_LABEL}" name="cmd[{SUBMIT_CMD}]" /></div>
+<form class="manual_scoring" action="{FORMACTION}" method="post">
+    <textarea name="manual_feedback" class="manscoring-tinymce">{MANUAL_FEEDBACK}</textarea>
+    <br />
+    <div><label>{POINTS_LABEL}</label></div>
+    <div>{POINTS_INPUT}</div>
+    <div class="ilRight"><input class="btn btn-default btn-sm" type="submit" value="{SUBMIT_LABEL}" name="cmd[{SUBMIT_CMD}]" /></div>
+</form>
 <!-- END rawform -->

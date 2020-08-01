@@ -364,6 +364,10 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
     {
         global $DIC; /* @var \ILIAS\DI\Container $DIC */
 
+        $DIC->ctrl()->setParameter($this, 'cmd', 'post');
+        $formaction = $DIC->ctrl()->getFormAction($this);
+        $DIC->ctrl()->setParameter($this, 'cmd', '');
+
         $rtestring = ilRTE::_getRTEClassname();
         $rte = new $rtestring(); /* @var ilTinyMCE $rte */
         $rte->addUserTextEditor("manscoring-tinymce");
@@ -383,6 +387,7 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         $tpl = new ilTemplate('tpl.manual_scoring_rawform.html', true, true, 'Modules/Test');
 
         $tpl->setCurrentBlock('rawform');
+        $tpl->setVariable('FORMACTION', $formaction);
         $tpl->setVariable('MANUAL_FEEDBACK', $manualFeedback);
         $tpl->setVariable('POINTS_LABEL', sprintf($DIC->language()->txt('granted_points'), $maxPoints));
         $tpl->setVariable('POINTS_INPUT', $pointsInput->render());
@@ -391,5 +396,50 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         $tpl->parseCurrentBlock();
 
         return $tpl->get();
+    }
+
+    protected function saveManualPointsCmd()
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        $this->saveParameters();
+
+        $this->object->saveManualFeedback(
+            $this->curActiveId, $this->curQuestionId, $this->curPassIndex,
+            $this->getCurrentQuestionGUI()->object->getHtmlQuestionContentPurifier()->purify($_POST['manual_feedback'])
+        );
+
+        $manPoints = $_POST['manual_points'];
+        $maxPoints = assQuestion::_getMaximumPoints($this->curQuestionId);
+
+        if( is_numeric($manPoints) && $manPoints >= 0 && $manPoints <= $maxPoints )
+        {
+            assQuestion::_setReachedPoints(
+                $this->curActiveId,
+                $this->curQuestionId,
+                $manPoints,
+                $maxPoints,
+                $this->curPassIndex,
+                1,
+                $this->object->areObligationsEnabled()
+            );
+        }
+        else
+        {
+            $failureMessage = sprintf($DIC->language()->txt('invalid_man_scoring_points'), $maxPoints, $manPoints);
+            ilUtil::sendFailure($failureMessage, true);
+
+            assQuestion::_setReachedPoints(
+                $this->curActiveId,
+                $this->curQuestionId,
+                0,
+                $maxPoints,
+                $this->curPassIndex,
+                1,
+                $this->object->areObligationsEnabled()
+            );
+        }
+
+        $DIC->ctrl()->redirect($this, 'showManualScoring');
     }
 }

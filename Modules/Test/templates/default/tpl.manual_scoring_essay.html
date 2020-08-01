@@ -13,4 +13,16 @@
         }
       )
     }
+
+    (function($){
+      $(document).ready(function() {
+
+        $('#frameset_{ID} form.manual_scoring').submit(function(e){
+          tinyMCE.triggerSave();
+          return true;
+        });
+
+      });
+    })(jQuery);
+
 </script>

@@ -15007,6 +15007,7 @@ wiki#:#wiki_wiki_search#:#Suche im Wiki
 wiki#:#wiki_wpg#:#Wiki-Seite
 assessment#:#man_scoring_essay#:#Bewertung von Freitextfragen
 assessment#:#granted_points#:#Punkte (von maximal %s)
+assessment#:#invalid_man_scoring_points#:#Bitte geben Sie einen gültigen Wert zwischen 0 und %s für die Punkte ein! (Eingegebener Wert: %s)
 wsp#:#element_already_shared#:#Die Ressource ist für diesen Benutzer bereits freigegeben.
 wsp#:#element_shared#:#Die Ressource wurde freigegeben.
 wsp#:#error_creating_certificate_pdf#:#Das Zertifikat konnte nicht erstellt werden. Bitte lassen Sie den Zertifikatsserver durch einen Administrator prüfen.
