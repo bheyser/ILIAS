@@ -69,8 +69,61 @@ class ilTestScoringPilotGUI extends ilTestScoringGUI
         global $DIC; /* @var \ILIAS\DI\Container $DIC */
 
         $table = $this->buildManScoringParticipantsTable(true);
+        $table->setRowTemplate('tpl.il_as_tst_man_scoring_pilot_participant_tblrow.html', 'Modules/Test');
         $table->setEditScoringPilot(true);
 
         $DIC->ui()->mainTemplate()->setContent($table->getHTML());
+    }
+
+    protected function applyManScoringParticipantsFilterCmd()
+    {
+        $table = $this->buildManScoringParticipantsTable(false);
+
+        $table->resetOffset();
+        $table->writeFilterToSession();
+
+        $this->showParticipantsCmd();
+    }
+
+    protected function resetManScoringParticipantsFilterCmd()
+    {
+        $table = $this->buildManScoringParticipantsTable(false);
+
+        $table->resetOffset();
+        $table->resetFilter();
+
+        $this->showParticipantsCmd();
+    }
+
+    protected function markParticipantScoredCmd()
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        ilTestService::setManScoringDone($this->getActiveIdParameter(), true);
+
+        $DIC->ctrl()->redirect($this);
+    }
+
+    protected function markParticipantUnscoredCmd()
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        ilTestService::setManScoringDone($this->getActiveIdParameter(), false);
+
+        $DIC->ctrl()->redirect($this);
+    }
+
+    /**
+     * @return int
+     */
+    protected function getActiveIdParameter()
+    {
+        $activeId = (int) $_GET['active_id'];
+
+        if (!$this->getTestAccess()->checkScoreParticipantsAccessForActiveId($activeId)) {
+            ilObjTestGUI::accessViolationRedirect();
+        }
+
+        return $activeId;
     }
 }

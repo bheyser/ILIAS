@@ -154,20 +154,19 @@ class ilTestManScoringParticipantsTableGUI extends ilTable2GUI
         
         $this->tpl->setVariable("PARTICIPANT_LASTNAME", $row['lastname']);
 
-        $this->tpl->setVariable("HREF_SCORE_PARTICIPANT", $ilCtrl->getLinkTarget($this->parent_obj, self::PARENT_EDIT_SCORING_CMD));
         // patch begin: manual scoring pilot
         if( $this->isEditScoringPilot() )
         {
-            $DIC->ctrl()->setParameterByClass(
-                ilTestScoringEssayGUI::class, 'active_id', $row['active_id']
-            );
-
-            $this->tpl->setVariable("HREF_SCORE_PARTICIPANT", $DIC->ctrl()->getLinkTargetByClass(
-                ilTestScoringEssayGUI::class, 'showManualScoring'
-            ));
+            $this->tpl->setVariable("ACTIONS_LIST", $this->buildActionsMenu($row)->getHTML());
+        }
+        else
+        {
+        // patch end: manual scoring pilot
+        $this->tpl->setVariable("HREF_SCORE_PARTICIPANT", $ilCtrl->getLinkTarget($this->parent_obj, self::PARENT_EDIT_SCORING_CMD));
+        $this->tpl->setVariable("TXT_SCORE_PARTICIPANT", $lng->txt('tst_edit_scoring'));
+        // patch begin: manual scoring pilot
         }
         // patch end: manual scoring pilot
-        $this->tpl->setVariable("TXT_SCORE_PARTICIPANT", $lng->txt('tst_edit_scoring'));
     }
     
     public function getInternalyOrderedDataValues()
@@ -181,4 +180,89 @@ class ilTestManScoringParticipantsTableGUI extends ilTable2GUI
             $this->numericOrdering($this->getOrderField())
         );
     }
+    // patch begin: manual scoring pilot
+    protected function buildActionsMenu($row)
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        $asl = new ilAdvancedSelectionListGUI();
+
+        $asl->addItem(
+            $DIC->language()->txt('tst_edit_scoring'),
+            '',
+            $DIC->ctrl()->getLinkTargetByClass(
+                ilTestScoringEssayGUI::class, 'showManualScoring'
+            )
+        );
+
+        if( $this->isManScoringDoneFiltered() )
+        {
+            $asl->addItem(
+                $DIC->language()->txt('tst_mark_unscored'),
+                '',
+                $DIC->ctrl()->getLinkTargetByClass(
+                    ilTestScoringPilotGUI::class, 'markParticipantUnscored'
+                )
+            );
+        }
+        elseif( $this->isManScoringNotDoneFiltered() )
+        {
+            $asl->addItem(
+                $DIC->language()->txt('tst_mark_scored'),
+                '',
+                $DIC->ctrl()->getLinkTargetByClass(
+                    ilTestScoringPilotGUI::class, 'markParticipantScored'
+                )
+            );
+        }
+        elseif( ilTestService::isManScoringDone($row['active_id']) )
+        {
+            $asl->addItem(
+                $DIC->language()->txt('tst_mark_unscored'),
+                '',
+                $DIC->ctrl()->getLinkTargetByClass(
+                    ilTestScoringPilotGUI::class, 'markParticipantUnscored'
+                )
+            );
+        }
+        else
+        {
+            $asl->addItem(
+                $DIC->language()->txt('tst_mark_scored'),
+                '',
+                $DIC->ctrl()->getLinkTargetByClass(
+                    ilTestScoringPilotGUI::class, 'markParticipantScored'
+                )
+            );
+        }
+
+        return $asl;
+    }
+    public function isManScoringDoneFiltered()
+    {
+        foreach($this->filters as $filter)
+        {
+            /* @var ilSelectInputGUI $filter */
+            if($filter->getPostVar() != 'participant_status')
+            {
+                continue;
+            }
+
+            return $filter->getValue() == ilTestScoringGUI::PART_FILTER_MANSCORING_DONE;
+        }
+    }
+    public function isManScoringNotDoneFiltered()
+    {
+        foreach($this->filters as $filter)
+        {
+            /* @var ilSelectInputGUI $filter */
+            if($filter->getPostVar() != 'participant_status')
+            {
+                continue;
+            }
+
+            return $filter->getValue() == ilTestScoringGUI::PART_FILTER_MANSCORING_NONE;
+        }
+    }
+    // patch end: manual scoring pilot
 }

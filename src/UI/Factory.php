@@ -756,9 +756,10 @@ interface Factory
      * @return  \ILIAS\UI\Component\MessageBox\Factory
      */
     public function messageBox();
-
+    // patch begin: manual scoring pilot
     /**
      * @return  \ILIAS\UI\Component\Frameset\Factory
      */
     public function frameset();
+    // patch end: manual scoring pilot
 }

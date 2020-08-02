@@ -339,7 +339,7 @@ class Factory implements \ILIAS\UI\Factory
     {
         return $this->messagebox_factory;
     }
-
+    // patch begin: manual scoring pilot
     /**
      * @inheritdoc
      */
@@ -347,4 +347,5 @@ class Factory implements \ILIAS\UI\Factory
     {
         return new \ILIAS\UI\Implementation\Component\Frameset\Factory();
     }
+    // patch end: manual scoring pilot
 }
