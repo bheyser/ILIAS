@@ -1276,7 +1276,9 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
                 'processing_time'            => array('text', $this->getProcessingTime()),
                 'enable_processing_time'     => array('text', $this->getEnableProcessingTime()),
                 'reset_processing_time'      => array('integer', $this->getResetProcessingTime()),
+                // patch begin: question working times
                 'use_qst_work_times'      => array('integer', (int)$this->isQuestionWorkingTimeLimitEnabled()),
+                // patch end: question working times
                 'reporting_date'             => array('text', $this->getReportingDate()),
                 'starting_time_enabled'      => array('integer', $this->isStartingTimeEnabled()),
                 'starting_time'              => array('integer', $this->getStartingTime()),
