@@ -368,6 +368,9 @@ class assImagemapQuestion extends assQuestion implements ilObjQuestionScoringAdj
             $data = $ilDB->fetchAssoc($result);
             $this->setId($question_id);
             $this->setObjId($data["obj_fi"]);
+            // patch begin: question working times
+            $this->assignCommonQuestionDataFromDb($data);
+            // patch end: question working times
             $this->setTitle($data["title"]);
             $this->setComment($data["description"]);
             $this->setOriginalId($data["original_id"]);

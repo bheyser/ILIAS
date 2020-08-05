@@ -1,110 +1,280 @@
 <script type="text/javascript">
 <!--
-	var serverdate = -1;
-	var unsaved = true;
-	
-	function setWorkingTime()
-	{
-		if (serverdate == -1) 
-		{
-			var n = new Date({YEAR}, {MONTHNOW}, {DAYNOW}, {HOURNOW}, {MINUTENOW}, {SECONDNOW});
-			serverdate = n.getTime() / 1000;
-		}
-		else
-		{
-			serverdate++;
-		}
-		var startd = new Date({YEAR}, {MONTH}, {DAY}, {HOUR}, {MINUTE}, {SECOND});
-		var enddtime = -1;
-<!-- BEGIN enddate -->		
-		var endd = new Date({ENDYEAR}, {ENDMONTH}, {ENDDAY}, {ENDHOUR}, {ENDMINUTE}, {ENDSECOND});
-		enddtime = endd.getTime() / 1000;
-<!-- END enddate -->		
-		var ptime_m = {PTIME_M};
-		var ptime_s = {PTIME_S};
-		var minute = "{STRING_MINUTE}";
-		var minutes = "{STRING_MINUTES}";
-		var second = "{STRING_SECOND}";
-		var seconds = "{STRING_SECONDS}";
-		var timeleft = "{STRING_TIMELEFT}";
-		var and = "{AND}";
-		var now = serverdate;
-		var then = startd.getTime() / 1000;
-		// time since start in seconds
-		var diff = Math.floor(now - then);
-		// available time
-		var avail = ptime_m * 60 + ptime_s - diff;
-		if (avail < 0)
-		{
-			avail = 0;
-		}
-		if (enddtime > -1)
-		{
-			var diffToEnd = Math.floor(enddtime - now);
-			if ((diffToEnd > 0) && (diffToEnd < avail))
-			{
-				avail = diffToEnd;
-			}
-			else if (diffToEnd < 0)
-			{
-				avail = 0;
-			}
-		}
-		if ((avail <= 0) && unsaved)
-		{
-			unsaved = false;
-// fau: testNav - call saveOnTimeReached in the new control script
-            if (typeof il.TestPlayerQuestionEditControl != 'undefined')
-            {
-                il.TestPlayerQuestionEditControl.saveOnTimeReached();
-            }
-// fau.
-		}
-		var avail_m = Math.floor(avail / 60);
-		var avail_s = avail - (avail_m * 60);
-		var output = avail_m + " ";
-		if (avail_m == 1)
-		{
-			output += minute;
-		}
-		else
-		{
-			output += minutes;
-		}
-		if (avail < 300)
-		{
-			if (avail_s < 10)
-			{
-				output += " " + and + " 0" + avail_s + " ";
-			}
-			else
-			{
-				output += " " + and + " " + avail_s + " ";
-			}
-			if (avail_m == 0)
-			{
-				if (avail_s < 10)
-				{
-					output = "0" + avail_s + " ";
-				}
-				else
-				{
-					output = avail_s + " ";
-				}
-			}
-			if (avail_s == 1)
-			{
-				output += second;
-			}
-			else
-			{
-				output += seconds;
-			}
-		}
-		var span = document.getElementById("timeleft");
-		span.innerHTML = timeleft.replace(/%s/, output);
-	}
-	
-	window.setInterval('setWorkingTime()',1000);
+// patch begin: question working times
+var workingTime = {
+  serverdate: -1,
+  unsaved: true,
+  firstupdate: true
+};
+
+var handleServerTime = function()
+{
+  if (workingTime.serverdate == -1)
+  {
+    var n = new Date({YEAR_NOW}, {MONTH_NOW}, {DAY_NOW}, {HOUR_NOW}, {MINUTE_NOW}, {SECOND_NOW});
+    workingTime.serverdate = n.getTime() / 1000;
+  }
+  else
+  {
+    workingTime.serverdate++;
+  }
+};
+
+var workingTimeIndicator = {
+  colors: { //	100% left	50% left	0% left
+    red:	{	max: 128,	mid: 236,	min: 236	},
+    green:	{	max: 236,	mid: 236,	min: 128	},
+    blue:	{	max: 128,	mid: 96,	min: 128	}
+  }
+};
+
+var workingTimeLabels = {
+  minute: "{STRING_MINUTE}", minutes: "{STRING_MINUTES}",
+  second: "{STRING_SECOND}", seconds: "{STRING_SECONDS}",
+  tst_timeleft: "{STRING_TST_TIMELEFT}", qst_timeleft: "{STRING_QST_TIMELEFT}",
+  and: "{AND}"
+};
+
+var workingTimeSettings = {
+  <!-- BEGIN tst_start -->
+  tst_ptime: { m: {TST_PTIME_M}, s: {TST_PTIME_S} },
+  <!-- END tst_start -->
+  <!-- BEGIN qst_start -->
+  qst_ptime: { m: {QST_PTIME_M}, s: {QST_PTIME_S} },
+  <!-- END qst_start -->
+
+  tst_startd: new Date({TST_START_YEAR}, {TST_START_MONTH}, {TST_START_DAY}, {TST_START_HOUR}, {TST_START_MINUTE}, {TST_START_SECOND}),
+  qst_startd: new Date({QST_START_YEAR}, {QST_START_MONTH}, {QST_START_DAY}, {QST_START_HOUR}, {QST_START_MINUTE}, {QST_START_SECOND}),
+
+  getTestStart: function() { return ( this.tst_startd.getTime() / 1000 ); },
+  getQuestionStart: function() { return ( this.qst_startd.getTime() / 1000 ); }
+};
+<!-- BEGIN enddate -->
+workingTimeSettings.endd = new Date(
+  {END_YEAR}, {END_MONTH}, {END_DAY}, {END_HOUR}, {END_MINUTE}, {END_SECOND}
+);
+<!-- END enddate -->
+
+var buildRemainingTimeString = function(remain, formatString)
+{
+  var remain_m = Math.floor(remain / 60);
+  var remain_s = remain - (remain_m * 60);
+
+  var output = remain_m + " ";
+
+  if (remain_m == 1)
+  {
+    output += workingTimeLabels.minute;
+  }
+  else
+  {
+    output += workingTimeLabels.minutes;
+  }
+
+  if (remain < 300)
+  {
+    if (remain_s < 10)
+    {
+      output += " " + workingTimeLabels.and + " 0" + remain_s + " ";
+    }
+    else
+    {
+      output += " " + workingTimeLabels.and + " " + remain_s + " ";
+    }
+
+    if (remain_m == 0)
+    {
+      if (remain_s < 10)
+      {
+        output = "0" + remain_s + " ";
+      }
+      else
+      {
+        output = remain_s + " ";
+      }
+    }
+
+    if (remain_s == 1)
+    {
+      output += workingTimeLabels.second;
+    }
+    else
+    {
+      output += workingTimeLabels.seconds;
+    }
+  }
+
+  return formatString.replace(/%s/, output);
+};
+
+var calculateProcessTime = function(time_m, time_s)
+{
+  return time_m * 60 + time_s;
+};
+
+var calculateRelativeRemaining = function(remaining, total)
+{
+  if( !remaining || remaining < 0 )
+  {
+    return 0;
+  }
+
+  if( remaining > total )
+  {
+    return 100;
+  }
+
+  return ( remaining / total * 100 );
+};
+
+var calculateRemainingTime = function(start, ptime)
+{
+  var now = workingTime.serverdate;
+
+  var end = -1;
+
+  if( workingTimeSettings.endd )
+  {
+    end = endd.getTime() / 1000;
+  }
+
+  // time since start in seconds
+  var used = Math.floor(now - start);
+
+  // available time from processing time
+  var avail = ptime - used;
+  if (avail < 0) avail = 0;
+
+  // assume available processing time the actual remaining time
+  var remain = avail;
+
+  if (end > -1)
+  {
+    var until = Math.floor(end - now);
+
+    if (until > 0 && until < avail)
+    {
+      remain = until;
+    }
+    else if (until < 0)
+    {
+      remain = 0;
+    }
+  }
+
+  return remain;
+};
+
+var handleRemainingTimeUpdate = function(element, formatString, remainingTime)
+{
+  if( remainingTime || !workingTime.firstupdate )
+  {
+    if (element) {
+      element.innerHTML = buildRemainingTimeString(remainingTime, formatString);
+    }
+  }
+
+  if( !remainingTime && workingTime.unsaved )
+  {
+    workingTime.unsaved = false;
+    // fau: testNav - call saveOnTimeReached in the new control script
+    if (typeof il.TestPlayerQuestionEditControl != 'undefined')
+    {
+      il.TestPlayerQuestionEditControl.saveOnTimeReached();
+    }
+    // fau.
+  }
+};
+
+var calculateRgbColorValue = function(factor, rgbMin, rgbMax)
+{
+  return rgbMin - parseInt((rgbMin - rgbMax) * factor);
+};
+
+var handleColorIndicatorUpdate = function(element, relativeRemainingTime)
+{
+  var red, green, blue, diff, factor, remaining = parseInt(relativeRemainingTime);
+
+  if( remaining > 50 )
+  {
+    factor = ( (remaining - 50) / 100 * 2 );
+
+    red = calculateRgbColorValue( factor,
+      workingTimeIndicator.colors.red.mid, workingTimeIndicator.colors.red.max
+    );
+
+    green = calculateRgbColorValue( factor,
+      workingTimeIndicator.colors.green.mid, workingTimeIndicator.colors.green.max
+    );
+
+    blue = calculateRgbColorValue( factor,
+      workingTimeIndicator.colors.blue.mid, workingTimeIndicator.colors.blue.max
+    );
+  }
+  else
+  {
+    factor = ( remaining / 100 * 2 );
+
+    red = calculateRgbColorValue( factor,
+      workingTimeIndicator.colors.red.min, workingTimeIndicator.colors.red.mid
+    );
+
+    green = calculateRgbColorValue( factor,
+      workingTimeIndicator.colors.green.min, workingTimeIndicator.colors.green.mid
+    );
+
+    blue = calculateRgbColorValue( factor,
+      workingTimeIndicator.colors.blue.min, workingTimeIndicator.colors.blue.mid
+    );
+  }
+
+  console.log(red + ', ' + green + ', ' + blue);
+
+  $(element).css('background-color', 'rgb(' + red + ', ' + green + ', ' + blue + ')');
+};
+
+var handleRemainingWorkingTimes = function()
+{
+  handleServerTime();
+
+  console.log(workingTimeSettings);
+
+  var testRelativeRemainingTime = 100;
+  var questRelativeRemainingTime = 100;
+
+  if(workingTimeSettings.tst_ptime)
+  {
+    var testProcessTime = calculateProcessTime(workingTimeSettings.tst_ptime.m, workingTimeSettings.tst_ptime.s);
+    var remainingTestTime = calculateRemainingTime(workingTimeSettings.getTestStart(), testProcessTime);
+    testRelativeRemainingTime = calculateRelativeRemaining(remainingTestTime, testProcessTime);
+
+    handleRemainingTimeUpdate( document.getElementById('tst_timeleft'),
+      workingTimeLabels.tst_timeleft, remainingTestTime
+    );
+  }
+
+  if(workingTimeSettings.qst_ptime) {
+    var questProcessTime = calculateProcessTime(workingTimeSettings.qst_ptime.m, workingTimeSettings.qst_ptime.s);
+    var remainingQuestTime = calculateRemainingTime(workingTimeSettings.getQuestionStart(), questProcessTime);
+    questRelativeRemainingTime = calculateRelativeRemaining(remainingQuestTime, questProcessTime);
+
+    handleRemainingTimeUpdate(document.getElementById('qst_timeleft'),
+      workingTimeLabels.qst_timeleft, remainingQuestTime
+    );
+  }
+
+  handleColorIndicatorUpdate( document.getElementById('tst_workingtimes'),
+    Math.min(testRelativeRemainingTime, questRelativeRemainingTime)
+  );
+
+  if(workingTime.firstupdate)
+  {
+    $('#tst_workingtimes').addClass('visible');
+    workingTime.firstupdate = false;
+  }
+};
+
+window.setInterval(handleRemainingWorkingTimes, 1000);
+// patch end: question working times
 //-->
 </script>

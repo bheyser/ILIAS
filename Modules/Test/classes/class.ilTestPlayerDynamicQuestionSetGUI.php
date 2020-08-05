@@ -81,6 +81,10 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
             $this->testSequence->setPreventCheckedQuestionsFromComingUpEnabled(true);
         }
 
+        // patch begin: question working times
+        $this->initWorkingTimeManager($this->testSequence->getActiveId(), $this->testSequence->getPass());
+        // patch end: question working times
+
         include_once 'Services/jQuery/classes/class.iljQueryUtil.php';
         iljQueryUtil::initjQuery();
         include_once "./Services/YUI/classes/class.ilYuiUtil.php";
@@ -486,7 +490,11 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
     
     protected function showQuestionCmd()
     {
+        // patch begin: question working times
+        /*
         $this->updateWorkingTime();
+        */
+        // patch end: question working times
         
         $this->testSequence->loadQuestions(
             $this->dynamicQuestionSetConfig,
@@ -517,6 +525,10 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
                 $this->testSequence->setQuestionUnchecked($upComingQuestionId);
             }*/
         }
+
+        // patch begin: question working times
+        $this->updateWorkingTime();
+        // patch end: question working times
 
         $navigationToolbarGUI = $this->getTestNavigationToolbarGUI();
         $navigationToolbarGUI->setQuestionSelectionButtonEnabled(true);
@@ -631,6 +643,13 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
                 // fau.
                 $this->testSession->getQuestionSetFilterSelection()->setForcedQuestionIds(array());
             }
+            // patch begin: question working times
+            elseif( !$this->isSolutionSubmitAllowedForQuestion() )
+            {
+                $presentationMode = ilTestPlayerAbstractGUI::PRESENTATION_MODE_VIEW;
+                ilUtil::sendInfo($this->lng->txt('detail_qst_processing_time_reached'));
+            }
+            // patch end: question working times
 
             // fau: testNav - add feedback modal
             if ($this->isForcedFeedbackNavUrlRegistered()) {
@@ -741,16 +760,29 @@ class ilTestPlayerDynamicQuestionSetGUI extends ilTestPlayerAbstractGUI
     {
         return false; // always
     }
-    
+
     /**
      * Returns TRUE if the answers of the current user could be saved
      *
      * @return boolean TRUE if the answers could be saved, FALSE otherwise
      */
+    // patch begin: question working times
+    /*
     protected function canSaveResult()
     {
         return !$this->object->endingTimeReached();
     }
+    */
+    protected function isSolutionSubmitAllowedByTest()
+    {
+        if( $this->object->endingTimeReached() )
+        {
+            return false;
+        }
+
+        return true;
+    }
+    // patch end: question working times
      
     /**
      * saves the user input of a question

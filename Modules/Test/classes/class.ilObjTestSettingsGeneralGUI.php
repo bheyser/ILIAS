@@ -1023,11 +1023,25 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
         $resetprocessing->setInfo($this->lng->txt("tst_reset_processing_time_desc"));
         $processing->addSubItem($resetprocessing);
         $form->addItem($processing);
+        // patch begin: question working times
+        // consider question working times as additional time limit,
+        // when question supports and offers
+        $considerQstWorkTimeLimit = new ilCheckboxInputGUI(
+            $this->lng->txt('tst_qst_work_time_limit'), 'qst_work_time_lim'
+        );
+        $considerQstWorkTimeLimit->setInfo($this->lng->txt("tst_qst_work_time_limit_info"));
+        $considerQstWorkTimeLimit->setValue(1);
+        $considerQstWorkTimeLimit->setChecked($this->testOBJ->isQuestionWorkingTimeLimitEnabled());
+        $form->addItem($considerQstWorkTimeLimit);
+        // patch end: question working times
 
         if ($this->testOBJ->participantDataExist()) {
             $processing->setDisabled(true);
             $processingtime->setDisabled(true);
             $resetprocessing->setDisabled(true);
+            // patch begin: question working times
+            $considerQstWorkTimeLimit->setDisabled(true);
+            // patch end: question working times
             
             $duration->setDisabled(true);
             $pass_waiting_enabled->setDisabled(true);
@@ -1103,6 +1117,14 @@ class ilObjTestSettingsGeneralGUI extends ilTestSettingsGUI
                 $this->testOBJ->setProcessingTime('');
                 $this->testOBJ->setResetProcessingTime(false);
             }
+            // patch begin: question working times
+            if( $form->getItemByPostVar('qst_work_time_lim') )
+            {
+                $this->testOBJ->setQuestionWorkingTimeLimitEnabled(
+                    (bool)$form->getItemByPostVar('qst_work_time_lim')->getChecked()
+                );
+            }
+            // patch end: question working times
         }
 
         if ($form->getItemByPostVar('kiosk') instanceof ilFormPropertyGUI) {

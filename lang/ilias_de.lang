@@ -567,6 +567,7 @@ assessment#:#deleteSuggestedSolution#:#Inhalte zur Wiederholung entfernen
 assessment#:#description_maxchars#:#Wenn nichts eingegeben wird, ist die maximale Anzahl von Zeichen für diese Textantwort unbegrenzt.
 assessment#:#detail_ending_time_reached#:#Sie haben die längstmögliche Bearbeitungsdauer des Tests überschritten. Der Test konnte nur bis %s bearbeitet werden.
 assessment#:#detail_max_processing_time_reached#:#Sie haben die maximale Bearbeitungsdauer des Tests überschritten. Sie dürfen den Test nicht weiter bearbeiten!
+assessment#:#detail_qst_processing_time_reached#:#Sie haben die maximale Bearbeitungsdauer für diese Frage überschritten. Sie dürfen die Lösung zu dieser Frage nicht weiter bearbeiten!
 assessment#:#detail_starting_time_not_reached#:#Der Test kann noch nicht bearbeitet werden. Eine Bearbeitung ist frühestens ab %s möglich.
 assessment#:#detailed_evaluation#:#Detaillierte Statistik
 assessment#:#detailed_evaluation_for#:#Detaillierte Statistik für %s
@@ -1189,6 +1190,12 @@ assessment#:#tst_anonymity_anonymous_test#:#Testergebnisse ohne Namen / Anonymer
 assessment#:#tst_anonymity_no_anonymization#:#Testergebnisse mit Namen
 assessment#:#tst_answer_aggr_answer_header#:#Antwort
 assessment#:#tst_answer_aggr_frequency_header#:#Häufigkeit
+assessment#:#tst_qst_work_time_limit#:#Berücksichtige Bearbeitungszeiten der Fragen
+assessment#:#tst_qst_work_time_limit_info#:#Diese Funktion führt dazu, dass für Fragen, die zum Zwecke einer zeitlichen Limitierung eine Bearbeitungszeit konfiguriert haben, dass die Bearbeitung auf diese Zeit eingeschränkt wird.
+assessment#:#ass_working_time_usage_meta#:#Verwendung als reines Metadatum
+assessment#:#ass_working_time_usage_meta_info#:#Das konfigurierte Zeitintervall kann als Metadatum verwendet werden. Wenn beispielsweise ein Autor eine geeignete Bearbeitungszeit für einen Test bestimmen möchte, den er erstelt, kann er das Zeitinterval aller Fragen aufaddieren und erhält so einen Anhaltspunkt.
+assessment#:#ass_working_time_usage_limit#:#Verwendung für zeitliche Beschränkungen oder als Metadatum
+assessment#:#ass_working_time_usage_limit_info#:#Zusätzlich zur Verwendung als Metadatum, kann diese Angabe zur zeitlichen Einschränkung verwendet werden, wenn die Frage in einem Objekt verwendet wird. Zum Beispiel kann ein Test die Bearbeitungszeit dieser einzelenen Frage gesondert einschränken.
 assessment#:#tst_answer_details#:#Antwortdetails
 assessment#:#tst_answer_fixation_handling#:#Teilnehmerantworten
 assessment#:#tst_answer_fixation_none#:#Antworten während des Testdurchlaufs nicht festschreiben
@@ -1796,7 +1803,9 @@ assessment#:#tst_test_result#:#Testergebnis
 assessment#:#tst_text_count_system#:#Bewertungssystem
 assessment#:#tst_threshold#:#Schwellenwert (in %)
 assessment#:#tst_time_already_spent#:#Sie haben den Test gestartet: %s. Ihre maximale Bearbeitungsdauer beträgt %s.
-assessment#:#tst_time_already_spent_left#:#Es verbleiben Ihnen noch %s
+assessment#:#tst_time_already_spent_left#:#Es verbleiben Ihnen noch %s für den Test.
+assessment#:#tst_time_spent_for_question#:#Für diese Frage verbleiben Ihnen noch %s.
+assessment#:#tst_no_time_left_for_question#:#Sie dürfen diese Frage nicht mehr bearbeiten.
 assessment#:#tst_title_output#:#Anzeige der Fragentitel
 assessment#:#tst_title_output_full#:#Fragentitel und erreichbare Punkte
 assessment#:#tst_title_output_hide_points#:#Nur Fragentitel

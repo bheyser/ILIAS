@@ -1247,6 +1247,8 @@ abstract class assQuestionGUI
 
         if (!$this->object->getSelfAssessmentEditingMode()) {
             // duration
+            // patch begin: question working times
+            /*
             $duration = new ilDurationInputGUI($this->lng->txt("working_time"), "Estimated");
             $duration->setShowHours(true);
             $duration->setShowMinutes(true);
@@ -1257,6 +1259,9 @@ abstract class assQuestionGUI
             $duration->setSeconds($ewt["s"]);
             $duration->setRequired(false);
             $form->addItem($duration);
+            */
+            $this->populateWorkingTimeSettings($form);
+            // patch end: question working times
         } else {
             // number of tries
             if (strlen($this->object->getNrOfTries())) {
@@ -2135,6 +2140,10 @@ abstract class assQuestionGUI
             $_POST["Estimated"]["mm"],
             $_POST["Estimated"]["ss"]
         );
+
+        // patch begin: question working times
+        $this->writeWorkingTimeSettings();
+        // patch end: question working times
     }
 
     abstract public function getPreview($show_question_only = false, $showInlineFeedback = false);
@@ -2287,7 +2296,72 @@ abstract class assQuestionGUI
         $errors = $this->editQuestion(true); // TODO bheyser: editQuestion should be added to the abstract base class with a unified signature
         return $this->editForm;
     }
-    
+
+    // patch begin: question working times
+
+    /**
+     * @param $postVar
+     * @param $ewt
+     * @return ilDurationInputGUI
+     */
+    protected function buildWorkingTimeInputGUI($postVar, $ewt)
+    {
+        $duration = new ilDurationInputGUI($this->lng->txt('time'), $postVar);
+        $duration->setShowHours(true);
+        $duration->setShowMinutes(true);
+        $duration->setShowSeconds(true);
+        $duration->setHours($ewt['h']);
+        $duration->setMinutes($ewt['m']);
+        $duration->setSeconds($ewt['s']);
+        $duration->setRequired(false);
+        return $duration;
+    }
+
+    /**
+     * @param ilPropertyFormGUI $form
+     */
+    protected function populateWorkingTimeSettings(ilPropertyFormGUI $form)
+    {
+        $usageMetadata = new ilRadioOption($this->lng->txt('ass_working_time_usage_meta'),
+            assQuestion::WORKING_TIME_USAGE_METADATA, $this->lng->txt('ass_working_time_usage_meta_info')
+        );
+        $usageMetadata->addSubItem($this->buildWorkingTimeInputGUI(
+            'estimated_working_time', $this->object->getEstimatedWorkingTime()
+        ));
+        $usageLimitation = new ilRadioOption($this->lng->txt('ass_working_time_usage_limit'),
+            assQuestion::WORKING_TIME_USAGE_LIMITATION, $this->lng->txt("ass_working_time_usage_limit_info")
+        );
+        $usageLimitation->addSubItem($this->buildWorkingTimeInputGUI(
+            'working_time_limit', $this->object->getEstimatedWorkingTime()
+        ));
+
+        $provideLimitation = new ilRadioGroupInputGUI(
+            $this->lng->txt('working_time'), 'ass_working_time_usage'
+        );
+        $provideLimitation->setRequired(true);
+        $provideLimitation->addOption($usageMetadata);
+        $provideLimitation->addOption($usageLimitation);
+        $provideLimitation->setValue($this->object->getWorkingTimeUsage());
+        $form->addItem($provideLimitation);
+    }
+
+    protected function writeWorkingTimeSettings()
+    {
+        switch( $_POST['ass_working_time_usage'] )
+        {
+            case assQuestion::WORKING_TIME_USAGE_LIMITATION: $workingTime = $_POST['working_time_limit']; break;
+            case assQuestion::WORKING_TIME_USAGE_METADATA: $workingTime = $_POST['estimated_working_time']; break;
+
+            default: return false;
+        }
+
+        $this->object->setWorkingTimeUsage($_POST['ass_working_time_usage']);
+        $this->object->setEstimatedWorkingTime($workingTime['hh'], $workingTime['mm'], $workingTime['ss']);
+
+        return true;
+    }
+    // patch end: question working times
+
     /**
      * @return string
      */

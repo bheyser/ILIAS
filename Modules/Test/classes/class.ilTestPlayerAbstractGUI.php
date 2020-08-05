@@ -61,6 +61,13 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
      */
     protected $testSequence = null;
 
+    // patch begin: question working times
+    /**
+     * @var ilTestWorkingTimeManager
+     */
+    protected $workingTimeManager = null;
+    // patch end: question working times
+
     /**
     * ilTestOutputGUI constructor
     *
@@ -81,7 +88,33 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
         $this->processLocker = null;
         $this->testSession = null;
         $this->assSettings = null;
+
+        // patch begin: question working times
+        require_once 'Modules/Test/classes/class.ilTestWorkingTimeManager.php';
+        require_once 'Modules/Test/classes/class.ilTestWorkingTimeDbStore.php';
+        $this->workingTimeManager = new ilTestWorkingTimeManager();
+        $this->workingTimeManager->setDataStore(new ilTestWorkingTimeDbStore());
+        // patch end: question working times
     }
+
+    // patch begin: question working times
+    protected function initWorkingTimeManager($activeId, $passIndex)
+    {
+        require_once 'Modules/Test/classes/class.ilTestPassWorkingTimeRecordList.php';
+        $passWorkingTimeRecordList = new ilTestPassWorkingTimeRecordList();
+        $passWorkingTimeRecordList->setActiveId($activeId);
+        $passWorkingTimeRecordList->setPassIndex($passIndex);
+        $this->workingTimeManager->setPassWorkingTimeRecordList($passWorkingTimeRecordList);
+
+        require_once 'Modules/Test/classes/class.ilTestQuestionWorkingTimeRecordList.php';
+        $qstWorkingTimeRecordList = new ilTestQuestionWorkingTimeRecordList();
+        $qstWorkingTimeRecordList->setActiveId($activeId);
+        $qstWorkingTimeRecordList->setPassIndex($passIndex);
+        $this->workingTimeManager->setQstWorkingTimeRecordList($qstWorkingTimeRecordList);
+
+        $this->workingTimeManager->loadTimes();
+    }
+    // patch end: question working times
 
     protected function checkReadAccess()
     {
@@ -168,6 +201,8 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
      */
     public function updateWorkingTime()
     {
+        // patch begin: question working times
+        /*
         if ($_SESSION["active_time_id"]) {
             $this->object->updateWorkingTime($_SESSION["active_time_id"]);
         }
@@ -176,6 +211,13 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
             $this->testSession->getActiveId(),
             $this->testSession->getPass()
         );
+        */
+        $this->workingTimeManager->trackQuestionWorkingAccess(
+            $this->getCurrentQuestionId()
+        );
+
+        $this->workingTimeManager->trackPassWorkingAccess();
+        // patch end: question working times
     }
 
     // fau: testNav - new function removeIntermediateSolution()
@@ -199,7 +241,49 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
      */
     abstract public function saveQuestionSolution($authorized = true, $force = false);
 
+    // patch begin: question working times
+    /*
     abstract protected function canSaveResult();
+    */
+    protected function canSaveResult()
+    {
+        if( !$this->isSolutionSubmitAllowedForQuestion() )
+        {
+            return false;
+        }
+
+        if( !$this->isSolutionSubmitAllowedByTest() )
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    protected function isSolutionSubmitAllowedForQuestion()
+    {
+        if( !$this->object->isQuestionWorkingTimeLimitEnabled() )
+        {
+            return true;
+        }
+
+        $question = $this->getQuestionInstance(
+            $this->getCurrentQuestionId()
+        );
+
+        if( !$question->supportsWorkingTimeLimitation() )
+        {
+            return true;
+        }
+
+        return $this->workingTimeManager->hasQuestionWorkingTimeRemaining($question);
+    }
+
+    /**
+     * @return boolean
+     */
+    abstract protected function isSolutionSubmitAllowedByTest();
+    // patch end: question working times
 
     public function suspendTestCmd()
     {
@@ -593,13 +677,30 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
                 }
             }
         }
+        // patch begin: question working times
+        if( !$this->isSolutionSubmitAllowedByTest() && !$this->ctrl->isAsynch())
+        {
+            // this was the last action in the test, saving is no longer allowed
+            $this->ctrl->redirect($this, ilTestPlayerCommands::REDIRECT_ON_TIME_LIMIT);
+        }
+        elseif( !$this->isSolutionSubmitAllowedForQuestion() && !$this->ctrl->isAsynch())
+        {
+            // this was the last action for this question,
+            // we redirect to show it again, it wont be editable any longer
+            $this->ctrl->redirect($this, ilTestPlayerCommands::SHOW_QUESTION);
+        }
+        // patch end: question working times
         // fau: testNav - simplify the redirection if time is reached
+        // patch begin: question working times
+        /*
         if (!$canSaveResult && !$this->ctrl->isAsynch()) {
             // this was the last action in the test, saving is no longer allowed
             // form was directly submitted in saveOnTimeReached()
             // instead of ajax with autoSave()
             $this->ctrl->redirect($this, ilTestPlayerCommands::REDIRECT_ON_TIME_LIMIT);
         }
+        */
+        // patch end: question working times
         // fau.
         echo $result;
         exit;
@@ -1122,10 +1223,18 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
         $this->tpl->setVariable("LOGIN", $ilUser->getLogin());
         $this->tpl->setVariable("SEQ_ID", $sequenceElement);
         $this->tpl->setVariable("QUEST_ID", $questionId);
-                
+
+        // patch begin: question working times
+        /*
         if ($this->object->getEnableProcessingTime()) {
             $this->outProcessingTime($this->testSession->getActiveId());
         }
+        */
+        if ( $this->isAnyProcessTimeLimitActive() )
+        {
+            $this->outProcessingTime($this->testSession->getActiveId());
+        }
+        // patch end: question working times
         
         $this->tpl->setVariable("PAGETITLE", "- " . $this->object->getTitle());
         
@@ -1419,7 +1528,9 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
         $this->tpl->setVariable("FORMACTION", $this->ctrl->getFormAction($this, "finalSubmission"));
         $this->tpl->parseCurrentBlock();
     }
-    
+
+    // patch begin: question working times
+    /*
     public function outProcessingTime($active_id)
     {
         global $DIC;
@@ -1504,6 +1615,148 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
         $this->tpl->setVariable("CONTENT_BLOCK", $template->get());
         $this->tpl->parseCurrentBlock();
     }
+    */
+    function outProcessingTime($active_id)
+    {
+        $nowTime = time();
+        $nowDATE = getdate();
+
+        if( $this->object->getEnableProcessingTime() )
+        {
+            // test related times
+
+            $testStartingTime = $this->object->getStartingTimeOfUser($active_id);
+            $testProcessingTime = $this->object->getProcessingTimeInSeconds($active_id);
+            $testRemainingTime = $testStartingTime + $testProcessingTime - $nowTime;
+
+            list($tstProcTime_M, $tstProcTime_S) = $this->calculateMinutesAndSeconds($testProcessingTime);
+
+            $tstStartingTimeSTR = ilDatePresentation::formatDate(new ilDateTime($testStartingTime, IL_CAL_UNIX));
+            $tstProcTimeSTR = $this->buildProcessingTimeString($tstProcTime_M, $tstProcTime_S);
+            $tstRemainTimeSTR = $this->buildRemainingTimeString($testRemainingTime);
+
+            $usrWorkTimeOutput = sprintf($this->lng->txt("tst_time_already_spent"), $tstStartingTimeSTR, $tstProcTimeSTR);
+            $usrRemainTstTimeOutput = sprintf($this->lng->txt("tst_time_already_spent_left"), $tstRemainTimeSTR);
+
+            // test related times
+
+            $testStartingTime = $this->object->getStartingTimeOfUser($active_id);
+            $testProcessingTime = $this->object->getProcessingTimeInSeconds($active_id);
+            $testRemainingTime = $testStartingTime + $testProcessingTime - $nowTime;
+
+            list($tstProcTime_M, $tstProcTime_S) = $this->calculateMinutesAndSeconds($testProcessingTime);
+
+            $tstStartingTimeSTR = ilDatePresentation::formatDate(new ilDateTime($testStartingTime, IL_CAL_UNIX));
+            $tstProcTimeSTR = $this->buildProcessingTimeString($tstProcTime_M, $tstProcTime_S);
+            $tstRemainTimeSTR = $this->buildRemainingTimeString($testRemainingTime);
+
+            $usrWorkTimeOutput = sprintf($this->lng->txt("tst_time_already_spent"), $tstStartingTimeSTR, $tstProcTimeSTR);
+            $usrRemainTstTimeOutput = sprintf($this->lng->txt("tst_time_already_spent_left"), $tstRemainTimeSTR);
+        }
+        else
+        {
+            $usrWorkTimeOutput = $usrRemainTstTimeOutput = '';
+            $tstProcTime_M = $tstProcTime_S = 0;
+            $testStartingTime = $this->object->getStartingTimeOfUser($active_id);
+        }
+
+        $question = $this->getQuestionInstance($this->getCurrentQuestionId());
+        if( $this->isQuestionWorkingTimeRequired($question) )
+        {
+            $questionStartingTime = $this->workingTimeManager->getQuestionStartingTime($question);
+            if( !$questionStartingTime ) $questionStartingTime = $nowTime;
+
+            $questionProcessingTime = $question->getWorkingTimeLimitation();
+            $questionRemainingTime = $questionStartingTime + $questionProcessingTime - $nowTime;
+            list($qstProcTime_M, $qstProcTime_S) = $this->calculateMinutesAndSeconds($questionProcessingTime);
+
+            if( $questionRemainingTime > 0 )
+            {
+                $qstRemainTimeSTR = $this->buildRemainingTimeString($questionRemainingTime);
+                $usrRemainQstTimeOutput = sprintf($this->lng->txt("tst_time_spent_for_question"), $qstRemainTimeSTR);
+                $usrRemainingQstTimeClass = 'qst_timeleft';
+            }
+            else
+            {
+                $usrRemainQstTimeOutput = $this->lng->txt("tst_no_time_left_for_question");
+                $usrRemainingQstTimeClass = 'qst_notime'  ;
+            }
+        }
+        else
+        {
+            $usrRemainQstTimeOutput = $usrRemainingQstTimeClass = '';
+            $qstProcTime_M = $qstProcTime_S = 0;
+            $questionStartingTime = $this->workingTimeManager->getQuestionStartingTime($question);
+        }
+
+        $this->tpl->setCurrentBlock("enableprocessingtime");
+        $this->tpl->setVariable("USER_WORKING_TIME", $usrWorkTimeOutput);
+        $this->tpl->setVariable("USER_REMAINING_TIME_TST", $usrRemainTstTimeOutput);
+        $this->tpl->setVariable("USER_REMAINING_TIME_QST", $usrRemainQstTimeOutput);
+        $this->tpl->setVariable("USER_REMAINING_TIME_QST_ID", $usrRemainingQstTimeClass);
+        $this->tpl->parseCurrentBlock();
+
+        $template = new ilTemplate("tpl.workingtime.js.html", TRUE, TRUE, 'Modules/Test');
+
+        if( $this->object->getEnableProcessingTime() )
+        {
+            $template->setVariable("TST_PTIME_M", $tstProcTime_M);
+            $template->setVariable("TST_PTIME_S", $tstProcTime_S);
+        }
+
+        if( $this->isQuestionWorkingTimeRequired($question) )
+        {
+            $template->setVariable("QST_PTIME_M", $qstProcTime_M);
+            $template->setVariable("QST_PTIME_S", $qstProcTime_S);
+        }
+
+        $template->setVariable("STRING_MINUTE", $this->lng->txt("minute"));
+        $template->setVariable("STRING_MINUTES", $this->lng->txt("minutes"));
+        $template->setVariable("STRING_SECOND", $this->lng->txt("second"));
+        $template->setVariable("STRING_SECONDS", $this->lng->txt("seconds"));
+        $template->setVariable("STRING_TST_TIMELEFT", $this->lng->txt("tst_time_already_spent_left"));
+        $template->setVariable("STRING_QST_TIMELEFT", $this->lng->txt("tst_time_spent_for_question"));
+        $template->setVariable("AND", strtolower($this->lng->txt("and")));
+
+        $tstStartingDATE = getdate($testStartingTime);
+        $template->setVariable("TST_START_YEAR", $tstStartingDATE["year"]);
+        $template->setVariable("TST_START_MONTH", $tstStartingDATE["mon"]-1);
+        $template->setVariable("TST_START_DAY", $tstStartingDATE["mday"]);
+        $template->setVariable("TST_START_HOUR", $tstStartingDATE["hours"]);
+        $template->setVariable("TST_START_MINUTE", $tstStartingDATE["minutes"]);
+        $template->setVariable("TST_START_SECOND", $tstStartingDATE["seconds"]);
+
+        $qstStartingDATE = getdate($questionStartingTime);
+        $template->setVariable("QST_START_YEAR", $qstStartingDATE["year"]);
+        $template->setVariable("QST_START_MONTH", $qstStartingDATE["mon"]-1);
+        $template->setVariable("QST_START_DAY", $qstStartingDATE["mday"]);
+        $template->setVariable("QST_START_HOUR", $qstStartingDATE["hours"]);
+        $template->setVariable("QST_START_MINUTE", $qstStartingDATE["minutes"]);
+        $template->setVariable("QST_START_SECOND", $qstStartingDATE["seconds"]);
+
+        $matches = null;
+        if ( $this->isEndingTimeAvailable($matches) )
+        {
+            $template->setVariable("END_YEAR", $matches[1]);
+            $template->setVariable("END_MONTH", $matches[2]-1);
+            $template->setVariable("END_DAY", $matches[3]);
+            $template->setVariable("END_HOUR", $matches[4]);
+            $template->setVariable("END_MINUTE", $matches[5]);
+            $template->setVariable("END_SECOND", $matches[6]);
+        }
+
+        $template->setVariable("YEAR_NOW", $nowDATE["year"]);
+        $template->setVariable("MONTH_NOW", $nowDATE["mon"]-1);
+        $template->setVariable("DAY_NOW", $nowDATE["mday"]);
+        $template->setVariable("HOUR_NOW", $nowDATE["hours"]);
+        $template->setVariable("MINUTE_NOW", $nowDATE["minutes"]);
+        $template->setVariable("SECOND_NOW", $nowDATE["seconds"]);
+
+        $this->tpl->setCurrentBlock("HeadContent");
+        $this->tpl->setVariable("CONTENT_BLOCK", $template->get());
+        $this->tpl->parseCurrentBlock();
+    }
+    // patch end: question working times
 
     protected function showSideList($presentationMode, $currentSequenceElement)
     {
@@ -1581,10 +1834,18 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
             $table_gui->setData($questionSummaryData);
 
             $this->tpl->setVariable('TABLE_LIST_OF_QUESTIONS', $table_gui->getHTML());
-            
+
+            // patch begin: question working times
+            /*
             if ($this->object->getEnableProcessingTime()) {
                 $this->outProcessingTime($active_id);
             }
+            */
+            if( $this->isAnyProcessTimeLimitActive() )
+            {
+                $this->outProcessingTime($active_id);
+            }
+            // patch end: question working times
         }
     }
     
@@ -2884,4 +3145,125 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
             unset($_SESSION['forced_feedback_navigation_url'][$this->testSession->getActiveId()]);
         }
     }
+
+    // patch begin: question working times
+    /**
+     * @param $processing_time_minutes
+     * @param $processing_time_seconds
+     * @return string
+     */
+    protected function buildProcessingTimeString($procTime_M, $procTime_S)
+    {
+        $str_processing_time = "";
+        if( $procTime_M > 0 )
+        {
+            $str_processing_time = $procTime_M." ".( $procTime_M == 1 ? $this->lng->txt("minute") : $this->lng->txt("minutes") );
+        }
+        if( $procTime_S > 0 )
+        {
+            if( strlen($str_processing_time) > 0 )
+            {
+                $str_processing_time .= " ".$this->lng->txt("and")." ";
+            }
+            $str_processing_time .= $procTime_S." ".( $procTime_S == 1 ? $this->lng->txt("second") : $this->lng->txt("seconds") );
+            return $str_processing_time;
+        }
+        return $str_processing_time;
+    }
+
+    /**
+     * @param $remainTime
+     * @return string
+     */
+    protected function buildRemainingTimeString($remainTime)
+    {
+        list($remainTime_M, $remainTime_S) = $this->calculateMinutesAndSeconds($remainTime);
+
+        $remainTimeSTR = "";
+        if( $remainTime_M > 0 )
+        {
+            $remainTimeSTR = $remainTime_M." ".( $remainTime_M == 1 ? $this->lng->txt("minute") : $this->lng->txt("minutes") );
+        }
+        if( $remainTime < 300 )
+        {
+            if( $remainTime_S > 0 )
+            {
+                if( strlen($remainTimeSTR) > 0 )
+                {
+                    $remainTimeSTR .= " ".$this->lng->txt("and")." ";
+                }
+                $remainTimeSTR .= $remainTime_S." ".( $remainTime_S == 1 ? $this->lng->txt("second") : $this->lng->txt("seconds") );
+                return $remainTimeSTR;
+            }
+            return $remainTimeSTR;
+        }
+        return $remainTimeSTR;
+    }
+
+    /**
+     * @param $processing_time
+     * @return array
+     */
+    protected function calculateMinutesAndSeconds($secondsOnly)
+    {
+        $minutes = floor($secondsOnly / 60);
+        $seconds = $secondsOnly - $minutes * 60;
+        return array($minutes, $seconds);
+    }
+
+    /**
+     * @return bool
+     */
+    protected function isEndingTimeAvailable(&$matches)
+    {
+        if( !$this->object->isEndingTimeEnabled() )
+        {
+            return false;
+        }
+
+        $regex = "/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/";
+        $matches = null;
+
+        if( !preg_match($regex, $this->object->getEndingTime(), $matches) )
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param assQuestion $question
+     * @return bool
+     */
+    protected function isQuestionWorkingTimeRequired(assQuestion $question)
+    {
+        if( !$this->object->isQuestionWorkingTimeLimitEnabled() )
+        {
+            return false;
+        }
+
+        if( !$question->supportsWorkingTimeLimitation() )
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @return int
+     */
+    protected function isAnyProcessTimeLimitActive()
+    {
+        if( $this->object->getEnableProcessingTime() )
+        {
+            return true;
+        }
+
+        return $this->isQuestionWorkingTimeRequired(
+            $this->getQuestionInstance($this->getCurrentQuestionId())
+        );
+    }
+    // patch end: question working times
 }

@@ -247,6 +247,15 @@ class ilTestResultsImportParser extends ilSaxParser
                             array($next_id, $this->active_id_mapping[$a_attribs['active_fi']], $a_attribs['started'], $a_attribs['finished'], $a_attribs['pass'], $a_attribs['tstamp'])
                         );
                         break;
+                    // patch begin: question working times
+                    case 'tst_times_qst':
+                        $next_id = $ilDB->nextId('tst_times_qst');
+                        $affectedRows = $ilDB->manipulateF("INSERT INTO tst_times_qst (record_id, active_fi, started, access_time, pass) VALUES (%s, %s, %s, %s, %s)",
+                            array('integer', 'integer', 'timestamp', 'timestamp', 'integer', 'integer'),
+                            array($next_id, $this->active_id_mapping[$a_attribs['active_fi']], $a_attribs['started'], $a_attribs['access_time'], $a_attribs['pass'])
+                        );
+                        break;
+                    // patch end: question working times
                 }
                 break;
             default:

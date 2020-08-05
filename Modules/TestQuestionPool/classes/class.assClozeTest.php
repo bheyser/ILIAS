@@ -184,6 +184,9 @@ class assClozeTest extends assQuestion implements ilObjQuestionScoringAdjustable
             $this->setId($question_id);
             $this->setNrOfTries($data['nr_of_tries']);
             $this->setObjId($data["obj_fi"]);
+            // patch begin: question working times
+            $this->assignCommonQuestionDataFromDb($data);
+            // patch end: question working times
             $this->setTitle($data["title"]);
             $this->setComment($data["description"]);
             $this->setOriginalId($data["original_id"]);

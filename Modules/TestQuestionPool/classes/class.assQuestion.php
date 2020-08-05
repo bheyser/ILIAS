@@ -22,6 +22,11 @@ abstract class assQuestion
     const IMG_MIME_TYPE_JPG = 'image/jpeg';
     const IMG_MIME_TYPE_PNG = 'image/png';
     const IMG_MIME_TYPE_GIF = 'image/gif';
+
+    // patch begin: question working times
+    const WORKING_TIME_USAGE_METADATA = 'meta';
+	const WORKING_TIME_USAGE_LIMITATION = 'limit';
+    // patch end: question working times
     
     protected static $allowedFileExtensionsByMimeType = array(
         self::IMG_MIME_TYPE_JPG => array('jpg', 'jpeg'),
@@ -34,6 +39,13 @@ abstract class assQuestion
         self::IMG_MIME_TYPE_PNG => array('binary'),
         self::IMG_MIME_TYPE_GIF => array('binary')
     );
+
+    // patch begin: question working times
+    /**
+     * @var string
+     */
+    protected $working_time_usage = self::WORKING_TIME_USAGE_METADATA;
+    // patch end: question working times
 
     /**
     * Question id
@@ -330,6 +342,50 @@ abstract class assQuestion
         require_once 'Services/Randomization/classes/class.ilArrayElementOrderKeeper.php';
         $this->shuffler = new ilArrayElementOrderKeeper();
     }
+
+    // patch begin: question working times
+    /**
+     * @return string
+     */
+    public function getWorkingTimeUsage()
+    {
+        return $this->working_time_usage;
+    }
+
+    /**
+     * @param string $working_time_usage
+     */
+    public function setWorkingTimeUsage($working_time_usage)
+    {
+        $this->working_time_usage = $working_time_usage;
+    }
+
+    public function supportsWorkingTimeLimitation()
+    {
+        if( $this->getWorkingTimeUsage() != self::WORKING_TIME_USAGE_LIMITATION )
+        {
+            return false;
+        }
+
+        if( !$this->getWorkingTimeLimitation() )
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function getWorkingTimeLimitation()
+    {
+        $wt = $this->getEstimatedWorkingTime();
+
+        $timeLimit = $wt['s'];
+        $timeLimit += ($wt['m'] * 60);
+        $timeLimit += ($wt['h'] * 3600);
+
+        return $timeLimit;
+    }
+    // patch end: question working times
     
     protected static $forcePassResultsUpdateEnabled = false;
     
@@ -2533,6 +2589,9 @@ abstract class assQuestion
                 "points" => array("float", 0),
                 "nr_of_tries" => array("integer", $this->getDefaultNrOfTries()), // #10771
                 "working_time" => array("text", $estw_time),
+                // patch begin: question working times
+                "working_time_usage" => array("text", $this->getWorkingTimeUsage()),
+                // patch end: question working times
                 "complete" => array("text", $complete),
                 "created" => array("integer", time()),
                 "original_id" => array("integer", null),
@@ -2577,6 +2636,9 @@ abstract class assQuestion
                 "question_text" => array("clob", ilRTE::_replaceMediaObjectImageSrc($this->getQuestion(), 0)),
                 "points" => array("float", $this->getMaximumPoints()),
                 "working_time" => array("text", $estw_time),
+                // patch begin: question working times
+                "working_time_usage" => array("text", $this->getWorkingTimeUsage()),
+                // patch end: question working times
                 "nr_of_tries" => array("integer", $this->getNrOfTries()),
                 "created" => array("integer", time()),
                 "original_id" => array("integer", ($original_id) ? $original_id : null),
@@ -2598,6 +2660,9 @@ abstract class assQuestion
                 "points" => array("float", $this->getMaximumPoints()),
                 "nr_of_tries" => array("integer", $this->getNrOfTries()),
                 "working_time" => array("text", $estw_time),
+                // patch begin: question working times
+                "working_time_usage" => array("text", $this->getWorkingTimeUsage()),
+                // patch end: question working times
                 "tstamp" => array("integer", time()),
                 'complete' => array('integer', $this->isComplete()),
                 "external_id" => array("text", $this->getExternalId())
@@ -2606,6 +2671,13 @@ abstract class assQuestion
             ));
         }
     }
+
+    // patch begin: question working times
+    protected function assignCommonQuestionDataFromDb($data)
+    {
+        $this->setWorkingTimeUsage($data['working_time_usage']);
+    }
+    // patch end: question working times
 
     /**
     * Saves the question to the database

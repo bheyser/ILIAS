@@ -235,6 +235,13 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
 */
     public $reset_processing_time;
 
+    // patch begin: question working times
+    /**
+     * @var bool
+     */
+    protected $questionWorkingTimeLimitEnabled = false;
+    // patch end: question working times
+
     /**
      * @var bool
      */
@@ -1269,6 +1276,7 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
                 'processing_time'            => array('text', $this->getProcessingTime()),
                 'enable_processing_time'     => array('text', $this->getEnableProcessingTime()),
                 'reset_processing_time'      => array('integer', $this->getResetProcessingTime()),
+                'use_qst_work_times'      => array('integer', (int)$this->isQuestionWorkingTimeLimitEnabled()),
                 'reporting_date'             => array('text', $this->getReportingDate()),
                 'starting_time_enabled'      => array('integer', $this->isStartingTimeEnabled()),
                 'starting_time'              => array('integer', $this->getStartingTime()),
@@ -1389,6 +1397,9 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
                         'processing_time'            => array('text', $this->getProcessingTime()),
                         'enable_processing_time'     => array('text', $this->getEnableProcessingTime()),
                         'reset_processing_time'      => array('integer', $this->getResetProcessingTime()),
+                        // patch begin: question working times
+                        'use_qst_work_times'      => array('integer', (int)$this->isQuestionWorkingTimeLimitEnabled()),
+                        // patch end: question working times
                         'reporting_date'             => array('text', $this->getReportingDate()),
                         'starting_time_enabled'      => array('integer', $this->isStartingTimeEnabled()),
                         'starting_time'              => array('integer', $this->getStartingTime()),
@@ -1878,6 +1889,9 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
             $this->setProcessingTime($data->processing_time);
             $this->setEnableProcessingTime($data->enable_processing_time);
             $this->setResetProcessingTime($data->reset_processing_time);
+            // patch begin: question working times
+            $this->setQuestionWorkingTimeLimitEnabled((bool)$data->use_qst_work_times);
+            // patch end: question working times
             $this->setReportingDate($data->reporting_date);
             $this->setShuffleQuestions($data->shuffle_questions);
             $this->setResultsPresentation($data->results_presentation);
@@ -3198,6 +3212,24 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
         }
     }
 
+    // patch begin: question working times
+    /**
+     * @return boolean
+     */
+    public function isQuestionWorkingTimeLimitEnabled()
+    {
+        return $this->questionWorkingTimeLimitEnabled;
+    }
+
+    /**
+     * @param boolean $questionWorkingTimeLimitEnabled
+     */
+    public function setQuestionWorkingTimeLimitEnabled($questionWorkingTimeLimitEnabled)
+    {
+        $this->questionWorkingTimeLimitEnabled = $questionWorkingTimeLimitEnabled;
+    }
+    // patch end: question working times
+
     /**
     * Sets the count system for the calculation of points
     *
@@ -3458,6 +3490,9 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
         $ilDB->manipulate("DELETE FROM tst_result_cache WHERE $IN_activeIds");
         $ilDB->manipulate("DELETE FROM tst_sequence WHERE $IN_activeIds");
         $ilDB->manipulate("DELETE FROM tst_times WHERE $IN_activeIds");
+        // patch begin: question working times
+        $ilDB->manipulate("DELETE FROM tst_times_qst WHERE $IN_activeIds");
+        // patch end: question working times
         
         if ($this->isRandomTest()) {
             $ilDB->manipulate("DELETE FROM tst_test_rnd_qst WHERE $IN_activeIds");
@@ -5850,6 +5885,11 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
                 case "reset_processing_time":
                     $this->setResetProcessingTime($metadata["entry"]);
                     break;
+                // patch begin: question working times
+                case "use_qst_work_times":
+                    $this->setQuestionWorkingTimeLimitEnabled((bool)$metadata["entry"]);
+                    break;
+                // patch end: question working times
                 case "instant_verification":
                     $this->setInstantFeedbackSolution($metadata["entry"]);
                     break;
@@ -6131,6 +6171,14 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
         $a_xml_writer->xmlElement("fieldlabel", null, "reset_processing_time");
         $a_xml_writer->xmlElement("fieldentry", null, $this->getResetProcessingTime());
         $a_xml_writer->xmlEndTag("qtimetadatafield");
+
+        // patch begin: question working times
+        // reset processing time
+        $a_xml_writer->xmlStartTag("qtimetadatafield");
+        $a_xml_writer->xmlElement("fieldlabel", NULL, "use_qst_work_times");
+        $a_xml_writer->xmlElement("fieldentry", NULL, (int)$this->isQuestionWorkingTimeLimitEnabled());
+        $a_xml_writer->xmlEndTag("qtimetadatafield");
+        // patch end: question working times
 
         // count system
         $a_xml_writer->xmlStartTag("qtimetadatafield");
@@ -7139,6 +7187,9 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
         $newObj->setQuestionSetType($this->getQuestionSetType());
         $newObj->setReportingDate($this->getReportingDate());
         $newObj->setResetProcessingTime($this->getResetProcessingTime());
+        // patch begin: question working times
+        $newObj->setQuestionWorkingTimeLimitEnabled($this->isQuestionWorkingTimeLimitEnabled());
+        // patch end: question working times
         $newObj->setResultsPresentation($this->getResultsPresentation());
         $newObj->setScoreCutting($this->getScoreCutting());
         $newObj->setScoreReporting($this->getScoreReporting());
@@ -9696,6 +9747,9 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
             "ProcessingTime"             => $this->getProcessingTime(),
             "EnableProcessingTime"       => $this->getEnableProcessingTime(),
             "ResetProcessingTime"        => $this->getResetProcessingTime(),
+            // patch begin: question working times
+            "use_qst_work_times"        => (int)$this->isQuestionWorkingTimeLimitEnabled(),
+            // patch end: question working times
             "StartingTimeEnabled"        => $this->isStartingTimeEnabled(),
             "StartingTime"               => $this->getStartingTime(),
             "EndingTimeEnabled"          => $this->isEndingTimeEnabled(),
@@ -9817,6 +9871,9 @@ class ilObjTest extends ilObject implements ilMarkSchemaAware, ilEctsGradesEnabl
         $this->setProcessingTime($testsettings["ProcessingTime"]);
         $this->setResetProcessingTime($testsettings["ResetProcessingTime"]);
         $this->setEnableProcessingTime($testsettings["EnableProcessingTime"]);
+        // patch begin: question working times
+        $this->setQuestionWorkingTimeLimitEnabled((bool)$testsettings["use_qst_work_times"]);
+        // patch end: question working times
         $this->setStartingTimeEnabled($testsettings["StartingTimeEnabled"]);
         $this->setStartingTime($testsettings["StartingTime"]);
         $this->setKiosk($testsettings["Kiosk"]);

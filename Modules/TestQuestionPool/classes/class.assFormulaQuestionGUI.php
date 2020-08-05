@@ -164,6 +164,8 @@ class assFormulaQuestionGUI extends assQuestionGUI
         $hasErrors = (!$always) ? $this->editQuestion(true) : false;
         $checked = true;
         if (!$hasErrors) {
+            // patch begin: question working times
+            /*
             $this->object->setTitle($_POST["title"]);
             $this->object->setAuthor($_POST["author"]);
             $this->object->setComment($_POST["comment"]);
@@ -175,6 +177,9 @@ class assFormulaQuestionGUI extends assQuestionGUI
                 $_POST["Estimated"]["mm"],
                 $_POST["Estimated"]["ss"]
             );
+            */
+            $this->writeQuestionGenericPostData();
+            // patch end: question working times
 
             $this->object->parseQuestionText();
             $found_vars    = array();

@@ -199,6 +199,12 @@ il.TestPlayerQuestionEditControl = new function() {
 
         // change status will be added by handleFormSubmit()
         $(FORM_SELECTOR).attr('action', config.saveOnTimeReachedUrl).submit();
+        // patch begin: question working times
+        var autosaveUrl = '{AUTOSAVE_URL}';
+        if (autosaveUrl) {
+            autosave(autosaveUrl);
+        }
+        // patch end: question working times
     };
 
     /**

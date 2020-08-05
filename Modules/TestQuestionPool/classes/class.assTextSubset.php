@@ -134,6 +134,9 @@ class assTextSubset extends assQuestion implements ilObjQuestionScoringAdjustabl
             $data = $ilDB->fetchAssoc($result);
             $this->setId($question_id);
             $this->setObjId($data["obj_fi"]);
+            // patch begin: question working times
+            $this->assignCommonQuestionDataFromDb($data);
+            // patch end: question working times
             $this->setNrOfTries($data['nr_of_tries']);
             $this->setTitle($data["title"]);
             $this->setComment($data["description"]);

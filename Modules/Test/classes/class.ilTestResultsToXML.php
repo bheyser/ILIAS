@@ -257,7 +257,30 @@ class ilTestResultsToXML extends ilXmlWriter
         }
         $this->xmlEndTag("tst_times");
     }
-    
+
+    // patch begin: question working times
+    protected function exportQuestionTimes()
+    {
+        global $ilDB;
+
+        $query = "SELECT * FROM tst_times_qst WHERE " . $ilDB->in('active_fi', $this->active_ids, false, 'integer') . " ORDER BY active_fi";
+        $result = $ilDB->query($query);
+        $this->xmlStartTag("tst_times_qst", NULL);
+        while ($row = $ilDB->fetchAssoc($result))
+        {
+            $attrs = array(
+                'record_id' => $row['record_id'],
+                'active_fi' => $row['active_fi'],
+                'pass' => $row['pass'],
+                'started' => $row['started'],
+                'access_time' => $row['access_time']
+            );
+            $this->xmlElement("row", $attrs);
+        }
+        $this->xmlEndTag("tst_times_qst");
+    }
+    // patch end: question working times
+
     public function getXML()
     {
         $this->active_ids = array();

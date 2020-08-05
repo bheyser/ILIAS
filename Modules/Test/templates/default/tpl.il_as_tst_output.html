@@ -6,12 +6,21 @@
 <form role="form" id="taForm" class="form-horizontal preventDoubleSubmission" name="test_output" method="post" style="clear: both;" {ENCTYPE} action="{FORMACTION}"<!-- BEGIN onsubmit --> onsubmit="{ON_SUBMIT}"<!-- END onsubmit -->>
 <div id="tst_left">{LIST_OF_QUESTIONS}</div>
 <div id="tst_right">
+<!-- patch begin: question working times -->
 <!-- BEGIN enableprocessingtime -->
-<div class="ilTstWorkingFormBlock_WorkingTime">
-	<span class="ilTstWorkingFormInfo_UserWorkingTime">{USER_WORKING_TIME}</span>
-	<span id="timeleft" class="ilTstWorkingFormInfo_ProcessTimeLeft">{USER_REMAINING_TIME}</span>
-</div>
+	<div id="tst_workingtimes" class="ilTstWorkingFormBlock_WorkingTime">
+		<!-- BEGIN usr_time -->
+		<span class="ilTstWorkingFormInfo_UserWorkingTime">{USER_WORKING_TIME}</span>
+		<!-- END usr_time -->
+		<!-- BEGIN tst_time -->
+		<span id="tst_timeleft" class="ilTstWorkingFormInfo_ProcessTimeLeft">{USER_REMAINING_TIME_TST}</span>
+		<!-- END tst_time -->
+		<!-- BEGIN qst_time -->
+		<span id="{USER_REMAINING_TIME_QST_ID}" class="ilTstWorkingFormInfo_ProcessTimeLeft">{USER_REMAINING_TIME_QST}</span>
+		<!-- END qst_time -->
+	</div>
 <!-- END enableprocessingtime -->
+<!-- patch end: question working times -->
 <input type="hidden" name="formtimestamp" value="{FORM_TIMESTAMP}" />
 <!-- BEGIN char_selector -->{CHAR_SELECTOR_TEMPLATE}<!-- END char_selector -->
 <!-- BEGIN test_nav_toolbar -->{TEST_NAV_TOOLBAR}<!-- END test_nav_toolbar -->

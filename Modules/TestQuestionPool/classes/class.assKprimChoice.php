@@ -200,6 +200,9 @@ class assKprimChoice extends assQuestion implements ilObjQuestionScoringAdjustab
 
             $this->setObjId($data['obj_fi']);
 
+            // patch begin: question working times
+            $this->assignCommonQuestionDataFromDb($data);
+            // patch end: question working times
             $this->setTitle($data['title']);
             $this->setNrOfTries($data['nr_of_tries']);
             $this->setComment($data['description']);

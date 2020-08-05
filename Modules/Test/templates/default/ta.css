@@ -86,8 +86,18 @@
 .ilTstWorkingFormBlock_WorkingTime {
 	text-align: center;
 	clear: both;
+	/* patch begin: question working times */
+	margin-bottom: 20px;
+	padding: 10px 0;
+	opacity: 0;
+	transition: opacity 500ms;
+	/* patch end: question working times */
 }
-
+/* patch begin: question working times */
+.ilTstWorkingFormBlock_WorkingTime.visible {
+	opacity: 1;
+}
+/* patch end: question working times */
 .ilTstWorkingFormInfo_UserWorkingTime {
 	visibility: hidden;
 	display: none;
@@ -96,6 +106,10 @@
 .ilTstWorkingFormInfo_ProcessTimeLeft {
 	font-size: 200%;
 	font-weight: bold;
+	/* patch begin: question working times */
+	font-size: 125%;
+	padding: 5px 5px;
+	/* patch end: question working times */
 }
 
 .ilTstQuestionSummaryBlock_WorkingTime {

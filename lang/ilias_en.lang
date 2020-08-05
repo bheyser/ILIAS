@@ -406,6 +406,12 @@ assessment#:#add_rect#:#Add rectangle area
 assessment#:#addSuggestedSolution#:#Add Content for Recapitulation
 assessment#:#tst_answer_aggr_answer_header#:#Answer
 assessment#:#tst_answer_aggr_frequency_header#:#Frequency
+assessment#:#tst_qst_work_time_limit#:#Questionside Working Time Limitations
+assessment#:#tst_qst_work_time_limit_info#:#Enabling this feature will consider a working time, that possibly got configured with the question and was declared for this purpose, as an additional processing time limit.
+assessment#:#ass_working_time_usage_meta#:#Meta Data Only
+assessment#:#ass_working_time_usage_meta_info#:#The configured period can only be used as reference. When estimating an adapted processing time during the creation of a test for example, the author can sum up this period for all qeuestions to have an idea for an adapted processing time.
+assessment#:#ass_working_time_usage_limit#:#Processing Time or Metadata
+assessment#:#ass_working_time_usage_limit_info#:#Beside the purpose of using the period as metadata, the question does provide this period when it gets used in a test for example. Question using objects can use this period to restrict the processing time for solving the question.
 assessment#:#all_available_question_pools#:#All available question pools
 assessment#:#allow_images#:#Image Support for Answers
 assessment#:#allowedextensions_info#:#Enter a comma separated list of allowed file extensions if you want to restrict the upload to a given set of file extensions (e.g. doc,xls,odt).
@@ -565,6 +571,7 @@ assessment#:#deleteSuggestedSolution#:#Remove this content for recapitulation
 assessment#:#description_maxchars#:#If nothing entered the maximum number of characters for this text answer is unlimited.
 assessment#:#detail_ending_time_reached#:#The time allotted for this test is now over. The test had not been available since %s
 assessment#:#detail_max_processing_time_reached#:#You have reached the maximum allowed processing time of the test!
+assessment#:#detail_qst_processing_time_reached#:#You have reached the maximum allowed processing time for this question! Editing the given solution is not allowed any longer.
 assessment#:#detail_starting_time_not_reached#:#You have not reached the start time of the test. The test will be available on %s
 assessment#:#detailed_evaluation_for#:#Detailed Evaluation for %s
 assessment#:#detailed_evaluation_missing_active_id#:#You must call the ‘Detailed Evaluation’ for a selected participant!
@@ -1360,7 +1367,9 @@ assessment#:#tst_stat_result_timeofwork#:#Time of Work
 assessment#:#tst_stat_result_total_participants#:#Total Number of Participants
 assessment#:#tst_submit_results#:#Yes, I do confirm the submission.
 assessment#:#tst_text_count_system#:#Scoring System
-assessment#:#tst_time_already_spent_left#:#You have %s left.
+assessment#:#tst_time_already_spent_left#:#You have %s left for the test.
+assessment#:#tst_time_spent_for_question#:#For the question you have %s left.
+assessment#:#tst_no_time_left_for_question#:#You are not allowed to change the given solution any longer.
 assessment#:#tst_time_already_spent#:#You started the test at: %s. Your maximum processing time is %s.
 assessment#:#tst_title_output_full#:#Question Titles and Available Points
 assessment#:#tst_title_output_hide_points#:#Only Question Titles

@@ -330,6 +330,8 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
         
         if (!$this->object->getSelfAssessmentEditingMode()) {
             // duration
+            // patch begin: question working times
+            /*
             $duration = new ilDurationInputGUI($this->lng->txt("working_time"), "Estimated");
             $duration->setShowHours(true);
             $duration->setShowMinutes(true);
@@ -340,6 +342,9 @@ class assClozeTestGUI extends assQuestionGUI implements ilGuiQuestionScoringAdju
             $duration->setSeconds($ewt["s"]);
             $duration->setRequired(false);
             $form->addItem($duration);
+            */
+            $this->populateWorkingTimeSettings($form);
+            // patch end: question working times
         } else {
             // number of tries
             if (strlen($this->object->getNrOfTries())) {

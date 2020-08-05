@@ -61,6 +61,10 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
         $this->testSequence->loadFromDb();
         $this->testSequence->loadQuestions();
 
+        // patch begin: question working times
+        $this->initWorkingTimeManager($this->testSequence->getActiveId(), $this->testSequence->getPass());
+        // patch end: question working times
+
         require_once 'Modules/Test/classes/class.ilTestQuestionRelatedObjectivesList.php';
         $this->questionRelatedObjectivesList = new ilTestQuestionRelatedObjectivesList();
 
@@ -213,11 +217,16 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
             }
         }
 
+        // patch begin: question working times
+        /*
         $active_time_id = $this->object->startWorkingTime(
             $this->testSession->getActiveId(),
             $this->testSession->getPass()
         );
         $_SESSION["active_time_id"] = $active_time_id;
+        */
+        $this->workingTimeManager->trackPassWorkingAccess();
+        // patch end: question working times
 
         $this->updateLearningProgressOnTestStart();
 
@@ -264,10 +273,15 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
     {
         $_SESSION['tst_pass_finish'] = 0;
 
+        // patch begin: question working times
+        /*
         $_SESSION["active_time_id"]= $this->object->startWorkingTime(
             $this->testSession->getActiveId(),
             $this->testSession->getPass()
         );
+        */
+        $this->updateWorkingTime();
+        // patch end: question working times
 
         $sequenceElement = $this->getCurrentSequenceElement();
 
@@ -311,7 +325,13 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
         if (!($questionGui instanceof assQuestionGUI)) {
             $this->handleTearsAndAngerQuestionIsNull($questionId, $sequenceElement);
         }
-        
+        // patch begin: question working times
+        elseif( !$this->isSolutionSubmitAllowedForQuestion() ) {
+            $presentationMode = ilTestPlayerAbstractGUI::PRESENTATION_MODE_VIEW;
+            ilUtil::sendInfo($this->lng->txt('detail_qst_processing_time_reached'));
+        }
+        // patch end: question working times
+
         $questionGui->setSequenceNumber($this->testSequence->getPositionOfSequence($sequenceElement));
         $questionGui->setQuestionCount($this->testSequence->getUserQuestionCount());
 
@@ -583,10 +603,33 @@ abstract class ilTestOutputGUI extends ilTestPlayerAbstractGUI
      *
      * @return boolean TRUE if the answers could be saved, FALSE otherwise
      */
+    // patch begin: question working times
+    /*
     protected function canSaveResult()
     {
         return !$this->object->endingTimeReached() && !$this->isMaxProcessingTimeReached() && !$this->isNrOfTriesReached();
     }
+    */
+    protected function isSolutionSubmitAllowedByTest()
+    {
+        if( $this->object->endingTimeReached() )
+        {
+            return false;
+        }
+
+        if( $this->isMaxProcessingTimeReached() )
+        {
+            return false;
+        }
+
+        if( $this->isNrOfTriesReached() )
+        {
+            return false;
+        }
+
+        return true;
+    }
+    // patch end: question working times
     
     /**
      * @return integer

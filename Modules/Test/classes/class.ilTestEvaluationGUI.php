@@ -1914,7 +1914,17 @@ class ilTestEvaluationGUI extends ilTestServiceGUI
 				WHERE active_fi = ' . $ilDB->quote($active_fi, 'integer') . '
 				AND pass = ' . $ilDB->quote($pass, 'integer')
             );
-            
+
+        // patch begin: question working times
+        // tst_times_qst
+        $ilDB->manipulate(
+            'DELETE
+				FROM tst_times_qst
+				WHERE active_fi = ' . $ilDB->quote($active_fi, 'integer') . '
+				AND pass = ' . $ilDB->quote($pass, 'integer')
+        );
+        // patch end: question working times
+
         if ($must_renumber) {
             $ilDB->manipulate(
                     'UPDATE tst_sequence

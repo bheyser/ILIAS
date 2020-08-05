@@ -639,6 +639,9 @@ class assFormulaQuestion extends assQuestion implements iQuestionCondition
         if ($result->numRows() == 1) {
             $data = $ilDB->fetchAssoc($result);
             $this->setId($question_id);
+            // patch begin: question working times
+            $this->assignCommonQuestionDataFromDb($data);
+            // patch end: question working times
             $this->setTitle($data["title"]);
             $this->setComment($data["description"]);
             $this->setSuggestedSolution($data["solution_hint"]);
