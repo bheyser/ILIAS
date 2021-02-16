@@ -14,7 +14,8 @@
         },
         mainFrame: {
           minWidth: '100px',
-        }
+        },
+        afterResizeCallback: function() {}
       };
 
       var that = this;
@@ -96,6 +97,24 @@
         }
       }
 
+      function getFrameClass(frameElement)
+      {
+        if( $(frameElement).hasClass('mainFrame') )
+        {
+          return 'mainFrame';
+        }
+        else if( $(frameElement).hasClass('leftFrame') )
+        {
+          return 'leftFrame';
+        }
+        else if( $(frameElement).hasClass('rightFrame') )
+        {
+          return 'rightFrame';
+        }
+
+        return '';
+      }
+
       function buildResizerElement() {
         var resizer = document.createElement('div');
         resizer.className = 'draghandle';
@@ -111,9 +130,13 @@
       }
 
       function stopResize(e) {
+        var frameClass = getFrameClass(curResizeFrameElement);
         curResizeFrameElement = null;
+
         window.removeEventListener('mousemove', performResize, false);
         window.removeEventListener('mouseup', stopResize, false);
+
+        config.afterResizeCallback(e, $(that).attr('id'), frameClass);
       }
 
       function performResize(e) {

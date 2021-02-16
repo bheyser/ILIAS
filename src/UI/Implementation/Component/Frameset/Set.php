@@ -33,6 +33,11 @@ class Set implements \ILIAS\UI\Component\Frameset\Set
     protected $rightFrame;
 
     /**
+     * @var string
+     */
+    protected $jsAfterResizeCallback;
+
+    /**
      * Set constructor.
      * @param Frame $frame
      */
@@ -45,6 +50,9 @@ class Set implements \ILIAS\UI\Component\Frameset\Set
 
         $this->id = $id;
         $this->mainFrame = $frame;
+        $this->leftFrame = null;
+        $this->rightFrame = null;
+        $this->jsAfterResizeCallback = null;
     }
 
     /**
@@ -113,5 +121,32 @@ class Set implements \ILIAS\UI\Component\Frameset\Set
     public function hasRightFrame()
     {
         return $this->rightFrame instanceof Frame;
+    }
+
+    /**
+     * @param string $jsAfterResizeCallback
+     * @return Set
+     */
+    public function withJavascriptAfterResizeCallback($jsAfterResizeCallback)
+    {
+        $that = clone $this;
+        $that->jsAfterResizeCallback = $jsAfterResizeCallback;
+        return $that;
+    }
+
+    /**
+     * @return string
+     */
+    public function getJsAfterResizeCallback()
+    {
+        return $this->jsAfterResizeCallback;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasJsAfterResizeCallback()
+    {
+        return $this->jsAfterResizeCallback !== null;
     }
 }

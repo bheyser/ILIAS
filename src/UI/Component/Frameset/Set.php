@@ -7,7 +7,21 @@ use ILIAS\UI\Component\Component as Component;
 
 interface Set extends Component
 {
+    /**
+     * @param Frame $frame
+     * @return Set
+     */
     public function withLeftFrame(Frame $frame);
 
+    /**
+     * @param Frame $frame
+     * @return Set
+     */
     public function withRightFrame(Frame $frame);
+
+    /**
+     * @param string $jsAfterResizeCallback
+     * @return Set
+     */
+    public function withJavascriptAfterResizeCallback($jsAfterResizeCallback);
 }

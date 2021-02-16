@@ -30,6 +30,9 @@
   $(document).ready(function() {
 
     $('#frameset_{ID}').frameset({
+      <!-- BEGIN js_callback_after_resize -->
+      afterResizeCallback: {JS_CALLBACK_AFTER_RESIZE},
+      <!-- END js_callback_after_resize -->
       <!-- BEGIN js_left_frame -->
       leftFrame: {
         <!-- BEGIN js_lf_min_width -->

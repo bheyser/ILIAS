@@ -131,6 +131,13 @@ class Renderer extends AbstractComponentRenderer
             $tpl->parseCurrentBlock();
         }
 
+        if( $set->hasJsAfterResizeCallback() )
+        {
+            $tpl->setCurrentBlock('js_callback_after_resize');
+            $tpl->setVariable('JS_CALLBACK_AFTER_RESIZE', $set->getJsAfterResizeCallback());
+            $tpl->parseCurrentBlock();
+        }
+
         $tpl->setCurrentBlock('javascript');
         $tpl->setVariable('ID', $set->getId());
         $tpl->parseCurrentBlock();
