@@ -307,7 +307,7 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
      * @param string $mainContent
      * @param string $leftContent
      * @param string $rightContent
-     * @return mixed
+     * @return \ILIAS\UI\Component\Frameset\Set
      */
     protected function buildFrameset($identifier, $mainContent, $leftContent, $rightContent)
     {
@@ -330,6 +330,8 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         $frameSet = $f->frameset()->set($identifier, $mainFrame);
         $frameSet = $frameSet->withLeftFrame($leftFrame);
         $frameSet = $frameSet->withRightFrame($rightFrame);
+
+        $frameSet = $frameSet->withJavascriptAfterResizeCallback('resizeTinyMce');
 
         return $frameSet;
     }
@@ -364,13 +366,16 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
     {
         global $DIC; /* @var \ILIAS\DI\Container $DIC */
 
+        $editorId = "tinymce_manscoring_{$questionGui->object->getId()}";
+
         $DIC->ctrl()->setParameter($this, 'cmd', 'post');
         $formaction = $DIC->ctrl()->getFormAction($this);
         $DIC->ctrl()->setParameter($this, 'cmd', '');
 
         $rtestring = ilRTE::_getRTEClassname();
-        $rte = new $rtestring(); /* @var ilTinyMCE $rte */
-        $rte->addUserTextEditor("manscoring-tinymce");
+        $rtestring = ( $rtestring == 'ilTinyMCE' ? 'ilPilotTinyMCE' : $rtestring );
+        $rte = new $rtestring(); /* @var ilPilotTinyMCE $rte */
+        $rte->enableRteSupport($this->object->getId(), $this->object->getType(), $editorId);
 
         $manualFeedback = $this->object->getManualFeedback(
             $this->curActiveId, $this->curQuestionId, $this->curPassIndex
@@ -387,6 +392,7 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         $tpl = new ilTemplate('tpl.manual_scoring_rawform.html', true, true, 'Modules/Test');
 
         $tpl->setCurrentBlock('rawform');
+        $tpl->setVariable('EDITOR_SELECTOR', $editorId);
         $tpl->setVariable('FORMACTION', $formaction);
         $tpl->setVariable('MANUAL_FEEDBACK', $manualFeedback);
         $tpl->setVariable('POINTS_LABEL', sprintf($DIC->language()->txt('granted_points'), $maxPoints));
