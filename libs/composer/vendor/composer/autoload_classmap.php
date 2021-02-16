@@ -6186,6 +6186,7 @@ return array(
     'ilPersonalSkillsGUI' => $baseDir . '/../../Services/Skill/classes/class.ilPersonalSkillsGUI.php',
     'ilPersonalWorkspaceGUI' => $baseDir . '/../../Services/PersonalWorkspace/classes/class.ilPersonalWorkspaceGUI.php',
     'ilPhantomJSRenderer' => $baseDir . '/../../Services/PDFGeneration/classes/renderer/phantomjs/class.ilPhantomJSRenderer.php',
+    'ilPilotTinyMCE' => $baseDir . '/../../Services/RTE/classes/class.ilPilotTinyMCE.php',
     'ilPlainTextHandler' => $baseDir . '/../../Services/Exceptions/classes/class.ilPlainTextHandler.php',
     'ilPlayerUtil' => $baseDir . '/../../Services/MediaObjects/classes/class.ilPlayerUtil.php',
     'ilPlugin' => $baseDir . '/../../Services/Component/classes/class.ilPlugin.php',

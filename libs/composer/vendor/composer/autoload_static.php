@@ -6552,6 +6552,7 @@ class ComposerStaticInit2fffdf922cf8fdbf1f62eec345993c83
         'ilPersonalSkillsGUI' => __DIR__ . '/../..' . '/../../Services/Skill/classes/class.ilPersonalSkillsGUI.php',
         'ilPersonalWorkspaceGUI' => __DIR__ . '/../..' . '/../../Services/PersonalWorkspace/classes/class.ilPersonalWorkspaceGUI.php',
         'ilPhantomJSRenderer' => __DIR__ . '/../..' . '/../../Services/PDFGeneration/classes/renderer/phantomjs/class.ilPhantomJSRenderer.php',
+        'ilPilotTinyMCE' => __DIR__ . '/../..' . '/../../Services/RTE/classes/class.ilPilotTinyMCE.php',
         'ilPlainTextHandler' => __DIR__ . '/../..' . '/../../Services/Exceptions/classes/class.ilPlainTextHandler.php',
         'ilPlayerUtil' => __DIR__ . '/../..' . '/../../Services/MediaObjects/classes/class.ilPlayerUtil.php',
         'ilPlugin' => __DIR__ . '/../..' . '/../../Services/Component/classes/class.ilPlugin.php',
