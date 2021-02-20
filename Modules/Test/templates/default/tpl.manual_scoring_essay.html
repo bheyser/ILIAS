@@ -16,11 +16,8 @@
 
     function resizeTinyMce(e, framesetId, frameClass)
     {
-      var editor = tinyMCE.get(
-        $('#' + framesetId + ' .' + frameClass).find('.tinymce_manscoring_{ID}').attr('id')
-      );
-
-      editor.execCommand('mceResizeContent');
+      $('#'+framesetId+' .'+frameClass+' #manual_feedback_resize.mceResize').trigger('click');
+      return true;
     }
 
     (function($){

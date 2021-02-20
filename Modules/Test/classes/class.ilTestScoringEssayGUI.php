@@ -373,9 +373,8 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         $DIC->ctrl()->setParameter($this, 'cmd', '');
 
         $rtestring = ilRTE::_getRTEClassname();
-        $rtestring = ( $rtestring == 'ilTinyMCE' ? 'ilPilotTinyMCE' : $rtestring );
-        $rte = new $rtestring(); /* @var ilPilotTinyMCE $rte */
-        $rte->enableRteSupport($this->object->getId(), $this->object->getType(), $editorId);
+        $rte = new $rtestring(); /* @var ilTinyMCE $rte */
+        $rte->addRteSupport($this->object->getId(), $this->object->getType(), $editorId);
 
         $manualFeedback = $this->object->getManualFeedback(
             $this->curActiveId, $this->curQuestionId, $this->curPassIndex

@@ -130,13 +130,10 @@
       }
 
       function stopResize(e) {
-        var frameClass = getFrameClass(curResizeFrameElement);
         curResizeFrameElement = null;
 
         window.removeEventListener('mousemove', performResize, false);
         window.removeEventListener('mouseup', stopResize, false);
-
-        config.afterResizeCallback(e, $(that).attr('id'), frameClass);
       }
 
       function performResize(e) {
@@ -178,6 +175,8 @@
         }
 
         $(curResizeFrameElement).css('width', newFrameResizeWidth + 'px');
+
+        config.afterResizeCallback(e, $(that).attr('id'), getFrameClass(curResizeFrameElement));
       }
 
       initFrameset();
