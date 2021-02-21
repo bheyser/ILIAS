@@ -9,6 +9,8 @@
  */
 class ilTestScoringEssayGUI extends ilTestScoringGUI
 {
+    const INIT_SIDE_FRAME_WIDTH = '33%';
+
     /**
      * @var int
      */
@@ -321,11 +323,15 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
 
         $leftFrame = $f->frameset()->frame($DIC->ui()->factory()->legacy(
             $leftContent
-        ))->withMinimalWidth('100px')->withInitialWidth('33%');
+        ))->withMinimalWidth('100px')->withInitialWidth(
+            $this->getInitialLeftFrameWidth($this->curQuestionId)
+        );
 
         $rightFrame = $f->frameset()->frame($DIC->ui()->factory()->legacy(
             $rightContent
-        ))->withMinimalWidth('100px')->withInitialWidth('33%');
+        ))->withMinimalWidth('100px')->withInitialWidth(
+            $this->getInitialRightFrameWidth($this->curQuestionId)
+        );
 
         $frameSet = $f->frameset()->set($identifier, $mainFrame);
         $frameSet = $frameSet->withLeftFrame($leftFrame);
@@ -446,5 +452,49 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         }
 
         $DIC->ctrl()->redirect($this, 'showManualScoring');
+    }
+
+    protected function getInitialLeftFrameWidth($id)
+    {
+        $name = $this->getLeftFrameWidthCookieName($id);
+
+        if( isset($_COOKIE[$name]) && $this->isValidFrameWidth($_COOKIE[$name]) )
+        {
+            return $_COOKIE[$name];
+        }
+
+        return self::INIT_SIDE_FRAME_WIDTH;
+    }
+
+    protected function getInitialRightFrameWidth($id)
+    {
+        $name = $this->getRightFrameWidthCookieName($id);
+
+        if( isset($_COOKIE[$name]) && $this->isValidFrameWidth($_COOKIE[$name]) )
+        {
+            return $_COOKIE[$name];
+        }
+
+        return self::INIT_SIDE_FRAME_WIDTH;
+    }
+
+    protected function getLeftFrameWidthCookieName($id)
+    {
+        return 'frameset_' . $id . '_leftFrame';
+    }
+
+    protected function getRightFrameWidthCookieName($id)
+    {
+        return 'frameset_' . $id . '_rightFrame';
+    }
+
+    protected function isValidFrameWidth($frameWidth)
+    {
+        if( preg_match('/^\d+px$/', $frameWidth) )
+        {
+            return true;
+        }
+
+        return false;
     }
 }

@@ -176,7 +176,16 @@
 
         $(curResizeFrameElement).css('width', newFrameResizeWidth + 'px');
 
+        setFrameResizeCookie(
+          $(that).attr('id'), getFrameClass(curResizeFrameElement), newFrameResizeWidth
+        );
+
         config.afterResizeCallback(e, $(that).attr('id'), getFrameClass(curResizeFrameElement));
+      }
+
+      function setFrameResizeCookie(framesetId, frameClass, frameWidth)
+      {
+        $.cookie(framesetId + '_' + frameClass, parseInt(frameWidth) + 'px');
       }
 
       initFrameset();

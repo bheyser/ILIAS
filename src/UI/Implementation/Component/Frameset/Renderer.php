@@ -12,7 +12,8 @@ use ILIAS\UI\Implementation\Render\Template;
 class Renderer extends AbstractComponentRenderer
 {
     const TEMPLATE = 'tpl.frameset.html';
-    const JS_PLUGIN = 'src/UI/templates/js/Frameset/frameset.js';
+    const JQUERY_FRAMESET_PLUGIN = 'src/UI/templates/js/Frameset/frameset.js';
+    const JQUERY_COOKIE_PLUGIN = 'src/UI/templates/js/Frameset/jquery.cookie.js';
 
     protected function getComponentInterfaceName()
     {
@@ -82,7 +83,8 @@ class Renderer extends AbstractComponentRenderer
     {
         global $DIC; /* @var \ILIAS\DI\Container $DIC */
 
-        $DIC->ui()->mainTemplate()->addJavaScript(self::JS_PLUGIN);
+        $DIC->ui()->mainTemplate()->addJavaScript(self::JQUERY_FRAMESET_PLUGIN);
+        $DIC->ui()->mainTemplate()->addJavaScript(self::JQUERY_COOKIE_PLUGIN);
 
         if( $set->hasLeftFrame() )
         {
