@@ -68,6 +68,7 @@
         if( $(toggle).hasClass('toggle-left') && $(toggle).hasClass('toggle-open') )
         {
           $(leftFrameElement).show();
+
         }
         else if( $(toggle).hasClass('toggle-left') && $(toggle).hasClass('toggle-closed') )
         {
@@ -185,7 +186,7 @@
 
       function setFrameResizeCookie(framesetId, frameClass, frameWidth)
       {
-        $.cookie(framesetId + '_' + frameClass, parseInt(frameWidth) + 'px');
+        $.cookie(framesetId + '_' + frameClass + '_width', parseInt(frameWidth) + 'px');
       }
 
       initFrameset();

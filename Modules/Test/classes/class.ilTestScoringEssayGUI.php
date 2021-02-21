@@ -480,12 +480,12 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
 
     protected function getLeftFrameWidthCookieName($id)
     {
-        return 'frameset_' . $id . '_leftFrame';
+        return 'frameset_' . $id . '_leftFrame_width';
     }
 
     protected function getRightFrameWidthCookieName($id)
     {
-        return 'frameset_' . $id . '_rightFrame';
+        return 'frameset_' . $id . '_rightFrame_width';
     }
 
     protected function isValidFrameWidth($frameWidth)
