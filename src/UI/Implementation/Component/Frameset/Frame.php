@@ -24,6 +24,11 @@ class Frame implements \ILIAS\UI\Component\Frameset\Frame
     protected $initialWidth;
 
     /**
+     * @var bool
+     */
+    protected $initiallyHidden;
+
+    /**
      * Frame constructor.
      * @param Component $content
      */
@@ -32,6 +37,7 @@ class Frame implements \ILIAS\UI\Component\Frameset\Frame
         $this->content = $content;
         $this->minimalWidth = null;
         $this->initialWidth = null;
+        $this->initiallyHidden = false;
     }
 
     /**
@@ -53,6 +59,17 @@ class Frame implements \ILIAS\UI\Component\Frameset\Frame
     {
         $that = clone $this;
         $that->initialWidth = $initialWidth;
+        return $that;
+    }
+
+    /**
+     * @param $initiallyHidden
+     * @return Frame
+     */
+    public function withInitiallyHidden($initiallyHidden)
+    {
+        $that = clone $this;
+        $that->initiallyHidden = $initiallyHidden;
         return $that;
     }
 
@@ -94,5 +111,13 @@ class Frame implements \ILIAS\UI\Component\Frameset\Frame
     public function getInitialWidth()
     {
         return $this->initialWidth;
+    }
+
+     /**
+     * @return bool
+     */
+    public function isInitiallyHidden()
+    {
+        return $this->initiallyHidden;
     }
 }

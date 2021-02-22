@@ -12,8 +12,14 @@ use ILIAS\UI\Implementation\Render\Template;
 class Renderer extends AbstractComponentRenderer
 {
     const TEMPLATE = 'tpl.frameset.html';
+
     const JQUERY_FRAMESET_PLUGIN = 'src/UI/templates/js/Frameset/frameset.js';
     const JQUERY_COOKIE_PLUGIN = 'src/UI/templates/js/Frameset/jquery.cookie.js';
+
+    const HIDDEN_CSS_STYLE = 'display: none;';
+
+    const TOGGLE_OPEN_CLASS = 'toggle-open';
+    const TOGGLE_CLOSED_CLASS = 'toggle-closed';
 
     protected function getComponentInterfaceName()
     {
@@ -103,6 +109,17 @@ class Renderer extends AbstractComponentRenderer
             }
 
             $tpl->setCurrentBlock('js_left_frame');
+
+            if( $set->getLeftFrame()->isInitiallyHidden() )
+            {
+                $tpl->setVariable('LEFT_FRAME_HIDDEN', self::HIDDEN_CSS_STYLE);
+                $tpl->setVariable('LEFT_FRAME_TOGGLE_CLASS', self::TOGGLE_CLOSED_CLASS);
+            }
+            else
+            {
+                $tpl->setVariable('LEFT_FRAME_TOGGLE_CLASS', self::TOGGLE_OPEN_CLASS);
+            }
+
             $tpl->parseCurrentBlock();
         }
 
@@ -123,6 +140,17 @@ class Renderer extends AbstractComponentRenderer
             }
 
             $tpl->setCurrentBlock('js_right_frame');
+
+            if( $set->getRightFrame()->isInitiallyHidden() )
+            {
+                $tpl->setVariable('RIGHT_FRAME_HIDDEN', self::HIDDEN_CSS_STYLE);
+                $tpl->setVariable('RIGHT_FRAME_TOGGLE_CLASS', self::TOGGLE_CLOSED_CLASS);
+            }
+            else
+            {
+                $tpl->setVariable('RIGHT_FRAME_TOGGLE_CLASS', self::TOGGLE_OPEN_CLASS);
+            }
+
             $tpl->parseCurrentBlock();
         }
 

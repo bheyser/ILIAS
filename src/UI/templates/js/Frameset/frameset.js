@@ -69,18 +69,33 @@
         {
           $(leftFrameElement).show();
 
+          setFrameHiddenCookie(
+            $(that).attr('id'), getFrameClass(leftFrameElement), false
+          );
         }
         else if( $(toggle).hasClass('toggle-left') && $(toggle).hasClass('toggle-closed') )
         {
           $(leftFrameElement).hide();
+
+          setFrameHiddenCookie(
+            $(that).attr('id'), getFrameClass(leftFrameElement), true
+          );
         }
         else if( $(toggle).hasClass('toggle-right') && $(toggle).hasClass('toggle-open') )
         {
           $(rightFrameElement).show();
+
+          setFrameHiddenCookie(
+            $(that).attr('id'), getFrameClass(rightFrameElement), false
+          );
         }
         else if( $(toggle).hasClass('toggle-right') && $(toggle).hasClass('toggle-closed') )
         {
           $(rightFrameElement).hide();
+
+          setFrameHiddenCookie(
+            $(that).attr('id'), getFrameClass(rightFrameElement), true
+          );
         }
       }
 
@@ -187,6 +202,11 @@
       function setFrameResizeCookie(framesetId, frameClass, frameWidth)
       {
         $.cookie(framesetId + '_' + frameClass + '_width', parseInt(frameWidth) + 'px');
+      }
+
+      function setFrameHiddenCookie(framesetId, frameClass, frameHidden)
+      {
+        $.cookie(framesetId + '_' + frameClass + '_hidden', frameHidden ? 1 : 0);
       }
 
       initFrameset();

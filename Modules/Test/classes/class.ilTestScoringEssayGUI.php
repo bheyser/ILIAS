@@ -327,11 +327,21 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
             $this->getInitialLeftFrameWidth($this->curQuestionId)
         );
 
+        if( $this->isLeftFrameInitiallyHidden($this->curQuestionId) )
+        {
+            $leftFrame = $leftFrame->withInitiallyHidden(true);
+        }
+
         $rightFrame = $f->frameset()->frame($DIC->ui()->factory()->legacy(
             $rightContent
         ))->withMinimalWidth('100px')->withInitialWidth(
             $this->getInitialRightFrameWidth($this->curQuestionId)
         );
+
+        if( $this->isRightFrameInitiallyHidden($this->curQuestionId) )
+        {
+            $rightFrame = $rightFrame->withInitiallyHidden(true);
+        }
 
         $frameSet = $f->frameset()->set($identifier, $mainFrame);
         $frameSet = $frameSet->withLeftFrame($leftFrame);
@@ -496,5 +506,37 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         }
 
         return false;
+    }
+
+    protected function isLeftFrameInitiallyHidden($id)
+    {
+        $name = $this->getLeftFrameInitiallyHiddenCookieName($id);
+        return $this->isFrameInitiallyHidden($name);
+    }
+
+    protected function isRightFrameInitiallyHidden($id)
+    {
+        $name = $this->getRightFrameInitiallyHiddenCookieName($id);
+        return $this->isFrameInitiallyHidden($name);
+    }
+
+    protected function isFrameInitiallyHidden($name)
+    {
+        if (isset($_COOKIE[$name]) && (bool)$_COOKIE[$name])
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    protected function getLeftFrameInitiallyHiddenCookieName($id)
+    {
+        return 'frameset_' . $id . '_leftFrame_hidden';
+    }
+
+    protected function getRightFrameInitiallyHiddenCookieName($id)
+    {
+        return 'frameset_' . $id . '_rightFrame_hidden';
     }
 }
