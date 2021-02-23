@@ -36,12 +36,18 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
      */
     public function __construct(ilObjTest $a_object)
     {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
         parent::__construct($a_object);
 
         if( isset($_POST['pass']) )
         {
             $_GET['pass'] = $_POST['pass'];
         }
+
+        $DIC->ctrl()->saveParameter($this, 'active_id');
+        $DIC->ctrl()->saveParameter($this, 'pass');
+        $DIC->ctrl()->saveParameter($this, 'question_id');
     }
 
     /**
@@ -213,10 +219,29 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
 
         $DIC->toolbar()->addSeparator();
 
-        $scoringMarkBtn = $this->buildParticipantScoringMarkButton();
-        $DIC->toolbar()->addButtonInstance($scoringMarkBtn);
+        $scoringMarkingBtn = $this->buildParticipantScoringMarkButton();
+        $DIC->toolbar()->addButtonInstance($scoringMarkingBtn);
+
+        $DIC->toolbar()->addSeparator();
+
+        $sendNotificationBtn = $this->buildSendNotificationButton();
+        $DIC->toolbar()->addButtonInstance($sendNotificationBtn);
 
         $DIC->toolbar()->setFormAction($DIC->ctrl()->getFormAction($this));
+    }
+
+    /**
+     * @return ilLinkButton
+     */
+    protected function buildSendNotificationButton()
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        $sendNotificationBtn = ilLinkButton::getInstance();
+        $sendNotificationBtn->setCaption('tst_manscoring_user_notification');
+        $sendNotificationBtn->setUrl($DIC->ctrl()->getLinkTarget($this, 'sendNotification'));
+
+        return $sendNotificationBtn;
     }
 
     /**
@@ -578,5 +603,33 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
     protected function getRightFrameInitiallyHiddenCookieName($id)
     {
         return 'frameset_' . $id . '_rightFrame_hidden';
+    }
+
+    protected function sendNotificationCmd()
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        $notificationData[$this->curQuestionId] = array(
+            'points' => assQuestion::_getReachedPoints($this->curActiveId, $this->curQuestionId),
+            'feedback' => $this->object->getManualFeedback(
+                $this->curActiveId, $this->curQuestionId, $this->curPassIndex
+            )
+        );
+
+        $notification = new ilTestManScoringParticipantNotification(
+            $this->object->_getUserIdFromActiveId($this->curActiveId),
+            $this->object->getRefId()
+        );
+
+        $notification->setAdditionalInformation(array(
+            'test_title' => $this->object->getTitle(),
+            'test_pass' => $this->curPassIndex + 1,
+            'questions_gui_list' => $this->questionGuiList,
+            'questions_scoring_data' => $notificationData
+        ));
+
+        $notification->send();
+
+        $DIC->ctrl()->redirect($this);
     }
 }
