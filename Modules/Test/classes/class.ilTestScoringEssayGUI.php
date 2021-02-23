@@ -211,7 +211,43 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         $submitBtn->setCommand('changeQuestion');
         $DIC->toolbar()->addButtonInstance($submitBtn);
 
+        $DIC->toolbar()->addSeparator();
+
+        $scoringMarkBtn = $this->buildParticipantScoringMarkButton();
+        $DIC->toolbar()->addButtonInstance($scoringMarkBtn);
+
         $DIC->toolbar()->setFormAction($DIC->ctrl()->getFormAction($this));
+    }
+
+    /**
+     * @return ilLinkButton
+     */
+    protected function buildParticipantScoringMarkButton()
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        $scoringMarkBtn = ilLinkButton::getInstance();
+
+        $DIC->ctrl()->setParameterByClass(ilTestScoringPilotGUI::class,
+            'active_id', $this->curActiveId
+        );
+
+        if( ilTestService::isManScoringDone($this->curActiveId) )
+        {
+            $scoringMarkBtn->setCaption('tst_mark_unscored');
+            $scoringMarkBtn->setUrl($DIC->ctrl()->getLinkTargetByClass(
+                ilTestScoringPilotGUI::class, 'markParticipantUnscored'
+            ));
+        }
+        else
+        {
+            $scoringMarkBtn->setCaption('tst_mark_scored');
+            $scoringMarkBtn->setUrl($DIC->ctrl()->getLinkTargetByClass(
+                ilTestScoringPilotGUI::class, 'markParticipantScored'
+            ));
+        }
+
+        return $scoringMarkBtn;
     }
 
     protected function saveParameters()
