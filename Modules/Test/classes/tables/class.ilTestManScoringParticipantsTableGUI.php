@@ -171,8 +171,22 @@ class ilTestManScoringParticipantsTableGUI extends ilTable2GUI
             $this->tpl->setVariable("PARTICIPANT_LOGIN", $row['login']);
             $this->tpl->parseCurrentBlock();
         }
-        
+        // patch begin: manual scoring pilot
+        if(!$this->isEditScoringPilot())
+        {
+        // patch end: manual scoring pilot
         $this->tpl->setVariable("PARTICIPANT_LASTNAME", $row['lastname']);
+        // patch begin: manual scoring pilot
+        }
+        else
+        {
+            $this->tpl->setVariable("PARTICIPANT_LASTNAME", $row['lastname']);
+
+            $this->tpl->setVariable("PARTICIPANT_HREF_SCORE", $DIC->ctrl()->getLinkTargetByClass(
+                ilTestScoringEssayGUI::class, 'showManualScoring'
+            ));
+        }
+        // patch end: manual scoring pilot
 
         // patch begin: manual scoring pilot
         if( $this->isEditScoringPilot() )
