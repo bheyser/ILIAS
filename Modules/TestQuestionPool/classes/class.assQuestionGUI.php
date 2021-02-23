@@ -1191,6 +1191,10 @@ abstract class assQuestionGUI
     */
     public function addBasicQuestionFormProperties($form)
     {
+        // patch begin: manual scoring pilot
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+        // patch end: manual scoring pilot
+
         // title
         $title = new ilTextInputGUI($this->lng->txt("title"), "title");
         $title->setMaxLength(100);
@@ -1248,6 +1252,9 @@ abstract class assQuestionGUI
         if (!$this->object->getSelfAssessmentEditingMode()) {
             // duration
             $duration = new ilDurationInputGUI($this->lng->txt("working_time"), "Estimated");
+            // patch begin: manual scoring pilot
+            $duration->setInfo($DIC->language()->txt('working_time_info'));
+            // patch end: manual scoring pilot
             $duration->setShowHours(true);
             $duration->setShowMinutes(true);
             $duration->setShowSeconds(true);
