@@ -298,7 +298,11 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
     {
         global $DIC; /* @var \ILIAS\DI\Container $DIC */
 
-        $title = $DIC->language()->txt('pass') . ' ' . ($this->curPassIndex + 1);
+        $userId = $this->object->_getUserIdFromActiveId($this->curActiveId);
+        $userFullname = $this->object->userLookupFullName($userId, false, true);
+
+        $title = $DIC->language()->txt('tst_participant').': '.$userFullname.'<br />';
+        $title .= $DIC->language()->txt('pass') . ' ' . ($this->curPassIndex + 1);
         $title .= ': ' . $this->getCurrentQuestionGUI()->object->getTitle();
 
         return $title;
