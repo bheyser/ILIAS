@@ -1432,6 +1432,7 @@ assessment#:#tst_manscoring_maxpoints_exceeded_input_alert#:#Die maximale Anzahl
 assessment#:#tst_manscoring_question_section_header#:#Frage: %s
 assessment#:#tst_manscoring_user_notification#:#Benachrichtigung senden
 assessment#:#tst_mark#:#Note
+assessment#:#tst_scoringdone#:#Bewertet
 assessment#:#tst_mark_create_new_mark_step#:#Neue Notenstufe erzeugen
 assessment#:#tst_mark_create_simple_mark_schema#:#Auf Einfaches Notenschema zurücksetzen
 assessment#:#tst_mark_minimum_level#:#Mindestprozentsatz

@@ -64,6 +64,11 @@ class ilTestScoringPilotGUI extends ilTestScoringGUI
         }
     }
 
+    protected function showManScoringParticipantsTableCmd()
+    {
+        $this->showParticipantsCmd();
+    }
+
     protected function showParticipantsCmd()
     {
         global $DIC; /* @var \ILIAS\DI\Container $DIC */
@@ -71,6 +76,7 @@ class ilTestScoringPilotGUI extends ilTestScoringGUI
         $table = $this->buildManScoringParticipantsTable(true);
         $table->setRowTemplate('tpl.il_as_tst_man_scoring_pilot_participant_tblrow.html', 'Modules/Test');
         $table->setEditScoringPilot(true);
+        $table->initColumns();
 
         $DIC->ui()->mainTemplate()->setContent($table->getHTML());
     }
@@ -125,5 +131,46 @@ class ilTestScoringPilotGUI extends ilTestScoringGUI
         }
 
         return $activeId;
+    }
+
+    /**
+     * @return ilTestManScoringParticipantsTableGUI
+     */
+    private function buildManScoringParticipantsTable($withData = false)
+    {
+        require_once 'Modules/Test/classes/tables/class.ilTestManScoringParticipantsTableGUI.php';
+        $table = new ilTestManScoringParticipantsTableGUI($this);
+
+        if ($withData) {
+            $participantStatusFilterValue = $table->getFilterItemByPostVar('participant_status')->getValue();
+
+            require_once 'Modules/Test/classes/class.ilTestParticipantList.php';
+            $participantList = new ilTestParticipantList($this->object);
+
+            $participantList->initializeFromDbRows(
+                $this->object->getTestParticipantsForManualScoring($participantStatusFilterValue)
+            );
+
+            $participantList = $participantList->getAccessFilteredList(
+                ilTestParticipantAccessFilter::getScoreParticipantsUserFilter($this->ref_id)
+            );
+
+            $table->setData($this->getParticipantsTableData($participantList));
+        }
+
+        return $table;
+    }
+
+    protected function getParticipantsTableData(ilTestParticipantList $participantList)
+    {
+        $participantList = $participantList->getScoredParticipantList();
+        $participants = $participantList->getManScoringPilotTableRows();
+
+        foreach($participants as $key => $data)
+        {
+            $participants[$key]['manscoring_done'] = ilTestService::isManScoringDone($data['active_id']);
+        }
+
+        return $participants;
     }
 }

@@ -504,14 +504,7 @@ class ilTestScoringGUI extends ilTestServiceGUI
     /**
      * @return ilTestManScoringParticipantsTableGUI
      */
-    // patch begin: manual scoring pilot
-    /*
-    // patch end: manual scoring pilot
-    private function ($withData = false)
-    // patch begin: manual scoring pilot
-    */
-    protected function buildManScoringParticipantsTable($withData = false)
-    // patch end: manual scoring pilot
+    private function buildManScoringParticipantsTable($withData = false)
     {
         require_once 'Modules/Test/classes/tables/class.ilTestManScoringParticipantsTableGUI.php';
         $table = new ilTestManScoringParticipantsTableGUI($this);

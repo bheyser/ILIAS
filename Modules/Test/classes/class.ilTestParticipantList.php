@@ -352,7 +352,46 @@ class ilTestParticipantList implements Iterator
         
         return $rows;
     }
-    
+
+    // patch begin: manual scoring pilot
+    public function getManScoringPilotTableRows()
+    {
+        $rows = array();
+
+        foreach ($this as $participant) {
+
+            $row = array(
+                'usr_id' => $participant->getUsrId(),
+                'active_id' => $participant->getActiveId(),
+                'login' => $participant->getLogin(),
+                'firstname' => $participant->getFirstname(),
+                'lastname' => $participant->getLastname(),
+                'name' => $this->buildFullname($participant)
+            );
+
+            if ($participant->getScoring()) {
+                $row['scored_pass'] = $participant->getScoring()->getScoredPass();
+                $row['answered_questions'] = $participant->getScoring()->getAnsweredQuestions();
+                $row['total_questions'] = $participant->getScoring()->getTotalQuestions();
+                $row['reached_points'] = $participant->getScoring()->getReachedPoints();
+                $row['max_points'] = $participant->getScoring()->getMaxPoints();
+                $row['percent_result'] = $participant->getScoring()->getPercentResult();
+                $row['passed_status'] = $participant->getScoring()->isPassed();
+                $row['final_mark'] = $participant->getScoring()->getFinalMark();
+
+                $row['pass_finished'] = ilObjTest::lookupLastTestPassAccess(
+                    $participant->getActiveId(),
+                    $participant->getScoring()->getScoredPass()
+                );
+            }
+
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+    // patch end: manual scoring pilot
+
     /**
      * @param integer $activeId
      * @return int|null

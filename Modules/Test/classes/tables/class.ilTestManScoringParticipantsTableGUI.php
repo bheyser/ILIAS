@@ -76,19 +76,34 @@ class ilTestManScoringParticipantsTableGUI extends ilTable2GUI
 
         $this->initFilter();
     }
-    
-    private function initColumns()
+
+    // patch begin: manual scoring pilot
+    //private function initColumns()
+    public function initColumns()
+    // patch end: manual scoring pilot
     {
+        // patch begin: manual scoring pilot
+        $this->column = array();
+        // patch end: manual scoring pilot
         global $DIC;
         $lng = $DIC['lng'];
         
         if ($this->parent_obj->object->getAnonymity()) {
-            $this->addColumn($lng->txt("name"), 'lastname', '100%');
+            $this->addColumn($lng->txt("name"), 'lastname', '');
         } else {
             $this->addColumn($lng->txt("lastname"), 'lastname', '');
             $this->addColumn($lng->txt("firstname"), 'firstname', '');
             $this->addColumn($lng->txt("login"), 'login', '');
         }
+
+        // patch begin: manual scoring pilot
+        if( $this->isEditScoringPilot() )
+        {
+            $this->addColumn($lng->txt('points'), 'points', '');
+            $this->addColumn($lng->txt('tst_mark'), 'mark', '');
+            $this->addColumn($lng->txt('tst_scoringdone'), 'scoringdone', '');
+        }
+        // patch end: manual scoring pilot
         
         $this->addColumn('', '', '1%');
     }
@@ -100,7 +115,12 @@ class ilTestManScoringParticipantsTableGUI extends ilTable2GUI
         $this->setDefaultOrderField("lastname");
         $this->setDefaultOrderDirection("asc");
     }
-    
+
+    public function numericOrdering($field)
+    {
+        return in_array($field, array('points'));
+    }
+
     public function initFilter()
     {
         global $DIC;
@@ -157,6 +177,12 @@ class ilTestManScoringParticipantsTableGUI extends ilTable2GUI
         // patch begin: manual scoring pilot
         if( $this->isEditScoringPilot() )
         {
+            $this->tpl->setCurrentBlock('extended_info');
+            $this->tpl->setVariable("PARTICIPANT_POINTS", $this->buildPointsString($row));
+            $this->tpl->setVariable("PARTICIPANT_GRADE", $row['final_mark']);
+            $this->tpl->setVariable("PARTICIPANT_SCORED", $this->buildManScoringDoneString($row));
+            $this->tpl->parseCurrentBlock();
+
             $this->tpl->setVariable("ACTIONS_LIST", $this->buildActionsMenu($row)->getHTML());
         }
         else
@@ -263,6 +289,27 @@ class ilTestManScoringParticipantsTableGUI extends ilTable2GUI
 
             return $filter->getValue() == ilTestScoringGUI::PART_FILTER_MANSCORING_NONE;
         }
+    }
+    protected function buildManScoringDoneString($row)
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        if( $row['manscoring_done'] )
+        {
+            return $DIC->language()->txt('yes');
+        }
+
+        return $DIC->language()->txt('no');
+    }
+    protected function buildPointsString($row)
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        return sprintf(
+            $DIC->language()->txt('tst_reached_points_of_max'),
+            $row['reached_points'],
+            $row['max_points']
+        );
     }
     // patch end: manual scoring pilot
 }
