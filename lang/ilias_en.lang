@@ -2292,6 +2292,7 @@ common#:#err_role_not_assignable#:#You cannot assign users to this role at this 
 common#:#err_session_expired#:#Your session is expired!
 common#:#err_wrong_header#:#Reason: Wrong header.
 common#:#err_wrong_login#:#Wrong Login or Password
+common#:#err_valid_login_account_creation_disabled#:#Authentication succeeded, but the creation of new user accounts is currently disabled. Please contact your system administrator.
 common#:#err_wrong_password#:#Wrong Password
 common#:#error_parser#:#Error starting the parser.
 common#:#error_recipient#:#Error Recipient
@@ -8212,6 +8213,9 @@ rbac#:#cat_administrate_users#:#Administrate Local User Accounts
 rbac#:#edit_permission#:#Change Permissions
 rbac#:#edit_event#:#Edit Calendar
 book#:#book_set_cancel#:#Cancel Reservation
+book#:#reservation_deleted#:#Reservation deleted
+book#:#X_reservations_of#:#%s reservations of
+book#:#book_set_delete#:#Delete
 rbac#:#book_edit_permission#:#User can change permission settings for booking pool
 rbac#:#book_visible#:#Booking pool is visible
 rbac#:#book_read#:#User can book resources / objects in booking pool
@@ -14586,6 +14590,8 @@ crs#:#crs_lhist_objective_completed#:#Mastered $3$ in $1$.
 trac#:#trac_lhist_obj_completed_in#:#$1$ was completed in $2$.
 trac#:#trac_lhist_obj_completed#:#$1$ was completed.
 lhist#:#lhist_learning_history#:#Learning History
+mme#:#flush#:#Remove Lost Items
+mme#:#msg_subitem_flushed#:#Lost Items removed.
 mme#:#main#:#Main Menu
 mme#:#subtab_topitems#:#Top Items
 mme#:#subtab_subitems#:#Items
