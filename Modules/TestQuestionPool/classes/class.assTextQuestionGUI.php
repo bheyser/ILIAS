@@ -441,7 +441,7 @@ class assTextQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringA
             $DIC->ui()->factory()->legacy($this->getLeftFrameContent()
         ))->withInitialWidth('50%')->withMinimalWidth('200px');
 
-        return $DIC->ui()->factory()->frameset()->set($this->object->getId(), $mainFrame)->withLeftFrame($leftFrame);
+        return $DIC->ui()->factory()->frameset()->set('qst'.$this->object->getId(), $mainFrame)->withLeftFrame($leftFrame);
     }
     protected function getLeftFrameContent()
     {

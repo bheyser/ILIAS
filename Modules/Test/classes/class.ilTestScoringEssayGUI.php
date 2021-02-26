@@ -313,7 +313,7 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         $leftContent = $this->getLeftFrameContent($questionGui);
         $rightContent = $this->getRightFrameContent($questionGui);
 
-        $frameSet = $this->buildFrameset('q'.$this->curQuestionId,
+        $frameSet = $this->buildFrameset('msp'.$this->curQuestionId,
             $mainContent, $leftContent, $rightContent
         );
 
