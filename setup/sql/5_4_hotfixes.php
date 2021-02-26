@@ -442,11 +442,11 @@ while ($row = $ilDB->fetchAssoc($res)) {
 			WHERE thr_fk = %s AND fpt_pk = %s
 		",
         ['integer', 'integer', 'integer'],
-        [$nextId, $row['thr_fk'], $row['fpt_pk']]
+        [$postId, $row['thr_fk'], $row['fpt_pk']]
     );
     $GLOBALS['ilLog']->info(sprintf(
         "Set parent to %s for posting with id %s in thread with id %s in database hotfix step %s",
-        $nextId,
+        $postId,
         $row['fpt_pk'],
         $row['thr_fk'],
         $step
@@ -1326,5 +1326,86 @@ $idx = $setting->get('ilfrmreadidx1', 0);
 if (!$idx) {
     $ilDB->addIndex('frm_user_read', ['usr_id', 'post_id'], 'i1');
     $setting->set('ilfrmreadidx1', 1);
+}
+?>
+<#90>
+<?php
+
+$query = 'update object_data set offline = 1 where type = ' .
+    $ilDB->quote('crs', \ilDBConstants::T_TEXT) . '  and offline IS NULL';
+$ilDB->manipulate($query);
+
+?>
+
+<#91>
+<?php
+
+$ilDB->modifyTableColumn(
+    'ldap_role_assignments',
+    'rule_id',
+    [
+            'type' => \ilDBConstants::T_INTEGER,
+            'length' => 4,
+            'notnull' => false
+    ]
+);
+?>
+<#92>
+<?php
+$ilCtrlStructureReader->getStructure();
+?>
+<#93>
+<?php
+    // remove magpie cache dir
+    $mcdir = CLIENT_WEB_DIR . "/magpie_cache";
+    ilUtil::delDir($mcdir);
+?>
+<#94>
+<?php
+$setting = new ilSetting();
+$setting->set('ilfrmtreemigr', 1);
+?>
+
+
+<#95>
+<?php
+include_once('./Services/Migration/DBUpdate_3560/classes/class.ilDBUpdateNewObjectType.php');
+// workaround to avoid error when using addAdminNode. Bug?
+class EventHandler
+{
+    public function raise($a_component, $a_event, $a_parameter = "")
+    {
+        // nothing to do...
+    }
+}
+$GLOBALS['ilAppEventHandler'] = new EventHandler();
+ilDBUpdateNewObjectType::addAdminNode('lsos', 'LearningSequenceAdmin');
+?>
+
+<#96>
+<?php
+$ilCtrlStructureReader->getStructure();
+?>
+
+<#97>
+<?php
+if (!$ilDB->indexExistsByFields('booking_object', array('pool_id'))) {
+    $ilDB->addIndex('booking_object', array('pool_id'), 'i1');
+}
+?>
+<#98>
+<?php
+if (!$ilDB->indexExistsByFields('il_object_subobj', array('subobj'))) {
+    $ilDB->addIndex('il_object_subobj', array('subobj'), 'i1');
+}
+?>
+<#99>
+<?php
+$ilCtrlStructureReader->getStructure();
+?>
+<#100>
+<?php
+if (!$ilDB->indexExistsByFields('tax_tree', ['child'])) {
+    $ilDB->addIndex('tax_tree', ['child'], 'i1');
 }
 ?>
