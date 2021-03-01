@@ -408,9 +408,25 @@ class ilTestServiceGUI
 
                             $compare_template->setVariable('PARTICIPANT', $result_output);
                             $compare_template->setVariable('SOLUTION', $best_output);
+                            // fau: testShowAutoSave - show in test results
+                            if ($question_gui->supportsIntermediateSolutionOutput() && $question_gui->hasIntermediateSolution($active_id, $pass)) {
+                                $question_gui->setUseIntermediateSolution(true);
+                                $intermediate_output = $question_gui->getSolutionOutput($active_id, $pass, $show_solutions, false, $show_question_only, $showFeedback);
+                                $compare_template->setVariable('TXT_INTERMEDIATE', $this->lng->txt('tst_intermediate_solution'));
+                                $compare_template->setVariable('INTERMEDIATE', $intermediate_output);
+                            }
+                            // fau.
                             $template->setVariable('SOLUTION_OUTPUT', $compare_template->get());
                         } else {
                             $result_output = $question_gui->getSolutionOutput($active_id, $pass, $show_solutions, false, $show_question_only, $showFeedback);
+                            // fau: testShowAutoSave - show in test results
+                            if ($question_gui->supportsIntermediateSolutionOutput() && $question_gui->hasIntermediateSolution($active_id, $pass)) {
+                                $question_gui->setUseIntermediateSolution(true);
+                                $intermediate_output = $question_gui->getSolutionOutput($active_id, $pass, $show_solutions, false, $show_question_only, $showFeedback);
+                                $template->setVariable('TXT_INTERMEDIATE', $this->lng->txt('tst_intermediate_solution'));
+                                $template->setVariable('INTERMEDIATE', $intermediate_output);
+                            }
+                            // fau.
                             $template->setVariable('SOLUTION_OUTPUT', $result_output);
                         }
 
