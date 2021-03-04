@@ -420,6 +420,11 @@ class assTextQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringA
         return $pageoutput;
     }
     // patch begin: manual scoring output
+    const MIN_MAIN_FRAME_WIDTH = '200px';
+    const MIN_SIDE_FRAME_WIDTH = '100px';
+    const INIT_SIDE_FRAME_WIDTH = '50%';
+    const INIT_SIDE_FRAME_HIDDEN = false;
+    const RESPECT_SIDE_FRAME_COOKIES = true;
     protected function getFramesetQuestionOutput($user_solution)
     {
         global $DIC; /* @var \ILIAS\DI\Container $DIC */
@@ -433,15 +438,18 @@ class assTextQuestionGUI extends assQuestionGUI implements ilGuiQuestionScoringA
     {
         global $DIC; /* @var \ILIAS\DI\Container $DIC */
 
-        $mainFrame = $DIC->ui()->factory()->frameset()->frame(
-            $DIC->ui()->factory()->legacy($this->getMainFrameContent($user_solution)
-        ));
+        $f = $DIC->ui()->factory();
 
-        $leftFrame = $DIC->ui()->factory()->frameset()->frame(
-            $DIC->ui()->factory()->legacy($this->getLeftFrameContent()
-        ))->withInitialWidth('50%')->withMinimalWidth('200px');
+        $mainFrame = $f->frameset()->frame($DIC->ui()->factory()->legacy($this->getMainFrameContent($user_solution)))
+                                   ->withMinimalWidth(self::MIN_MAIN_FRAME_WIDTH);
 
-        return $DIC->ui()->factory()->frameset()->set($this->object->getId(), $mainFrame)->withLeftFrame($leftFrame);
+        $leftFrame = $f->frameset()->frame($DIC->ui()->factory()->legacy($this->getLeftFrameContent()))
+                                   ->withMinimalWidth(self::MIN_SIDE_FRAME_WIDTH)
+                                   ->withInitialWidth(self::INIT_SIDE_FRAME_WIDTH)
+                                   ->withInitiallyHidden(self::INIT_SIDE_FRAME_HIDDEN);
+
+        return $f->frameset()->set('qst'.$this->object->getId(), $mainFrame)->withLeftFrame($leftFrame)
+                             ->withRespectCookies(self::RESPECT_SIDE_FRAME_COOKIES);
     }
     protected function getLeftFrameContent()
     {

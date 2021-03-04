@@ -9,7 +9,13 @@
  */
 class ilTestScoringEssayGUI extends ilTestScoringGUI
 {
+    const MIN_MAIN_FRAME_WIDTH = '200px';
+    const MIN_SIDE_FRAME_WIDTH = '100px';
+
     const INIT_SIDE_FRAME_WIDTH = '33%';
+    const INIT_SIDE_FRAME_HIDDEN = false;
+
+    const RESPECT_SIDE_FRAME_COOKIES = true;
 
     /**
      * @var int
@@ -313,7 +319,7 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         $leftContent = $this->getLeftFrameContent($questionGui);
         $rightContent = $this->getRightFrameContent($questionGui);
 
-        $frameSet = $this->buildFrameset($this->curQuestionId,
+        $frameSet = $this->buildFrameset('msp'.$this->curQuestionId,
             $mainContent, $leftContent, $rightContent
         );
 
@@ -382,35 +388,23 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
 
         $f = $DIC->ui()->factory();
 
-        $mainFrame = $f->frameset()->frame($DIC->ui()->factory()->legacy(
-            $mainContent
-        ))->withMinimalWidth('200px');
+        $mainFrame = $f->frameset()->frame($DIC->ui()->factory()->legacy($mainContent))
+                                   ->withMinimalWidth(self::MIN_MAIN_FRAME_WIDTH);
 
-        $leftFrame = $f->frameset()->frame($DIC->ui()->factory()->legacy(
-            $leftContent
-        ))->withMinimalWidth('100px')->withInitialWidth(
-            $this->getInitialLeftFrameWidth($this->curQuestionId)
-        );
+        $leftFrame = $f->frameset()->frame($DIC->ui()->factory()->legacy($leftContent))
+                                   ->withMinimalWidth(self::MIN_SIDE_FRAME_WIDTH)
+                                   ->withInitialWidth(self::INIT_SIDE_FRAME_WIDTH)
+                                   ->withInitiallyHidden(self::INIT_SIDE_FRAME_HIDDEN);
 
-        if( $this->isLeftFrameInitiallyHidden($this->curQuestionId) )
-        {
-            $leftFrame = $leftFrame->withInitiallyHidden(true);
-        }
+        $rightFrame = $f->frameset()->frame($DIC->ui()->factory()->legacy($rightContent))
+                                    ->withMinimalWidth(self::MIN_SIDE_FRAME_WIDTH)
+                                    ->withInitialWidth(self::INIT_SIDE_FRAME_WIDTH)
+                                    ->withInitiallyHidden(self::INIT_SIDE_FRAME_HIDDEN);
 
-        $rightFrame = $f->frameset()->frame($DIC->ui()->factory()->legacy(
-            $rightContent
-        ))->withMinimalWidth('100px')->withInitialWidth(
-            $this->getInitialRightFrameWidth($this->curQuestionId)
-        );
-
-        if( $this->isRightFrameInitiallyHidden($this->curQuestionId) )
-        {
-            $rightFrame = $rightFrame->withInitiallyHidden(true);
-        }
-
-        $frameSet = $f->frameset()->set($identifier, $mainFrame);
-        $frameSet = $frameSet->withLeftFrame($leftFrame);
-        $frameSet = $frameSet->withRightFrame($rightFrame);
+        $frameSet = $f->frameset()->set($identifier, $mainFrame)
+                                  ->withLeftFrame($leftFrame)
+                                  ->withRightFrame($rightFrame)
+                                  ->withRespectCookies(self::RESPECT_SIDE_FRAME_COOKIES);
 
         $frameSet = $frameSet->withJavascriptAfterResizeCallback('resizeTinyMce');
 
@@ -527,82 +521,6 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
         }
 
         $DIC->ctrl()->redirect($this, 'showManualScoring');
-    }
-
-    protected function getInitialLeftFrameWidth($id)
-    {
-        $name = $this->getLeftFrameWidthCookieName($id);
-
-        if( isset($_COOKIE[$name]) && $this->isValidFrameWidth($_COOKIE[$name]) )
-        {
-            return $_COOKIE[$name];
-        }
-
-        return self::INIT_SIDE_FRAME_WIDTH;
-    }
-
-    protected function getInitialRightFrameWidth($id)
-    {
-        $name = $this->getRightFrameWidthCookieName($id);
-
-        if( isset($_COOKIE[$name]) && $this->isValidFrameWidth($_COOKIE[$name]) )
-        {
-            return $_COOKIE[$name];
-        }
-
-        return self::INIT_SIDE_FRAME_WIDTH;
-    }
-
-    protected function getLeftFrameWidthCookieName($id)
-    {
-        return 'frameset_' . $id . '_leftFrame_width';
-    }
-
-    protected function getRightFrameWidthCookieName($id)
-    {
-        return 'frameset_' . $id . '_rightFrame_width';
-    }
-
-    protected function isValidFrameWidth($frameWidth)
-    {
-        if( preg_match('/^\d+px$/', $frameWidth) )
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    protected function isLeftFrameInitiallyHidden($id)
-    {
-        $name = $this->getLeftFrameInitiallyHiddenCookieName($id);
-        return $this->isFrameInitiallyHidden($name);
-    }
-
-    protected function isRightFrameInitiallyHidden($id)
-    {
-        $name = $this->getRightFrameInitiallyHiddenCookieName($id);
-        return $this->isFrameInitiallyHidden($name);
-    }
-
-    protected function isFrameInitiallyHidden($name)
-    {
-        if (isset($_COOKIE[$name]) && (bool)$_COOKIE[$name])
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    protected function getLeftFrameInitiallyHiddenCookieName($id)
-    {
-        return 'frameset_' . $id . '_leftFrame_hidden';
-    }
-
-    protected function getRightFrameInitiallyHiddenCookieName($id)
-    {
-        return 'frameset_' . $id . '_rightFrame_hidden';
     }
 
     protected function sendNotificationCmd()

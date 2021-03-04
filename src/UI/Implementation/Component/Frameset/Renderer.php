@@ -94,64 +94,12 @@ class Renderer extends AbstractComponentRenderer
 
         if( $set->hasLeftFrame() )
         {
-            if( $set->getLeftFrame()->hasMinimalWidth() )
-            {
-                $tpl->setCurrentBlock('js_lf_min_width');
-                $tpl->setVariable('LEFT_FRAME_MIN_WIDTH', $set->getLeftFrame()->getMinimalWidth());
-                $tpl->parseCurrentBlock();
-            }
-
-            if( $set->getLeftFrame()->hasInitialWidth() )
-            {
-                $tpl->setCurrentBlock('js_lf_init_width');
-                $tpl->setVariable('LEFT_FRAME_INIT_WIDTH', $set->getLeftFrame()->getInitialWidth());
-                $tpl->parseCurrentBlock();
-            }
-
-            $tpl->setCurrentBlock('js_left_frame');
-
-            if( $set->getLeftFrame()->isInitiallyHidden() )
-            {
-                $tpl->setVariable('LEFT_FRAME_HIDDEN', self::HIDDEN_CSS_STYLE);
-                $tpl->setVariable('LEFT_FRAME_TOGGLE_CLASS', self::TOGGLE_CLOSED_CLASS);
-            }
-            else
-            {
-                $tpl->setVariable('LEFT_FRAME_TOGGLE_CLASS', self::TOGGLE_OPEN_CLASS);
-            }
-
-            $tpl->parseCurrentBlock();
+            $this->renderLeftFrameJs($set, $tpl);
         }
 
         if( $set->hasRightFrame() )
         {
-            if( $set->getRightFrame()->hasMinimalWidth() )
-            {
-                $tpl->setCurrentBlock('js_rf_min_width');
-                $tpl->setVariable('RIGHT_FRAME_MIN_WIDTH', $set->getRightFrame()->getMinimalWidth());
-                $tpl->parseCurrentBlock();
-            }
-
-            if( $set->getRightFrame()->hasInitialWidth() )
-            {
-                $tpl->setCurrentBlock('js_rf_init_width');
-                $tpl->setVariable('RIGHT_FRAME_INIT_WIDTH', $set->getRightFrame()->getInitialWidth());
-                $tpl->parseCurrentBlock();
-            }
-
-            $tpl->setCurrentBlock('js_right_frame');
-
-            if( $set->getRightFrame()->isInitiallyHidden() )
-            {
-                $tpl->setVariable('RIGHT_FRAME_HIDDEN', self::HIDDEN_CSS_STYLE);
-                $tpl->setVariable('RIGHT_FRAME_TOGGLE_CLASS', self::TOGGLE_CLOSED_CLASS);
-            }
-            else
-            {
-                $tpl->setVariable('RIGHT_FRAME_TOGGLE_CLASS', self::TOGGLE_OPEN_CLASS);
-            }
-
-            $tpl->parseCurrentBlock();
+            $this->renderRightFrameJs($set, $tpl);
         }
 
         if( $set->getMainFrame()->hasMinimalWidth() )
@@ -170,6 +118,92 @@ class Renderer extends AbstractComponentRenderer
 
         $tpl->setCurrentBlock('javascript');
         $tpl->setVariable('ID', $set->getId());
+        $tpl->parseCurrentBlock();
+    }
+
+    /**
+     * @param Set      $set
+     * @param Template $tpl
+     */
+    protected function renderLeftFrameJs(Set $set, Template $tpl)
+    {
+        if( $set->getLeftFrame()->hasMinimalWidth() )
+        {
+            $tpl->setCurrentBlock('js_lf_min_width');
+            $tpl->setVariable('LEFT_FRAME_MIN_WIDTH', $set->getLeftFrame()->getMinimalWidth());
+            $tpl->parseCurrentBlock();
+        }
+
+        $cookies = new Cookies($set->getId(), 'leftFrame');
+
+        if( $set->hasRespectCookies() && $cookies->hasWidthCookie() )
+        {
+            $tpl->setCurrentBlock('js_lf_init_width');
+            $tpl->setVariable('LEFT_FRAME_INIT_WIDTH', $cookies->getWidthCookie());
+            $tpl->parseCurrentBlock();
+        }
+        elseif( $set->getLeftFrame()->hasInitialWidth() )
+        {
+            $tpl->setCurrentBlock('js_lf_init_width');
+            $tpl->setVariable('LEFT_FRAME_INIT_WIDTH', $set->getLeftFrame()->getInitialWidth());
+            $tpl->parseCurrentBlock();
+        }
+
+        $tpl->setCurrentBlock('js_left_frame');
+
+        if( ($set->hasRespectCookies() && $cookies->hasHiddenCookie()) || $set->getLeftFrame()->isInitiallyHidden() )
+        {
+            $tpl->setVariable('LEFT_FRAME_HIDDEN', self::HIDDEN_CSS_STYLE);
+            $tpl->setVariable('LEFT_FRAME_TOGGLE_CLASS', self::TOGGLE_CLOSED_CLASS);
+        }
+        else
+        {
+            $tpl->setVariable('LEFT_FRAME_TOGGLE_CLASS', self::TOGGLE_OPEN_CLASS);
+        }
+
+        $tpl->parseCurrentBlock();
+    }
+
+    /**
+     * @param Set      $set
+     * @param Template $tpl
+     */
+    protected function renderRightFrameJs(Set $set, Template $tpl)
+    {
+        if( $set->getRightFrame()->hasMinimalWidth() )
+        {
+            $tpl->setCurrentBlock('js_rf_min_width');
+            $tpl->setVariable('RIGHT_FRAME_MIN_WIDTH', $set->getRightFrame()->getMinimalWidth());
+            $tpl->parseCurrentBlock();
+        }
+
+        $cookies = new Cookies($set->getId(), 'rightFrame');
+
+        if( $set->hasRespectCookies() && $cookies->hasWidthCookie() )
+        {
+            $tpl->setCurrentBlock('js_rf_init_width');
+            $tpl->setVariable('RIGHT_FRAME_INIT_WIDTH', $cookies->getWidthCookie());
+            $tpl->parseCurrentBlock();
+        }
+        elseif( $set->getRightFrame()->hasInitialWidth() )
+        {
+            $tpl->setCurrentBlock('js_rf_init_width');
+            $tpl->setVariable('RIGHT_FRAME_INIT_WIDTH', $set->getRightFrame()->getInitialWidth());
+            $tpl->parseCurrentBlock();
+        }
+
+        $tpl->setCurrentBlock('js_right_frame');
+
+        if( ($set->hasRespectCookies() && $cookies->hasHiddenCookie()) || $set->getRightFrame()->isInitiallyHidden() )
+        {
+            $tpl->setVariable('RIGHT_FRAME_HIDDEN', self::HIDDEN_CSS_STYLE);
+            $tpl->setVariable('RIGHT_FRAME_TOGGLE_CLASS', self::TOGGLE_CLOSED_CLASS);
+        }
+        else
+        {
+            $tpl->setVariable('RIGHT_FRAME_TOGGLE_CLASS', self::TOGGLE_OPEN_CLASS);
+        }
+
         $tpl->parseCurrentBlock();
     }
 }

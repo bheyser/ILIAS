@@ -20,6 +20,12 @@ interface Set extends Component
     public function withRightFrame(Frame $frame);
 
     /**
+     * @param bool $respectCookies
+     * @return Set
+     */
+    public function withRespectCookies($respectCookies);
+
+    /**
      * @param string $jsAfterResizeCallback
      * @return Set
      */
