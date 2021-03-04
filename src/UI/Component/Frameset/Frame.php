@@ -18,7 +18,7 @@ interface Frame
     public function withInitialWidth($initialWidth);
 
     /**
-     * @param $initiallyHidden
+     * @param bool $initiallyHidden
      * @return Frame
      */
     public function withInitiallyHidden($initiallyHidden);

@@ -120,4 +120,12 @@ class Frame implements \ILIAS\UI\Component\Frameset\Frame
     {
         return $this->initiallyHidden;
     }
+
+     /**
+     * @return bool
+     */
+    public function hasRespectCookies()
+    {
+        return $this->respectCookies;
+    }
 }

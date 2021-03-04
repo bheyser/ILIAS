@@ -33,6 +33,11 @@ class Set implements \ILIAS\UI\Component\Frameset\Set
     protected $rightFrame;
 
     /**
+     * @var bool
+     */
+    protected $respectCookies;
+
+    /**
      * @var string
      */
     protected $jsAfterResizeCallback;
@@ -52,6 +57,7 @@ class Set implements \ILIAS\UI\Component\Frameset\Set
         $this->mainFrame = $frame;
         $this->leftFrame = null;
         $this->rightFrame = null;
+        $this->respectCookies = false;
         $this->jsAfterResizeCallback = null;
     }
 
@@ -121,6 +127,25 @@ class Set implements \ILIAS\UI\Component\Frameset\Set
     public function hasRightFrame()
     {
         return $this->rightFrame instanceof Frame;
+    }
+
+    /**
+     * @param bool $respectCookies
+     * @return Set
+     */
+    public function withRespectCookies($respectCookies)
+    {
+        $that = clone $this;
+        $that->respectCookies = $respectCookies;
+        return $that;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasRespectCookies()
+    {
+        return $this->respectCookies;
     }
 
     /**
