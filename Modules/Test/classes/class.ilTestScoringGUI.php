@@ -451,6 +451,16 @@ class ilTestScoringGUI extends ilTestServiceGUI
             $cust->setHtml($questionSolution);
             $form->addItem($cust);
 
+            // fau: testShowAutoSave - show on manual scoring screen
+            if ($questionGUI->supportsIntermediateSolutionOutput() && $questionGUI->hasIntermediateSolution($activeId, $pass)) {
+                $questionGUI->setUseIntermediateSolution(true);
+                $intermediateSolution = $questionSolution = $questionGUI->getSolutionOutput($activeId, $pass, false, false, true, false, false, true);
+                $cust = new ilCustomInputGUI($lng->txt('tst_intermediate_solution'));
+                $cust->setHtml($intermediateSolution);
+                $form->addItem($cust);
+            }
+            // fau.
+
             $text = new ilTextInputGUI($lng->txt('tst_change_points_for_question'), "question__{$questionId}__points");
             if ($initValues) {
                 $text->setValue(assQuestion::_getReachedPoints($activeId, $questionId, $pass));
@@ -462,7 +472,23 @@ class ilTestScoringGUI extends ilTestServiceGUI
                 $nonedit->setValue(assQuestion::_getMaximumPoints($questionId));
             }
             $form->addItem($nonedit);
-            
+
+            if($questionGUI instanceof assTextQuestionGUI && $this->object->getAutosave()) {
+                $aresult_output = $questionGUI->getAutoSavedSolutionOutput(
+                    $activeId,
+                    $pass,
+                    false,
+                    false,
+                    false,
+                    $this->object->getShowSolutionFeedback(),
+                    false,
+                    true
+                );
+                $cust_as = new ilCustomInputGUI($lng->txt('autosavecontent'));
+                $cust_as->setHtml($aresult_output);
+                $form->addItem($cust_as);
+            }
+
             $area = new ilTextAreaInputGUI($lng->txt('set_manual_feedback'), "question__{$questionId}__feedback");
             $area->setUseRTE(true);
             if ($initValues) {
