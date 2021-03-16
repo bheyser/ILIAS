@@ -325,9 +325,21 @@ class ilTestScoringEssayGUI extends ilTestScoringGUI
 
         $panel = $DIC->ui()->factory()->panel()->standard($this->buildPanelTitle(), $frameSet);
 
-        $DIC->ui()->mainTemplate()->setContent(
-            $DIC->ui()->renderer()->render($panel) . $this->getJavacript()
-        );
+        $DIC->ui()->mainTemplate()->setContent($this->buildTextQuestionOutput($panel));
+    }
+
+    protected function buildTextQuestionOutput($panel)
+    {
+        global $DIC; /* @var \ILIAS\DI\Container $DIC */
+
+        $manualScoringPilot = $DIC->ui()->renderer()->render($panel) . $this->getJavacript();
+
+        $tpl = new ilTemplate('tpl.manual_scoring_pilot.html', true, true, 'Modules/Test');
+        $tpl->setCurrentBlock('manual_scoring_pilot');
+        $tpl->setVariable('MANUAL_SCORING_PILOT', $manualScoringPilot);
+        $tpl->parseCurrentBlock();
+
+        return $tpl->get();
     }
 
     /**

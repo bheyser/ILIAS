@@ -660,12 +660,6 @@ div.ilc_Page.readonly textarea[disabled]
 	left:0;
 }
 
-/* patch begin: manual scoring pilot */
-.ilc_question_TextQuestion {
-	font-size: 72%;
-}
-/* patch end: manual scoring pilot */
-
 .textarea {
 	cursor: not-allowed !important;
 	border: 1px solid rgb(169, 169, 169);
