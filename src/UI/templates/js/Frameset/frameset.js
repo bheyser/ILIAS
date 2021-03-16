@@ -150,9 +150,13 @@
 
         window.removeEventListener('mousemove', performResize, false);
         window.removeEventListener('mouseup', stopResize, false);
+        
+        config.afterResizeCallback(e, $(that).attr('id'), getFrameClass(curResizeFrameElement));
       }
 
       function performResize(e) {
+
+        config.afterResizeCallback(e, $(that).attr('id'), getFrameClass(curResizeFrameElement));
 
         var mainFrameWidth = parseInt($(that).css('width'));
         var leftFrameWidth = parseInt($(leftFrameElement).css('width'));
@@ -195,8 +199,6 @@
         setFrameResizeCookie(
           $(that).attr('id'), getFrameClass(curResizeFrameElement), newFrameResizeWidth
         );
-
-        config.afterResizeCallback(e, $(that).attr('id'), getFrameClass(curResizeFrameElement));
       }
 
       function setFrameResizeCookie(framesetId, frameClass, frameWidth)
