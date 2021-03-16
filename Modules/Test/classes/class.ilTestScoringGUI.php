@@ -491,6 +491,10 @@ class ilTestScoringGUI extends ilTestServiceGUI
 
             $area = new ilTextAreaInputGUI($lng->txt('set_manual_feedback'), "question__{$questionId}__feedback");
             $area->setUseRTE(true);
+            // patch begin: manual scoring pilot
+            $area->setRteTags(ilObjAdvancedEditing::_getUsedHTMLTags("assessment"));
+            $area->setRTESupport($questionId, "qpl", "assessment");
+            // patch end: manual scoring pilot
             if ($initValues) {
                 $area->setValue($this->object->getManualFeedback($activeId, $questionId, $pass));
             }
